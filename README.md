@@ -17,23 +17,40 @@ This project is intentionally conservative:
 - Optional: local OpenAI-compatible LLM endpoint, for example Ollama/Open WebUI/LM Studio
 - Binance API keys only when moving beyond mock/dry-run
 
-The current Codex desktop environment has a bundled Python at:
-
-```powershell
-C:\Users\cakla\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe
-```
-
 ## Quick Start
 
 ```powershell
 Copy-Item .env.example .env
-& 'C:\Users\cakla\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe' -m trading_agent --config config.example.toml
+python -m trading_agent --config config.example.toml
 ```
 
 The first run uses mock market/account data and writes:
 
 - SQLite journal to `work/trading_agent.sqlite3`
 - Markdown report to `outputs/reports/`
+
+You can also run the helper script:
+
+```powershell
+.\scripts\run.ps1
+```
+
+If Windows blocks local PowerShell scripts, run:
+
+```powershell
+PowerShell -ExecutionPolicy Bypass -File .\scripts\run.ps1
+```
+
+## VS Code
+
+Open the project folder directly:
+
+```powershell
+code "D:\CodexWork\binance-trading-agent"
+```
+
+The repository includes a minimal `.vscode/launch.json` debug profile named
+`Trading Agent: DRY_RUN`.
 
 ## Modes
 
@@ -51,4 +68,3 @@ Real trading and real redeem are disabled by default. Before enabling anything l
 - restrict API key by IP
 - start with tiny amounts
 - keep `allow_locked_redeem = false`
-

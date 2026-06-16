@@ -1,0 +1,13 @@
+[project]
+name = "binance-trading-agent"
+version = "0.1.0"
+description = "Periodic local Binance Spot and Simple Earn trading agent MVP."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+trading-agent = "trading_agent.cli:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+

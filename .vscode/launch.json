@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Trading Agent: DRY_RUN",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "trading_agent",
+      "args": ["--config", "config.example.toml"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}
+

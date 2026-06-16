@@ -1,0 +1,65 @@
+[app]
+mode = "DRY_RUN"
+mock_data = true
+base_currency = "USDT"
+database_path = "work/trading_agent.sqlite3"
+reports_dir = "outputs/reports"
+
+[binance]
+testnet = false
+api_base_url = "https://api.binance.com"
+
+[ai]
+enabled = false
+provider = "openai_compatible"
+base_url_env = "LLM_BASE_URL"
+api_key_env = "LLM_API_KEY"
+model_env = "LLM_MODEL"
+timeout_seconds = 60
+
+[risk]
+max_trades_per_day = 1
+max_daily_loss_pct = 1.0
+max_weekly_loss_pct = 3.0
+max_position_pct_per_asset = 10.0
+max_total_trading_capital_pct = 20.0
+max_risk_per_trade_pct = 0.25
+min_ai_confidence = 0.65
+cooldown_after_loss_hours = 24
+max_consecutive_losses = 2
+kill_switch_enabled = true
+
+[orders]
+require_stop_loss = true
+default_stop_loss_pct = 1.5
+default_take_profit_pct = 3.0
+use_oco_when_live = true
+
+[earn]
+allow_flexible_redeem = true
+allow_locked_redeem = false
+redeem_destination = "SPOT"
+allowed_redeem_assets = ["USDT", "BTC", "ETH", "BNB"]
+max_redeem_per_run_usdt = 50.0
+max_redeem_per_day_usdt = 100.0
+min_flexible_reserve_usdt = 25.0
+wait_for_redeem_seconds = 30
+require_redeem_success_before_order = true
+execute_real_redeem = false
+
+[strategy]
+allowed_symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT"]
+quote_amount_usdt = 25.0
+timeframes = ["4h", "1d"]
+
+[rebalancing]
+enabled = true
+frequency = "weekly"
+threshold_pct = 5.0
+
+[rebalancing.target_allocation]
+USDT = 50.0
+BTC = 30.0
+ETH = 15.0
+BNB = 5.0
+

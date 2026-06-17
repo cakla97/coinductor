@@ -1,6 +1,7 @@
 # Binance Periodic Trading Agent MVP
 
-Experimental local trading/rebalancing agent for Binance Spot + Simple Earn Flexible.
+Experimental local portfolio assistant for Binance Spot, Simple Earn Flexible, rebalancing,
+and Spot Grid bot recommendations.
 
 This project is intentionally conservative:
 
@@ -10,6 +11,7 @@ This project is intentionally conservative:
 - AI is an analyst only; deterministic code enforces risk and liquidity rules
 - Flexible Earn redeem is modeled as a liquidity-management step
 - Locked Earn is read-only
+- Spot Grid bot creation is recommend-only unless an official execution path is added later
 
 ## Prerequisites
 
@@ -28,6 +30,17 @@ The first run uses mock market/account data and writes:
 
 - SQLite journal to `work/trading_agent.sqlite3`
 - Markdown report to `outputs/reports/`
+
+Each report includes:
+
+- portfolio summary
+- Spot vs Flexible vs Locked balance view
+- market snapshot
+- AI trade proposal
+- risk decision
+- Flexible Earn liquidity recommendation
+- Spot Grid bot recommendation and manual setup steps
+- recommendation for when to run the assistant again
 
 You can also run the helper script:
 
@@ -58,6 +71,18 @@ The repository includes a minimal `.vscode/launch.json` debug profile named
 - `TESTNET`: reserved for Binance Spot Testnet execution
 - `LIVE_CONFIRM`: reserved for future manual-confirm mainnet mode
 - `LIVE_AUTO`: intentionally outside this MVP
+
+## Strategy Decisions
+
+The assistant can currently produce these decision types:
+
+- `HOLD`
+- `SPOT_TRADE_RECOMMENDATION`
+- `REBALANCE_RECOMMENDATION`
+- `GRID_BOT_RECOMMENDATION`
+
+Grid bot recommendations are designed for manual setup in Binance Trade-X / Trading Bots.
+The assistant generates parameters and checklist steps, but does not create the bot directly.
 
 ## Safety Defaults
 

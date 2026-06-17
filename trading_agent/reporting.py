@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import Balance, LiquidityDecision, MarketSnapshot, RiskDecision, TradeProposal
+from .models import Balance, LiquidityDecision, MarketSnapshot, NextRunRecommendation, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Reporter:
@@ -20,6 +20,9 @@ class Reporter:
         proposal: TradeProposal,
         risk_decision: RiskDecision,
         liquidity_decision: LiquidityDecision,
+        grid_liquidity_decision: LiquidityDecision,
+        strategy_decision: StrategyDecision,
+        next_run: NextRunRecommendation,
     ) -> Path:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = self.reports_dir / f"{timestamp}_run-{run_id}.md"
@@ -67,12 +70,68 @@ class Reporter:
                 f"- Redeem asset: `{liquidity_decision.redeem_asset}`",
                 f"- Redeem amount: `{liquidity_decision.redeem_amount}`",
                 "",
+                "## Grid Liquidity Decision",
+                "",
+                f"- Approved: `{grid_liquidity_decision.approved}`",
+                f"- Reason: {grid_liquidity_decision.reason}",
+                f"- Redeem asset: `{grid_liquidity_decision.redeem_asset}`",
+                f"- Redeem amount: `{grid_liquidity_decision.redeem_amount}`",
+                "",
+                "## Strategy Decision",
+                "",
+                f"- Decision: `{strategy_decision.decision_type}`",
+                f"- Priority: `{strategy_decision.priority}`",
+                f"- Summary: {strategy_decision.summary}",
+                f"- Rebalancing note: {strategy_decision.rebalancing_note or 'None'}",
+                "",
+            ]
+        )
+        if strategy_decision.grid is not None:
+            grid = strategy_decision.grid
+            lines.extend(
+                [
+                    "## Spot Grid Recommendation",
+                    "",
+                    f"- Recommended: `{grid.recommended}`",
+                    f"- Symbol: `{grid.symbol}`",
+                    f"- Reason: {grid.reason}",
+                    f"- Range low: `{grid.range_low}`",
+                    f"- Range high: `{grid.range_high}`",
+                    f"- Grid count: `{grid.grid_count}`",
+                    f"- Grid type: `{grid.grid_type}`",
+                    f"- Investment: `{grid.investment_usdt} USDT`",
+                    f"- Stop loss price: `{grid.stop_loss_price}`",
+                    f"- Take profit price: `{grid.take_profit_price}`",
+                    "",
+                ]
+            )
+            if grid.manual_steps:
+                lines.extend(["### Manual Setup Steps", ""])
+                for index, step in enumerate(grid.manual_steps, start=1):
+                    lines.append(f"{index}. {step}")
+                lines.append("")
+        lines.extend(
+            [
+                "## Next Run Recommendation",
+                "",
+                f"- Run again in: `{next_run.run_again_in_hours} hours`",
+                f"- Urgency: `{next_run.urgency}`",
+                f"- Reason: {next_run.reason}",
+                "",
+                "### Triggers",
+                "",
+            ]
+        )
+        for trigger in next_run.triggers:
+            lines.append(f"- {trigger}")
+        lines.extend(
+            [
+                "",
                 "## Execution",
                 "",
-                "No live order was sent. MVP is running in dry-run/simulated mode.",
+                "No live order, redeem, or grid bot was created. MVP is running in dry-run/recommend-only mode.",
                 "",
             ]
         )
         path.write_text("\n".join(lines), encoding="utf-8")
         return path
-

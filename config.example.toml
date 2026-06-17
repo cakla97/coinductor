@@ -51,6 +51,25 @@ execute_real_redeem = false
 allowed_symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT"]
 quote_amount_usdt = 25.0
 timeframes = ["4h", "1d"]
+decision_modes = ["HOLD", "SPOT_TRADE_RECOMMENDATION", "REBALANCE_RECOMMENDATION", "GRID_BOT_RECOMMENDATION"]
+
+[grid_bot]
+enabled = true
+recommend_only = true
+allowed_symbols = ["BTCUSDT", "ETHUSDT"]
+max_active_grid_bots = 1
+max_grid_capital_usdt = 100.0
+max_grid_capital_pct = 10.0
+default_investment_usdt = 50.0
+min_range_width_pct = 5.0
+max_range_width_pct = 25.0
+min_grid_count = 8
+max_grid_count = 40
+preferred_grid_count = 20
+require_stop_loss = true
+require_manual_confirm = true
+cancel_if_price_leaves_range_hours = 12
+max_runtime_days = 14
 
 [rebalancing]
 enabled = true
@@ -62,4 +81,3 @@ USDT = 50.0
 BTC = 30.0
 ETH = 15.0
 BNB = 5.0
-

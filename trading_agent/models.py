@@ -53,8 +53,40 @@ class LiquidityDecision:
 
 
 @dataclass(frozen=True)
+class GridRecommendation:
+    recommended: bool
+    symbol: str | None
+    reason: str
+    range_low: Decimal
+    range_high: Decimal
+    grid_count: int
+    grid_type: str
+    investment_usdt: Decimal
+    stop_loss_price: Decimal
+    take_profit_price: Decimal
+    manual_steps: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class StrategyDecision:
+    decision_type: str
+    priority: str
+    summary: str
+    spot_trade: TradeProposal | None
+    grid: GridRecommendation | None
+    rebalancing_note: str | None
+
+
+@dataclass(frozen=True)
+class NextRunRecommendation:
+    run_again_in_hours: int
+    urgency: str
+    reason: str
+    triggers: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str
     report_path: str
-

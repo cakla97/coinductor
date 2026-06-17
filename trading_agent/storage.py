@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from .models import Balance, MarketSnapshot, RiskDecision, TradeProposal
+from .models import Balance, GridRecommendation, MarketSnapshot, NextRunRecommendation, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Storage:
@@ -57,6 +57,32 @@ class Storage:
                 reason text,
                 adjusted_quote_amount_usdt text
             );
+            create table if not exists grid_recommendations (
+                run_id integer,
+                recommended integer,
+                symbol text,
+                reason text,
+                range_low text,
+                range_high text,
+                grid_count integer,
+                investment_usdt text,
+                stop_loss_price text,
+                take_profit_price text
+            );
+            create table if not exists strategy_decisions (
+                run_id integer,
+                decision_type text,
+                priority text,
+                summary text,
+                rebalancing_note text
+            );
+            create table if not exists next_run_recommendations (
+                run_id integer,
+                run_again_in_hours integer,
+                urgency text,
+                reason text,
+                triggers text
+            );
             """
         )
         self.connection.commit()
@@ -104,3 +130,40 @@ class Storage:
         )
         self.connection.commit()
 
+    def save_grid_recommendation(self, run_id: int, recommendation: GridRecommendation) -> None:
+        self.connection.execute(
+            "insert into grid_recommendations values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                run_id,
+                int(recommendation.recommended),
+                recommendation.symbol,
+                recommendation.reason,
+                str(recommendation.range_low),
+                str(recommendation.range_high),
+                recommendation.grid_count,
+                str(recommendation.investment_usdt),
+                str(recommendation.stop_loss_price),
+                str(recommendation.take_profit_price),
+            ),
+        )
+        self.connection.commit()
+
+    def save_strategy_decision(self, run_id: int, decision: StrategyDecision) -> None:
+        self.connection.execute(
+            "insert into strategy_decisions values (?, ?, ?, ?, ?)",
+            (run_id, decision.decision_type, decision.priority, decision.summary, decision.rebalancing_note),
+        )
+        self.connection.commit()
+
+    def save_next_run_recommendation(self, run_id: int, recommendation: NextRunRecommendation) -> None:
+        self.connection.execute(
+            "insert into next_run_recommendations values (?, ?, ?, ?, ?)",
+            (
+                run_id,
+                recommendation.run_again_in_hours,
+                recommendation.urgency,
+                recommendation.reason,
+                "\n".join(recommendation.triggers),
+            ),
+        )
+        self.connection.commit()

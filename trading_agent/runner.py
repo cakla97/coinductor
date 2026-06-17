@@ -6,10 +6,13 @@ from .ai_analyst import AiAnalyst
 from .binance_client import BinanceClient
 from .config import AppConfig
 from .earn_manager import EarnLiquidityManager
+from .grid_advisor import GridBotAdvisor
 from .models import AgentRunResult, LiquidityDecision
+from .next_run import NextRunAdvisor
 from .reporting import Reporter
 from .risk_engine import RiskEngine
 from .storage import Storage
+from .strategy_decision import StrategyDecisionEngine
 
 
 class AgentRunner:
@@ -20,6 +23,9 @@ class AgentRunner:
         self.ai = AiAnalyst(config.raw)
         self.risk = RiskEngine(config.raw)
         self.earn = EarnLiquidityManager(config.raw)
+        self.grid = GridBotAdvisor(config.raw)
+        self.strategy = StrategyDecisionEngine()
+        self.next_run = NextRunAdvisor()
         self.reporter = Reporter(config.reports_dir)
 
     def run(self) -> AgentRunResult:
@@ -43,11 +49,25 @@ class AgentRunner:
                 )
             else:
                 liquidity_decision = LiquidityDecision(False, "Risk engine rejected proposal before liquidity check.", None, Decimal("0"))
+            grid_recommendation = self.grid.recommend(snapshots)
+            if grid_recommendation.recommended:
+                grid_liquidity_decision = self.earn.ensure_quote_liquidity(
+                    balances=balances,
+                    quote_asset="USDT",
+                    required_amount=grid_recommendation.investment_usdt,
+                )
+            else:
+                grid_liquidity_decision = LiquidityDecision(False, "No grid recommendation requires liquidity.", None, Decimal("0"))
+            strategy_decision = self.strategy.decide(proposal, risk_decision, grid_recommendation)
+            next_run_recommendation = self.next_run.recommend(strategy_decision)
 
             self.storage.save_balances(run_id, balances)
             self.storage.save_market_snapshots(run_id, snapshots)
             self.storage.save_proposal(run_id, proposal)
             self.storage.save_risk_decision(run_id, risk_decision)
+            self.storage.save_grid_recommendation(run_id, grid_recommendation)
+            self.storage.save_strategy_decision(run_id, strategy_decision)
+            self.storage.save_next_run_recommendation(run_id, next_run_recommendation)
             report_path = self.reporter.write_report(
                 run_id=run_id,
                 mode=self.config.mode,
@@ -56,6 +76,9 @@ class AgentRunner:
                 proposal=proposal,
                 risk_decision=risk_decision,
                 liquidity_decision=liquidity_decision,
+                grid_liquidity_decision=grid_liquidity_decision,
+                strategy_decision=strategy_decision,
+                next_run=next_run_recommendation,
             )
             status = "OK"
             self.storage.finish_run(run_id, status, f"Report written to {report_path}")
@@ -63,4 +86,3 @@ class AgentRunner:
         except Exception as exc:
             self.storage.finish_run(run_id, "ERROR", str(exc))
             raise
-

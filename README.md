@@ -77,6 +77,13 @@ Then set `commentary_enabled = true` under `[ai]` in your local config. AI comme
 is explanatory only; deterministic risk, liquidity, grid, and capital sourcing rules
 remain authoritative.
 
+For a one-off run without editing config:
+
+```powershell
+$env:LLM_BASE_URL="http://127.0.0.1:11434/v1"
+python -m trading_agent --config config.example.toml --real-data --ai-commentary
+```
+
 ## VS Code
 
 Open the project folder directly:

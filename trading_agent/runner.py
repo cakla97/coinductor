@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from .ai_analyst import AiAnalyst
 from .binance_client import BinanceClient
+from .capital_sourcing import CapitalSourcingAdvisor
 from .config import AppConfig
 from .earn_manager import EarnLiquidityManager
 from .grid_advisor import GridBotAdvisor
@@ -26,6 +27,7 @@ class AgentRunner:
         self.earn = EarnLiquidityManager(config.raw)
         self.grid = GridBotAdvisor(config.raw)
         self.portfolio = PortfolioAnalyzer(config.raw)
+        self.capital_sourcing = CapitalSourcingAdvisor(config.raw)
         self.strategy = StrategyDecisionEngine()
         self.next_run = NextRunAdvisor()
         self.reporter = Reporter(config.reports_dir)
@@ -64,8 +66,11 @@ class AgentRunner:
                     quote_asset="USDT",
                     required_amount=grid_recommendation.investment_usdt,
                 )
+                grid_capital_plan = self.capital_sourcing.plan(balances, portfolio_analysis, grid_recommendation.investment_usdt)
             else:
                 grid_liquidity_decision = LiquidityDecision(False, "No grid recommendation requires liquidity.", None, Decimal("0"))
+                grid_capital_plan = self.capital_sourcing.plan(balances, portfolio_analysis, Decimal("0"))
+            spot_capital_plan = self.capital_sourcing.plan(balances, portfolio_analysis, risk_decision.adjusted_quote_amount_usdt)
             strategy_decision = self.strategy.decide(proposal, risk_decision, grid_recommendation)
             next_run_recommendation = self.next_run.recommend(strategy_decision)
 
@@ -75,6 +80,8 @@ class AgentRunner:
             self.storage.save_proposal(run_id, proposal)
             self.storage.save_risk_decision(run_id, risk_decision)
             self.storage.save_grid_recommendation(run_id, grid_recommendation)
+            self.storage.save_capital_sourcing_plan(run_id, "SPOT_TRADE", spot_capital_plan)
+            self.storage.save_capital_sourcing_plan(run_id, "GRID_BOT", grid_capital_plan)
             self.storage.save_strategy_decision(run_id, strategy_decision)
             self.storage.save_next_run_recommendation(run_id, next_run_recommendation)
             report_path = self.reporter.write_report(
@@ -87,6 +94,8 @@ class AgentRunner:
                 risk_decision=risk_decision,
                 liquidity_decision=liquidity_decision,
                 grid_liquidity_decision=grid_liquidity_decision,
+                spot_capital_plan=spot_capital_plan,
+                grid_capital_plan=grid_capital_plan,
                 strategy_decision=strategy_decision,
                 next_run=next_run_recommendation,
             )

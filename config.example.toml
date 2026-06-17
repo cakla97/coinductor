@@ -60,6 +60,16 @@ tracked_assets = ["USDT", "BNB", "BTC", "WBETH", "ETH", "SOL", "WLD"]
 pricing_quote_assets = ["USDT", "USDC", "FDUSD"]
 ignored_asset_prefixes = ["LD"]
 
+[capital_sourcing]
+enabled = true
+recommend_only = true
+allowed_source_assets = ["WLD", "SOL", "BNB"]
+protected_assets = ["BTC", "ETH", "WBETH"]
+max_source_value_usdt_per_run = 50.0
+min_remaining_value_usdt_per_asset = 25.0
+prefer_overweight_assets = true
+require_manual_confirm = true
+
 [grid_bot]
 enabled = true
 recommend_only = true

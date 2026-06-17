@@ -115,6 +115,24 @@ class PortfolioAnalysis:
 
 
 @dataclass(frozen=True)
+class CapitalSourcePlanItem:
+    asset: str
+    action: str
+    value_usdt: Decimal
+    reason: str
+
+
+@dataclass(frozen=True)
+class CapitalSourcingPlan:
+    needed_usdt: Decimal
+    available_usdt: Decimal
+    missing_usdt: Decimal
+    recommended: bool
+    summary: str
+    items: tuple[CapitalSourcePlanItem, ...]
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

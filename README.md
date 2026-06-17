@@ -103,6 +103,8 @@ Portfolio tracking is intentionally broader than trading permissions:
 - `[portfolio].tracked_assets` lists assets the assistant should price and include in portfolio analysis.
 - `[strategy].allowed_symbols` lists pairs that can be considered for spot trade recommendations.
 - `[grid_bot].allowed_symbols` lists pairs that can be considered for Spot Grid recommendations.
+- `[capital_sourcing].allowed_source_assets` lists assets that can be recommended as manual sources of USDT.
+- `[capital_sourcing].protected_assets` lists assets that should not be recommended as capital sources.
 
 Assets that cannot be priced are shown as unpriced instead of silently disappearing from totals.
 Binance internal voucher-like assets with configured prefixes, such as `LD`, are reported separately

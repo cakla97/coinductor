@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from .models import Balance, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RiskDecision, StrategyDecision, TradeProposal
+from .models import Balance, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Storage:
@@ -101,6 +101,23 @@ class Storage:
                 priority text,
                 summary text,
                 rebalancing_note text
+            );
+            create table if not exists capital_sourcing_plans (
+                run_id integer,
+                plan_type text,
+                needed_usdt text,
+                available_usdt text,
+                missing_usdt text,
+                recommended integer,
+                summary text
+            );
+            create table if not exists capital_sourcing_items (
+                run_id integer,
+                plan_type text,
+                asset text,
+                action text,
+                value_usdt text,
+                reason text
             );
             create table if not exists next_run_recommendations (
                 run_id integer,
@@ -237,6 +254,25 @@ class Storage:
         self.connection.execute(
             "insert into strategy_decisions values (?, ?, ?, ?, ?)",
             (run_id, decision.decision_type, decision.priority, decision.summary, decision.rebalancing_note),
+        )
+        self.connection.commit()
+
+    def save_capital_sourcing_plan(self, run_id: int, plan_type: str, plan: CapitalSourcingPlan) -> None:
+        self.connection.execute(
+            "insert into capital_sourcing_plans values (?, ?, ?, ?, ?, ?, ?)",
+            (
+                run_id,
+                plan_type,
+                str(plan.needed_usdt),
+                str(plan.available_usdt),
+                str(plan.missing_usdt),
+                int(plan.recommended),
+                plan.summary,
+            ),
+        )
+        self.connection.executemany(
+            "insert into capital_sourcing_items values (?, ?, ?, ?, ?, ?)",
+            [(run_id, plan_type, item.asset, item.action, str(item.value_usdt), item.reason) for item in plan.items],
         )
         self.connection.commit()
 

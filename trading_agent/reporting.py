@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import Balance, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RiskDecision, StrategyDecision, TradeProposal
+from .models import Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Reporter:
@@ -22,6 +22,8 @@ class Reporter:
         risk_decision: RiskDecision,
         liquidity_decision: LiquidityDecision,
         grid_liquidity_decision: LiquidityDecision,
+        spot_capital_plan: CapitalSourcingPlan,
+        grid_capital_plan: CapitalSourcingPlan,
         strategy_decision: StrategyDecision,
         next_run: NextRunRecommendation,
     ) -> Path:
@@ -130,6 +132,16 @@ class Reporter:
                 f"- Redeem asset: `{grid_liquidity_decision.redeem_asset}`",
                 f"- Redeem amount: `{grid_liquidity_decision.redeem_amount}`",
                 "",
+                "## Capital Sourcing",
+                "",
+                "### Spot Trade",
+                "",
+                *self._capital_plan_lines(spot_capital_plan),
+                "",
+                "### Grid Bot",
+                "",
+                *self._capital_plan_lines(grid_capital_plan),
+                "",
                 "## Strategy Decision",
                 "",
                 f"- Decision: `{strategy_decision.decision_type}`",
@@ -188,3 +200,17 @@ class Reporter:
         )
         path.write_text("\n".join(lines), encoding="utf-8")
         return path
+
+    def _capital_plan_lines(self, plan: CapitalSourcingPlan) -> list[str]:
+        lines = [
+            f"- Needed: `{plan.needed_usdt} USDT`",
+            f"- Available USDT: `{plan.available_usdt} USDT`",
+            f"- Missing: `{plan.missing_usdt} USDT`",
+            f"- Recommended: `{plan.recommended}`",
+            f"- Summary: {plan.summary}",
+        ]
+        if plan.items:
+            lines.extend(["", "| Asset | Value USDT | Action | Reason |", "| --- | ---: | --- | --- |"])
+            for item in plan.items:
+                lines.append(f"| {item.asset} | {item.value_usdt} | {item.action} | {item.reason} |")
+        return lines

@@ -40,7 +40,6 @@ class AgentRunner:
         run_id = self.storage.start_run(self.config.mode)
         try:
             balances = self.client.get_balances()
-            research_bundle = self.research.load()
             snapshots = self.client.get_market_snapshots(self.config.allowed_symbols)
             portfolio_assets = sorted(
                 {balance.asset for balance in balances}
@@ -48,6 +47,8 @@ class AgentRunner:
             )
             asset_prices = self.client.get_asset_prices_usdt(portfolio_assets)
             portfolio_analysis = self.portfolio.analyze(balances, asset_prices)
+            research_bundle = self.research.load()
+            research_status = self.research.status_and_request(portfolio_analysis)
             proposal = self.ai.propose_trade(snapshots)
             trades_today = self.storage.count_trades_today()
             risk_decision = self.risk.evaluate(
@@ -98,6 +99,7 @@ class AgentRunner:
                 next_run=next_run_recommendation,
                 recommended_actions=recommended_actions,
                 research=research_bundle,
+                research_status=research_status,
             )
 
             self.storage.save_balances(run_id, balances)
@@ -113,6 +115,7 @@ class AgentRunner:
             self.storage.save_recommended_actions(run_id, recommended_actions)
             self.storage.save_ai_commentary(run_id, ai_commentary)
             self.storage.save_research_notes(run_id, research_bundle)
+            self.storage.save_research_status(run_id, research_status)
             report_path = self.reporter.write_report(
                 run_id=run_id,
                 mode=self.config.mode,
@@ -130,6 +133,7 @@ class AgentRunner:
                 recommended_actions=recommended_actions,
                 ai_commentary=ai_commentary,
                 research=research_bundle,
+                research_status=research_status,
             )
             status = "OK"
             self.storage.finish_run(run_id, status, f"Report written to {report_path}")

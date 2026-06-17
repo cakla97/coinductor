@@ -8,6 +8,10 @@ Supported formats:
 - `.txt`
 - `.json`
 
+Generated research prompts are written to `research/requests` when notes are missing
+or stale. Run the generated request with Binance AI Agent Skills, then save the final
+research output here in `research/notes`.
+
 Example Markdown note:
 
 ```markdown
@@ -29,4 +33,3 @@ Example JSON note:
   "summary": "BTC is range-bound; ETH relative strength is neutral."
 }
 ```
-

@@ -5,7 +5,7 @@ import json
 import os
 import urllib.request
 
-from .models import AiCommentary, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, RiskDecision, StrategyDecision, TradeProposal
+from .models import AiCommentary, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class AiAnalyst:
@@ -31,6 +31,7 @@ class AiAnalyst:
         next_run: NextRunRecommendation,
         recommended_actions: tuple[RecommendedAction, ...],
         research: ResearchBundle,
+        research_status: ResearchStatus,
     ) -> AiCommentary:
         ai_config = self.config.get("ai", {})
         if not ai_config.get("commentary_enabled", False):
@@ -84,6 +85,16 @@ class AiAnalyst:
             ]
             if self.config.get("research", {}).get("include_in_ai_commentary", True)
             else [],
+            "research_status": {
+                "enabled": research_status.enabled,
+                "notes_count": research_status.notes_count,
+                "is_fresh": research_status.is_fresh,
+                "latest_note_age_hours": str(research_status.latest_note_age_hours)
+                if research_status.latest_note_age_hours is not None
+                else None,
+                "summary": research_status.summary,
+                "request_path": research_status.request.path if research_status.request else None,
+            },
             "deterministic_outputs": {
                 "trade_proposal": proposal.__dict__,
                 "risk_decision": risk_decision.__dict__,

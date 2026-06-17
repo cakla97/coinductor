@@ -162,6 +162,23 @@ class ResearchBundle:
 
 
 @dataclass(frozen=True)
+class ResearchRequest:
+    path: str
+    title: str
+    content: str
+
+
+@dataclass(frozen=True)
+class ResearchStatus:
+    enabled: bool
+    notes_count: int
+    is_fresh: bool
+    latest_note_age_hours: Decimal | None
+    request: ResearchRequest | None
+    summary: str
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from .models import AiCommentary, Balance, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, RiskDecision, StrategyDecision, TradeProposal
+from .models import AiCommentary, Balance, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Storage:
@@ -145,6 +145,15 @@ class Storage:
                 source text,
                 title text,
                 content text
+            );
+            create table if not exists research_statuses (
+                run_id integer,
+                enabled integer,
+                notes_count integer,
+                is_fresh integer,
+                latest_note_age_hours text,
+                request_path text,
+                summary text
             );
             """
         )
@@ -334,5 +343,20 @@ class Storage:
         self.connection.executemany(
             "insert into research_notes values (?, ?, ?, ?)",
             [(run_id, note.source, note.title, note.content) for note in research.notes],
+        )
+        self.connection.commit()
+
+    def save_research_status(self, run_id: int, status: ResearchStatus) -> None:
+        self.connection.execute(
+            "insert into research_statuses values (?, ?, ?, ?, ?, ?, ?)",
+            (
+                run_id,
+                int(status.enabled),
+                status.notes_count,
+                int(status.is_fresh),
+                str(status.latest_note_age_hours) if status.latest_note_age_hours is not None else None,
+                status.request.path if status.request else None,
+                status.summary,
+            ),
         )
         self.connection.commit()

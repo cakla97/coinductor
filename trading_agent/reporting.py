@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import AiCommentary, Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, RiskDecision, StrategyDecision, TradeProposal
+from .models import AiCommentary, Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Reporter:
@@ -30,6 +30,7 @@ class Reporter:
         recommended_actions: tuple[RecommendedAction, ...],
         ai_commentary: AiCommentary,
         research: ResearchBundle,
+        research_status: ResearchStatus,
     ) -> Path:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = self.reports_dir / f"{timestamp}_run-{run_id}.md"
@@ -75,9 +76,23 @@ class Reporter:
                 "",
                 f"- Enabled: `{research.enabled}`",
                 f"- Notes loaded: `{len(research.notes)}`",
+                f"- Fresh: `{research_status.is_fresh}`",
+                f"- Summary: {research_status.summary}",
                 "",
             ]
         )
+        if research_status.request is not None:
+            lines.extend(
+                [
+                    "### Generated Research Request",
+                    "",
+                    f"- Path: `{research_status.request.path}`",
+                    f"- Title: {research_status.request.title}",
+                    "",
+                    "Run this request with Binance AI Agent Skills, then save the result into `research/notes/`.",
+                    "",
+                ]
+            )
         if research.notes:
             for note in research.notes:
                 lines.extend(

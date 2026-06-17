@@ -11,9 +11,14 @@ keep_last = 30
 [research]
 enabled = true
 notes_dir = "research/notes"
+requests_dir = "research/requests"
 max_notes = 5
 max_chars_per_note = 3000
 include_in_ai_commentary = true
+generate_requests = true
+freshness_hours = 24
+request_symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "WLDUSDT"]
+request_assets = ["BTC", "ETH", "WBETH", "BNB", "SOL", "WLD"]
 
 [binance]
 testnet = false

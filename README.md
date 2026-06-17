@@ -100,6 +100,18 @@ The assistant includes recent research notes in the report and passes them to th
 as context. Research notes never override deterministic risk, whitelist, liquidity, or
 capital sourcing rules.
 
+## Active Strategy Tracking
+
+If you manually create a Binance Spot Grid bot, copy the example state file:
+
+```powershell
+Copy-Item state/active_strategies.example.toml state/active_strategies.toml
+```
+
+Then edit `state/active_strategies.toml` with the real grid range, symbol, and
+investment. The assistant will track whether current price is inside the configured
+range and add review actions when price approaches or leaves the range.
+
 ## VS Code
 
 Open the project folder directly:

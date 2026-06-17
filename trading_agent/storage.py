@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from .models import AiCommentary, Balance, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Storage:
@@ -154,6 +154,19 @@ class Storage:
                 latest_note_age_hours text,
                 request_path text,
                 summary text
+            );
+            create table if not exists active_grid_evaluations (
+                run_id integer,
+                name text,
+                symbol text,
+                range_low text,
+                range_high text,
+                investment_usdt text,
+                current_price text,
+                state text,
+                distance_to_lower_pct text,
+                distance_to_upper_pct text,
+                recommendation text
             );
             """
         )
@@ -358,5 +371,27 @@ class Storage:
                 status.request.path if status.request else None,
                 status.summary,
             ),
+        )
+        self.connection.commit()
+
+    def save_active_strategies(self, run_id: int, report: ActiveStrategiesReport) -> None:
+        self.connection.executemany(
+            "insert into active_grid_evaluations values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                (
+                    run_id,
+                    item.bot.name,
+                    item.bot.symbol,
+                    str(item.bot.range_low),
+                    str(item.bot.range_high),
+                    str(item.bot.investment_usdt),
+                    str(item.current_price) if item.current_price is not None else None,
+                    item.state,
+                    str(item.distance_to_lower_pct) if item.distance_to_lower_pct is not None else None,
+                    str(item.distance_to_upper_pct) if item.distance_to_upper_pct is not None else None,
+                    item.recommendation,
+                )
+                for item in report.grid_bots
+            ],
         )
         self.connection.commit()

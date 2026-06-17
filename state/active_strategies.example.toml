@@ -1,0 +1,12 @@
+# Copy this file to state/active_strategies.toml and edit after manually creating a grid bot.
+
+[[grid_bots]]
+name = "btc-grid-example"
+symbol = "BTCUSDT"
+range_low = 98000
+range_high = 112000
+investment_usdt = 50
+created_at = "2026-06-17"
+status = "ACTIVE"
+notes = "Example only. Do not use as live state."
+

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import AiCommentary, Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Reporter:
@@ -31,6 +31,7 @@ class Reporter:
         ai_commentary: AiCommentary,
         research: ResearchBundle,
         research_status: ResearchStatus,
+        active_strategies: ActiveStrategiesReport,
     ) -> Path:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = self.reports_dir / f"{timestamp}_run-{run_id}.md"
@@ -105,6 +106,32 @@ class Reporter:
                         "",
                     ]
                 )
+        lines.extend(
+            [
+                "## Active Strategies",
+                "",
+                f"- Enabled: `{active_strategies.enabled}`",
+                f"- Summary: {active_strategies.summary}",
+                "",
+            ]
+        )
+        if active_strategies.grid_bots:
+            lines.extend(
+                [
+                    "| Name | Symbol | Range | Current Price | State | Distance Lower | Distance Upper | Recommendation |",
+                    "| --- | --- | ---: | ---: | --- | ---: | ---: | --- |",
+                ]
+            )
+            for item in active_strategies.grid_bots:
+                lines.append(
+                    "| "
+                    f"{item.bot.name} | {item.bot.symbol} | {item.bot.range_low}-{item.bot.range_high} | "
+                    f"{item.current_price if item.current_price is not None else ''} | {item.state} | "
+                    f"{item.distance_to_lower_pct if item.distance_to_lower_pct is not None else ''}% | "
+                    f"{item.distance_to_upper_pct if item.distance_to_upper_pct is not None else ''}% | "
+                    f"{item.recommendation} |"
+                )
+            lines.append("")
         lines.extend(
             [
                 "## Executive Summary",

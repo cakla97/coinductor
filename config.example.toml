@@ -4,6 +4,7 @@ mock_data = true
 base_currency = "USDT"
 database_path = "work/trading_agent.sqlite3"
 reports_dir = "outputs/reports"
+active_strategies_path = "state/active_strategies.toml"
 
 [reports]
 keep_last = 30
@@ -104,6 +105,10 @@ require_stop_loss = true
 require_manual_confirm = true
 cancel_if_price_leaves_range_hours = 12
 max_runtime_days = 14
+
+[active_strategies]
+enabled = true
+warn_near_range_pct = 5.0
 
 [rebalancing]
 enabled = true

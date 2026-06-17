@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from .active_strategies import ActiveStrategiesTracker
 from .ai_analyst import AiAnalyst
 from .binance_client import BinanceClient
 from .capital_sourcing import CapitalSourcingAdvisor
@@ -34,6 +35,7 @@ class AgentRunner:
         self.next_run = NextRunAdvisor()
         self.actions = RecommendedActionsBuilder()
         self.research = ResearchLoader(config.raw)
+        self.active_strategies = ActiveStrategiesTracker(config.raw)
         self.reporter = Reporter(config.reports_dir, keep_last=int(config.raw.get("reports", {}).get("keep_last", 30)))
 
     def run(self) -> AgentRunResult:
@@ -41,6 +43,7 @@ class AgentRunner:
         try:
             balances = self.client.get_balances()
             snapshots = self.client.get_market_snapshots(self.config.allowed_symbols)
+            active_strategies_report = self.active_strategies.evaluate(snapshots)
             portfolio_assets = sorted(
                 {balance.asset for balance in balances}
                 | {asset.upper() for asset in self.config.raw.get("portfolio", {}).get("tracked_assets", [])}
@@ -86,6 +89,7 @@ class AgentRunner:
                 spot_capital_plan=spot_capital_plan,
                 grid_capital_plan=grid_capital_plan,
                 next_run=next_run_recommendation,
+                active_strategies=active_strategies_report,
             )
             ai_commentary = self.ai.comment_on_portfolio(
                 portfolio=portfolio_analysis,
@@ -100,6 +104,7 @@ class AgentRunner:
                 recommended_actions=recommended_actions,
                 research=research_bundle,
                 research_status=research_status,
+                active_strategies=active_strategies_report,
             )
 
             self.storage.save_balances(run_id, balances)
@@ -116,6 +121,7 @@ class AgentRunner:
             self.storage.save_ai_commentary(run_id, ai_commentary)
             self.storage.save_research_notes(run_id, research_bundle)
             self.storage.save_research_status(run_id, research_status)
+            self.storage.save_active_strategies(run_id, active_strategies_report)
             report_path = self.reporter.write_report(
                 run_id=run_id,
                 mode=self.config.mode,
@@ -134,6 +140,7 @@ class AgentRunner:
                 ai_commentary=ai_commentary,
                 research=research_bundle,
                 research_status=research_status,
+                active_strategies=active_strategies_report,
             )
             status = "OK"
             self.storage.finish_run(run_id, status, f"Report written to {report_path}")

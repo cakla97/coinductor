@@ -5,7 +5,7 @@ import json
 import os
 import urllib.request
 
-from .models import AiCommentary, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class AiAnalyst:
@@ -32,6 +32,7 @@ class AiAnalyst:
         recommended_actions: tuple[RecommendedAction, ...],
         research: ResearchBundle,
         research_status: ResearchStatus,
+        active_strategies: ActiveStrategiesReport,
     ) -> AiCommentary:
         ai_config = self.config.get("ai", {})
         if not ai_config.get("commentary_enabled", False):
@@ -94,6 +95,21 @@ class AiAnalyst:
                 else None,
                 "summary": research_status.summary,
                 "request_path": research_status.request.path if research_status.request else None,
+            },
+            "active_strategies": {
+                "summary": active_strategies.summary,
+                "grid_bots": [
+                    {
+                        "name": item.bot.name,
+                        "symbol": item.bot.symbol,
+                        "range_low": str(item.bot.range_low),
+                        "range_high": str(item.bot.range_high),
+                        "current_price": str(item.current_price) if item.current_price is not None else None,
+                        "state": item.state,
+                        "recommendation": item.recommendation,
+                    }
+                    for item in active_strategies.grid_bots
+                ],
             },
             "deterministic_outputs": {
                 "trade_proposal": proposal.__dict__,

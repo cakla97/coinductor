@@ -179,6 +179,35 @@ class ResearchStatus:
 
 
 @dataclass(frozen=True)
+class ActiveGridBot:
+    name: str
+    symbol: str
+    range_low: Decimal
+    range_high: Decimal
+    investment_usdt: Decimal
+    created_at: str
+    status: str
+    notes: str
+
+
+@dataclass(frozen=True)
+class ActiveGridEvaluation:
+    bot: ActiveGridBot
+    current_price: Decimal | None
+    state: str
+    distance_to_lower_pct: Decimal | None
+    distance_to_upper_pct: Decimal | None
+    recommendation: str
+
+
+@dataclass(frozen=True)
+class ActiveStrategiesReport:
+    enabled: bool
+    grid_bots: tuple[ActiveGridEvaluation, ...]
+    summary: str
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

@@ -7,3 +7,4 @@ work/
 outputs/reports/
 research/requests/*
 !research/requests/.gitkeep
+state/active_strategies.toml

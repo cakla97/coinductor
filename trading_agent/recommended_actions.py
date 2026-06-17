@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .models import CapitalSourcingPlan, GridRecommendation, NextRunRecommendation, RecommendedAction, RiskDecision, StrategyDecision
+from .models import ActiveStrategiesReport, CapitalSourcingPlan, GridRecommendation, NextRunRecommendation, RecommendedAction, RiskDecision, StrategyDecision
 
 
 class RecommendedActionsBuilder:
@@ -12,8 +12,19 @@ class RecommendedActionsBuilder:
         spot_capital_plan: CapitalSourcingPlan,
         grid_capital_plan: CapitalSourcingPlan,
         next_run: NextRunRecommendation,
+        active_strategies: ActiveStrategiesReport,
     ) -> tuple[RecommendedAction, ...]:
         actions: list[RecommendedAction] = []
+
+        for grid in active_strategies.grid_bots:
+            if grid.state in {"BELOW_RANGE", "ABOVE_RANGE", "NEAR_LOWER", "NEAR_UPPER", "UNKNOWN_PRICE"}:
+                actions.append(
+                    RecommendedAction(
+                        priority="HIGH" if grid.state in {"BELOW_RANGE", "ABOVE_RANGE"} else "MEDIUM",
+                        action=f"Review active grid bot {grid.bot.name or grid.bot.symbol}.",
+                        reason=grid.recommendation,
+                    )
+                )
 
         if strategy_decision.decision_type == "GRID_BOT_RECOMMENDATION" and grid_recommendation.recommended:
             actions.append(
@@ -72,4 +83,3 @@ class RecommendedActionsBuilder:
                     reason=plan.summary,
                 )
             )
-

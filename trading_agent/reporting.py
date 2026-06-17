@@ -3,12 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RiskDecision, StrategyDecision, TradeProposal
+from .models import Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Reporter:
-    def __init__(self, reports_dir: Path):
+    def __init__(self, reports_dir: Path, keep_last: int = 30):
         self.reports_dir = reports_dir
+        self.keep_last = keep_last
         self.reports_dir.mkdir(parents=True, exist_ok=True)
 
     def write_report(
@@ -26,6 +27,7 @@ class Reporter:
         grid_capital_plan: CapitalSourcingPlan,
         strategy_decision: StrategyDecision,
         next_run: NextRunRecommendation,
+        recommended_actions: tuple[RecommendedAction, ...],
     ) -> Path:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = self.reports_dir / f"{timestamp}_run-{run_id}.md"
@@ -35,21 +37,35 @@ class Reporter:
             f"- Mode: `{mode}`",
             f"- Generated: `{timestamp}`",
             "",
-            "## Executive Summary",
+            "## Recommended Actions",
             "",
-            f"- Total portfolio value: `{portfolio_analysis.total_value_usdt} USDT`",
-            f"- Liquid value: `{portfolio_analysis.liquid_value_usdt} USDT`",
-            f"- Locked value: `{portfolio_analysis.locked_value_usdt} USDT` (`{portfolio_analysis.locked_pct}%`)",
-            f"- Unpriced assets: `{', '.join(portfolio_analysis.unpriced_assets) if portfolio_analysis.unpriced_assets else 'None'}`",
-            f"- Ignored internal assets: `{', '.join(portfolio_analysis.ignored_internal_assets) if portfolio_analysis.ignored_internal_assets else 'None'}`",
-            f"- Rebalance: {portfolio_analysis.rebalance_summary}",
-            f"- Liquidity: {portfolio_analysis.liquidity_summary}",
-            "",
-            "## Portfolio",
-            "",
-            "| Asset | Spot free | Flexible | Locked |",
-            "| --- | ---: | ---: | ---: |",
         ]
+        for index, action in enumerate(recommended_actions, start=1):
+            lines.extend(
+                [
+                    f"{index}. **{action.priority}** - {action.action}",
+                    f"   Reason: {action.reason}",
+                ]
+            )
+        lines.extend(
+            [
+                "",
+                "## Executive Summary",
+                "",
+                f"- Total portfolio value: `{portfolio_analysis.total_value_usdt} USDT`",
+                f"- Liquid value: `{portfolio_analysis.liquid_value_usdt} USDT`",
+                f"- Locked value: `{portfolio_analysis.locked_value_usdt} USDT` (`{portfolio_analysis.locked_pct}%`)",
+                f"- Unpriced assets: `{', '.join(portfolio_analysis.unpriced_assets) if portfolio_analysis.unpriced_assets else 'None'}`",
+                f"- Ignored internal assets: `{', '.join(portfolio_analysis.ignored_internal_assets) if portfolio_analysis.ignored_internal_assets else 'None'}`",
+                f"- Rebalance: {portfolio_analysis.rebalance_summary}",
+                f"- Liquidity: {portfolio_analysis.liquidity_summary}",
+                "",
+                "## Portfolio",
+                "",
+                "| Asset | Spot free | Flexible | Locked |",
+                "| --- | ---: | ---: | ---: |",
+            ]
+        )
         for balance in balances:
             lines.append(f"| {balance.asset} | {balance.spot_free} | {balance.flexible_amount} | {balance.locked_amount} |")
         lines.extend(
@@ -199,7 +215,19 @@ class Reporter:
             ]
         )
         path.write_text("\n".join(lines), encoding="utf-8")
+        self.cleanup_old_reports()
         return path
+
+    def cleanup_old_reports(self) -> None:
+        if self.keep_last <= 0:
+            return
+        reports = sorted(
+            self.reports_dir.glob("*_run-*.md"),
+            key=lambda report: report.stat().st_mtime,
+            reverse=True,
+        )
+        for report in reports[self.keep_last :]:
+            report.unlink()
 
     def _capital_plan_lines(self, plan: CapitalSourcingPlan) -> list[str]:
         lines = [

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from .models import Balance, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RiskDecision, StrategyDecision, TradeProposal
+from .models import Balance, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Storage:
@@ -125,6 +125,12 @@ class Storage:
                 urgency text,
                 reason text,
                 triggers text
+            );
+            create table if not exists recommended_actions (
+                run_id integer,
+                priority text,
+                action text,
+                reason text
             );
             """
         )
@@ -286,5 +292,12 @@ class Storage:
                 recommendation.reason,
                 "\n".join(recommendation.triggers),
             ),
+        )
+        self.connection.commit()
+
+    def save_recommended_actions(self, run_id: int, actions: tuple[RecommendedAction, ...]) -> None:
+        self.connection.executemany(
+            "insert into recommended_actions values (?, ?, ?, ?)",
+            [(run_id, action.priority, action.action, action.reason) for action in actions],
         )
         self.connection.commit()

@@ -5,6 +5,9 @@ base_currency = "USDT"
 database_path = "work/trading_agent.sqlite3"
 reports_dir = "outputs/reports"
 
+[reports]
+keep_last = 30
+
 [binance]
 testnet = false
 api_base_url = "https://api.binance.com"

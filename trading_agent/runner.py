@@ -11,6 +11,7 @@ from .grid_advisor import GridBotAdvisor
 from .models import AgentRunResult, LiquidityDecision
 from .next_run import NextRunAdvisor
 from .portfolio_analyzer import PortfolioAnalyzer
+from .recommended_actions import RecommendedActionsBuilder
 from .reporting import Reporter
 from .risk_engine import RiskEngine
 from .storage import Storage
@@ -30,7 +31,8 @@ class AgentRunner:
         self.capital_sourcing = CapitalSourcingAdvisor(config.raw)
         self.strategy = StrategyDecisionEngine()
         self.next_run = NextRunAdvisor()
-        self.reporter = Reporter(config.reports_dir)
+        self.actions = RecommendedActionsBuilder()
+        self.reporter = Reporter(config.reports_dir, keep_last=int(config.raw.get("reports", {}).get("keep_last", 30)))
 
     def run(self) -> AgentRunResult:
         run_id = self.storage.start_run(self.config.mode)
@@ -73,6 +75,14 @@ class AgentRunner:
             spot_capital_plan = self.capital_sourcing.plan(balances, portfolio_analysis, risk_decision.adjusted_quote_amount_usdt)
             strategy_decision = self.strategy.decide(proposal, risk_decision, grid_recommendation)
             next_run_recommendation = self.next_run.recommend(strategy_decision)
+            recommended_actions = self.actions.build(
+                strategy_decision=strategy_decision,
+                risk_decision=risk_decision,
+                grid_recommendation=grid_recommendation,
+                spot_capital_plan=spot_capital_plan,
+                grid_capital_plan=grid_capital_plan,
+                next_run=next_run_recommendation,
+            )
 
             self.storage.save_balances(run_id, balances)
             self.storage.save_portfolio_analysis(run_id, portfolio_analysis)
@@ -84,6 +94,7 @@ class AgentRunner:
             self.storage.save_capital_sourcing_plan(run_id, "GRID_BOT", grid_capital_plan)
             self.storage.save_strategy_decision(run_id, strategy_decision)
             self.storage.save_next_run_recommendation(run_id, next_run_recommendation)
+            self.storage.save_recommended_actions(run_id, recommended_actions)
             report_path = self.reporter.write_report(
                 run_id=run_id,
                 mode=self.config.mode,
@@ -98,6 +109,7 @@ class AgentRunner:
                 grid_capital_plan=grid_capital_plan,
                 strategy_decision=strategy_decision,
                 next_run=next_run_recommendation,
+                recommended_actions=recommended_actions,
             )
             status = "OK"
             self.storage.finish_run(run_id, status, f"Report written to {report_path}")

@@ -133,6 +133,13 @@ class CapitalSourcingPlan:
 
 
 @dataclass(frozen=True)
+class RecommendedAction:
+    priority: str
+    action: str
+    reason: str
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

@@ -34,6 +34,8 @@ The first run uses mock market/account data and writes:
 Each report includes:
 
 - portfolio summary
+- portfolio valuation in USDT
+- rebalance gap against configured target allocation
 - Spot vs Flexible vs Locked balance view
 - market snapshot
 - AI trade proposal

@@ -86,6 +86,33 @@ class NextRunRecommendation:
 
 
 @dataclass(frozen=True)
+class PortfolioAssetValuation:
+    asset: str
+    price_usdt: Decimal
+    spot_value_usdt: Decimal
+    flexible_value_usdt: Decimal
+    locked_value_usdt: Decimal
+    total_value_usdt: Decimal
+    allocation_pct: Decimal
+    target_pct: Decimal | None
+    gap_pct: Decimal | None
+    rebalance_action: str
+
+
+@dataclass(frozen=True)
+class PortfolioAnalysis:
+    total_value_usdt: Decimal
+    spot_value_usdt: Decimal
+    flexible_value_usdt: Decimal
+    locked_value_usdt: Decimal
+    liquid_value_usdt: Decimal
+    locked_pct: Decimal
+    assets: tuple[PortfolioAssetValuation, ...]
+    rebalance_summary: str
+    liquidity_summary: str
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

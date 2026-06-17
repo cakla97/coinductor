@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import Balance, LiquidityDecision, MarketSnapshot, NextRunRecommendation, RiskDecision, StrategyDecision, TradeProposal
+from .models import Balance, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Reporter:
@@ -16,6 +16,7 @@ class Reporter:
         run_id: int,
         mode: str,
         balances: list[Balance],
+        portfolio_analysis: PortfolioAnalysis,
         snapshots: list[MarketSnapshot],
         proposal: TradeProposal,
         risk_decision: RiskDecision,
@@ -32,6 +33,14 @@ class Reporter:
             f"- Mode: `{mode}`",
             f"- Generated: `{timestamp}`",
             "",
+            "## Executive Summary",
+            "",
+            f"- Total portfolio value: `{portfolio_analysis.total_value_usdt} USDT`",
+            f"- Liquid value: `{portfolio_analysis.liquid_value_usdt} USDT`",
+            f"- Locked value: `{portfolio_analysis.locked_value_usdt} USDT` (`{portfolio_analysis.locked_pct}%`)",
+            f"- Rebalance: {portfolio_analysis.rebalance_summary}",
+            f"- Liquidity: {portfolio_analysis.liquidity_summary}",
+            "",
             "## Portfolio",
             "",
             "| Asset | Spot free | Flexible | Locked |",
@@ -39,6 +48,24 @@ class Reporter:
         ]
         for balance in balances:
             lines.append(f"| {balance.asset} | {balance.spot_free} | {balance.flexible_amount} | {balance.locked_amount} |")
+        lines.extend(
+            [
+                "",
+                "## Portfolio Valuation",
+                "",
+                "| Asset | Price USDT | Spot value | Flexible value | Locked value | Total value | Allocation | Target | Gap | Action |",
+                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+            ]
+        )
+        for asset in portfolio_analysis.assets:
+            target = "" if asset.target_pct is None else f"{asset.target_pct}%"
+            gap = "" if asset.gap_pct is None else f"{asset.gap_pct:+}%"
+            lines.append(
+                "| "
+                f"{asset.asset} | {asset.price_usdt} | {asset.spot_value_usdt} | {asset.flexible_value_usdt} | "
+                f"{asset.locked_value_usdt} | {asset.total_value_usdt} | {asset.allocation_pct}% | {target} | {gap} | "
+                f"{asset.rebalance_action} |"
+            )
         lines.extend(["", "## Market", "", "| Symbol | Price | RSI14 | EMA20 | EMA50 | EMA200 | Regime |", "| --- | ---: | ---: | ---: | ---: | ---: | --- |"])
         for snapshot in snapshots:
             lines.append(

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from .models import Balance, GridRecommendation, MarketSnapshot, NextRunRecommendation, RiskDecision, StrategyDecision, TradeProposal
+from .models import Balance, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Storage:
@@ -31,6 +31,30 @@ class Storage:
                 spot_locked text,
                 flexible_amount text,
                 locked_amount text
+            );
+            create table if not exists portfolio_valuations (
+                run_id integer,
+                asset text,
+                price_usdt text,
+                spot_value_usdt text,
+                flexible_value_usdt text,
+                locked_value_usdt text,
+                total_value_usdt text,
+                allocation_pct text,
+                target_pct text,
+                gap_pct text,
+                rebalance_action text
+            );
+            create table if not exists portfolio_summaries (
+                run_id integer,
+                total_value_usdt text,
+                spot_value_usdt text,
+                flexible_value_usdt text,
+                locked_value_usdt text,
+                liquid_value_usdt text,
+                locked_pct text,
+                rebalance_summary text,
+                liquidity_summary text
             );
             create table if not exists market_snapshots (
                 run_id integer,
@@ -103,6 +127,42 @@ class Storage:
         self.connection.executemany(
             "insert into balances values (?, ?, ?, ?, ?, ?)",
             [(run_id, b.asset, str(b.spot_free), str(b.spot_locked), str(b.flexible_amount), str(b.locked_amount)) for b in balances],
+        )
+        self.connection.commit()
+
+    def save_portfolio_analysis(self, run_id: int, analysis: PortfolioAnalysis) -> None:
+        self.connection.execute(
+            "insert into portfolio_summaries values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                run_id,
+                str(analysis.total_value_usdt),
+                str(analysis.spot_value_usdt),
+                str(analysis.flexible_value_usdt),
+                str(analysis.locked_value_usdt),
+                str(analysis.liquid_value_usdt),
+                str(analysis.locked_pct),
+                analysis.rebalance_summary,
+                analysis.liquidity_summary,
+            ),
+        )
+        self.connection.executemany(
+            "insert into portfolio_valuations values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                (
+                    run_id,
+                    asset.asset,
+                    str(asset.price_usdt),
+                    str(asset.spot_value_usdt),
+                    str(asset.flexible_value_usdt),
+                    str(asset.locked_value_usdt),
+                    str(asset.total_value_usdt),
+                    str(asset.allocation_pct),
+                    str(asset.target_pct) if asset.target_pct is not None else None,
+                    str(asset.gap_pct) if asset.gap_pct is not None else None,
+                    asset.rebalance_action,
+                )
+                for asset in analysis.assets
+            ],
         )
         self.connection.commit()
 

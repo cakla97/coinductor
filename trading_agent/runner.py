@@ -9,6 +9,7 @@ from .earn_manager import EarnLiquidityManager
 from .grid_advisor import GridBotAdvisor
 from .models import AgentRunResult, LiquidityDecision
 from .next_run import NextRunAdvisor
+from .portfolio_analyzer import PortfolioAnalyzer
 from .reporting import Reporter
 from .risk_engine import RiskEngine
 from .storage import Storage
@@ -24,6 +25,7 @@ class AgentRunner:
         self.risk = RiskEngine(config.raw)
         self.earn = EarnLiquidityManager(config.raw)
         self.grid = GridBotAdvisor(config.raw)
+        self.portfolio = PortfolioAnalyzer(config.raw)
         self.strategy = StrategyDecisionEngine()
         self.next_run = NextRunAdvisor()
         self.reporter = Reporter(config.reports_dir)
@@ -33,6 +35,7 @@ class AgentRunner:
         try:
             balances = self.client.get_balances()
             snapshots = self.client.get_market_snapshots(self.config.allowed_symbols)
+            portfolio_analysis = self.portfolio.analyze(balances, snapshots)
             proposal = self.ai.propose_trade(snapshots)
             trades_today = self.storage.count_trades_today()
             risk_decision = self.risk.evaluate(
@@ -62,6 +65,7 @@ class AgentRunner:
             next_run_recommendation = self.next_run.recommend(strategy_decision)
 
             self.storage.save_balances(run_id, balances)
+            self.storage.save_portfolio_analysis(run_id, portfolio_analysis)
             self.storage.save_market_snapshots(run_id, snapshots)
             self.storage.save_proposal(run_id, proposal)
             self.storage.save_risk_decision(run_id, risk_decision)
@@ -72,6 +76,7 @@ class AgentRunner:
                 run_id=run_id,
                 mode=self.config.mode,
                 balances=balances,
+                portfolio_analysis=portfolio_analysis,
                 snapshots=snapshots,
                 proposal=proposal,
                 risk_decision=risk_decision,

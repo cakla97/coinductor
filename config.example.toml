@@ -8,6 +8,8 @@ reports_dir = "outputs/reports"
 [binance]
 testnet = false
 api_base_url = "https://api.binance.com"
+recv_window_ms = 5000
+timeout_seconds = 30
 
 [ai]
 enabled = false

@@ -54,6 +54,16 @@ If Windows blocks local PowerShell scripts, run:
 PowerShell -ExecutionPolicy Bypass -File .\scripts\run.ps1
 ```
 
+To use real Binance read-only data, create `.env` from `.env.example`, add a
+read-only Binance API key, then run:
+
+```powershell
+python -m trading_agent --config config.example.toml --real-data
+```
+
+The application checks Binance API permissions before reading account data and
+stops if trading, withdrawal, transfer, margin, or futures permissions are enabled.
+
 ## VS Code
 
 Open the project folder directly:

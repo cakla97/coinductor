@@ -84,6 +84,21 @@ $env:LLM_BASE_URL="http://127.0.0.1:11434/v1"
 python -m trading_agent --config config.example.toml --real-data --ai-commentary
 ```
 
+## Research Layer
+
+Optional research notes can be stored in `research/notes` as `.md`, `.txt`, or `.json`.
+This is the preferred integration point for outputs from Binance AI Agent Skills.
+
+Example workflow:
+
+1. Use Binance Skills in your agent/runtime to run a market scan, token audit, or trend analysis.
+2. Save the result into `research/notes/YYYY-MM-DD_topic.md`.
+3. Run the assistant with `--ai-commentary`.
+
+The assistant includes recent research notes in the report and passes them to the local LLM
+as context. Research notes never override deterministic risk, whitelist, liquidity, or
+capital sourcing rules.
+
 ## VS Code
 
 Open the project folder directly:

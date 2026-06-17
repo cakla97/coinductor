@@ -5,7 +5,7 @@ import json
 import os
 import urllib.request
 
-from .models import AiCommentary, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, RiskDecision, StrategyDecision, TradeProposal
+from .models import AiCommentary, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, RiskDecision, StrategyDecision, TradeProposal
 
 
 class AiAnalyst:
@@ -30,6 +30,7 @@ class AiAnalyst:
         strategy_decision: StrategyDecision,
         next_run: NextRunRecommendation,
         recommended_actions: tuple[RecommendedAction, ...],
+        research: ResearchBundle,
     ) -> AiCommentary:
         ai_config = self.config.get("ai", {})
         if not ai_config.get("commentary_enabled", False):
@@ -73,6 +74,16 @@ class AiAnalyst:
                 }
                 for snapshot in snapshots
             ],
+            "external_research_notes": [
+                {
+                    "source": note.source,
+                    "title": note.title,
+                    "content": note.content,
+                }
+                for note in research.notes
+            ]
+            if self.config.get("research", {}).get("include_in_ai_commentary", True)
+            else [],
             "deterministic_outputs": {
                 "trade_proposal": proposal.__dict__,
                 "risk_decision": risk_decision.__dict__,

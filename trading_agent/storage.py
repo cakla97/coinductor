@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from .models import AiCommentary, Balance, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, RiskDecision, StrategyDecision, TradeProposal
+from .models import AiCommentary, Balance, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Storage:
@@ -139,6 +139,12 @@ class Storage:
                 risks text,
                 watchlist text,
                 raw_response text
+            );
+            create table if not exists research_notes (
+                run_id integer,
+                source text,
+                title text,
+                content text
             );
             """
         )
@@ -321,5 +327,12 @@ class Storage:
                 "\n".join(commentary.watchlist),
                 commentary.raw_response,
             ),
+        )
+        self.connection.commit()
+
+    def save_research_notes(self, run_id: int, research: ResearchBundle) -> None:
+        self.connection.executemany(
+            "insert into research_notes values (?, ?, ?, ?)",
+            [(run_id, note.source, note.title, note.content) for note in research.notes],
         )
         self.connection.commit()

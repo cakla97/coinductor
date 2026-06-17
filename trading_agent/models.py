@@ -149,6 +149,19 @@ class AiCommentary:
 
 
 @dataclass(frozen=True)
+class ResearchNote:
+    source: str
+    title: str
+    content: str
+
+
+@dataclass(frozen=True)
+class ResearchBundle:
+    enabled: bool
+    notes: tuple[ResearchNote, ...]
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

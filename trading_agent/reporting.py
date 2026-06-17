@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import AiCommentary, Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, RiskDecision, StrategyDecision, TradeProposal
+from .models import AiCommentary, Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Reporter:
@@ -29,6 +29,7 @@ class Reporter:
         next_run: NextRunRecommendation,
         recommended_actions: tuple[RecommendedAction, ...],
         ai_commentary: AiCommentary,
+        research: ResearchBundle,
     ) -> Path:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = self.reports_dir / f"{timestamp}_run-{run_id}.md"
@@ -68,6 +69,27 @@ class Reporter:
             for item in ai_commentary.watchlist:
                 lines.append(f"- {item}")
             lines.append("")
+        lines.extend(
+            [
+                "## Research Notes",
+                "",
+                f"- Enabled: `{research.enabled}`",
+                f"- Notes loaded: `{len(research.notes)}`",
+                "",
+            ]
+        )
+        if research.notes:
+            for note in research.notes:
+                lines.extend(
+                    [
+                        f"### {note.title}",
+                        "",
+                        f"- Source: `{note.source}`",
+                        "",
+                        note.content,
+                        "",
+                    ]
+                )
         lines.extend(
             [
                 "## Executive Summary",

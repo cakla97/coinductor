@@ -8,6 +8,13 @@ reports_dir = "outputs/reports"
 [reports]
 keep_last = 30
 
+[research]
+enabled = true
+notes_dir = "research/notes"
+max_notes = 5
+max_chars_per_note = 3000
+include_in_ai_commentary = true
+
 [binance]
 testnet = false
 api_base_url = "https://api.binance.com"

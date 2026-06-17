@@ -13,6 +13,7 @@ from .next_run import NextRunAdvisor
 from .portfolio_analyzer import PortfolioAnalyzer
 from .recommended_actions import RecommendedActionsBuilder
 from .reporting import Reporter
+from .research import ResearchLoader
 from .risk_engine import RiskEngine
 from .storage import Storage
 from .strategy_decision import StrategyDecisionEngine
@@ -32,12 +33,14 @@ class AgentRunner:
         self.strategy = StrategyDecisionEngine()
         self.next_run = NextRunAdvisor()
         self.actions = RecommendedActionsBuilder()
+        self.research = ResearchLoader(config.raw)
         self.reporter = Reporter(config.reports_dir, keep_last=int(config.raw.get("reports", {}).get("keep_last", 30)))
 
     def run(self) -> AgentRunResult:
         run_id = self.storage.start_run(self.config.mode)
         try:
             balances = self.client.get_balances()
+            research_bundle = self.research.load()
             snapshots = self.client.get_market_snapshots(self.config.allowed_symbols)
             portfolio_assets = sorted(
                 {balance.asset for balance in balances}
@@ -94,6 +97,7 @@ class AgentRunner:
                 strategy_decision=strategy_decision,
                 next_run=next_run_recommendation,
                 recommended_actions=recommended_actions,
+                research=research_bundle,
             )
 
             self.storage.save_balances(run_id, balances)
@@ -108,6 +112,7 @@ class AgentRunner:
             self.storage.save_next_run_recommendation(run_id, next_run_recommendation)
             self.storage.save_recommended_actions(run_id, recommended_actions)
             self.storage.save_ai_commentary(run_id, ai_commentary)
+            self.storage.save_research_notes(run_id, research_bundle)
             report_path = self.reporter.write_report(
                 run_id=run_id,
                 mode=self.config.mode,
@@ -124,6 +129,7 @@ class AgentRunner:
                 next_run=next_run_recommendation,
                 recommended_actions=recommended_actions,
                 ai_commentary=ai_commentary,
+                research=research_bundle,
             )
             status = "OK"
             self.storage.finish_run(run_id, status, f"Report written to {report_path}")

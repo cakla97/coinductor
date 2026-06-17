@@ -66,6 +66,17 @@ python -m trading_agent --config config.example.toml --real-data
 The application checks Binance API permissions before reading account data and
 stops if trading, withdrawal, transfer, margin, or futures permissions are enabled.
 
+To enable local LLM commentary, expose an OpenAI-compatible endpoint and set:
+
+```env
+LLM_BASE_URL=http://127.0.0.1:11434/v1
+LLM_MODEL=qwen3:14b
+```
+
+Then set `commentary_enabled = true` under `[ai]` in your local config. AI commentary
+is explanatory only; deterministic risk, liquidity, grid, and capital sourcing rules
+remain authoritative.
+
 ## VS Code
 
 Open the project folder directly:

@@ -16,11 +16,13 @@ timeout_seconds = 30
 
 [ai]
 enabled = false
+commentary_enabled = false
 provider = "openai_compatible"
 base_url_env = "LLM_BASE_URL"
 api_key_env = "LLM_API_KEY"
 model_env = "LLM_MODEL"
 timeout_seconds = 60
+temperature = 0.2
 
 [risk]
 max_trades_per_day = 1

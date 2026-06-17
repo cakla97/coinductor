@@ -140,6 +140,15 @@ class RecommendedAction:
 
 
 @dataclass(frozen=True)
+class AiCommentary:
+    enabled: bool
+    summary: str
+    risks: tuple[str, ...]
+    watchlist: tuple[str, ...]
+    raw_response: str
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

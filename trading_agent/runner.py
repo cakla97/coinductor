@@ -83,6 +83,18 @@ class AgentRunner:
                 grid_capital_plan=grid_capital_plan,
                 next_run=next_run_recommendation,
             )
+            ai_commentary = self.ai.comment_on_portfolio(
+                portfolio=portfolio_analysis,
+                snapshots=snapshots,
+                proposal=proposal,
+                risk_decision=risk_decision,
+                grid_recommendation=grid_recommendation,
+                spot_capital_plan=spot_capital_plan,
+                grid_capital_plan=grid_capital_plan,
+                strategy_decision=strategy_decision,
+                next_run=next_run_recommendation,
+                recommended_actions=recommended_actions,
+            )
 
             self.storage.save_balances(run_id, balances)
             self.storage.save_portfolio_analysis(run_id, portfolio_analysis)
@@ -95,6 +107,7 @@ class AgentRunner:
             self.storage.save_strategy_decision(run_id, strategy_decision)
             self.storage.save_next_run_recommendation(run_id, next_run_recommendation)
             self.storage.save_recommended_actions(run_id, recommended_actions)
+            self.storage.save_ai_commentary(run_id, ai_commentary)
             report_path = self.reporter.write_report(
                 run_id=run_id,
                 mode=self.config.mode,
@@ -110,6 +123,7 @@ class AgentRunner:
                 strategy_decision=strategy_decision,
                 next_run=next_run_recommendation,
                 recommended_actions=recommended_actions,
+                ai_commentary=ai_commentary,
             )
             status = "OK"
             self.storage.finish_run(run_id, status, f"Report written to {report_path}")

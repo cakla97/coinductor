@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, RiskDecision, StrategyDecision, TradeProposal
+from .models import AiCommentary, Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Reporter:
@@ -28,6 +28,7 @@ class Reporter:
         strategy_decision: StrategyDecision,
         next_run: NextRunRecommendation,
         recommended_actions: tuple[RecommendedAction, ...],
+        ai_commentary: AiCommentary,
     ) -> Path:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = self.reports_dir / f"{timestamp}_run-{run_id}.md"
@@ -50,6 +51,25 @@ class Reporter:
         lines.extend(
             [
                 "",
+                "## AI Commentary",
+                "",
+                f"- Enabled: `{ai_commentary.enabled}`",
+                f"- Summary: {ai_commentary.summary}",
+                "",
+            ]
+        )
+        if ai_commentary.risks:
+            lines.extend(["### Risks", ""])
+            for risk in ai_commentary.risks:
+                lines.append(f"- {risk}")
+            lines.append("")
+        if ai_commentary.watchlist:
+            lines.extend(["### Watchlist", ""])
+            for item in ai_commentary.watchlist:
+                lines.append(f"- {item}")
+            lines.append("")
+        lines.extend(
+            [
                 "## Executive Summary",
                 "",
                 f"- Total portfolio value: `{portfolio_analysis.total_value_usdt} USDT`",

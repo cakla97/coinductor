@@ -35,7 +35,12 @@ class AgentRunner:
         try:
             balances = self.client.get_balances()
             snapshots = self.client.get_market_snapshots(self.config.allowed_symbols)
-            portfolio_analysis = self.portfolio.analyze(balances, snapshots)
+            portfolio_assets = sorted(
+                {balance.asset for balance in balances}
+                | {asset.upper() for asset in self.config.raw.get("portfolio", {}).get("tracked_assets", [])}
+            )
+            asset_prices = self.client.get_asset_prices_usdt(portfolio_assets)
+            portfolio_analysis = self.portfolio.analyze(balances, asset_prices)
             proposal = self.ai.propose_trade(snapshots)
             trades_today = self.storage.count_trades_today()
             risk_decision = self.risk.evaluate(

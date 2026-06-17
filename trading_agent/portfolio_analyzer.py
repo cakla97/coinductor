@@ -2,22 +2,29 @@ from __future__ import annotations
 
 from decimal import Decimal, ROUND_HALF_UP
 
-from .models import Balance, MarketSnapshot, PortfolioAnalysis, PortfolioAssetValuation
+from .models import Balance, PortfolioAnalysis, PortfolioAssetValuation
 
 
 class PortfolioAnalyzer:
     def __init__(self, config: dict):
         self.config = config
 
-    def analyze(self, balances: list[Balance], snapshots: list[MarketSnapshot]) -> PortfolioAnalysis:
-        prices = self._price_map(snapshots)
+    def analyze(self, balances: list[Balance], prices: dict[str, Decimal]) -> PortfolioAnalysis:
         target_allocation = {
             asset.upper(): Decimal(str(percent))
             for asset, percent in self.config.get("rebalancing", {}).get("target_allocation", {}).items()
         }
         raw_rows: list[tuple[Balance, Decimal, Decimal, Decimal, Decimal]] = []
+        unpriced_assets: list[str] = []
+        ignored_internal_assets: list[str] = []
         for balance in balances:
             price = prices.get(balance.asset, Decimal("0"))
+            total_amount = balance.spot_free + balance.spot_locked + balance.flexible_amount + balance.locked_amount
+            if price == 0 and total_amount > 0:
+                if self._is_ignored_internal_asset(balance.asset):
+                    ignored_internal_assets.append(balance.asset)
+                    continue
+                unpriced_assets.append(balance.asset)
             spot_value = (balance.spot_free + balance.spot_locked) * price
             flexible_value = balance.flexible_amount * price
             locked_value = balance.locked_amount * price
@@ -51,8 +58,10 @@ class PortfolioAnalyzer:
             liquid_value_usdt=self._money(liquid_value),
             locked_pct=self._percent(locked_pct),
             assets=assets,
+            unpriced_assets=tuple(sorted(unpriced_assets)),
+            ignored_internal_assets=tuple(sorted(ignored_internal_assets)),
             rebalance_summary=self._rebalance_summary(assets),
-            liquidity_summary=self._liquidity_summary(locked_pct),
+            liquidity_summary=self._liquidity_summary(locked_pct, unpriced_assets),
         )
 
     def _asset_valuation(
@@ -83,13 +92,6 @@ class PortfolioAnalyzer:
             rebalance_action=action,
         )
 
-    def _price_map(self, snapshots: list[MarketSnapshot]) -> dict[str, Decimal]:
-        prices = {"USDT": Decimal("1")}
-        for snapshot in snapshots:
-            if snapshot.symbol.endswith("USDT"):
-                prices[snapshot.symbol.removesuffix("USDT")] = snapshot.price
-        return prices
-
     def _rebalance_action(self, gap_pct: Decimal | None) -> str:
         if gap_pct is None:
             return "NO_TARGET"
@@ -100,6 +102,10 @@ class PortfolioAnalyzer:
             return "INCREASE"
         return "HOLD"
 
+    def _is_ignored_internal_asset(self, asset: str) -> bool:
+        prefixes = self.config.get("portfolio", {}).get("ignored_asset_prefixes", [])
+        return any(asset.upper().startswith(str(prefix).upper()) for prefix in prefixes)
+
     def _rebalance_summary(self, assets: tuple[PortfolioAssetValuation, ...]) -> str:
         actions = [asset for asset in assets if asset.rebalance_action in {"REDUCE", "INCREASE"}]
         if not actions:
@@ -107,16 +113,19 @@ class PortfolioAnalyzer:
         fragments = [f"{asset.asset}: {asset.rebalance_action} ({asset.gap_pct:+} pp)" for asset in actions if asset.gap_pct is not None]
         return "Rebalance gaps detected: " + "; ".join(fragments)
 
-    def _liquidity_summary(self, locked_pct: Decimal) -> str:
+    def _liquidity_summary(self, locked_pct: Decimal, unpriced_assets: list[str]) -> str:
         locked_percent = self._percent(locked_pct)
+        unpriced_note = ""
+        if unpriced_assets:
+            unpriced_note = f" Unpriced assets are excluded from totals: {', '.join(sorted(unpriced_assets))}."
         if locked_percent > Decimal("50"):
             return (
                 f"{locked_percent}% of portfolio value is locked. For a more flexible assistant workflow, consider "
-                "manually moving expiring or low-yield locked positions to Flexible Earn."
+                f"manually moving expiring or low-yield locked positions to Flexible Earn.{unpriced_note}"
             )
         if locked_percent > Decimal("0"):
-            return f"{locked_percent}% of portfolio value is locked. Keep locked positions read-only unless you manually decide otherwise."
-        return "Portfolio is fully liquid from the assistant perspective: Spot plus Flexible Earn only."
+            return f"{locked_percent}% of portfolio value is locked. Keep locked positions read-only unless you manually decide otherwise.{unpriced_note}"
+        return f"Portfolio is fully liquid from the assistant perspective: Spot plus Flexible Earn only.{unpriced_note}"
 
     def _pct(self, part: Decimal, total: Decimal) -> Decimal:
         if total == 0:
@@ -130,4 +139,3 @@ class PortfolioAnalyzer:
         if value is None:
             return Decimal("0")
         return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
-

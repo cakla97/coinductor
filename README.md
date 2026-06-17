@@ -96,6 +96,18 @@ The assistant can currently produce these decision types:
 Grid bot recommendations are designed for manual setup in Binance Trade-X / Trading Bots.
 The assistant generates parameters and checklist steps, but does not create the bot directly.
 
+## Portfolio vs Trading Universe
+
+Portfolio tracking is intentionally broader than trading permissions:
+
+- `[portfolio].tracked_assets` lists assets the assistant should price and include in portfolio analysis.
+- `[strategy].allowed_symbols` lists pairs that can be considered for spot trade recommendations.
+- `[grid_bot].allowed_symbols` lists pairs that can be considered for Spot Grid recommendations.
+
+Assets that cannot be priced are shown as unpriced instead of silently disappearing from totals.
+Binance internal voucher-like assets with configured prefixes, such as `LD`, are reported separately
+and excluded from valuation to avoid double counting.
+
 ## Safety Defaults
 
 Real trading and real redeem are disabled by default. Before enabling anything live:

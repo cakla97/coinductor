@@ -108,6 +108,8 @@ class PortfolioAnalysis:
     liquid_value_usdt: Decimal
     locked_pct: Decimal
     assets: tuple[PortfolioAssetValuation, ...]
+    unpriced_assets: tuple[str, ...]
+    ignored_internal_assets: tuple[str, ...]
     rebalance_summary: str
     liquidity_summary: str
 

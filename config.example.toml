@@ -55,6 +55,11 @@ quote_amount_usdt = 25.0
 timeframes = ["4h", "1d"]
 decision_modes = ["HOLD", "SPOT_TRADE_RECOMMENDATION", "REBALANCE_RECOMMENDATION", "GRID_BOT_RECOMMENDATION"]
 
+[portfolio]
+tracked_assets = ["USDT", "BNB", "BTC", "WBETH", "ETH", "SOL", "WLD"]
+pricing_quote_assets = ["USDT", "USDC", "FDUSD"]
+ignored_asset_prefixes = ["LD"]
+
 [grid_bot]
 enabled = true
 recommend_only = true

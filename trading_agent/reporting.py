@@ -38,6 +38,8 @@ class Reporter:
             f"- Total portfolio value: `{portfolio_analysis.total_value_usdt} USDT`",
             f"- Liquid value: `{portfolio_analysis.liquid_value_usdt} USDT`",
             f"- Locked value: `{portfolio_analysis.locked_value_usdt} USDT` (`{portfolio_analysis.locked_pct}%`)",
+            f"- Unpriced assets: `{', '.join(portfolio_analysis.unpriced_assets) if portfolio_analysis.unpriced_assets else 'None'}`",
+            f"- Ignored internal assets: `{', '.join(portfolio_analysis.ignored_internal_assets) if portfolio_analysis.ignored_internal_assets else 'None'}`",
             f"- Rebalance: {portfolio_analysis.rebalance_summary}",
             f"- Liquidity: {portfolio_analysis.liquidity_summary}",
             "",
@@ -66,6 +68,30 @@ class Reporter:
                 f"{asset.locked_value_usdt} | {asset.total_value_usdt} | {asset.allocation_pct}% | {target} | {gap} | "
                 f"{asset.rebalance_action} |"
             )
+        if portfolio_analysis.unpriced_assets:
+            lines.extend(
+                [
+                    "",
+                    "### Unpriced Assets",
+                    "",
+                    "These assets were present in balances but excluded from total value because no supported Binance price route was found.",
+                    "",
+                ]
+            )
+            for asset in portfolio_analysis.unpriced_assets:
+                lines.append(f"- `{asset}`")
+        if portfolio_analysis.ignored_internal_assets:
+            lines.extend(
+                [
+                    "",
+                    "### Ignored Internal Assets",
+                    "",
+                    "These tickers look like Binance internal voucher/accounting assets and are excluded from valuation to avoid double counting.",
+                    "",
+                ]
+            )
+            for asset in portfolio_analysis.ignored_internal_assets:
+                lines.append(f"- `{asset}`")
         lines.extend(["", "## Market", "", "| Symbol | Price | RSI14 | EMA20 | EMA50 | EMA200 | Regime |", "| --- | ---: | ---: | ---: | ---: | ---: | --- |"])
         for snapshot in snapshots:
             lines.append(

@@ -53,6 +53,8 @@ class Storage:
                 locked_value_usdt text,
                 liquid_value_usdt text,
                 locked_pct text,
+                unpriced_assets text,
+                ignored_internal_assets text,
                 rebalance_summary text,
                 liquidity_summary text
             );
@@ -109,7 +111,14 @@ class Storage:
             );
             """
         )
+        self._ensure_column("portfolio_summaries", "unpriced_assets", "text")
+        self._ensure_column("portfolio_summaries", "ignored_internal_assets", "text")
         self.connection.commit()
+
+    def _ensure_column(self, table: str, column: str, definition: str) -> None:
+        columns = {row["name"] for row in self.connection.execute(f"pragma table_info({table})")}
+        if column not in columns:
+            self.connection.execute(f"alter table {table} add column {column} {definition}")
 
     def start_run(self, mode: str) -> int:
         cursor = self.connection.execute("insert into runs(mode, status) values (?, ?)", (mode, "RUNNING"))
@@ -132,7 +141,21 @@ class Storage:
 
     def save_portfolio_analysis(self, run_id: int, analysis: PortfolioAnalysis) -> None:
         self.connection.execute(
-            "insert into portfolio_summaries values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            """
+            insert into portfolio_summaries (
+                run_id,
+                total_value_usdt,
+                spot_value_usdt,
+                flexible_value_usdt,
+                locked_value_usdt,
+                liquid_value_usdt,
+                locked_pct,
+                unpriced_assets,
+                ignored_internal_assets,
+                rebalance_summary,
+                liquidity_summary
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
             (
                 run_id,
                 str(analysis.total_value_usdt),
@@ -141,6 +164,8 @@ class Storage:
                 str(analysis.locked_value_usdt),
                 str(analysis.liquid_value_usdt),
                 str(analysis.locked_pct),
+                ",".join(analysis.unpriced_assets),
+                ",".join(analysis.ignored_internal_assets),
                 analysis.rebalance_summary,
                 analysis.liquidity_summary,
             ),

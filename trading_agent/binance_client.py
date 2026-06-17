@@ -75,6 +75,21 @@ class BinanceClient:
             ]
         return [self._get_market_snapshot(symbol) for symbol in symbols]
 
+    def get_asset_prices_usdt(self, assets: list[str]) -> dict[str, Decimal]:
+        if self.config["app"].get("mock_data", True):
+            return {
+                "USDT": Decimal("1"),
+                "BTC": Decimal("104000"),
+                "ETH": Decimal("3600"),
+                "WBETH": Decimal("3700"),
+                "BNB": Decimal("650"),
+                "SOL": Decimal("150"),
+                "WLD": Decimal("3"),
+            }
+        tickers = self._public_get("/api/v3/ticker/price")
+        ticker_map = {row["symbol"]: Decimal(row["price"]) for row in tickers}
+        return self._price_assets_from_tickers({asset.upper() for asset in assets}, ticker_map)
+
     def assert_read_only_permissions(self) -> None:
         permissions = self._signed_get("/sapi/v1/account/apiRestrictions")
         dangerous_flags = {
@@ -240,3 +255,34 @@ class BinanceClient:
         if price < ema50 < ema200 or rsi14 < Decimal("35"):
             return "RISK_OFF"
         return "NEUTRAL"
+
+    def _price_assets_from_tickers(self, assets: set[str], ticker_map: dict[str, Decimal]) -> dict[str, Decimal]:
+        prices: dict[str, Decimal] = {"USDT": Decimal("1"), "USDC": Decimal("1"), "FDUSD": Decimal("1")}
+        quote_assets = [quote.upper() for quote in self.config.get("portfolio", {}).get("pricing_quote_assets", ["USDT"])]
+        pending = set(assets)
+        for asset in list(pending):
+            if asset in prices:
+                pending.discard(asset)
+                continue
+            for quote in quote_assets:
+                symbol = f"{asset}{quote}"
+                if symbol in ticker_map:
+                    prices[asset] = ticker_map[symbol] * prices.get(quote, Decimal("1"))
+                    pending.discard(asset)
+                    break
+
+        if "ETH" not in prices and "ETHUSDT" in ticker_map:
+            prices["ETH"] = ticker_map["ETHUSDT"]
+        if "BTC" not in prices and "BTCUSDT" in ticker_map:
+            prices["BTC"] = ticker_map["BTCUSDT"]
+
+        for asset in list(pending):
+            eth_pair = f"{asset}ETH"
+            btc_pair = f"{asset}BTC"
+            if eth_pair in ticker_map and "ETH" in prices:
+                prices[asset] = ticker_map[eth_pair] * prices["ETH"]
+                pending.discard(asset)
+            elif btc_pair in ticker_map and "BTC" in prices:
+                prices[asset] = ticker_map[btc_pair] * prices["BTC"]
+                pending.discard(asset)
+        return {asset: price for asset, price in prices.items() if asset in assets or asset in {"USDT", "USDC", "FDUSD"}}

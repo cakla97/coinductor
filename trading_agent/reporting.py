@@ -153,16 +153,16 @@ class Reporter:
         if testnet_execution.orders:
             lines.extend(
                 [
-                    "| Intent | Symbol | Side | Quote USDT | Client Order ID | Submitted | Status | Executed Qty | Cumulative Quote | Order ID | Message |",
-                    "| --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | --- | --- |",
+                    "| Intent | Symbol | Side | Quote USDT | Client Order ID | Submitted | Status | Queried Status | Executed Qty | Cumulative Quote | Order ID | Validation | Message |",
+                    "| --- | --- | --- | ---: | --- | --- | --- | --- | ---: | ---: | --- | --- | --- |",
                 ]
             )
             for order in testnet_execution.orders:
                 lines.append(
                     "| "
                     f"{order.intent_id} | {order.symbol} | {order.side} | {order.quote_amount_usdt} | "
-                    f"{order.client_order_id} | {order.submitted} | {order.status} | {order.executed_quantity} | "
-                    f"{order.cumulative_quote_qty} | {order.order_id} | {order.message} |"
+                    f"{order.client_order_id} | {order.submitted} | {order.status} | {order.queried_status} | {order.executed_quantity} | "
+                    f"{order.cumulative_quote_qty} | {order.order_id} | {order.validation_summary} | {order.message} |"
                 )
             lines.append("")
         lines.extend(

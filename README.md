@@ -35,7 +35,9 @@ python -m trading_agent doctor --config config.example.toml --real-data --ai-com
 python -m trading_agent last-report --config config.example.toml
 python -m trading_agent research-request --config config.example.toml --real-data
 python -m trading_agent testnet-account --config config.example.toml
+python -m trading_agent testnet-symbol --config config.example.toml --symbol BTCUSDT --quote-amount 10
 python -m trading_agent testnet-market-buy --config config.example.toml --symbol BTCUSDT --quote-amount 10
+python -m trading_agent testnet-order-status --config config.example.toml --symbol BTCUSDT --order-id 123456
 python -m trading_agent run --config config.example.toml --real-data --testnet-execution
 ```
 
@@ -144,6 +146,12 @@ Check access:
 python -m trading_agent testnet-account --config config.example.toml
 ```
 
+Inspect symbol filters before placing anything:
+
+```powershell
+python -m trading_agent testnet-symbol --config config.example.toml --symbol BTCUSDT --quote-amount 10
+```
+
 Preview a testnet market buy without submitting it:
 
 ```powershell
@@ -154,6 +162,12 @@ Submit only when you intentionally add the exact confirmation string:
 
 ```powershell
 python -m trading_agent testnet-market-buy --config config.example.toml --symbol BTCUSDT --quote-amount 10 --confirm CONFIRM_TESTNET_ORDER
+```
+
+Query an existing Spot Testnet order:
+
+```powershell
+python -m trading_agent testnet-order-status --config config.example.toml --symbol BTCUSDT --order-id 123456
 ```
 
 To connect Spot Testnet execution to the normal assistant run, first run a preview:
@@ -171,6 +185,7 @@ python -m trading_agent run --config config.example.toml --real-data --testnet-e
 
 The assistant still follows the deterministic risk engine first. It submits only approved
 spot `BUY` proposals, caps quote size with `[testnet_execution].max_quote_amount_usdt`,
+validates Binance `exchangeInfo` symbol filters, queries order status after submit,
 and skips duplicate intents inside the configured idempotency window.
 
 Binance Spot Testnet uses virtual funds and supports `/api` endpoints only, so

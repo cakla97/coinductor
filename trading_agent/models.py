@@ -275,6 +275,27 @@ class TestnetOrderResult:
 
 
 @dataclass(frozen=True)
+class SymbolRules:
+    symbol: str
+    status: str
+    base_asset: str
+    quote_asset: str
+    quote_order_qty_market_allowed: bool
+    min_qty: Decimal
+    max_qty: Decimal
+    step_size: Decimal
+    min_notional: Decimal
+    tick_size: Decimal
+
+
+@dataclass(frozen=True)
+class OrderValidation:
+    approved: bool
+    reason: str
+    adjusted_quote_amount_usdt: Decimal
+
+
+@dataclass(frozen=True)
 class TestnetExecutedOrder:
     intent_id: str
     symbol: str
@@ -286,6 +307,8 @@ class TestnetExecutedOrder:
     executed_quantity: Decimal
     cumulative_quote_qty: Decimal
     order_id: str
+    queried_status: str
+    validation_summary: str
     message: str
 
 

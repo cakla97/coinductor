@@ -11,7 +11,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
-from .models import Balance, MarketSnapshot
+from .models import Balance, MarketSnapshot, SymbolRules
 
 
 class BinanceApiError(RuntimeError):
@@ -93,6 +93,29 @@ class BinanceClient:
         tickers = self._public_get("/api/v3/ticker/price")
         ticker_map = {row["symbol"]: Decimal(row["price"]) for row in tickers}
         return self._price_assets_from_tickers({asset.upper() for asset in assets}, ticker_map)
+
+    def get_symbol_rules(self, symbol: str) -> SymbolRules:
+        payload = self._public_get("/api/v3/exchangeInfo", {"symbol": symbol.upper()})
+        symbols = payload.get("symbols", [])
+        if not symbols:
+            raise BinanceApiError(f"Symbol {symbol.upper()} was not found in exchangeInfo.")
+        row = symbols[0]
+        filters = {item["filterType"]: item for item in row.get("filters", [])}
+        lot_size = filters.get("LOT_SIZE", {})
+        price_filter = filters.get("PRICE_FILTER", {})
+        notional_filter = filters.get("NOTIONAL") or filters.get("MIN_NOTIONAL") or {}
+        return SymbolRules(
+            symbol=row["symbol"],
+            status=row.get("status", ""),
+            base_asset=row.get("baseAsset", ""),
+            quote_asset=row.get("quoteAsset", ""),
+            quote_order_qty_market_allowed=bool(row.get("quoteOrderQtyMarketAllowed", False)),
+            min_qty=Decimal(str(lot_size.get("minQty", "0"))),
+            max_qty=Decimal(str(lot_size.get("maxQty", "0"))),
+            step_size=Decimal(str(lot_size.get("stepSize", "0"))),
+            min_notional=Decimal(str(notional_filter.get("minNotional", "0"))),
+            tick_size=Decimal(str(price_filter.get("tickSize", "0"))),
+        )
 
     def assert_read_only_permissions(self) -> None:
         if self.use_testnet:
@@ -190,6 +213,16 @@ class BinanceClient:
         if not self.use_testnet:
             raise BinanceApiError("testnet_account_ping requires use_testnet=True.")
         return self._signed_get("/api/v3/account")
+
+    def query_order(self, symbol: str, order_id: str | None = None, client_order_id: str | None = None) -> dict:
+        params: dict[str, object] = {"symbol": symbol.upper()}
+        if order_id:
+            params["orderId"] = order_id
+        if client_order_id:
+            params["origClientOrderId"] = client_order_id
+        if "orderId" not in params and "origClientOrderId" not in params:
+            raise BinanceApiError("query_order requires order_id or client_order_id.")
+        return self._signed_get("/api/v3/order", params)
 
     def _public_get(self, path: str, params: dict[str, object] | None = None) -> list | dict:
         query = urlencode(params or {})

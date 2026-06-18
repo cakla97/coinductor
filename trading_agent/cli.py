@@ -40,6 +40,10 @@ def main(argv: list[str] | None = None) -> int:
         return _testnet_account_command(args)
     if args.command == "testnet-market-buy":
         return _testnet_market_buy_command(args, parser)
+    if args.command == "testnet-symbol":
+        return _testnet_symbol_command(args)
+    if args.command == "testnet-order-status":
+        return _testnet_order_status_command(args, parser)
     parser.error(f"Unknown command {args.command}")
     return 2
 
@@ -73,6 +77,17 @@ def _build_parser() -> argparse.ArgumentParser:
     testnet_buy_parser.add_argument("--quote-amount", required=True, help="USDT quote amount to spend")
     testnet_buy_parser.add_argument("--client-order-id", default="", help="Optional custom client order id")
     testnet_buy_parser.add_argument("--confirm", default="", help="Must equal CONFIRM_TESTNET_ORDER to submit")
+
+    testnet_symbol_parser = subparsers.add_parser("testnet-symbol", help="Inspect Spot Testnet symbol filters")
+    testnet_symbol_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    testnet_symbol_parser.add_argument("--symbol", required=True, help="Spot symbol, for example BTCUSDT")
+    testnet_symbol_parser.add_argument("--quote-amount", default="10", help="Quote amount to validate")
+
+    order_status_parser = subparsers.add_parser("testnet-order-status", help="Query a Spot Testnet order status")
+    order_status_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    order_status_parser.add_argument("--symbol", required=True, help="Spot symbol, for example BTCUSDT")
+    order_status_parser.add_argument("--order-id", default="", help="Binance orderId")
+    order_status_parser.add_argument("--client-order-id", default="", help="Client order id")
     return parser
 
 
@@ -250,23 +265,72 @@ def _testnet_market_buy_command(args: argparse.Namespace, parser: argparse.Argum
     if quote_amount <= 0:
         parser.error("--quote-amount must be greater than zero")
     client_order_id = args.client_order_id or _default_testnet_client_order_id(symbol)
-    request = TestnetExecutor(config.raw).market_buy_quote(symbol, quote_amount, client_order_id)
+    executor = TestnetExecutor(config.raw)
+    rules = executor.client.get_symbol_rules(symbol)
+    validation = executor.validate_market_buy(symbol, quote_amount, rules)
+    request = executor.market_buy_quote(symbol, validation.adjusted_quote_amount_usdt, client_order_id)
     print("Spot Testnet order request:")
     print(f"  symbol: {request.symbol}")
     print(f"  side: {request.side}")
     print(f"  type: {request.order_type}")
     print(f"  quoteOrderQty: {request.quote_order_qty}")
     print(f"  newClientOrderId: {request.client_order_id}")
+    print(f"  validation: {validation.reason}")
+    if not validation.approved:
+        print("Not submitted. Local symbol filter validation rejected this order.")
+        return 1
     if args.confirm != "CONFIRM_TESTNET_ORDER":
         print("Not submitted. Add --confirm CONFIRM_TESTNET_ORDER to place this on Binance Spot Testnet.")
         return 0
-    result = TestnetExecutor(config.raw).submit(request, args.confirm)
+    result = executor.submit(request, args.confirm)
     print(f"Submitted: {result.submitted}")
     print(f"Status: {result.status}")
     print(f"Message: {result.message}")
     if result.response:
         print(f"Response: {result.response}")
     return 0 if result.status not in {"ERROR"} else 1
+
+
+def _testnet_symbol_command(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    executor = TestnetExecutor(config.raw)
+    rules = executor.client.get_symbol_rules(str(args.symbol).upper())
+    validation = executor.validate_market_buy(rules.symbol, Decimal(str(args.quote_amount)), rules)
+    print(f"Symbol: {rules.symbol}")
+    print(f"Status: {rules.status}")
+    print(f"Base/quote: {rules.base_asset}/{rules.quote_asset}")
+    print(f"quoteOrderQtyMarketAllowed: {rules.quote_order_qty_market_allowed}")
+    print(f"minNotional: {rules.min_notional}")
+    print(f"minQty: {rules.min_qty}")
+    print(f"stepSize: {rules.step_size}")
+    print(f"tickSize: {rules.tick_size}")
+    print(f"Validation approved: {validation.approved}")
+    print(f"Validation reason: {validation.reason}")
+    print(f"Adjusted quote amount: {validation.adjusted_quote_amount_usdt}")
+    return 0 if validation.approved else 1
+
+
+def _testnet_order_status_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    if not args.order_id and not args.client_order_id:
+        parser.error("--order-id or --client-order-id is required")
+    config = load_config(args.config)
+    try:
+        order = BinanceClient(config.raw, use_testnet=True).query_order(
+            symbol=str(args.symbol).upper(),
+            order_id=args.order_id or None,
+            client_order_id=args.client_order_id or None,
+        )
+    except BinanceApiError as exc:
+        print(f"[FAIL] Spot Testnet order query: {exc}")
+        return 1
+    print(f"Symbol: {order.get('symbol', '')}")
+    print(f"Order ID: {order.get('orderId', '')}")
+    print(f"Client order ID: {order.get('clientOrderId', '')}")
+    print(f"Side/type: {order.get('side', '')}/{order.get('type', '')}")
+    print(f"Status: {order.get('status', '')}")
+    print(f"Executed quantity: {order.get('executedQty', '')}")
+    print(f"Cumulative quote: {order.get('cummulativeQuoteQty', '')}")
+    return 0
 
 
 def _default_testnet_client_order_id(symbol: str) -> str:

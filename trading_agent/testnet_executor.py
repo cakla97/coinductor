@@ -4,7 +4,7 @@ from decimal import Decimal
 import json
 
 from .binance_client import BinanceApiError, BinanceClient
-from .models import RiskDecision, TestnetExecutedOrder, TestnetExecutionReport, TestnetOrderRequest, TestnetOrderResult, TradeProposal
+from .models import OrderValidation, RiskDecision, SymbolRules, TestnetExecutedOrder, TestnetExecutionReport, TestnetOrderRequest, TestnetOrderResult, TradeProposal
 from .order_journal import OrderIntentFactory
 
 
@@ -40,27 +40,68 @@ class TestnetExecutor:
         if proposal.action != "BUY":
             return TestnetExecutionReport(enabled=True, orders=(), summary=f"Spot Testnet execution for {proposal.action} is not implemented yet.")
 
-        quote_amount = risk_decision.adjusted_quote_amount_usdt
-        max_quote = Decimal(str(execution_config.get("max_quote_amount_usdt", "10")))
-        if quote_amount > max_quote:
-            quote_amount = max_quote
-
         intent_id = OrderIntentFactory(self.config).spot_intent_id(proposal, risk_decision)
         if intent_id in existing_intents:
             return TestnetExecutionReport(enabled=True, orders=(), summary=f"Skipped duplicate testnet order intent {intent_id}.")
 
+        rules = self.client.get_symbol_rules(proposal.symbol)
+        validation = self.validate_market_buy(proposal.symbol, risk_decision.adjusted_quote_amount_usdt, rules)
+        if not validation.approved:
+            order = TestnetExecutedOrder(
+                intent_id=intent_id,
+                symbol=proposal.symbol,
+                side=proposal.action,
+                quote_amount_usdt=validation.adjusted_quote_amount_usdt,
+                client_order_id=f"bta-{intent_id}",
+                submitted=False,
+                status="REJECTED_BY_FILTERS",
+                executed_quantity=Decimal("0"),
+                cumulative_quote_qty=Decimal("0"),
+                order_id="",
+                queried_status="",
+                validation_summary=validation.reason,
+                message="Order was rejected locally before reaching Binance Spot Testnet.",
+            )
+            return TestnetExecutionReport(enabled=True, orders=(order,), summary=f"Rejected Spot Testnet {proposal.action} order for {proposal.symbol}: {validation.reason}")
+
         request = self.market_buy_quote(
             symbol=proposal.symbol,
-            quote_amount_usdt=quote_amount,
+            quote_amount_usdt=validation.adjusted_quote_amount_usdt,
             client_order_id=f"bta-{intent_id}",
         )
         result = self.submit(request, confirm)
-        order = self._executed_order_from_result(intent_id, request, result)
+        order = self._executed_order_from_result(intent_id, request, result, validation.reason)
         action = "Submitted" if result.submitted else "Prepared"
         return TestnetExecutionReport(
             enabled=True,
             orders=(order,),
             summary=f"{action} Spot Testnet {proposal.action} order for {proposal.symbol}: {result.status}.",
+        )
+
+    def validate_market_buy(self, symbol: str, quote_amount_usdt: Decimal, rules: SymbolRules | None = None) -> OrderValidation:
+        rules = rules or self.client.get_symbol_rules(symbol)
+        allowed = {item.upper() for item in self.config.get("strategy", {}).get("allowed_symbols", [])}
+        if rules.symbol.upper() not in allowed:
+            return OrderValidation(False, f"{rules.symbol} is not in strategy.allowed_symbols.", Decimal("0"))
+        if rules.status != "TRADING":
+            return OrderValidation(False, f"{rules.symbol} status is {rules.status}, not TRADING.", Decimal("0"))
+        if rules.quote_asset != "USDT":
+            return OrderValidation(False, f"{rules.symbol} quote asset is {rules.quote_asset}, expected USDT.", Decimal("0"))
+        if not rules.quote_order_qty_market_allowed:
+            return OrderValidation(False, f"{rules.symbol} does not allow MARKET quoteOrderQty.", Decimal("0"))
+
+        max_quote = Decimal(str(self.config.get("testnet_execution", {}).get("max_quote_amount_usdt", "10")))
+        adjusted = min(quote_amount_usdt, max_quote)
+        if rules.min_notional and adjusted < rules.min_notional:
+            return OrderValidation(
+                False,
+                f"Adjusted quote amount {adjusted} USDT is below {rules.symbol} minNotional {rules.min_notional}.",
+                adjusted,
+            )
+        return OrderValidation(
+            True,
+            f"{rules.symbol} filters passed: minNotional={rules.min_notional}, quoteOrderQtyMarketAllowed={rules.quote_order_qty_market_allowed}.",
+            adjusted,
         )
 
     def submit(self, request: TestnetOrderRequest, confirm: str) -> TestnetOrderResult:
@@ -106,8 +147,17 @@ class TestnetExecutor:
         intent_id: str,
         request: TestnetOrderRequest,
         result: TestnetOrderResult,
+        validation_summary: str,
     ) -> TestnetExecutedOrder:
         response = json.loads(result.response) if result.response else {}
+        order_id = str(response.get("orderId", ""))
+        queried_status = ""
+        if result.submitted and order_id:
+            try:
+                queried = self.client.query_order(request.symbol, order_id=order_id)
+                queried_status = str(queried.get("status", ""))
+            except BinanceApiError as exc:
+                queried_status = f"QUERY_ERROR: {exc}"
         return TestnetExecutedOrder(
             intent_id=intent_id,
             symbol=request.symbol,
@@ -118,6 +168,8 @@ class TestnetExecutor:
             status=result.status,
             executed_quantity=Decimal(str(response.get("executedQty", "0"))),
             cumulative_quote_qty=Decimal(str(response.get("cummulativeQuoteQty", "0"))),
-            order_id=str(response.get("orderId", "")),
+            order_id=order_id,
+            queried_status=queried_status,
+            validation_summary=validation_summary,
             message=result.message,
         )

@@ -111,6 +111,8 @@ class Storage:
                 executed_quantity text,
                 cumulative_quote_qty text,
                 order_id text,
+                queried_status text,
+                validation_summary text,
                 message text
             );
             create table if not exists grid_recommendations (
@@ -210,6 +212,8 @@ class Storage:
         self._ensure_column("portfolio_summaries", "ignored_internal_assets", "text")
         self._ensure_column("portfolio_valuations", "role", "text")
         self._ensure_column("paper_orders", "intent_id", "text")
+        self._ensure_column("testnet_orders", "queried_status", "text")
+        self._ensure_column("testnet_orders", "validation_summary", "text")
         self.connection.commit()
 
     def _ensure_column(self, table: str, column: str, definition: str) -> None:
@@ -389,8 +393,10 @@ class Storage:
                 executed_quantity,
                 cumulative_quote_qty,
                 order_id,
+                queried_status,
+                validation_summary,
                 message
-            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
@@ -405,6 +411,8 @@ class Storage:
                     str(order.executed_quantity),
                     str(order.cumulative_quote_qty),
                     order.order_id,
+                    order.queried_status,
+                    order.validation_summary,
                     order.message,
                 )
                 for order in report.orders

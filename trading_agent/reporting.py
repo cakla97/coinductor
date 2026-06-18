@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Reporter:
@@ -28,6 +28,7 @@ class Reporter:
         strategy_decision: StrategyDecision,
         next_run: NextRunRecommendation,
         recommended_actions: tuple[RecommendedAction, ...],
+        execution_checklist: tuple[ExecutionChecklistItem, ...],
         ai_commentary: AiCommentary,
         research: ResearchBundle,
         research_status: ResearchStatus,
@@ -49,6 +50,14 @@ class Reporter:
                 [
                     f"{index}. **{action.priority}** - {action.action}",
                     f"   Reason: {action.reason}",
+                ]
+            )
+        lines.extend(["", "## Execution Checklist", ""])
+        for index, item in enumerate(execution_checklist, start=1):
+            lines.extend(
+                [
+                    f"{index}. **{item.priority}** - {item.step}",
+                    f"   Detail: {item.detail}",
                 ]
             )
         lines.extend(

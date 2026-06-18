@@ -8,6 +8,7 @@ from .binance_client import BinanceClient
 from .capital_sourcing import CapitalSourcingAdvisor
 from .config import AppConfig
 from .earn_manager import EarnLiquidityManager
+from .execution_checklist import ExecutionChecklistBuilder
 from .grid_advisor import GridBotAdvisor
 from .models import AgentRunResult, LiquidityDecision
 from .next_run import NextRunAdvisor
@@ -34,6 +35,7 @@ class AgentRunner:
         self.strategy = StrategyDecisionEngine()
         self.next_run = NextRunAdvisor()
         self.actions = RecommendedActionsBuilder()
+        self.checklist = ExecutionChecklistBuilder()
         self.research = ResearchLoader(config.raw)
         self.active_strategies = ActiveStrategiesTracker(config.raw)
         self.reporter = Reporter(config.reports_dir, keep_last=int(config.raw.get("reports", {}).get("keep_last", 30)))
@@ -91,6 +93,17 @@ class AgentRunner:
                 next_run=next_run_recommendation,
                 active_strategies=active_strategies_report,
             )
+            execution_checklist = self.checklist.build(
+                proposal=proposal,
+                risk_decision=risk_decision,
+                liquidity_decision=liquidity_decision,
+                grid_liquidity_decision=grid_liquidity_decision,
+                spot_capital_plan=spot_capital_plan,
+                grid_capital_plan=grid_capital_plan,
+                grid_recommendation=grid_recommendation,
+                strategy_decision=strategy_decision,
+                research_status=research_status,
+            )
             ai_commentary = self.ai.comment_on_portfolio(
                 portfolio=portfolio_analysis,
                 snapshots=snapshots,
@@ -118,6 +131,7 @@ class AgentRunner:
             self.storage.save_strategy_decision(run_id, strategy_decision)
             self.storage.save_next_run_recommendation(run_id, next_run_recommendation)
             self.storage.save_recommended_actions(run_id, recommended_actions)
+            self.storage.save_execution_checklist(run_id, execution_checklist)
             self.storage.save_ai_commentary(run_id, ai_commentary)
             self.storage.save_research_notes(run_id, research_bundle)
             self.storage.save_research_status(run_id, research_status)
@@ -137,6 +151,7 @@ class AgentRunner:
                 strategy_decision=strategy_decision,
                 next_run=next_run_recommendation,
                 recommended_actions=recommended_actions,
+                execution_checklist=execution_checklist,
                 ai_commentary=ai_commentary,
                 research=research_bundle,
                 research_status=research_status,

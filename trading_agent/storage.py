@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Storage:
@@ -131,6 +131,12 @@ class Storage:
                 priority text,
                 action text,
                 reason text
+            );
+            create table if not exists execution_checklist_items (
+                run_id integer,
+                priority text,
+                step text,
+                detail text
             );
             create table if not exists ai_commentaries (
                 run_id integer,
@@ -335,6 +341,13 @@ class Storage:
         self.connection.executemany(
             "insert into recommended_actions values (?, ?, ?, ?)",
             [(run_id, action.priority, action.action, action.reason) for action in actions],
+        )
+        self.connection.commit()
+
+    def save_execution_checklist(self, run_id: int, items: tuple[ExecutionChecklistItem, ...]) -> None:
+        self.connection.executemany(
+            "insert into execution_checklist_items values (?, ?, ?, ?)",
+            [(run_id, item.priority, item.step, item.detail) for item in items],
         )
         self.connection.commit()
 

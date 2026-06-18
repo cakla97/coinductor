@@ -140,6 +140,13 @@ class RecommendedAction:
 
 
 @dataclass(frozen=True)
+class ExecutionChecklistItem:
+    priority: str
+    step: str
+    detail: str
+
+
+@dataclass(frozen=True)
 class AiCommentary:
     enabled: bool
     summary: str

@@ -37,6 +37,7 @@ Each report includes:
 - portfolio valuation in USDT
 - rebalance gap against configured target allocation
 - Spot vs Flexible vs Locked balance view
+- manual execution checklist
 - market snapshot
 - AI trade proposal
 - risk decision

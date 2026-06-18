@@ -218,13 +218,16 @@ def _testnet_account_command(args: argparse.Namespace) -> int:
         print(f"[FAIL] Binance Spot Testnet account: {exc}")
         return 1
     balances = account.get("balances", [])
-    non_zero = [
+    non_zero = sorted(
         row["asset"]
         for row in balances
         if Decimal(row.get("free", "0")) != 0 or Decimal(row.get("locked", "0")) != 0
-    ]
+    )
+    watched = ["USDT", "BTC", "ETH", "BNB", "SOL", "WLD"]
+    watched_available = [asset for asset in watched if asset in non_zero]
     print("[OK] Binance Spot Testnet account reachable")
-    print(f"Non-zero testnet assets: {', '.join(non_zero) if non_zero else 'none'}")
+    print(f"Non-zero testnet assets: {len(non_zero)}")
+    print(f"Watched assets available: {_console_safe(', '.join(watched_available) if watched_available else 'none')}")
     return 0
 
 
@@ -257,6 +260,10 @@ def _testnet_market_buy_command(args: argparse.Namespace, parser: argparse.Argum
 def _default_testnet_client_order_id(symbol: str) -> str:
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
     return f"bta-{symbol.lower()}-{timestamp}"
+
+
+def _console_safe(value: str) -> str:
+    return value.encode("ascii", errors="backslashreplace").decode("ascii")
 
 
 def _validation_summary(validation) -> str:

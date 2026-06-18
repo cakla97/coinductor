@@ -26,6 +26,16 @@ Copy-Item .env.example .env
 python -m trading_agent --config config.example.toml
 ```
 
+Preferred CLI form:
+
+```powershell
+python -m trading_agent run --config config.example.toml
+python -m trading_agent run --config config.example.toml --real-data --ai-commentary
+python -m trading_agent doctor --config config.example.toml --real-data --ai-commentary
+python -m trading_agent last-report --config config.example.toml
+python -m trading_agent research-request --config config.example.toml --real-data
+```
+
 The first run uses mock market/account data and writes:
 
 - SQLite journal to `work/trading_agent.sqlite3`

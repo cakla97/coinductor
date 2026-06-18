@@ -428,6 +428,40 @@ class Storage:
             )
         }
 
+    def get_latest_filled_testnet_buy(self, symbol: str) -> dict[str, str] | None:
+        row = self.connection.execute(
+            """
+            select
+                run_id,
+                intent_id,
+                symbol,
+                executed_quantity,
+                cumulative_quote_qty,
+                order_id,
+                client_order_id
+            from testnet_orders
+            where symbol = ?
+              and side = 'BUY'
+              and submitted = 1
+              and status = 'FILLED'
+              and cast(executed_quantity as real) > 0
+              and not exists (
+                  select 1
+                  from testnet_orders sell
+                  where sell.intent_id = 'sell-' || testnet_orders.intent_id
+                    and sell.side = 'SELL'
+                    and sell.submitted = 1
+                    and sell.status = 'FILLED'
+              )
+            order by run_id desc
+            limit 1
+            """,
+            (symbol.upper(),),
+        ).fetchone()
+        if row is None:
+            return None
+        return {key: str(row[key]) for key in row.keys()}
+
     def save_grid_recommendation(self, run_id: int, recommendation: GridRecommendation) -> None:
         self.connection.execute(
             "insert into grid_recommendations values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",

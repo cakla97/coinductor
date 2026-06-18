@@ -37,6 +37,7 @@ python -m trading_agent research-request --config config.example.toml --real-dat
 python -m trading_agent testnet-account --config config.example.toml
 python -m trading_agent testnet-symbol --config config.example.toml --symbol BTCUSDT --quote-amount 10
 python -m trading_agent testnet-market-buy --config config.example.toml --symbol BTCUSDT --quote-amount 10
+python -m trading_agent testnet-market-sell --config config.example.toml --symbol BTCUSDT --from-last-buy
 python -m trading_agent testnet-order-status --config config.example.toml --symbol BTCUSDT --order-id 123456
 python -m trading_agent run --config config.example.toml --real-data --testnet-execution
 ```
@@ -162,6 +163,18 @@ Submit only when you intentionally add the exact confirmation string:
 
 ```powershell
 python -m trading_agent testnet-market-buy --config config.example.toml --symbol BTCUSDT --quote-amount 10 --confirm CONFIRM_TESTNET_ORDER
+```
+
+Preview closing the latest locally tracked filled testnet BUY:
+
+```powershell
+python -m trading_agent testnet-market-sell --config config.example.toml --symbol BTCUSDT --from-last-buy
+```
+
+Submit the testnet exit only with explicit confirmation:
+
+```powershell
+python -m trading_agent testnet-market-sell --config config.example.toml --symbol BTCUSDT --from-last-buy --confirm CONFIRM_TESTNET_ORDER
 ```
 
 Query an existing Spot Testnet order:

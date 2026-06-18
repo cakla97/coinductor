@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, ROUND_DOWN
 import json
 
 from .binance_client import BinanceApiError, BinanceClient
@@ -20,6 +20,18 @@ class TestnetExecutor:
             order_type="MARKET",
             quote_order_qty=quote_amount_usdt,
             quantity=None,
+            price=None,
+            time_in_force=None,
+            client_order_id=client_order_id,
+        )
+
+    def market_sell_quantity(self, symbol: str, quantity: Decimal, client_order_id: str) -> TestnetOrderRequest:
+        return TestnetOrderRequest(
+            symbol=symbol.upper(),
+            side="SELL",
+            order_type="MARKET",
+            quote_order_qty=None,
+            quantity=quantity,
             price=None,
             time_in_force=None,
             client_order_id=client_order_id,
@@ -104,6 +116,41 @@ class TestnetExecutor:
             adjusted,
         )
 
+    def validate_market_sell(self, symbol: str, quantity: Decimal, rules: SymbolRules | None = None) -> OrderValidation:
+        rules = rules or self.client.get_symbol_rules(symbol)
+        allowed = {item.upper() for item in self.config.get("strategy", {}).get("allowed_symbols", [])}
+        if rules.symbol.upper() not in allowed:
+            return OrderValidation(False, f"{rules.symbol} is not in strategy.allowed_symbols.", Decimal("0"))
+        if rules.status != "TRADING":
+            return OrderValidation(False, f"{rules.symbol} status is {rules.status}, not TRADING.", Decimal("0"))
+        if rules.quote_asset != "USDT":
+            return OrderValidation(False, f"{rules.symbol} quote asset is {rules.quote_asset}, expected USDT.", Decimal("0"))
+
+        adjusted_quantity = self._floor_to_step(quantity, rules.step_size)
+        if adjusted_quantity <= 0:
+            return OrderValidation(False, f"Quantity {quantity} rounds to zero with stepSize {rules.step_size}.", Decimal("0"))
+        if rules.min_qty and adjusted_quantity < rules.min_qty:
+            return OrderValidation(False, f"Adjusted quantity {adjusted_quantity} is below {rules.symbol} minQty {rules.min_qty}.", adjusted_quantity)
+        if rules.max_qty and adjusted_quantity > rules.max_qty:
+            return OrderValidation(False, f"Adjusted quantity {adjusted_quantity} is above {rules.symbol} maxQty {rules.max_qty}.", adjusted_quantity)
+
+        free_balance = self.client.testnet_free_balance(rules.base_asset)
+        if adjusted_quantity > free_balance:
+            return OrderValidation(False, f"Adjusted quantity {adjusted_quantity} exceeds free testnet {rules.base_asset} balance {free_balance}.", adjusted_quantity)
+
+        estimated_notional = adjusted_quantity * self.client.get_symbol_price(rules.symbol)
+        if rules.min_notional and estimated_notional < rules.min_notional:
+            return OrderValidation(
+                False,
+                f"Estimated notional {estimated_notional:.8f} USDT is below {rules.symbol} minNotional {rules.min_notional}.",
+                adjusted_quantity,
+            )
+        return OrderValidation(
+            True,
+            f"{rules.symbol} sell filters passed: quantity={adjusted_quantity}, estimatedNotional={estimated_notional:.8f}, freeBalance={free_balance}.",
+            adjusted_quantity,
+        )
+
     def submit(self, request: TestnetOrderRequest, confirm: str) -> TestnetOrderResult:
         if confirm != "CONFIRM_TESTNET_ORDER":
             return TestnetOrderResult(
@@ -173,3 +220,9 @@ class TestnetExecutor:
             validation_summary=validation_summary,
             message=result.message,
         )
+
+    def _floor_to_step(self, value: Decimal, step: Decimal) -> Decimal:
+        if step <= 0:
+            return value
+        units = (value / step).to_integral_value(rounding=ROUND_DOWN)
+        return units * step

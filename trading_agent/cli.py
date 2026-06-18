@@ -16,7 +16,9 @@ from .env import load_env_file
 from .portfolio_analyzer import PortfolioAnalyzer
 from .research import ResearchLoader
 from .runner import AgentRunner
+from .storage import Storage
 from .testnet_executor import TestnetExecutor
+from .models import TestnetExecutedOrder, TestnetExecutionReport
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -40,6 +42,8 @@ def main(argv: list[str] | None = None) -> int:
         return _testnet_account_command(args)
     if args.command == "testnet-market-buy":
         return _testnet_market_buy_command(args, parser)
+    if args.command == "testnet-market-sell":
+        return _testnet_market_sell_command(args, parser)
     if args.command == "testnet-symbol":
         return _testnet_symbol_command(args)
     if args.command == "testnet-order-status":
@@ -77,6 +81,14 @@ def _build_parser() -> argparse.ArgumentParser:
     testnet_buy_parser.add_argument("--quote-amount", required=True, help="USDT quote amount to spend")
     testnet_buy_parser.add_argument("--client-order-id", default="", help="Optional custom client order id")
     testnet_buy_parser.add_argument("--confirm", default="", help="Must equal CONFIRM_TESTNET_ORDER to submit")
+
+    testnet_sell_parser = subparsers.add_parser("testnet-market-sell", help="Preview or submit a Spot Testnet market sell")
+    testnet_sell_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    testnet_sell_parser.add_argument("--symbol", required=True, help="Spot symbol, for example BTCUSDT")
+    testnet_sell_parser.add_argument("--quantity", default="", help="Base asset quantity to sell")
+    testnet_sell_parser.add_argument("--from-last-buy", action="store_true", help="Use the last filled testnet BUY quantity from local SQLite history")
+    testnet_sell_parser.add_argument("--client-order-id", default="", help="Optional custom client order id")
+    testnet_sell_parser.add_argument("--confirm", default="", help="Must equal CONFIRM_TESTNET_ORDER to submit")
 
     testnet_symbol_parser = subparsers.add_parser("testnet-symbol", help="Inspect Spot Testnet symbol filters")
     testnet_symbol_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
@@ -289,6 +301,87 @@ def _testnet_market_buy_command(args: argparse.Namespace, parser: argparse.Argum
     if result.response:
         print(f"Response: {result.response}")
     return 0 if result.status not in {"ERROR"} else 1
+
+
+def _testnet_market_sell_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    config = load_config(args.config)
+    symbol = str(args.symbol).upper()
+    if args.from_last_buy:
+        latest_buy = Storage(config.database_path).get_latest_filled_testnet_buy(symbol)
+        if latest_buy is None:
+            print(f"No filled local Spot Testnet BUY found for {symbol}.")
+            return 1
+        quantity = Decimal(latest_buy["executed_quantity"])
+        intent_id = f"sell-{latest_buy['intent_id']}"
+        source = f"last filled testnet BUY order {latest_buy['order_id']}"
+    else:
+        if not args.quantity:
+            parser.error("--quantity is required unless --from-last-buy is used")
+        quantity = Decimal(str(args.quantity))
+        intent_id = f"manual-sell-{symbol.lower()}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+        source = "CLI quantity"
+    if quantity <= 0:
+        parser.error("--quantity must be greater than zero")
+
+    client_order_id = args.client_order_id or _default_testnet_client_order_id(f"{symbol}-sell")
+    executor = TestnetExecutor(config.raw)
+    rules = executor.client.get_symbol_rules(symbol)
+    validation = executor.validate_market_sell(symbol, quantity, rules)
+    request = executor.market_sell_quantity(symbol, validation.adjusted_quote_amount_usdt, client_order_id)
+    print("Spot Testnet sell request:")
+    print(f"  source: {source}")
+    print(f"  symbol: {request.symbol}")
+    print(f"  side: {request.side}")
+    print(f"  type: {request.order_type}")
+    print(f"  quantity: {request.quantity}")
+    print(f"  newClientOrderId: {request.client_order_id}")
+    print(f"  validation: {validation.reason}")
+    if not validation.approved:
+        print("Not submitted. Local symbol filter/balance validation rejected this order.")
+        return 1
+    if args.confirm != "CONFIRM_TESTNET_ORDER":
+        print("Not submitted. Add --confirm CONFIRM_TESTNET_ORDER to place this on Binance Spot Testnet.")
+        return 0
+    result = executor.submit(request, args.confirm)
+    print(f"Submitted: {result.submitted}")
+    print(f"Status: {result.status}")
+    print(f"Message: {result.message}")
+    if result.response:
+        print(f"Response: {result.response}")
+    if result.submitted and result.status != "ERROR":
+        _save_manual_testnet_order(config, intent_id, request, result, validation.reason)
+    return 0 if result.status not in {"ERROR"} else 1
+
+
+def _save_manual_testnet_order(config: AppConfig, intent_id: str, request, result, validation_summary: str) -> None:
+    response = json.loads(result.response) if result.response else {}
+    order_id = str(response.get("orderId", ""))
+    queried_status = ""
+    if order_id:
+        try:
+            queried = BinanceClient(config.raw, use_testnet=True).query_order(request.symbol, order_id=order_id)
+            queried_status = str(queried.get("status", ""))
+        except BinanceApiError as exc:
+            queried_status = f"QUERY_ERROR: {exc}"
+    order = TestnetExecutedOrder(
+        intent_id=intent_id,
+        symbol=request.symbol,
+        side=request.side,
+        quote_amount_usdt=Decimal(str(response.get("cummulativeQuoteQty", "0"))),
+        client_order_id=request.client_order_id,
+        submitted=result.submitted,
+        status=result.status,
+        executed_quantity=Decimal(str(response.get("executedQty", "0"))),
+        cumulative_quote_qty=Decimal(str(response.get("cummulativeQuoteQty", "0"))),
+        order_id=order_id,
+        queried_status=queried_status,
+        validation_summary=validation_summary,
+        message=result.message,
+    )
+    storage = Storage(config.database_path)
+    run_id = storage.start_run("TESTNET_MANUAL")
+    storage.save_testnet_execution(run_id, TestnetExecutionReport(enabled=True, orders=(order,), summary="Manual Spot Testnet CLI order."))
+    storage.finish_run(run_id, "OK", f"Manual Spot Testnet {request.side} order {order_id} saved.")
 
 
 def _testnet_symbol_command(args: argparse.Namespace) -> int:

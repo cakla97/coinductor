@@ -117,6 +117,10 @@ class BinanceClient:
             tick_size=Decimal(str(price_filter.get("tickSize", "0"))),
         )
 
+    def get_symbol_price(self, symbol: str) -> Decimal:
+        payload = self._public_get("/api/v3/ticker/price", {"symbol": symbol.upper()})
+        return Decimal(str(payload["price"]))
+
     def assert_read_only_permissions(self) -> None:
         if self.use_testnet:
             raise BinanceApiError("Read-only permission check uses /sapi and is not available on Spot Testnet.")
@@ -213,6 +217,13 @@ class BinanceClient:
         if not self.use_testnet:
             raise BinanceApiError("testnet_account_ping requires use_testnet=True.")
         return self._signed_get("/api/v3/account")
+
+    def testnet_free_balance(self, asset: str) -> Decimal:
+        account = self.testnet_account_ping()
+        for row in account.get("balances", []):
+            if row.get("asset", "").upper() == asset.upper():
+                return Decimal(str(row.get("free", "0")))
+        return Decimal("0")
 
     def query_order(self, symbol: str, order_id: str | None = None, client_order_id: str | None = None) -> dict:
         params: dict[str, object] = {"symbol": symbol.upper()}

@@ -14,6 +14,7 @@ class ConfigValidator:
         self._validate_universes(config, issues)
         self._validate_capital_sourcing(config, issues)
         self._validate_modes(config, issues)
+        self._validate_binance(config, issues)
         return ConfigValidationResult(tuple(issues))
 
     def _validate_portfolio(self, config: dict, issues: list[ConfigIssue]) -> None:
@@ -70,6 +71,13 @@ class ConfigValidator:
         if config.get("earn", {}).get("allow_locked_redeem", False):
             issues.append(ConfigIssue("ERROR", "earn.allow_locked_redeem", "Locked Earn redeem must remain disabled."))
 
+    def _validate_binance(self, config: dict, issues: list[ConfigIssue]) -> None:
+        binance = config.get("binance", {})
+        for key in ("api_base_url", "testnet_api_base_url"):
+            value = str(binance.get(key, ""))
+            if not value.startswith("https://"):
+                issues.append(ConfigIssue("ERROR", f"binance.{key}", "URL must start with https://."))
+
     def _upper_list(self, values: list[str]) -> list[str]:
         return [str(value).upper() for value in values]
 
@@ -79,4 +87,3 @@ class ConfigValidator:
             if symbol.endswith(quote):
                 return symbol[: -len(quote)]
         return symbol
-

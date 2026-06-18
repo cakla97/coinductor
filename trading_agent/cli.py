@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
+from decimal import Decimal
 import json
 import os
 from pathlib import Path
@@ -14,6 +16,7 @@ from .env import load_env_file
 from .portfolio_analyzer import PortfolioAnalyzer
 from .research import ResearchLoader
 from .runner import AgentRunner
+from .testnet_executor import TestnetExecutor
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -33,6 +36,10 @@ def main(argv: list[str] | None = None) -> int:
         return _last_report_command(args)
     if args.command == "research-request":
         return _research_request_command(args)
+    if args.command == "testnet-account":
+        return _testnet_account_command(args)
+    if args.command == "testnet-market-buy":
+        return _testnet_market_buy_command(args, parser)
     parser.error(f"Unknown command {args.command}")
     return 2
 
@@ -56,6 +63,16 @@ def _build_parser() -> argparse.ArgumentParser:
     request_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
     request_parser.add_argument("--real-data", action="store_true", help="Use real Binance read-only data for portfolio context")
     request_parser.add_argument("--mock-data", action="store_true", help="Use mock data for portfolio context")
+
+    testnet_account_parser = subparsers.add_parser("testnet-account", help="Check Binance Spot Testnet account access")
+    testnet_account_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+
+    testnet_buy_parser = subparsers.add_parser("testnet-market-buy", help="Preview or submit a Spot Testnet market buy")
+    testnet_buy_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    testnet_buy_parser.add_argument("--symbol", required=True, help="Spot symbol, for example BTCUSDT")
+    testnet_buy_parser.add_argument("--quote-amount", required=True, help="USDT quote amount to spend")
+    testnet_buy_parser.add_argument("--client-order-id", default="", help="Optional custom client order id")
+    testnet_buy_parser.add_argument("--confirm", default="", help="Must equal CONFIRM_TESTNET_ORDER to submit")
     return parser
 
 
@@ -191,6 +208,55 @@ def _research_request_command(args: argparse.Namespace) -> int:
         return 0
     print(status.request.path)
     return 0
+
+
+def _testnet_account_command(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    try:
+        account = BinanceClient(config.raw, use_testnet=True).testnet_account_ping()
+    except BinanceApiError as exc:
+        print(f"[FAIL] Binance Spot Testnet account: {exc}")
+        return 1
+    balances = account.get("balances", [])
+    non_zero = [
+        row["asset"]
+        for row in balances
+        if Decimal(row.get("free", "0")) != 0 or Decimal(row.get("locked", "0")) != 0
+    ]
+    print("[OK] Binance Spot Testnet account reachable")
+    print(f"Non-zero testnet assets: {', '.join(non_zero) if non_zero else 'none'}")
+    return 0
+
+
+def _testnet_market_buy_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    config = load_config(args.config)
+    symbol = str(args.symbol).upper()
+    quote_amount = Decimal(str(args.quote_amount))
+    if quote_amount <= 0:
+        parser.error("--quote-amount must be greater than zero")
+    client_order_id = args.client_order_id or _default_testnet_client_order_id(symbol)
+    request = TestnetExecutor(config.raw).market_buy_quote(symbol, quote_amount, client_order_id)
+    print("Spot Testnet order request:")
+    print(f"  symbol: {request.symbol}")
+    print(f"  side: {request.side}")
+    print(f"  type: {request.order_type}")
+    print(f"  quoteOrderQty: {request.quote_order_qty}")
+    print(f"  newClientOrderId: {request.client_order_id}")
+    if args.confirm != "CONFIRM_TESTNET_ORDER":
+        print("Not submitted. Add --confirm CONFIRM_TESTNET_ORDER to place this on Binance Spot Testnet.")
+        return 0
+    result = TestnetExecutor(config.raw).submit(request, args.confirm)
+    print(f"Submitted: {result.submitted}")
+    print(f"Status: {result.status}")
+    print(f"Message: {result.message}")
+    if result.response:
+        print(f"Response: {result.response}")
+    return 0 if result.status not in {"ERROR"} else 1
+
+
+def _default_testnet_client_order_id(symbol: str) -> str:
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    return f"bta-{symbol.lower()}-{timestamp}"
 
 
 def _validation_summary(validation) -> str:

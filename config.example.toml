@@ -24,6 +24,7 @@ request_assets = ["BTC", "ETH", "WBETH", "BNB", "SOL", "WLD"]
 [binance]
 testnet = false
 api_base_url = "https://api.binance.com"
+testnet_api_base_url = "https://testnet.binance.vision"
 recv_window_ms = 5000
 timeout_seconds = 30
 

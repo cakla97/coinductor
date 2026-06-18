@@ -19,11 +19,15 @@ class BinanceApiError(RuntimeError):
 
 
 class BinanceClient:
-    def __init__(self, config: dict):
+    def __init__(self, config: dict, use_testnet: bool = False):
         self.config = config
-        self.api_key = os.getenv("BINANCE_API_KEY", "")
-        self.api_secret = os.getenv("BINANCE_API_SECRET", "")
-        self.base_url = str(config["binance"].get("api_base_url", "https://api.binance.com")).rstrip("/")
+        self.use_testnet = use_testnet
+        key_env = "BINANCE_TESTNET_API_KEY" if use_testnet else "BINANCE_API_KEY"
+        secret_env = "BINANCE_TESTNET_API_SECRET" if use_testnet else "BINANCE_API_SECRET"
+        self.api_key = os.getenv(key_env, "")
+        self.api_secret = os.getenv(secret_env, "")
+        base_key = "testnet_api_base_url" if use_testnet else "api_base_url"
+        self.base_url = str(config["binance"].get(base_key, "https://api.binance.com")).rstrip("/")
         self.ssl_context = self._ssl_context()
         self._server_time_offset_ms: int | None = None
 
@@ -91,6 +95,8 @@ class BinanceClient:
         return self._price_assets_from_tickers({asset.upper() for asset in assets}, ticker_map)
 
     def assert_read_only_permissions(self) -> None:
+        if self.use_testnet:
+            raise BinanceApiError("Read-only permission check uses /sapi and is not available on Spot Testnet.")
         permissions = self._signed_get("/sapi/v1/account/apiRestrictions")
         dangerous_flags = {
             "enableWithdrawals": permissions.get("enableWithdrawals"),
@@ -171,6 +177,20 @@ class BinanceClient:
         signature = hmac.new(self.api_secret.encode("utf-8"), query.encode("utf-8"), hashlib.sha256).hexdigest()
         return self._request("GET", f"{path}?{query}&signature={signature}", signed=True)
 
+    def signed_post(self, path: str, params: dict[str, object] | None = None) -> dict:
+        self._require_api_keys()
+        request_params = dict(params or {})
+        request_params["timestamp"] = self._timestamp_ms()
+        request_params["recvWindow"] = int(self.config["binance"].get("recv_window_ms", 5000))
+        query = urlencode(request_params)
+        signature = hmac.new(self.api_secret.encode("utf-8"), query.encode("utf-8"), hashlib.sha256).hexdigest()
+        return self._request("POST", f"{path}?{query}&signature={signature}", signed=True)
+
+    def testnet_account_ping(self) -> dict:
+        if not self.use_testnet:
+            raise BinanceApiError("testnet_account_ping requires use_testnet=True.")
+        return self._signed_get("/api/v3/account")
+
     def _public_get(self, path: str, params: dict[str, object] | None = None) -> list | dict:
         query = urlencode(params or {})
         suffix = f"?{query}" if query else ""
@@ -192,6 +212,8 @@ class BinanceClient:
 
     def _require_api_keys(self) -> None:
         if not self.api_key or not self.api_secret:
+            if self.use_testnet:
+                raise BinanceApiError("BINANCE_TESTNET_API_KEY and BINANCE_TESTNET_API_SECRET must be set in .env for testnet mode.")
             raise BinanceApiError("BINANCE_API_KEY and BINANCE_API_SECRET must be set in .env for real-data mode.")
 
     def _timestamp_ms(self) -> int:

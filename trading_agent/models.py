@@ -255,6 +255,26 @@ class PaperExecutionReport:
 
 
 @dataclass(frozen=True)
+class TestnetOrderRequest:
+    symbol: str
+    side: str
+    order_type: str
+    quote_order_qty: Decimal | None
+    quantity: Decimal | None
+    price: Decimal | None
+    time_in_force: str | None
+    client_order_id: str
+
+
+@dataclass(frozen=True)
+class TestnetOrderResult:
+    submitted: bool
+    status: str
+    message: str
+    response: str
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

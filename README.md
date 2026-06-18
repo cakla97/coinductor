@@ -34,6 +34,8 @@ python -m trading_agent run --config config.example.toml --real-data --ai-commen
 python -m trading_agent doctor --config config.example.toml --real-data --ai-commentary
 python -m trading_agent last-report --config config.example.toml
 python -m trading_agent research-request --config config.example.toml --real-data
+python -m trading_agent testnet-account --config config.example.toml
+python -m trading_agent testnet-market-buy --config config.example.toml --symbol BTCUSDT --quote-amount 10
 ```
 
 The first run uses mock market/account data and writes:
@@ -124,6 +126,37 @@ Copy-Item state/active_strategies.example.toml state/active_strategies.toml
 Then edit `state/active_strategies.toml` with the real grid range, symbol, and
 investment. The assistant will track whether current price is inside the configured
 range and add review actions when price approaches or leaves the range.
+
+## Binance Spot Testnet
+
+Spot Testnet support is separate from mainnet read-only portfolio analysis.
+Create testnet API keys at `https://testnet.binance.vision`, then add them to `.env`:
+
+```env
+BINANCE_TESTNET_API_KEY=...
+BINANCE_TESTNET_API_SECRET=...
+```
+
+Check access:
+
+```powershell
+python -m trading_agent testnet-account --config config.example.toml
+```
+
+Preview a testnet market buy without submitting it:
+
+```powershell
+python -m trading_agent testnet-market-buy --config config.example.toml --symbol BTCUSDT --quote-amount 10
+```
+
+Submit only when you intentionally add the exact confirmation string:
+
+```powershell
+python -m trading_agent testnet-market-buy --config config.example.toml --symbol BTCUSDT --quote-amount 10 --confirm CONFIRM_TESTNET_ORDER
+```
+
+Binance Spot Testnet uses virtual funds and supports `/api` endpoints only, so
+Simple Earn `/sapi` operations and read-only permission checks are still mainnet-only.
 
 ## VS Code
 

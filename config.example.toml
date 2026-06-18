@@ -78,6 +78,15 @@ tracked_assets = ["USDT", "BNB", "BTC", "WBETH", "ETH", "SOL", "WLD"]
 pricing_quote_assets = ["USDT", "USDC", "FDUSD"]
 ignored_asset_prefixes = ["LD"]
 
+[portfolio.asset_roles]
+USDT = "STABLE"
+BTC = "CORE"
+ETH = "CORE"
+WBETH = "PROTECTED"
+BNB = "CAPITAL_SOURCE"
+SOL = "CAPITAL_SOURCE"
+WLD = "SPECULATIVE_SOURCE"
+
 [capital_sourcing]
 enabled = true
 recommend_only = true

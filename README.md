@@ -162,10 +162,18 @@ Portfolio tracking is intentionally broader than trading permissions:
 - `[grid_bot].allowed_symbols` lists pairs that can be considered for Spot Grid recommendations.
 - `[capital_sourcing].allowed_source_assets` lists assets that can be recommended as manual sources of USDT.
 - `[capital_sourcing].protected_assets` lists assets that should not be recommended as capital sources.
+- `[portfolio.asset_roles]` classifies assets as `CORE`, `PROTECTED`, `CAPITAL_SOURCE`,
+  `SPECULATIVE_SOURCE`, `STABLE`, or another explicit role used for audit/reporting.
 
 Assets that cannot be priced are shown as unpriced instead of silently disappearing from totals.
 Binance internal voucher-like assets with configured prefixes, such as `LD`, are reported separately
 and excluded from valuation to avoid double counting.
+
+Use `doctor` to validate local setup and config consistency:
+
+```powershell
+python -m trading_agent doctor --config config.example.toml --real-data --ai-commentary
+```
 
 ## Safety Defaults
 

@@ -81,6 +81,7 @@ class PortfolioAnalyzer:
         action = self._rebalance_action(gap_pct)
         return PortfolioAssetValuation(
             asset=balance.asset,
+            role=self._asset_role(balance.asset),
             price_usdt=self._money(price),
             spot_value_usdt=self._money(spot_value),
             flexible_value_usdt=self._money(flexible_value),
@@ -105,6 +106,10 @@ class PortfolioAnalyzer:
     def _is_ignored_internal_asset(self, asset: str) -> bool:
         prefixes = self.config.get("portfolio", {}).get("ignored_asset_prefixes", [])
         return any(asset.upper().startswith(str(prefix).upper()) for prefix in prefixes)
+
+    def _asset_role(self, asset: str) -> str:
+        roles = self.config.get("portfolio", {}).get("asset_roles", {})
+        return str(roles.get(asset.upper(), "UNCLASSIFIED")).upper()
 
     def _rebalance_summary(self, assets: tuple[PortfolioAssetValuation, ...]) -> str:
         actions = [asset for asset in assets if asset.rebalance_action in {"REDUCE", "INCREASE"}]

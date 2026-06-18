@@ -35,6 +35,7 @@ class Storage:
             create table if not exists portfolio_valuations (
                 run_id integer,
                 asset text,
+                role text,
                 price_usdt text,
                 spot_value_usdt text,
                 flexible_value_usdt text,
@@ -178,6 +179,7 @@ class Storage:
         )
         self._ensure_column("portfolio_summaries", "unpriced_assets", "text")
         self._ensure_column("portfolio_summaries", "ignored_internal_assets", "text")
+        self._ensure_column("portfolio_valuations", "role", "text")
         self.connection.commit()
 
     def _ensure_column(self, table: str, column: str, definition: str) -> None:
@@ -236,11 +238,27 @@ class Storage:
             ),
         )
         self.connection.executemany(
-            "insert into portfolio_valuations values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            """
+            insert into portfolio_valuations (
+                run_id,
+                asset,
+                role,
+                price_usdt,
+                spot_value_usdt,
+                flexible_value_usdt,
+                locked_value_usdt,
+                total_value_usdt,
+                allocation_pct,
+                target_pct,
+                gap_pct,
+                rebalance_action
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
             [
                 (
                     run_id,
                     asset.asset,
+                    asset.role,
                     str(asset.price_usdt),
                     str(asset.spot_value_usdt),
                     str(asset.flexible_value_usdt),

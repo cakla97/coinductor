@@ -88,6 +88,7 @@ class NextRunRecommendation:
 @dataclass(frozen=True)
 class PortfolioAssetValuation:
     asset: str
+    role: str
     price_usdt: Decimal
     spot_value_usdt: Decimal
     flexible_value_usdt: Decimal
@@ -144,6 +145,22 @@ class ExecutionChecklistItem:
     priority: str
     step: str
     detail: str
+
+
+@dataclass(frozen=True)
+class ConfigIssue:
+    severity: str
+    path: str
+    message: str
+
+
+@dataclass(frozen=True)
+class ConfigValidationResult:
+    issues: tuple[ConfigIssue, ...]
+
+    @property
+    def has_errors(self) -> bool:
+        return any(issue.severity == "ERROR" for issue in self.issues)
 
 
 @dataclass(frozen=True)

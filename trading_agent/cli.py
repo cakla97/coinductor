@@ -9,6 +9,7 @@ import urllib.request
 
 from .binance_client import BinanceApiError, BinanceClient
 from .config import AppConfig, load_config
+from .config_validator import ConfigValidator
 from .env import load_env_file
 from .portfolio_analyzer import PortfolioAnalyzer
 from .research import ResearchLoader
@@ -93,6 +94,11 @@ def _load_and_apply_config(args: argparse.Namespace, parser: argparse.ArgumentPa
 
 def _run_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     config = _load_and_apply_config(args, parser)
+    validation = ConfigValidator().validate(config.raw)
+    _print_validation(validation)
+    if validation.has_errors:
+        print("Config validation failed. Fix errors before running.")
+        return 2
     runner = AgentRunner(config)
     result = runner.run()
     print(f"Run {result.run_id} finished: {result.status}")
@@ -105,6 +111,8 @@ def _doctor_command(args: argparse.Namespace) -> int:
     checks: list[tuple[str, bool, str]] = []
     checks.append(("Python", True, sys.version.split()[0]))
     checks.append(("Config", config.path.exists(), str(config.path)))
+    validation = ConfigValidator().validate(config.raw)
+    checks.append(("Config validation", not validation.has_errors, _validation_summary(validation)))
     checks.append((".env", Path(".env").exists(), "present" if Path(".env").exists() else "missing"))
 
     for path in [
@@ -132,6 +140,7 @@ def _doctor_command(args: argparse.Namespace) -> int:
         ok = ok and passed
         status = "OK" if passed else "FAIL"
         print(f"[{status}] {name}: {detail}")
+    _print_validation(validation)
     return 0 if ok else 1
 
 
@@ -163,6 +172,11 @@ def _last_report_command(args: argparse.Namespace) -> int:
 def _research_request_command(args: argparse.Namespace) -> int:
     parser = argparse.ArgumentParser()
     config = _load_and_apply_config(args, parser)
+    validation = ConfigValidator().validate(config.raw)
+    _print_validation(validation)
+    if validation.has_errors:
+        print("Config validation failed. Fix errors before generating research request.")
+        return 2
     client = BinanceClient(config.raw)
     balances = client.get_balances()
     portfolio_assets = sorted(
@@ -177,3 +191,14 @@ def _research_request_command(args: argparse.Namespace) -> int:
         return 0
     print(status.request.path)
     return 0
+
+
+def _validation_summary(validation) -> str:
+    errors = sum(1 for issue in validation.issues if issue.severity == "ERROR")
+    warnings = sum(1 for issue in validation.issues if issue.severity == "WARNING")
+    return f"{errors} error(s), {warnings} warning(s)"
+
+
+def _print_validation(validation) -> None:
+    for issue in validation.issues:
+        print(f"[{issue.severity}] {issue.path}: {issue.message}")

@@ -166,8 +166,8 @@ class Reporter:
                 "",
                 "## Portfolio Valuation",
                 "",
-                "| Asset | Price USDT | Spot value | Flexible value | Locked value | Total value | Allocation | Target | Gap | Action |",
-                "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+                "| Asset | Role | Price USDT | Spot value | Flexible value | Locked value | Total value | Allocation | Target | Gap | Action |",
+                "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
             ]
         )
         for asset in portfolio_analysis.assets:
@@ -175,7 +175,7 @@ class Reporter:
             gap = "" if asset.gap_pct is None else f"{asset.gap_pct:+}%"
             lines.append(
                 "| "
-                f"{asset.asset} | {asset.price_usdt} | {asset.spot_value_usdt} | {asset.flexible_value_usdt} | "
+                f"{asset.asset} | {asset.role} | {asset.price_usdt} | {asset.spot_value_usdt} | {asset.flexible_value_usdt} | "
                 f"{asset.locked_value_usdt} | {asset.total_value_usdt} | {asset.allocation_pct}% | {target} | {gap} | "
                 f"{asset.rebalance_action} |"
             )

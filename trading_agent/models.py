@@ -232,6 +232,28 @@ class ActiveStrategiesReport:
 
 
 @dataclass(frozen=True)
+class PaperOrder:
+    symbol: str
+    side: str
+    quote_amount_usdt: Decimal
+    simulated_price: Decimal
+    simulated_quantity: Decimal
+    fee_usdt: Decimal
+    slippage_usdt: Decimal
+    stop_loss_price: Decimal
+    take_profit_price: Decimal
+    status: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class PaperExecutionReport:
+    enabled: bool
+    orders: tuple[PaperOrder, ...]
+    summary: str
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

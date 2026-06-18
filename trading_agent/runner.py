@@ -12,6 +12,7 @@ from .execution_checklist import ExecutionChecklistBuilder
 from .grid_advisor import GridBotAdvisor
 from .models import AgentRunResult, LiquidityDecision
 from .next_run import NextRunAdvisor
+from .paper_executor import PaperExecutor
 from .portfolio_analyzer import PortfolioAnalyzer
 from .recommended_actions import RecommendedActionsBuilder
 from .reporting import Reporter
@@ -36,6 +37,7 @@ class AgentRunner:
         self.next_run = NextRunAdvisor()
         self.actions = RecommendedActionsBuilder()
         self.checklist = ExecutionChecklistBuilder()
+        self.paper = PaperExecutor(config.raw)
         self.research = ResearchLoader(config.raw)
         self.active_strategies = ActiveStrategiesTracker(config.raw)
         self.reporter = Reporter(config.reports_dir, keep_last=int(config.raw.get("reports", {}).get("keep_last", 30)))
@@ -82,6 +84,7 @@ class AgentRunner:
                 grid_liquidity_decision = LiquidityDecision(False, "No grid recommendation requires liquidity.", None, Decimal("0"))
                 grid_capital_plan = self.capital_sourcing.plan(balances, portfolio_analysis, Decimal("0"))
             spot_capital_plan = self.capital_sourcing.plan(balances, portfolio_analysis, risk_decision.adjusted_quote_amount_usdt)
+            paper_execution = self.paper.simulate_spot(proposal, risk_decision, snapshots)
             strategy_decision = self.strategy.decide(proposal, risk_decision, grid_recommendation)
             next_run_recommendation = self.next_run.recommend(strategy_decision)
             recommended_actions = self.actions.build(
@@ -125,6 +128,7 @@ class AgentRunner:
             self.storage.save_market_snapshots(run_id, snapshots)
             self.storage.save_proposal(run_id, proposal)
             self.storage.save_risk_decision(run_id, risk_decision)
+            self.storage.save_paper_execution(run_id, paper_execution)
             self.storage.save_grid_recommendation(run_id, grid_recommendation)
             self.storage.save_capital_sourcing_plan(run_id, "SPOT_TRADE", spot_capital_plan)
             self.storage.save_capital_sourcing_plan(run_id, "GRID_BOT", grid_capital_plan)
@@ -144,6 +148,7 @@ class AgentRunner:
                 snapshots=snapshots,
                 proposal=proposal,
                 risk_decision=risk_decision,
+                paper_execution=paper_execution,
                 liquidity_decision=liquidity_decision,
                 grid_liquidity_decision=grid_liquidity_decision,
                 spot_capital_plan=spot_capital_plan,

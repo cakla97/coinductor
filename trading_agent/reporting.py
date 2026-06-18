@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Reporter:
@@ -21,6 +21,7 @@ class Reporter:
         snapshots: list[MarketSnapshot],
         proposal: TradeProposal,
         risk_decision: RiskDecision,
+        paper_execution: PaperExecutionReport,
         liquidity_decision: LiquidityDecision,
         grid_liquidity_decision: LiquidityDecision,
         spot_capital_plan: CapitalSourcingPlan,
@@ -115,6 +116,30 @@ class Reporter:
                         "",
                     ]
                 )
+        lines.extend(
+            [
+                "## Paper Execution",
+                "",
+                f"- Enabled: `{paper_execution.enabled}`",
+                f"- Summary: {paper_execution.summary}",
+                "",
+            ]
+        )
+        if paper_execution.orders:
+            lines.extend(
+                [
+                    "| Symbol | Side | Quote USDT | Sim Price | Quantity | Fee USDT | Slippage USDT | Stop | Take Profit | Status |",
+                    "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+                ]
+            )
+            for order in paper_execution.orders:
+                lines.append(
+                    "| "
+                    f"{order.symbol} | {order.side} | {order.quote_amount_usdt} | {order.simulated_price} | "
+                    f"{order.simulated_quantity} | {order.fee_usdt} | {order.slippage_usdt} | "
+                    f"{order.stop_loss_price} | {order.take_profit_price} | {order.status} |"
+                )
+            lines.append("")
         lines.extend(
             [
                 "## Active Strategies",

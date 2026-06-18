@@ -73,6 +73,12 @@ quote_amount_usdt = 25.0
 timeframes = ["4h", "1d"]
 decision_modes = ["HOLD", "SPOT_TRADE_RECOMMENDATION", "REBALANCE_RECOMMENDATION", "GRID_BOT_RECOMMENDATION"]
 
+[paper]
+enabled = true
+simulate_spot_trades = true
+fee_pct = 0.1
+slippage_pct = 0.05
+
 [portfolio]
 tracked_assets = ["USDT", "BNB", "BTC", "WBETH", "ETH", "SOL", "WLD"]
 pricing_quote_assets = ["USDT", "USDC", "FDUSD"]

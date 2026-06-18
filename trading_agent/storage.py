@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class Storage:
@@ -83,6 +83,20 @@ class Storage:
                 approved integer,
                 reason text,
                 adjusted_quote_amount_usdt text
+            );
+            create table if not exists paper_orders (
+                run_id integer,
+                symbol text,
+                side text,
+                quote_amount_usdt text,
+                simulated_price text,
+                simulated_quantity text,
+                fee_usdt text,
+                slippage_usdt text,
+                stop_loss_price text,
+                take_profit_price text,
+                status text,
+                reason text
             );
             create table if not exists grid_recommendations (
                 run_id integer,
@@ -295,6 +309,29 @@ class Storage:
         self.connection.execute(
             "insert into risk_decisions values (?, ?, ?, ?)",
             (run_id, int(decision.approved), decision.reason, str(decision.adjusted_quote_amount_usdt)),
+        )
+        self.connection.commit()
+
+    def save_paper_execution(self, run_id: int, paper: PaperExecutionReport) -> None:
+        self.connection.executemany(
+            "insert into paper_orders values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [
+                (
+                    run_id,
+                    order.symbol,
+                    order.side,
+                    str(order.quote_amount_usdt),
+                    str(order.simulated_price),
+                    str(order.simulated_quantity),
+                    str(order.fee_usdt),
+                    str(order.slippage_usdt),
+                    str(order.stop_loss_price),
+                    str(order.take_profit_price),
+                    order.status,
+                    order.reason,
+                )
+                for order in paper.orders
+            ],
         )
         self.connection.commit()
 

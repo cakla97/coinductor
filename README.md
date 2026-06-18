@@ -48,6 +48,7 @@ Each report includes:
 - rebalance gap against configured target allocation
 - Spot vs Flexible vs Locked balance view
 - manual execution checklist
+- paper execution simulation
 - market snapshot
 - AI trade proposal
 - risk decision

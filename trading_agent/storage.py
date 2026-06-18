@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TradeProposal
 
 
 class Storage:
@@ -98,6 +98,20 @@ class Storage:
                 take_profit_price text,
                 status text,
                 reason text
+            );
+            create table if not exists testnet_orders (
+                run_id integer,
+                intent_id text,
+                symbol text,
+                side text,
+                quote_amount_usdt text,
+                client_order_id text,
+                submitted integer,
+                status text,
+                executed_quantity text,
+                cumulative_quote_qty text,
+                order_id text,
+                message text
             );
             create table if not exists grid_recommendations (
                 run_id integer,
@@ -359,6 +373,52 @@ class Storage:
         if "intent_id" not in columns:
             return set()
         return {row["intent_id"] for row in self.connection.execute("select intent_id from paper_orders where intent_id is not null")}
+
+    def save_testnet_execution(self, run_id: int, report: TestnetExecutionReport) -> None:
+        self.connection.executemany(
+            """
+            insert into testnet_orders (
+                run_id,
+                intent_id,
+                symbol,
+                side,
+                quote_amount_usdt,
+                client_order_id,
+                submitted,
+                status,
+                executed_quantity,
+                cumulative_quote_qty,
+                order_id,
+                message
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    run_id,
+                    order.intent_id,
+                    order.symbol,
+                    order.side,
+                    str(order.quote_amount_usdt),
+                    order.client_order_id,
+                    int(order.submitted),
+                    order.status,
+                    str(order.executed_quantity),
+                    str(order.cumulative_quote_qty),
+                    order.order_id,
+                    order.message,
+                )
+                for order in report.orders
+            ],
+        )
+        self.connection.commit()
+
+    def get_existing_testnet_intents(self) -> set[str]:
+        return {
+            row["intent_id"]
+            for row in self.connection.execute(
+                "select intent_id from testnet_orders where intent_id is not null and submitted = 1 and status not in ('ERROR', 'SKIPPED')"
+            )
+        }
 
     def save_grid_recommendation(self, run_id: int, recommendation: GridRecommendation) -> None:
         self.connection.execute(

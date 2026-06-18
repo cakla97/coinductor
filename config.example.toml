@@ -81,6 +81,10 @@ fee_pct = 0.1
 slippage_pct = 0.05
 idempotency_window = "daily"
 
+[testnet_execution]
+enabled = false
+max_quote_amount_usdt = 10.0
+
 [portfolio]
 tracked_assets = ["USDT", "BNB", "BTC", "WBETH", "ETH", "SOL", "WLD"]
 pricing_quote_assets = ["USDT", "USDC", "FDUSD"]

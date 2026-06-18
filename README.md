@@ -36,6 +36,7 @@ python -m trading_agent last-report --config config.example.toml
 python -m trading_agent research-request --config config.example.toml --real-data
 python -m trading_agent testnet-account --config config.example.toml
 python -m trading_agent testnet-market-buy --config config.example.toml --symbol BTCUSDT --quote-amount 10
+python -m trading_agent run --config config.example.toml --real-data --testnet-execution
 ```
 
 The first run uses mock market/account data and writes:
@@ -154,6 +155,23 @@ Submit only when you intentionally add the exact confirmation string:
 ```powershell
 python -m trading_agent testnet-market-buy --config config.example.toml --symbol BTCUSDT --quote-amount 10 --confirm CONFIRM_TESTNET_ORDER
 ```
+
+To connect Spot Testnet execution to the normal assistant run, first run a preview:
+
+```powershell
+python -m trading_agent run --config config.example.toml --real-data --testnet-execution
+```
+
+This writes a Spot Testnet Execution section to the report, but does not submit unless
+the exact confirmation string is included:
+
+```powershell
+python -m trading_agent run --config config.example.toml --real-data --testnet-execution --confirm-testnet-order CONFIRM_TESTNET_ORDER
+```
+
+The assistant still follows the deterministic risk engine first. It submits only approved
+spot `BUY` proposals, caps quote size with `[testnet_execution].max_quote_amount_usdt`,
+and skips duplicate intents inside the configured idempotency window.
 
 Binance Spot Testnet uses virtual funds and supports `/api` endpoints only, so
 Simple Earn `/sapi` operations and read-only permission checks are still mainnet-only.

@@ -15,6 +15,7 @@ class ConfigValidator:
         self._validate_capital_sourcing(config, issues)
         self._validate_modes(config, issues)
         self._validate_binance(config, issues)
+        self._validate_testnet_execution(config, issues)
         return ConfigValidationResult(tuple(issues))
 
     def _validate_portfolio(self, config: dict, issues: list[ConfigIssue]) -> None:
@@ -77,6 +78,11 @@ class ConfigValidator:
             value = str(binance.get(key, ""))
             if not value.startswith("https://"):
                 issues.append(ConfigIssue("ERROR", f"binance.{key}", "URL must start with https://."))
+
+    def _validate_testnet_execution(self, config: dict, issues: list[ConfigIssue]) -> None:
+        testnet = config.get("testnet_execution", {})
+        if Decimal(str(testnet.get("max_quote_amount_usdt", 0))) <= 0:
+            issues.append(ConfigIssue("ERROR", "testnet_execution.max_quote_amount_usdt", "Value must be greater than zero."))
 
     def _upper_list(self, values: list[str]) -> list[str]:
         return [str(value).upper() for value in values]

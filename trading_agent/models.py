@@ -275,6 +275,28 @@ class TestnetOrderResult:
 
 
 @dataclass(frozen=True)
+class TestnetExecutedOrder:
+    intent_id: str
+    symbol: str
+    side: str
+    quote_amount_usdt: Decimal
+    client_order_id: str
+    submitted: bool
+    status: str
+    executed_quantity: Decimal
+    cumulative_quote_qty: Decimal
+    order_id: str
+    message: str
+
+
+@dataclass(frozen=True)
+class TestnetExecutionReport:
+    enabled: bool
+    orders: tuple[TestnetExecutedOrder, ...]
+    summary: str
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

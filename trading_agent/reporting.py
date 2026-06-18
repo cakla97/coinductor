@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TradeProposal
 
 
 class Reporter:
@@ -22,6 +22,7 @@ class Reporter:
         proposal: TradeProposal,
         risk_decision: RiskDecision,
         paper_execution: PaperExecutionReport,
+        testnet_execution: TestnetExecutionReport,
         liquidity_decision: LiquidityDecision,
         grid_liquidity_decision: LiquidityDecision,
         spot_capital_plan: CapitalSourcingPlan,
@@ -138,6 +139,30 @@ class Reporter:
                     f"{order.intent_id} | {order.symbol} | {order.side} | {order.quote_amount_usdt} | {order.simulated_price} | "
                     f"{order.simulated_quantity} | {order.fee_usdt} | {order.slippage_usdt} | "
                     f"{order.stop_loss_price} | {order.take_profit_price} | {order.status} |"
+                )
+            lines.append("")
+        lines.extend(
+            [
+                "## Spot Testnet Execution",
+                "",
+                f"- Enabled: `{testnet_execution.enabled}`",
+                f"- Summary: {testnet_execution.summary}",
+                "",
+            ]
+        )
+        if testnet_execution.orders:
+            lines.extend(
+                [
+                    "| Intent | Symbol | Side | Quote USDT | Client Order ID | Submitted | Status | Executed Qty | Cumulative Quote | Order ID | Message |",
+                    "| --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | --- | --- |",
+                ]
+            )
+            for order in testnet_execution.orders:
+                lines.append(
+                    "| "
+                    f"{order.intent_id} | {order.symbol} | {order.side} | {order.quote_amount_usdt} | "
+                    f"{order.client_order_id} | {order.submitted} | {order.status} | {order.executed_quantity} | "
+                    f"{order.cumulative_quote_qty} | {order.order_id} | {order.message} |"
                 )
             lines.append("")
         lines.extend(
@@ -328,7 +353,7 @@ class Reporter:
                 "",
                 "## Execution",
                 "",
-                "No live order, redeem, or grid bot was created. MVP is running in dry-run/recommend-only mode.",
+                "No mainnet live order, redeem, or grid bot was created. Spot Testnet execution may be present above when explicitly enabled.",
                 "",
             ]
         )

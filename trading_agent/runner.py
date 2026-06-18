@@ -20,6 +20,7 @@ from .research import ResearchLoader
 from .risk_engine import RiskEngine
 from .storage import Storage
 from .strategy_decision import StrategyDecisionEngine
+from .testnet_executor import TestnetExecutor
 
 
 class AgentRunner:
@@ -38,6 +39,7 @@ class AgentRunner:
         self.actions = RecommendedActionsBuilder()
         self.checklist = ExecutionChecklistBuilder()
         self.paper = PaperExecutor(config.raw)
+        self.testnet = TestnetExecutor(config.raw)
         self.research = ResearchLoader(config.raw)
         self.active_strategies = ActiveStrategiesTracker(config.raw)
         self.reporter = Reporter(config.reports_dir, keep_last=int(config.raw.get("reports", {}).get("keep_last", 30)))
@@ -90,6 +92,12 @@ class AgentRunner:
                 snapshots,
                 existing_intents=self.storage.get_existing_paper_intents(),
             )
+            testnet_execution = self.testnet.execute_spot_proposal(
+                proposal=proposal,
+                risk_decision=risk_decision,
+                existing_intents=self.storage.get_existing_testnet_intents(),
+                confirm=str(self.config.raw.get("_runtime", {}).get("testnet_confirm", "")),
+            )
             strategy_decision = self.strategy.decide(proposal, risk_decision, grid_recommendation)
             next_run_recommendation = self.next_run.recommend(strategy_decision)
             recommended_actions = self.actions.build(
@@ -134,6 +142,7 @@ class AgentRunner:
             self.storage.save_proposal(run_id, proposal)
             self.storage.save_risk_decision(run_id, risk_decision)
             self.storage.save_paper_execution(run_id, paper_execution)
+            self.storage.save_testnet_execution(run_id, testnet_execution)
             self.storage.save_grid_recommendation(run_id, grid_recommendation)
             self.storage.save_capital_sourcing_plan(run_id, "SPOT_TRADE", spot_capital_plan)
             self.storage.save_capital_sourcing_plan(run_id, "GRID_BOT", grid_capital_plan)
@@ -154,6 +163,7 @@ class AgentRunner:
                 proposal=proposal,
                 risk_decision=risk_decision,
                 paper_execution=paper_execution,
+                testnet_execution=testnet_execution,
                 liquidity_decision=liquidity_decision,
                 grid_liquidity_decision=grid_liquidity_decision,
                 spot_capital_plan=spot_capital_plan,

@@ -128,14 +128,14 @@ class Reporter:
         if paper_execution.orders:
             lines.extend(
                 [
-                    "| Symbol | Side | Quote USDT | Sim Price | Quantity | Fee USDT | Slippage USDT | Stop | Take Profit | Status |",
-                    "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+                    "| Intent | Symbol | Side | Quote USDT | Sim Price | Quantity | Fee USDT | Slippage USDT | Stop | Take Profit | Status |",
+                    "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
                 ]
             )
             for order in paper_execution.orders:
                 lines.append(
                     "| "
-                    f"{order.symbol} | {order.side} | {order.quote_amount_usdt} | {order.simulated_price} | "
+                    f"{order.intent_id} | {order.symbol} | {order.side} | {order.quote_amount_usdt} | {order.simulated_price} | "
                     f"{order.simulated_quantity} | {order.fee_usdt} | {order.slippage_usdt} | "
                     f"{order.stop_loss_price} | {order.take_profit_price} | {order.status} |"
                 )

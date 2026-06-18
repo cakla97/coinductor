@@ -233,6 +233,7 @@ class ActiveStrategiesReport:
 
 @dataclass(frozen=True)
 class PaperOrder:
+    intent_id: str
     symbol: str
     side: str
     quote_amount_usdt: Decimal

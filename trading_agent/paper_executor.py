@@ -3,13 +3,20 @@ from __future__ import annotations
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 
 from .models import MarketSnapshot, PaperExecutionReport, PaperOrder, RiskDecision, TradeProposal
+from .order_journal import OrderIntentFactory
 
 
 class PaperExecutor:
     def __init__(self, config: dict):
         self.config = config
 
-    def simulate_spot(self, proposal: TradeProposal, risk_decision: RiskDecision, snapshots: list[MarketSnapshot]) -> PaperExecutionReport:
+    def simulate_spot(
+        self,
+        proposal: TradeProposal,
+        risk_decision: RiskDecision,
+        snapshots: list[MarketSnapshot],
+        existing_intents: set[str],
+    ) -> PaperExecutionReport:
         paper_config = self.config.get("paper", {})
         if not paper_config.get("enabled", False) or not paper_config.get("simulate_spot_trades", False):
             return PaperExecutionReport(enabled=False, orders=(), summary="Paper execution is disabled.")
@@ -17,6 +24,13 @@ class PaperExecutor:
             return PaperExecutionReport(enabled=True, orders=(), summary="No paper order created because risk engine rejected the proposal.")
         if proposal.action != "BUY":
             return PaperExecutionReport(enabled=True, orders=(), summary=f"Paper simulation for {proposal.action} is not implemented yet.")
+        intent_id = OrderIntentFactory(self.config).spot_intent_id(proposal, risk_decision)
+        if intent_id in existing_intents:
+            return PaperExecutionReport(
+                enabled=True,
+                orders=(),
+                summary=f"Skipped duplicate paper order intent {intent_id}.",
+            )
 
         snapshot = next((item for item in snapshots if item.symbol == proposal.symbol), None)
         if snapshot is None:
@@ -33,6 +47,7 @@ class PaperExecutor:
         stop_loss = simulated_price * (Decimal("1") - proposal.stop_loss_pct / Decimal("100"))
         take_profit = simulated_price * (Decimal("1") + proposal.take_profit_pct / Decimal("100"))
         order = PaperOrder(
+            intent_id=intent_id,
             symbol=proposal.symbol,
             side=proposal.action,
             quote_amount_usdt=self._money(quote_amount),
@@ -56,4 +71,3 @@ class PaperExecutor:
 
     def _price(self, value: Decimal) -> Decimal:
         return value.quantize(Decimal("0.00000001"), rounding=ROUND_HALF_UP)
-

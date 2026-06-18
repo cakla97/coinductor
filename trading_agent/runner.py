@@ -84,7 +84,12 @@ class AgentRunner:
                 grid_liquidity_decision = LiquidityDecision(False, "No grid recommendation requires liquidity.", None, Decimal("0"))
                 grid_capital_plan = self.capital_sourcing.plan(balances, portfolio_analysis, Decimal("0"))
             spot_capital_plan = self.capital_sourcing.plan(balances, portfolio_analysis, risk_decision.adjusted_quote_amount_usdt)
-            paper_execution = self.paper.simulate_spot(proposal, risk_decision, snapshots)
+            paper_execution = self.paper.simulate_spot(
+                proposal,
+                risk_decision,
+                snapshots,
+                existing_intents=self.storage.get_existing_paper_intents(),
+            )
             strategy_decision = self.strategy.decide(proposal, risk_decision, grid_recommendation)
             next_run_recommendation = self.next_run.recommend(strategy_decision)
             recommended_actions = self.actions.build(

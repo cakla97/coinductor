@@ -49,6 +49,7 @@ Each report includes:
 - Spot vs Flexible vs Locked balance view
 - manual execution checklist
 - paper execution simulation
+- daily paper order idempotency
 - market snapshot
 - AI trade proposal
 - risk decision

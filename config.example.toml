@@ -78,6 +78,7 @@ enabled = true
 simulate_spot_trades = true
 fee_pct = 0.1
 slippage_pct = 0.05
+idempotency_window = "daily"
 
 [portfolio]
 tracked_assets = ["USDT", "BNB", "BTC", "WBETH", "ETH", "SOL", "WLD"]

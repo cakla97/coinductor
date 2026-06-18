@@ -86,6 +86,7 @@ class Storage:
             );
             create table if not exists paper_orders (
                 run_id integer,
+                intent_id text,
                 symbol text,
                 side text,
                 quote_amount_usdt text,
@@ -194,6 +195,7 @@ class Storage:
         self._ensure_column("portfolio_summaries", "unpriced_assets", "text")
         self._ensure_column("portfolio_summaries", "ignored_internal_assets", "text")
         self._ensure_column("portfolio_valuations", "role", "text")
+        self._ensure_column("paper_orders", "intent_id", "text")
         self.connection.commit()
 
     def _ensure_column(self, table: str, column: str, definition: str) -> None:
@@ -314,10 +316,27 @@ class Storage:
 
     def save_paper_execution(self, run_id: int, paper: PaperExecutionReport) -> None:
         self.connection.executemany(
-            "insert into paper_orders values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            """
+            insert into paper_orders (
+                run_id,
+                intent_id,
+                symbol,
+                side,
+                quote_amount_usdt,
+                simulated_price,
+                simulated_quantity,
+                fee_usdt,
+                slippage_usdt,
+                stop_loss_price,
+                take_profit_price,
+                status,
+                reason
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
             [
                 (
                     run_id,
+                    order.intent_id,
                     order.symbol,
                     order.side,
                     str(order.quote_amount_usdt),
@@ -334,6 +353,12 @@ class Storage:
             ],
         )
         self.connection.commit()
+
+    def get_existing_paper_intents(self) -> set[str]:
+        columns = {row["name"] for row in self.connection.execute("pragma table_info(paper_orders)")}
+        if "intent_id" not in columns:
+            return set()
+        return {row["intent_id"] for row in self.connection.execute("select intent_id from paper_orders where intent_id is not null")}
 
     def save_grid_recommendation(self, run_id: int, recommendation: GridRecommendation) -> None:
         self.connection.execute(

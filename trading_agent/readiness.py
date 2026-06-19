@@ -114,4 +114,14 @@ class ReadinessChecker:
             checks.append(ReadinessCheck("BLOCK", "Retention guard", "Database retention must keep at least one run."))
         else:
             checks.append(ReadinessCheck("PASS", "Retention guard", "Database and report retention are configured."))
+
+        bankroll = self.config.raw.get("trading_bankroll", {})
+        if not bankroll.get("enabled", False):
+            checks.append(ReadinessCheck("WARN", "Trading bankroll guard", "Trading bankroll tracking is disabled."))
+        elif not bankroll.get("prefer_profit_first", True):
+            checks.append(ReadinessCheck("WARN", "Trading bankroll guard", "prefer_profit_first is disabled."))
+        else:
+            quote_asset = str(bankroll.get("quote_asset", self.config.raw.get("live_confirm", {}).get("quote_asset", "USDT"))).upper()
+            seed = bankroll.get("initial_seed_usdc", 0)
+            checks.append(ReadinessCheck("PASS", "Trading bankroll guard", f"Tracking {quote_asset} seed/profit bankroll with initial seed {seed}."))
         return checks

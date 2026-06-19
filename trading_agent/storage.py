@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -151,6 +151,23 @@ class Storage:
                 action text,
                 value_usdt text,
                 reason text
+            );
+            create table if not exists trading_bankroll_reports (
+                run_id integer,
+                enabled integer,
+                quote_asset text,
+                initial_seed text,
+                spot_free text,
+                flexible_amount text,
+                total_quote text,
+                realized_pnl text,
+                profit_available text,
+                seed_capital_at_risk text,
+                required_amount text,
+                preferred_source text,
+                max_profit_trade_amount text,
+                flexible_draw_needed text,
+                summary text
             );
             create table if not exists next_run_recommendations (
                 run_id integer,
@@ -566,6 +583,7 @@ class Storage:
             "strategy_decisions",
             "capital_sourcing_plans",
             "capital_sourcing_items",
+            "trading_bankroll_reports",
             "next_run_recommendations",
             "recommended_actions",
             "execution_checklist_items",
@@ -621,6 +639,47 @@ class Storage:
         self.connection.executemany(
             "insert into capital_sourcing_items values (?, ?, ?, ?, ?, ?)",
             [(run_id, plan_type, item.asset, item.action, str(item.value_usdt), item.reason) for item in plan.items],
+        )
+        self.connection.commit()
+
+    def save_trading_bankroll_report(self, run_id: int, report: TradingBankrollReport) -> None:
+        self.connection.execute(
+            """
+            insert into trading_bankroll_reports (
+                run_id,
+                enabled,
+                quote_asset,
+                initial_seed,
+                spot_free,
+                flexible_amount,
+                total_quote,
+                realized_pnl,
+                profit_available,
+                seed_capital_at_risk,
+                required_amount,
+                preferred_source,
+                max_profit_trade_amount,
+                flexible_draw_needed,
+                summary
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                int(report.enabled),
+                report.quote_asset,
+                str(report.initial_seed),
+                str(report.spot_free),
+                str(report.flexible_amount),
+                str(report.total_quote),
+                str(report.realized_pnl),
+                str(report.profit_available),
+                str(report.seed_capital_at_risk),
+                str(report.required_amount),
+                report.preferred_source,
+                str(report.max_profit_trade_amount),
+                str(report.flexible_draw_needed),
+                report.summary,
+            ),
         )
         self.connection.commit()
 

@@ -97,6 +97,14 @@ max_quote_amount_usdt = 10.0
 funding_buffer_usdt = 1.0
 quote_asset = "USDC"
 
+[trading_bankroll]
+enabled = true
+quote_asset = "USDC"
+initial_seed_usdc = 12.0
+prefer_profit_first = true
+allow_seed_bootstrap = true
+max_flexible_earn_draw_usdc_per_run = 12.0
+
 [portfolio]
 tracked_assets = ["USDC", "USDT", "BNB", "BTC", "WBETH", "ETH", "SOL", "WLD"]
 pricing_quote_assets = ["USDC", "USDT", "FDUSD"]

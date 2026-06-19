@@ -311,6 +311,20 @@ The report includes `Mainnet LIVE_CONFIRM Preview`. Missing
 If Spot quote balance is too low, the report adds a manual funding checklist. Funding remains
 manual: redeem from Flexible Earn to Spot yourself, then run live-confirm preview again.
 
+## Trading Bankroll
+
+`[trading_bankroll]` separates the bot's working capital from the rest of the portfolio.
+The initial manual allocation is tracked as seed capital, while any quote balance above that
+seed is treated as estimated realized profit. Reports show whether a trade would use:
+
+- `PROFIT_SPOT`: realized profit already available in Spot
+- `SEEDED_SPOT`: bootstrap seed capital, not profit yet
+- `FLEXIBLE_EARN_REDEEM_REQUIRED`: quote asset must be manually redeemed from Flexible Earn
+- `INSUFFICIENT`: not enough tracked bankroll is available
+
+This is intentionally audit-first. Flexible Earn redemption and mainnet order submission remain
+manual/preview-only until the bankroll policy has been observed over real runs.
+
 ## Safety Defaults
 
 Real trading and real redeem are disabled by default. Before enabling anything live:

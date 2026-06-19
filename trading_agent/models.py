@@ -135,6 +135,24 @@ class CapitalSourcingPlan:
 
 
 @dataclass(frozen=True)
+class TradingBankrollReport:
+    enabled: bool
+    quote_asset: str
+    initial_seed: Decimal
+    spot_free: Decimal
+    flexible_amount: Decimal
+    total_quote: Decimal
+    realized_pnl: Decimal
+    profit_available: Decimal
+    seed_capital_at_risk: Decimal
+    required_amount: Decimal
+    preferred_source: str
+    max_profit_trade_amount: Decimal
+    flexible_draw_needed: Decimal
+    summary: str
+
+
+@dataclass(frozen=True)
 class RebalancePlanStep:
     asset: str
     symbol: str | None

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -22,6 +22,7 @@ class Reporter:
         snapshots: list[MarketSnapshot],
         proposal: TradeProposal,
         risk_decision: RiskDecision,
+        trading_bankroll: TradingBankrollReport,
         paper_execution: PaperExecutionReport,
         testnet_execution: TestnetExecutionReport,
         live_preview: LivePreviewReport,
@@ -120,6 +121,25 @@ class Reporter:
                         "",
                     ]
                 )
+        lines.extend(
+            [
+                "## Trading Bankroll",
+                "",
+                f"- Enabled: `{trading_bankroll.enabled}`",
+                f"- Quote asset: `{trading_bankroll.quote_asset}`",
+                f"- Initial seed: `{trading_bankroll.initial_seed} {trading_bankroll.quote_asset}`",
+                f"- Spot free: `{trading_bankroll.spot_free} {trading_bankroll.quote_asset}`",
+                f"- Flexible Earn: `{trading_bankroll.flexible_amount} {trading_bankroll.quote_asset}`",
+                f"- Total tracked quote: `{trading_bankroll.total_quote} {trading_bankroll.quote_asset}`",
+                f"- Estimated realized PnL vs seed: `{trading_bankroll.realized_pnl} {trading_bankroll.quote_asset}`",
+                f"- Profit available in Spot: `{trading_bankroll.max_profit_trade_amount} {trading_bankroll.quote_asset}`",
+                f"- Required amount: `{trading_bankroll.required_amount} {trading_bankroll.quote_asset}`",
+                f"- Preferred source: `{trading_bankroll.preferred_source}`",
+                f"- Flexible draw needed: `{trading_bankroll.flexible_draw_needed} {trading_bankroll.quote_asset}`",
+                f"- Summary: {trading_bankroll.summary}",
+                "",
+            ]
+        )
         lines.extend(
             [
                 "## Paper Execution",

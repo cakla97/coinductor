@@ -17,6 +17,7 @@ class ConfigValidator:
         self._validate_binance(config, issues)
         self._validate_testnet_execution(config, issues)
         self._validate_live_confirm(config, issues)
+        self._validate_trading_bankroll(config, issues)
         self._validate_retention(config, issues)
         return ConfigValidationResult(tuple(issues))
 
@@ -104,6 +105,18 @@ class ConfigValidator:
             issues.append(ConfigIssue("ERROR", "live_confirm.funding_buffer_usdt", "Value must be zero or greater."))
         if not live.get("preview_only", True):
             issues.append(ConfigIssue("ERROR", "live_confirm.preview_only", "LIVE_CONFIRM must remain preview-only in this implementation step."))
+
+    def _validate_trading_bankroll(self, config: dict, issues: list[ConfigIssue]) -> None:
+        bankroll = config.get("trading_bankroll", {})
+        if not bankroll:
+            return
+        quote_asset = str(bankroll.get("quote_asset", config.get("live_confirm", {}).get("quote_asset", "USDT"))).upper()
+        live_quote = str(config.get("live_confirm", {}).get("quote_asset", quote_asset)).upper()
+        if quote_asset != live_quote:
+            issues.append(ConfigIssue("WARNING", "trading_bankroll.quote_asset", f"Bankroll quote {quote_asset} differs from live_confirm.quote_asset {live_quote}."))
+        for key in ("initial_seed_usdc", "max_flexible_earn_draw_usdc_per_run"):
+            if Decimal(str(bankroll.get(key, 0))) < 0:
+                issues.append(ConfigIssue("ERROR", f"trading_bankroll.{key}", "Value must be zero or greater."))
 
     def _validate_retention(self, config: dict, issues: list[ConfigIssue]) -> None:
         retention = config.get("retention", {})

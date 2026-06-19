@@ -23,6 +23,7 @@ from .risk_engine import RiskEngine
 from .storage import Storage
 from .strategy_decision import StrategyDecisionEngine
 from .testnet_executor import TestnetExecutor
+from .trading_bankroll import TradingBankrollAdvisor
 
 
 class AgentRunner:
@@ -44,6 +45,7 @@ class AgentRunner:
         self.paper = PaperExecutor(config.raw)
         self.testnet = TestnetExecutor(config.raw)
         self.live_preview = LivePreviewExecutor(config.raw)
+        self.bankroll = TradingBankrollAdvisor(config.raw)
         self.research = ResearchLoader(config.raw)
         self.active_strategies = ActiveStrategiesTracker(config.raw)
         self.reporter = Reporter(config.reports_dir, keep_last=int(config.raw.get("reports", {}).get("keep_last", 30)))
@@ -80,6 +82,9 @@ class AgentRunner:
                 )
             else:
                 liquidity_decision = LiquidityDecision(False, "Risk engine rejected proposal before liquidity check.", None, Decimal("0"))
+            live_quote_cap = Decimal(str(self.config.raw.get("live_confirm", {}).get("max_quote_amount_usdt", risk_decision.adjusted_quote_amount_usdt)))
+            bankroll_required = min(risk_decision.adjusted_quote_amount_usdt, live_quote_cap) if risk_decision.approved else Decimal("0")
+            bankroll_report = self.bankroll.analyze(balances, bankroll_required)
             grid_recommendation = self.grid.recommend(snapshots)
             if grid_recommendation.recommended:
                 quote_asset = str(self.config.raw.get("live_confirm", {}).get("quote_asset", "USDT")).upper()
@@ -149,6 +154,7 @@ class AgentRunner:
             self.storage.save_market_snapshots(run_id, snapshots)
             self.storage.save_proposal(run_id, proposal)
             self.storage.save_risk_decision(run_id, risk_decision)
+            self.storage.save_trading_bankroll_report(run_id, bankroll_report)
             self.storage.save_paper_execution(run_id, paper_execution)
             self.storage.save_testnet_execution(run_id, testnet_execution)
             self.storage.save_grid_recommendation(run_id, grid_recommendation)
@@ -172,6 +178,7 @@ class AgentRunner:
                 snapshots=snapshots,
                 proposal=proposal,
                 risk_decision=risk_decision,
+                trading_bankroll=bankroll_report,
                 paper_execution=paper_execution,
                 testnet_execution=testnet_execution,
                 live_preview=live_preview,

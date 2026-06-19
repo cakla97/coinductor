@@ -383,6 +383,9 @@ class LiveOrderPreview:
     status: str
     validation_summary: str
     available_usdt: Decimal
+    missing_usdt: Decimal
+    funding_required: bool
+    funding_steps: tuple[str, ...]
     confirmation_required: str
 
 

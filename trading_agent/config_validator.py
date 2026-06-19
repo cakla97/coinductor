@@ -94,6 +94,8 @@ class ConfigValidator:
         live = config.get("live_confirm", {})
         if Decimal(str(live.get("max_quote_amount_usdt", 0))) <= 0:
             issues.append(ConfigIssue("ERROR", "live_confirm.max_quote_amount_usdt", "Value must be greater than zero."))
+        if Decimal(str(live.get("funding_buffer_usdt", 0))) < 0:
+            issues.append(ConfigIssue("ERROR", "live_confirm.funding_buffer_usdt", "Value must be zero or greater."))
         if not live.get("preview_only", True):
             issues.append(ConfigIssue("ERROR", "live_confirm.preview_only", "LIVE_CONFIRM must remain preview-only in this implementation step."))
 

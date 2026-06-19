@@ -304,6 +304,8 @@ python -m trading_agent run --config config.example.toml --real-data --live-conf
 
 The report includes `Mainnet LIVE_CONFIRM Preview`. Missing
 `BINANCE_LIVE_TRADE_API_KEY` / `BINANCE_LIVE_TRADE_API_SECRET` is reported as a blocker.
+If Spot USDT is too low, the report adds a manual funding checklist. Funding remains
+manual: redeem from Flexible Earn to Spot yourself, then run live-confirm preview again.
 
 ## Safety Defaults
 

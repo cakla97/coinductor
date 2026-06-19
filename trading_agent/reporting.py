@@ -180,17 +180,24 @@ class Reporter:
         if live_preview.orders:
             lines.extend(
                 [
-                    "| Symbol | Side | Type | Quote USDT | Status | Available USDT | Confirmation Required | Validation |",
-                    "| --- | --- | --- | ---: | --- | ---: | --- | --- |",
+                    "| Symbol | Side | Type | Quote USDT | Status | Available USDT | Missing USDT | Funding Required | Confirmation Required | Validation |",
+                    "| --- | --- | --- | ---: | --- | ---: | ---: | --- | --- | --- |",
                 ]
             )
             for order in live_preview.orders:
                 lines.append(
                     "| "
                     f"{order.symbol} | {order.side} | {order.order_type} | {order.quote_amount_usdt} | "
-                    f"{order.status} | {order.available_usdt} | {order.confirmation_required} | {order.validation_summary} |"
+                    f"{order.status} | {order.available_usdt} | {order.missing_usdt} | {order.funding_required} | "
+                    f"{order.confirmation_required} | {order.validation_summary} |"
                 )
             lines.append("")
+            funding_steps = [step for order in live_preview.orders for step in order.funding_steps]
+            if funding_steps:
+                lines.extend(["### Manual Funding Checklist", ""])
+                for index, step in enumerate(funding_steps, start=1):
+                    lines.append(f"{index}. {step}")
+                lines.append("")
         lines.extend(
             [
                 "## Spot Testnet Positions",

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from decimal import Decimal
+from decimal import Decimal, ROUND_CEILING
 
 from .binance_client import BinanceApiError, BinanceClient
 from .models import LiveOrderPreview, LivePreviewReport, RiskDecision, SymbolRules, TradeProposal
@@ -39,6 +39,9 @@ class LivePreviewExecutor:
                         status="BLOCKED",
                         validation_summary=key_check,
                         available_usdt=Decimal("0"),
+                        missing_usdt=Decimal("0"),
+                        funding_required=False,
+                        funding_steps=(),
                         confirmation_required="CONFIRM_MAINNET_ORDER",
                     ),
                 ),
@@ -61,6 +64,9 @@ class LivePreviewExecutor:
                         status="BLOCKED",
                         validation_summary=str(exc),
                         available_usdt=Decimal("0"),
+                        missing_usdt=Decimal("0"),
+                        funding_required=False,
+                        funding_steps=(),
                         confirmation_required="CONFIRM_MAINNET_ORDER",
                     ),
                 ),
@@ -68,6 +74,8 @@ class LivePreviewExecutor:
             )
 
         status = "PREVIEW_READY" if validation.startswith("OK:") else "BLOCKED"
+        missing_usdt = max(Decimal("0"), quote_amount - available_usdt)
+        funding_required = missing_usdt > 0
         return LivePreviewReport(
             enabled=True,
             orders=(
@@ -79,6 +87,9 @@ class LivePreviewExecutor:
                     status=status,
                     validation_summary=validation,
                     available_usdt=available_usdt,
+                    missing_usdt=missing_usdt,
+                    funding_required=funding_required,
+                    funding_steps=self._funding_steps(quote_amount, available_usdt) if funding_required else (),
                     confirmation_required="CONFIRM_MAINNET_ORDER",
                 ),
             ),
@@ -110,3 +121,16 @@ class LivePreviewExecutor:
         if quote_amount > available_usdt:
             return f"Quote amount {quote_amount} USDT exceeds live spot free USDT balance {available_usdt}."
         return f"OK: {symbol} live preview passed filters and balance check."
+
+    def _funding_steps(self, quote_amount: Decimal, available_usdt: Decimal) -> tuple[str, ...]:
+        missing = max(Decimal("0"), quote_amount - available_usdt)
+        if missing <= 0:
+            return ()
+        buffer = Decimal(str(self.config.get("live_confirm", {}).get("funding_buffer_usdt", "1")))
+        target = (missing + buffer).quantize(Decimal("0.01"), rounding=ROUND_CEILING)
+        return (
+            f"Manually redeem at least {target} USDT from Flexible Earn to Spot.",
+            "Wait until Binance shows the redeemed USDT as Spot free balance.",
+            "Run `python -m trading_agent run --config config.example.toml --real-data --live-confirm-preview` again.",
+            "Continue only if the LIVE_CONFIRM preview changes from BLOCKED to PREVIEW_READY.",
+        )

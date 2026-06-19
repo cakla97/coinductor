@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -113,6 +113,20 @@ class Storage:
                 cumulative_quote_qty text,
                 order_id text,
                 queried_status text,
+                validation_summary text,
+                message text
+            );
+            create table if not exists live_orders (
+                run_id integer,
+                intent_id text,
+                symbol text,
+                side text,
+                order_type text,
+                quote_amount_usdt text,
+                quote_asset text,
+                status text,
+                submitted integer,
+                order_id text,
                 validation_summary text,
                 message text
             );
@@ -446,6 +460,52 @@ class Storage:
             )
         }
 
+    def get_existing_live_intents(self) -> set[str]:
+        return {
+            row["intent_id"]
+            for row in self.connection.execute(
+                "select intent_id from live_orders where intent_id is not null and submitted = 1 and status not in ('SUBMIT_ERROR', 'SUBMIT_SKIPPED')"
+            )
+        }
+
+    def save_live_preview(self, run_id: int, report: LivePreviewReport) -> None:
+        self.connection.executemany(
+            """
+            insert into live_orders (
+                run_id,
+                intent_id,
+                symbol,
+                side,
+                order_type,
+                quote_amount_usdt,
+                quote_asset,
+                status,
+                submitted,
+                order_id,
+                validation_summary,
+                message
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    run_id,
+                    order.intent_id,
+                    order.symbol,
+                    order.side,
+                    order.order_type,
+                    str(order.quote_amount_usdt),
+                    order.quote_asset,
+                    order.status,
+                    int(order.submitted),
+                    order.order_id,
+                    order.validation_summary,
+                    order.message,
+                )
+                for order in report.orders
+            ],
+        )
+        self.connection.commit()
+
     def get_latest_filled_testnet_buy(self, symbol: str) -> dict[str, str] | None:
         row = self.connection.execute(
             """
@@ -579,6 +639,7 @@ class Storage:
             "risk_decisions",
             "paper_orders",
             "testnet_orders",
+            "live_orders",
             "grid_recommendations",
             "strategy_decisions",
             "capital_sourcing_plans",

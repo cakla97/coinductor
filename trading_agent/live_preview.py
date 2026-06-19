@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import os
 from decimal import Decimal, ROUND_CEILING
+from datetime import datetime, timezone
 
 from .binance_client import BinanceApiError, BinanceClient
-from .models import LiveOrderPreview, LivePreviewReport, RiskDecision, SymbolRules, TradeProposal
+from .models import LiveOrderPreview, LivePreviewReport, RiskDecision, SymbolRules, TradeProposal, TradingBankrollReport
+from .order_journal import OrderIntentFactory
 
 
 class LivePreviewExecutor:
@@ -12,7 +14,13 @@ class LivePreviewExecutor:
         self.config = config
         self.client = BinanceClient(config, credential_profile="live_trade")
 
-    def preview_spot_proposal(self, proposal: TradeProposal, risk_decision: RiskDecision) -> LivePreviewReport:
+    def preview_spot_proposal(
+        self,
+        proposal: TradeProposal,
+        risk_decision: RiskDecision,
+        bankroll: TradingBankrollReport | None = None,
+        existing_intents: set[str] | None = None,
+    ) -> LivePreviewReport:
         live_config = self.config.get("live_confirm", {})
         enabled = bool(live_config.get("enabled", False))
         if not enabled:
@@ -28,11 +36,13 @@ class LivePreviewExecutor:
             risk_decision.adjusted_quote_amount_usdt,
             Decimal(str(live_config.get("max_quote_amount_usdt", "10"))),
         )
+        intent_id = OrderIntentFactory(self.config).spot_intent_id(proposal, risk_decision)
         if key_check is not None:
             return LivePreviewReport(
                 enabled=True,
                 orders=(
                     LiveOrderPreview(
+                        intent_id=intent_id,
                         symbol=proposal.symbol,
                         side=proposal.action,
                         order_type="MARKET",
@@ -54,11 +64,15 @@ class LivePreviewExecutor:
             rules = self.client.get_symbol_rules(proposal.symbol)
             available_quote = self.client.get_spot_free_balance(quote_asset)
             validation = self._validate_market_buy(proposal.symbol, quote_amount, rules, available_quote, quote_asset)
+            bankroll_validation = self._validate_bankroll(bankroll)
+            if bankroll_validation:
+                validation = bankroll_validation
         except BinanceApiError as exc:
             return LivePreviewReport(
                 enabled=True,
                 orders=(
                     LiveOrderPreview(
+                        intent_id=intent_id,
                         symbol=proposal.symbol,
                         side=proposal.action,
                         order_type="MARKET",
@@ -77,12 +91,25 @@ class LivePreviewExecutor:
             )
 
         status = "PREVIEW_READY" if validation.startswith("OK:") else "BLOCKED"
+        if status == "PREVIEW_READY" and intent_id in (existing_intents or set()):
+            status = "BLOCKED"
+            validation = f"Live order intent {intent_id} was already submitted before."
         missing_usdt = max(Decimal("0"), quote_amount - available_quote)
         funding_required = missing_usdt > 0
+        submitted = False
+        order_id = ""
+        message = "No mainnet order was submitted."
+        if status == "PREVIEW_READY" and self._submit_requested():
+            submit_result = self._submit_market_buy(proposal.symbol, quote_amount, intent_id)
+            status = submit_result["status"]
+            submitted = submit_result["submitted"]
+            order_id = submit_result["order_id"]
+            message = submit_result["message"]
         return LivePreviewReport(
             enabled=True,
             orders=(
                 LiveOrderPreview(
+                    intent_id=intent_id,
                     symbol=proposal.symbol,
                     side=proposal.action,
                     order_type="MARKET",
@@ -95,9 +122,12 @@ class LivePreviewExecutor:
                     funding_required=funding_required,
                     funding_steps=self._funding_steps(quote_amount, available_quote, quote_asset) if funding_required else (),
                     confirmation_required="CONFIRM_MAINNET_ORDER",
+                    submitted=submitted,
+                    order_id=order_id,
+                    message=message,
                 ),
             ),
-            summary=f"LIVE_CONFIRM preview for {proposal.symbol}: {status}. No mainnet order was submitted.",
+            summary=f"LIVE_CONFIRM for {proposal.symbol}: {status}. {message}",
         )
 
     def _key_check(self) -> str | None:
@@ -138,3 +168,55 @@ class LivePreviewExecutor:
             "Run `python -m trading_agent run --config config.example.toml --real-data --live-confirm-preview` again.",
             "Continue only if the LIVE_CONFIRM preview changes from BLOCKED to PREVIEW_READY.",
         )
+
+    def _validate_bankroll(self, bankroll: TradingBankrollReport | None) -> str | None:
+        if bankroll is None or not bankroll.enabled:
+            return None
+        allowed_sources = {
+            "PROFIT_SPOT",
+            "SEEDED_SPOT",
+            "SPOT_AVAILABLE",
+            "FLEXIBLE_EARN_REDEEM_REQUIRED",
+        }
+        if bankroll.preferred_source in allowed_sources:
+            if bankroll.preferred_source == "FLEXIBLE_EARN_REDEEM_REQUIRED":
+                return (
+                    f"Bankroll policy allows Flexible Earn funding, but {bankroll.flexible_draw_needed} "
+                    f"{bankroll.quote_asset} must be redeemed to Spot before order submission."
+                )
+            return None
+        return f"Bankroll policy blocked live order: {bankroll.summary}"
+
+    def _submit_requested(self) -> bool:
+        runtime = self.config.get("_runtime", {})
+        return bool(runtime.get("live_submit", False))
+
+    def _submit_market_buy(self, symbol: str, quote_amount: Decimal, intent_id: str) -> dict[str, object]:
+        confirm = str(self.config.get("_runtime", {}).get("mainnet_confirm", ""))
+        if confirm != "CONFIRM_MAINNET_ORDER":
+            return {
+                "submitted": False,
+                "status": "SUBMIT_SKIPPED",
+                "order_id": "",
+                "message": "Submit requested but confirmation string did not match CONFIRM_MAINNET_ORDER.",
+            }
+        client_order_id = self._client_order_id(symbol, intent_id)
+        try:
+            response = self.client.submit_market_buy_quote(symbol, quote_amount, client_order_id)
+        except BinanceApiError as exc:
+            return {
+                "submitted": True,
+                "status": "SUBMIT_ERROR",
+                "order_id": "",
+                "message": str(exc),
+            }
+        return {
+            "submitted": True,
+            "status": str(response.get("status", "SUBMITTED")),
+            "order_id": str(response.get("orderId", "")),
+            "message": f"Mainnet order submitted with clientOrderId {client_order_id}.",
+        }
+
+    def _client_order_id(self, symbol: str, intent_id: str) -> str:
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        return f"bta-live-{symbol.lower()}-{intent_id[:10]}-{timestamp}"

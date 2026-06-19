@@ -253,6 +253,18 @@ class BinanceClient:
             raise BinanceApiError("query_order requires order_id or client_order_id.")
         return self._signed_get("/api/v3/order", params)
 
+    def submit_market_buy_quote(self, symbol: str, quote_amount: Decimal, client_order_id: str) -> dict:
+        return self.signed_post(
+            "/api/v3/order",
+            {
+                "symbol": symbol.upper(),
+                "side": "BUY",
+                "type": "MARKET",
+                "quoteOrderQty": str(quote_amount),
+                "newClientOrderId": client_order_id,
+            },
+        )
+
     def _public_get(self, path: str, params: dict[str, object] | None = None) -> list | dict:
         query = urlencode(params or {})
         suffix = f"?{query}" if query else ""

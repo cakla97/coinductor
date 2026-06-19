@@ -110,7 +110,12 @@ class AgentRunner:
                 existing_intents=self.storage.get_existing_testnet_intents(),
                 confirm=str(self.config.raw.get("_runtime", {}).get("testnet_confirm", "")),
             )
-            live_preview = self.live_preview.preview_spot_proposal(proposal, risk_decision)
+            live_preview = self.live_preview.preview_spot_proposal(
+                proposal,
+                risk_decision,
+                bankroll_report,
+                existing_intents=self.storage.get_existing_live_intents(),
+            )
             strategy_decision = self.strategy.decide(proposal, risk_decision, grid_recommendation)
             next_run_recommendation = self.next_run.recommend(strategy_decision)
             recommended_actions = self.actions.build(
@@ -157,6 +162,7 @@ class AgentRunner:
             self.storage.save_trading_bankroll_report(run_id, bankroll_report)
             self.storage.save_paper_execution(run_id, paper_execution)
             self.storage.save_testnet_execution(run_id, testnet_execution)
+            self.storage.save_live_preview(run_id, live_preview)
             self.storage.save_grid_recommendation(run_id, grid_recommendation)
             self.storage.save_capital_sourcing_plan(run_id, "SPOT_TRADE", spot_capital_plan)
             self.storage.save_capital_sourcing_plan(run_id, "GRID_BOT", grid_capital_plan)

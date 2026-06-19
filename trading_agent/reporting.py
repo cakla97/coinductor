@@ -200,16 +200,17 @@ class Reporter:
         if live_preview.orders:
             lines.extend(
                 [
-                    "| Symbol | Side | Type | Quote Amount | Quote Asset | Status | Available Quote | Missing Quote | Funding Required | Confirmation Required | Validation |",
-                    "| --- | --- | --- | ---: | --- | --- | ---: | ---: | --- | --- | --- |",
+                    "| Intent | Symbol | Side | Type | Quote Amount | Quote Asset | Status | Submitted | Order ID | Available Quote | Missing Quote | Funding Required | Confirmation Required | Validation | Message |",
+                    "| --- | --- | --- | --- | ---: | --- | --- | --- | --- | ---: | ---: | --- | --- | --- | --- |",
                 ]
             )
             for order in live_preview.orders:
                 lines.append(
                     "| "
-                    f"{order.symbol} | {order.side} | {order.order_type} | {order.quote_amount_usdt} | "
-                    f"{order.quote_asset} | {order.status} | {order.available_usdt} | {order.missing_usdt} | {order.funding_required} | "
-                    f"{order.confirmation_required} | {order.validation_summary} |"
+                    f"{order.intent_id} | {order.symbol} | {order.side} | {order.order_type} | {order.quote_amount_usdt} | "
+                    f"{order.quote_asset} | {order.status} | {order.submitted} | {order.order_id} | "
+                    f"{order.available_usdt} | {order.missing_usdt} | {order.funding_required} | "
+                    f"{order.confirmation_required} | {order.validation_summary} | {order.message} |"
                 )
             lines.append("")
             funding_steps = [step for order in live_preview.orders for step in order.funding_steps]

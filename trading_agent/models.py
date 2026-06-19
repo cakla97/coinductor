@@ -395,6 +395,7 @@ class TestnetPositionSummary:
 
 @dataclass(frozen=True)
 class LiveOrderPreview:
+    intent_id: str
     symbol: str
     side: str
     order_type: str
@@ -407,6 +408,9 @@ class LiveOrderPreview:
     funding_required: bool
     funding_steps: tuple[str, ...]
     confirmation_required: str
+    submitted: bool = False
+    order_id: str = ""
+    message: str = ""
 
 
 @dataclass(frozen=True)

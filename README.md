@@ -311,6 +311,17 @@ The report includes `Mainnet LIVE_CONFIRM Preview`. Missing
 If Spot quote balance is too low, the report adds a manual funding checklist. Funding remains
 manual: redeem from Flexible Earn to Spot yourself, then run live-confirm preview again.
 
+Guarded submit requires a separate explicit command:
+
+```powershell
+python -m trading_agent run --config config.example.toml --real-data --live-confirm-submit --confirm-mainnet-order CONFIRM_MAINNET_ORDER
+```
+
+Submit still passes through symbol filters, balance checks, risk checks, and the trading
+bankroll policy. Without the exact confirmation string, the run records `SUBMIT_SKIPPED`.
+Submitted live intents are stored in SQLite so rerunning the same daily signal does not submit
+the same mainnet order twice.
+
 ## Trading Bankroll
 
 `[trading_bankroll]` separates the bot's working capital from the rest of the portfolio.
@@ -323,7 +334,9 @@ seed is treated as estimated realized profit. Reports show whether a trade would
 - `INSUFFICIENT`: not enough tracked bankroll is available
 
 This is intentionally audit-first. Flexible Earn redemption and mainnet order submission remain
-manual/preview-only until the bankroll policy has been observed over real runs.
+guarded. The compromise policy prefers profit first, allows limited bootstrap seed while the
+strategy is new, and can recommend a bounded Flexible Earn draw when Spot capital is insufficient.
+Real Flexible Earn redemption is still not automatic in this implementation step.
 
 ## Safety Defaults
 

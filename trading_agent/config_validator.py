@@ -16,6 +16,7 @@ class ConfigValidator:
         self._validate_modes(config, issues)
         self._validate_binance(config, issues)
         self._validate_testnet_execution(config, issues)
+        self._validate_live_confirm(config, issues)
         self._validate_retention(config, issues)
         return ConfigValidationResult(tuple(issues))
 
@@ -88,6 +89,13 @@ class ConfigValidator:
         testnet = config.get("testnet_execution", {})
         if Decimal(str(testnet.get("max_quote_amount_usdt", 0))) <= 0:
             issues.append(ConfigIssue("ERROR", "testnet_execution.max_quote_amount_usdt", "Value must be greater than zero."))
+
+    def _validate_live_confirm(self, config: dict, issues: list[ConfigIssue]) -> None:
+        live = config.get("live_confirm", {})
+        if Decimal(str(live.get("max_quote_amount_usdt", 0))) <= 0:
+            issues.append(ConfigIssue("ERROR", "live_confirm.max_quote_amount_usdt", "Value must be greater than zero."))
+        if not live.get("preview_only", True):
+            issues.append(ConfigIssue("ERROR", "live_confirm.preview_only", "LIVE_CONFIRM must remain preview-only in this implementation step."))
 
     def _validate_retention(self, config: dict, issues: list[ConfigIssue]) -> None:
         retention = config.get("retention", {})

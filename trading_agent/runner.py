@@ -10,6 +10,7 @@ from .config import AppConfig
 from .earn_manager import EarnLiquidityManager
 from .execution_checklist import ExecutionChecklistBuilder
 from .grid_advisor import GridBotAdvisor
+from .live_preview import LivePreviewExecutor
 from .models import AgentRunResult, LiquidityDecision
 from .next_run import NextRunAdvisor
 from .paper_executor import PaperExecutor
@@ -42,6 +43,7 @@ class AgentRunner:
         self.checklist = ExecutionChecklistBuilder()
         self.paper = PaperExecutor(config.raw)
         self.testnet = TestnetExecutor(config.raw)
+        self.live_preview = LivePreviewExecutor(config.raw)
         self.research = ResearchLoader(config.raw)
         self.active_strategies = ActiveStrategiesTracker(config.raw)
         self.reporter = Reporter(config.reports_dir, keep_last=int(config.raw.get("reports", {}).get("keep_last", 30)))
@@ -101,6 +103,7 @@ class AgentRunner:
                 existing_intents=self.storage.get_existing_testnet_intents(),
                 confirm=str(self.config.raw.get("_runtime", {}).get("testnet_confirm", "")),
             )
+            live_preview = self.live_preview.preview_spot_proposal(proposal, risk_decision)
             strategy_decision = self.strategy.decide(proposal, risk_decision, grid_recommendation)
             next_run_recommendation = self.next_run.recommend(strategy_decision)
             recommended_actions = self.actions.build(
@@ -169,6 +172,7 @@ class AgentRunner:
                 risk_decision=risk_decision,
                 paper_execution=paper_execution,
                 testnet_execution=testnet_execution,
+                live_preview=live_preview,
                 testnet_positions=testnet_positions,
                 liquidity_decision=liquidity_decision,
                 grid_liquidity_decision=grid_liquidity_decision,

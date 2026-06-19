@@ -41,6 +41,7 @@ python -m trading_agent testnet-market-buy --config config.example.toml --symbol
 python -m trading_agent testnet-market-sell --config config.example.toml --symbol BTCUSDT --from-last-buy
 python -m trading_agent testnet-order-status --config config.example.toml --symbol BTCUSDT --order-id 123456
 python -m trading_agent run --config config.example.toml --real-data --testnet-execution
+python -m trading_agent run --config config.example.toml --real-data --live-confirm-preview
 ```
 
 The first run uses mock market/account data and writes:
@@ -290,6 +291,19 @@ python -m trading_agent readiness --config config.example.toml
 
 This command is expected to report `BLOCKED` until a separate live trading API key
 and live confirmation implementation exist.
+
+## LIVE_CONFIRM Preview
+
+`LIVE_CONFIRM` starts as a mainnet preview-only layer. It can validate an approved spot
+proposal against a separate live trading API key, mainnet symbol filters, and live spot
+USDT balance, but it never submits an order in this implementation step.
+
+```powershell
+python -m trading_agent run --config config.example.toml --real-data --live-confirm-preview
+```
+
+The report includes `Mainnet LIVE_CONFIRM Preview`. Missing
+`BINANCE_LIVE_TRADE_API_KEY` / `BINANCE_LIVE_TRADE_API_SECRET` is reported as a blocker.
 
 ## Safety Defaults
 

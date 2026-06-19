@@ -89,6 +89,11 @@ idempotency_window = "daily"
 enabled = false
 max_quote_amount_usdt = 10.0
 
+[live_confirm]
+enabled = false
+preview_only = true
+max_quote_amount_usdt = 10.0
+
 [portfolio]
 tracked_assets = ["USDT", "BNB", "BTC", "WBETH", "ETH", "SOL", "WLD"]
 pricing_quote_assets = ["USDT", "USDC", "FDUSD"]

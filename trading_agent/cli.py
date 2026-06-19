@@ -118,6 +118,8 @@ def _add_common_run_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--testnet-execution", action="store_true", help="Enable Spot Testnet execution for approved spot proposals")
     parser.add_argument("--no-testnet-execution", action="store_true", help="Disable Spot Testnet execution for this run")
     parser.add_argument("--confirm-testnet-order", default="", help="Must equal CONFIRM_TESTNET_ORDER to submit a Spot Testnet order")
+    parser.add_argument("--live-confirm-preview", action="store_true", help="Enable mainnet LIVE_CONFIRM preview without submitting orders")
+    parser.add_argument("--no-live-confirm-preview", action="store_true", help="Disable mainnet LIVE_CONFIRM preview for this run")
 
 
 def _run_legacy(argv: list[str]) -> int:
@@ -151,6 +153,13 @@ def _load_and_apply_config(args: argparse.Namespace, parser: argparse.ArgumentPa
         config.raw["testnet_execution"]["enabled"] = False
     config.raw.setdefault("_runtime", {})
     config.raw["_runtime"]["testnet_confirm"] = getattr(args, "confirm_testnet_order", "")
+    if getattr(args, "live_confirm_preview", False) and getattr(args, "no_live_confirm_preview", False):
+        parser.error("--live-confirm-preview and --no-live-confirm-preview cannot be used together")
+    config.raw.setdefault("live_confirm", {})
+    if getattr(args, "live_confirm_preview", False):
+        config.raw["live_confirm"]["enabled"] = True
+    if getattr(args, "no_live_confirm_preview", False):
+        config.raw["live_confirm"]["enabled"] = False
     return config
 
 

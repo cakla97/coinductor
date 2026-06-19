@@ -375,6 +375,25 @@ class TestnetPositionSummary:
 
 
 @dataclass(frozen=True)
+class LiveOrderPreview:
+    symbol: str
+    side: str
+    order_type: str
+    quote_amount_usdt: Decimal
+    status: str
+    validation_summary: str
+    available_usdt: Decimal
+    confirmation_required: str
+
+
+@dataclass(frozen=True)
+class LivePreviewReport:
+    enabled: bool
+    orders: tuple[LiveOrderPreview, ...]
+    summary: str
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

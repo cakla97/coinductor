@@ -19,17 +19,24 @@ class BinanceApiError(RuntimeError):
 
 
 class BinanceClient:
-    def __init__(self, config: dict, use_testnet: bool = False):
+    def __init__(self, config: dict, use_testnet: bool = False, credential_profile: str = "mainnet_read"):
         self.config = config
         self.use_testnet = use_testnet
-        key_env = "BINANCE_TESTNET_API_KEY" if use_testnet else "BINANCE_API_KEY"
-        secret_env = "BINANCE_TESTNET_API_SECRET" if use_testnet else "BINANCE_API_SECRET"
+        self.credential_profile = "testnet" if use_testnet else credential_profile
+        key_env, secret_env = self._credential_env_names()
         self.api_key = os.getenv(key_env, "")
         self.api_secret = os.getenv(secret_env, "")
         base_key = "testnet_api_base_url" if use_testnet else "api_base_url"
         self.base_url = str(config["binance"].get(base_key, "https://api.binance.com")).rstrip("/")
         self.ssl_context = self._ssl_context()
         self._server_time_offset_ms: int | None = None
+
+    def _credential_env_names(self) -> tuple[str, str]:
+        if self.credential_profile == "testnet":
+            return "BINANCE_TESTNET_API_KEY", "BINANCE_TESTNET_API_SECRET"
+        if self.credential_profile == "live_trade":
+            return "BINANCE_LIVE_TRADE_API_KEY", "BINANCE_LIVE_TRADE_API_SECRET"
+        return "BINANCE_API_KEY", "BINANCE_API_SECRET"
 
     def get_balances(self) -> list[Balance]:
         if self.config["app"].get("mock_data", True):
@@ -151,6 +158,10 @@ class BinanceClient:
                 balances[row["asset"]] = (free, locked)
         return balances
 
+    def get_spot_free_balance(self, asset: str) -> Decimal:
+        balances = self._get_spot_balances()
+        return balances.get(asset.upper(), (Decimal("0"), Decimal("0")))[0]
+
     def _get_flexible_balances(self) -> dict[str, Decimal]:
         payload = self._signed_get("/sapi/v1/simple-earn/flexible/position", {"size": 100})
         balances: dict[str, Decimal] = {}
@@ -258,6 +269,8 @@ class BinanceClient:
         if not self.api_key or not self.api_secret:
             if self.use_testnet:
                 raise BinanceApiError("BINANCE_TESTNET_API_KEY and BINANCE_TESTNET_API_SECRET must be set in .env for testnet mode.")
+            if self.credential_profile == "live_trade":
+                raise BinanceApiError("BINANCE_LIVE_TRADE_API_KEY and BINANCE_LIVE_TRADE_API_SECRET must be set in .env for LIVE_CONFIRM preview.")
             raise BinanceApiError("BINANCE_API_KEY and BINANCE_API_SECRET must be set in .env for real-data mode.")
 
     def _timestamp_ms(self) -> int:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal
 
 
 class Reporter:
@@ -24,6 +24,7 @@ class Reporter:
         risk_decision: RiskDecision,
         paper_execution: PaperExecutionReport,
         testnet_execution: TestnetExecutionReport,
+        live_preview: LivePreviewReport,
         testnet_positions: TestnetPositionSummary,
         liquidity_decision: LiquidityDecision,
         grid_liquidity_decision: LiquidityDecision,
@@ -165,6 +166,29 @@ class Reporter:
                     f"{order.intent_id} | {order.symbol} | {order.side} | {order.quote_amount_usdt} | "
                     f"{order.client_order_id} | {order.submitted} | {order.status} | {order.queried_status} | {order.executed_quantity} | "
                     f"{order.cumulative_quote_qty} | {order.order_id} | {order.validation_summary} | {order.message} |"
+                )
+            lines.append("")
+        lines.extend(
+            [
+                "## Mainnet LIVE_CONFIRM Preview",
+                "",
+                f"- Enabled: `{live_preview.enabled}`",
+                f"- Summary: {live_preview.summary}",
+                "",
+            ]
+        )
+        if live_preview.orders:
+            lines.extend(
+                [
+                    "| Symbol | Side | Type | Quote USDT | Status | Available USDT | Confirmation Required | Validation |",
+                    "| --- | --- | --- | ---: | --- | ---: | --- | --- |",
+                ]
+            )
+            for order in live_preview.orders:
+                lines.append(
+                    "| "
+                    f"{order.symbol} | {order.side} | {order.order_type} | {order.quote_amount_usdt} | "
+                    f"{order.status} | {order.available_usdt} | {order.confirmation_required} | {order.validation_summary} |"
                 )
             lines.append("")
         lines.extend(

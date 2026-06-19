@@ -382,6 +382,7 @@ def _save_manual_testnet_order(config: AppConfig, intent_id: str, request, resul
     run_id = storage.start_run("TESTNET_MANUAL")
     storage.save_testnet_execution(run_id, TestnetExecutionReport(enabled=True, orders=(order,), summary="Manual Spot Testnet CLI order."))
     storage.finish_run(run_id, "OK", f"Manual Spot Testnet {request.side} order {order_id} saved.")
+    storage.cleanup_old_runs(int(config.raw.get("retention", {}).get("keep_database_runs", 500)))
 
 
 def _testnet_symbol_command(args: argparse.Namespace) -> int:

@@ -122,7 +122,24 @@ class ResearchLoader:
         path = requests_dir / f"{timestamp}_binance_skills_research.md"
         content = self._request_content(title, portfolio)
         path.write_text(content, encoding="utf-8")
+        self._cleanup_old_requests(requests_dir)
         return ResearchRequest(path=str(path), title=title, content=content)
+
+    def _cleanup_old_requests(self, requests_dir: Path) -> None:
+        keep_last = int(self.config.get("retention", {}).get("keep_research_requests", 30))
+        if keep_last <= 0:
+            return
+        files = sorted(
+            [
+                path
+                for path in requests_dir.iterdir()
+                if path.is_file() and path.suffix.lower() in {".md", ".txt", ".json"}
+            ],
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )
+        for path in files[keep_last:]:
+            path.unlink()
 
     def _request_content(self, title: str, portfolio: PortfolioAnalysis) -> str:
         research_config = self.config.get("research", {})

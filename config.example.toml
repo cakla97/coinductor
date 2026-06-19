@@ -9,6 +9,10 @@ active_strategies_path = "state/active_strategies.toml"
 [reports]
 keep_last = 30
 
+[retention]
+keep_database_runs = 500
+keep_research_requests = 30
+
 [research]
 enabled = true
 notes_dir = "research/notes"

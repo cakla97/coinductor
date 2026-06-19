@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal
 
 
 class Storage:
@@ -461,6 +462,123 @@ class Storage:
         if row is None:
             return None
         return {key: str(row[key]) for key in row.keys()}
+
+    def get_testnet_position_summary(self) -> TestnetPositionSummary:
+        buys = self.connection.execute(
+            """
+            select intent_id, symbol, executed_quantity, cumulative_quote_qty, order_id
+            from testnet_orders
+            where side = 'BUY'
+              and submitted = 1
+              and status = 'FILLED'
+              and cast(executed_quantity as real) > 0
+            order by run_id desc
+            limit 50
+            """
+        ).fetchall()
+        open_positions: list[TestnetPositionCycle] = []
+        closed_positions: list[TestnetPositionCycle] = []
+        total_pnl = Decimal("0")
+        for buy in buys:
+            sell = self.connection.execute(
+                """
+                select executed_quantity, cumulative_quote_qty, order_id
+                from testnet_orders
+                where intent_id = ?
+                  and side = 'SELL'
+                  and submitted = 1
+                  and status = 'FILLED'
+                order by run_id desc
+                limit 1
+                """,
+                (f"sell-{buy['intent_id']}",),
+            ).fetchone()
+            buy_quote = Decimal(str(buy["cumulative_quote_qty"]))
+            quantity = Decimal(str(buy["executed_quantity"]))
+            if sell is None:
+                open_positions.append(
+                    TestnetPositionCycle(
+                        symbol=str(buy["symbol"]),
+                        buy_order_id=str(buy["order_id"]),
+                        sell_order_id=None,
+                        buy_quote_usdt=buy_quote,
+                        sell_quote_usdt=None,
+                        quantity=quantity,
+                        status="OPEN",
+                        pnl_usdt=None,
+                    )
+                )
+                continue
+            sell_quote = Decimal(str(sell["cumulative_quote_qty"]))
+            pnl = sell_quote - buy_quote
+            total_pnl += pnl
+            closed_positions.append(
+                TestnetPositionCycle(
+                    symbol=str(buy["symbol"]),
+                    buy_order_id=str(buy["order_id"]),
+                    sell_order_id=str(sell["order_id"]),
+                    buy_quote_usdt=buy_quote,
+                    sell_quote_usdt=sell_quote,
+                    quantity=quantity,
+                    status="CLOSED",
+                    pnl_usdt=pnl,
+                )
+            )
+        summary = (
+            f"{len(open_positions)} open testnet position(s), {len(closed_positions)} closed cycle(s), "
+            f"realized PnL {total_pnl} USDT."
+        )
+        return TestnetPositionSummary(
+            enabled=True,
+            open_positions=tuple(open_positions),
+            closed_positions=tuple(closed_positions),
+            total_realized_pnl_usdt=total_pnl,
+            summary=summary,
+        )
+
+    def cleanup_old_runs(self, keep_last: int) -> int:
+        if keep_last <= 0:
+            return 0
+        old_rows = self.connection.execute(
+            """
+            select id
+            from runs
+            where id not in (
+                select id from runs order by id desc limit ?
+            )
+            """,
+            (keep_last,),
+        ).fetchall()
+        old_ids = [int(row["id"]) for row in old_rows]
+        if not old_ids:
+            return 0
+        placeholders = ",".join("?" for _ in old_ids)
+        tables = [
+            "balances",
+            "portfolio_valuations",
+            "portfolio_summaries",
+            "market_snapshots",
+            "ai_proposals",
+            "risk_decisions",
+            "paper_orders",
+            "testnet_orders",
+            "grid_recommendations",
+            "strategy_decisions",
+            "capital_sourcing_plans",
+            "capital_sourcing_items",
+            "next_run_recommendations",
+            "recommended_actions",
+            "execution_checklist_items",
+            "ai_commentaries",
+            "research_notes",
+            "research_statuses",
+            "active_grid_evaluations",
+        ]
+        for table in tables:
+            self.connection.execute(f"delete from {table} where run_id in ({placeholders})", old_ids)
+        self.connection.execute(f"delete from runs where id in ({placeholders})", old_ids)
+        self.connection.commit()
+        return len(old_ids)
 
     def save_grid_recommendation(self, run_id: int, recommendation: GridRecommendation) -> None:
         self.connection.execute(

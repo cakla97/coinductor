@@ -320,6 +320,27 @@ class TestnetExecutionReport:
 
 
 @dataclass(frozen=True)
+class TestnetPositionCycle:
+    symbol: str
+    buy_order_id: str
+    sell_order_id: str | None
+    buy_quote_usdt: Decimal
+    sell_quote_usdt: Decimal | None
+    quantity: Decimal
+    status: str
+    pnl_usdt: Decimal | None
+
+
+@dataclass(frozen=True)
+class TestnetPositionSummary:
+    enabled: bool
+    open_positions: tuple[TestnetPositionCycle, ...]
+    closed_positions: tuple[TestnetPositionCycle, ...]
+    total_realized_pnl_usdt: Decimal
+    summary: str
+
+
+@dataclass(frozen=True)
 class AgentRunResult:
     run_id: int
     status: str

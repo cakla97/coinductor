@@ -154,6 +154,7 @@ class AgentRunner:
             self.storage.save_research_notes(run_id, research_bundle)
             self.storage.save_research_status(run_id, research_status)
             self.storage.save_active_strategies(run_id, active_strategies_report)
+            testnet_positions = self.storage.get_testnet_position_summary()
             report_path = self.reporter.write_report(
                 run_id=run_id,
                 mode=self.config.mode,
@@ -164,6 +165,7 @@ class AgentRunner:
                 risk_decision=risk_decision,
                 paper_execution=paper_execution,
                 testnet_execution=testnet_execution,
+                testnet_positions=testnet_positions,
                 liquidity_decision=liquidity_decision,
                 grid_liquidity_decision=grid_liquidity_decision,
                 spot_capital_plan=spot_capital_plan,
@@ -177,6 +179,7 @@ class AgentRunner:
                 research_status=research_status,
                 active_strategies=active_strategies_report,
             )
+            self.storage.cleanup_old_runs(int(self.config.raw.get("retention", {}).get("keep_database_runs", 500)))
             status = "OK"
             self.storage.finish_run(run_id, status, f"Report written to {report_path}")
             return AgentRunResult(run_id=run_id, status=status, report_path=str(report_path))

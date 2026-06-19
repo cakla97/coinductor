@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal
 
 
 class Reporter:
@@ -23,6 +23,7 @@ class Reporter:
         risk_decision: RiskDecision,
         paper_execution: PaperExecutionReport,
         testnet_execution: TestnetExecutionReport,
+        testnet_positions: TestnetPositionSummary,
         liquidity_decision: LiquidityDecision,
         grid_liquidity_decision: LiquidityDecision,
         spot_capital_plan: CapitalSourcingPlan,
@@ -163,6 +164,46 @@ class Reporter:
                     f"{order.intent_id} | {order.symbol} | {order.side} | {order.quote_amount_usdt} | "
                     f"{order.client_order_id} | {order.submitted} | {order.status} | {order.queried_status} | {order.executed_quantity} | "
                     f"{order.cumulative_quote_qty} | {order.order_id} | {order.validation_summary} | {order.message} |"
+                )
+            lines.append("")
+        lines.extend(
+            [
+                "## Spot Testnet Positions",
+                "",
+                f"- Enabled: `{testnet_positions.enabled}`",
+                f"- Summary: {testnet_positions.summary}",
+                f"- Realized PnL: `{testnet_positions.total_realized_pnl_usdt} USDT`",
+                "",
+            ]
+        )
+        if testnet_positions.open_positions:
+            lines.extend(
+                [
+                    "### Open Testnet Positions",
+                    "",
+                    "| Symbol | Buy Order ID | Quantity | Buy Quote USDT | Status |",
+                    "| --- | --- | ---: | ---: | --- |",
+                ]
+            )
+            for position in testnet_positions.open_positions:
+                lines.append(
+                    f"| {position.symbol} | {position.buy_order_id} | {position.quantity} | {position.buy_quote_usdt} | {position.status} |"
+                )
+            lines.append("")
+        if testnet_positions.closed_positions:
+            lines.extend(
+                [
+                    "### Closed Testnet Cycles",
+                    "",
+                    "| Symbol | Buy Order ID | Sell Order ID | Quantity | Buy Quote USDT | Sell Quote USDT | PnL USDT |",
+                    "| --- | --- | --- | ---: | ---: | ---: | ---: |",
+                ]
+            )
+            for position in testnet_positions.closed_positions:
+                lines.append(
+                    "| "
+                    f"{position.symbol} | {position.buy_order_id} | {position.sell_order_id or ''} | {position.quantity} | "
+                    f"{position.buy_quote_usdt} | {position.sell_quote_usdt or ''} | {position.pnl_usdt or ''} |"
                 )
             lines.append("")
         lines.extend(

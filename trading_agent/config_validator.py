@@ -16,6 +16,7 @@ class ConfigValidator:
         self._validate_modes(config, issues)
         self._validate_binance(config, issues)
         self._validate_testnet_execution(config, issues)
+        self._validate_retention(config, issues)
         return ConfigValidationResult(tuple(issues))
 
     def _validate_portfolio(self, config: dict, issues: list[ConfigIssue]) -> None:
@@ -83,6 +84,12 @@ class ConfigValidator:
         testnet = config.get("testnet_execution", {})
         if Decimal(str(testnet.get("max_quote_amount_usdt", 0))) <= 0:
             issues.append(ConfigIssue("ERROR", "testnet_execution.max_quote_amount_usdt", "Value must be greater than zero."))
+
+    def _validate_retention(self, config: dict, issues: list[ConfigIssue]) -> None:
+        retention = config.get("retention", {})
+        for key in ("keep_database_runs", "keep_research_requests"):
+            if int(retention.get(key, 1)) <= 0:
+                issues.append(ConfigIssue("ERROR", f"retention.{key}", "Value must be greater than zero."))
 
     def _upper_list(self, values: list[str]) -> list[str]:
         return [str(value).upper() for value in values]

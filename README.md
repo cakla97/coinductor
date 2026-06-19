@@ -56,6 +56,7 @@ Each report includes:
 - manual execution checklist
 - paper execution simulation
 - daily paper order idempotency
+- Spot Testnet position summary
 - market snapshot
 - AI trade proposal
 - risk decision
@@ -118,6 +119,17 @@ Example workflow:
 The assistant includes recent research notes in the report and passes them to the local LLM
 as context. Research notes never override deterministic risk, whitelist, liquidity, or
 capital sourcing rules.
+
+## Retention
+
+Incremental artifacts are capped by configuration:
+
+- `[reports].keep_last` keeps the latest Markdown reports.
+- `[retention].keep_research_requests` keeps the latest generated research request prompts.
+- `[retention].keep_database_runs` keeps the latest SQLite run records and deletes older
+  associated snapshots, recommendations, paper orders, and testnet orders.
+
+Research notes are not auto-deleted because they are manually curated inputs.
 
 ## Active Strategy Tracking
 
@@ -203,6 +215,7 @@ and skips duplicate intents inside the configured idempotency window.
 
 Binance Spot Testnet uses virtual funds and supports `/api` endpoints only, so
 Simple Earn `/sapi` operations and read-only permission checks are still mainnet-only.
+Reports include a Spot Testnet Positions section built from local SQLite BUY/SELL cycles.
 
 ## VS Code
 

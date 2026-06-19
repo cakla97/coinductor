@@ -15,6 +15,7 @@ from .next_run import NextRunAdvisor
 from .paper_executor import PaperExecutor
 from .portfolio_analyzer import PortfolioAnalyzer
 from .recommended_actions import RecommendedActionsBuilder
+from .rebalance_planner import RebalancePlanner
 from .reporting import Reporter
 from .research import ResearchLoader
 from .risk_engine import RiskEngine
@@ -34,6 +35,7 @@ class AgentRunner:
         self.grid = GridBotAdvisor(config.raw)
         self.portfolio = PortfolioAnalyzer(config.raw)
         self.capital_sourcing = CapitalSourcingAdvisor(config.raw)
+        self.rebalance_planner = RebalancePlanner(config.raw)
         self.strategy = StrategyDecisionEngine()
         self.next_run = NextRunAdvisor()
         self.actions = RecommendedActionsBuilder()
@@ -56,6 +58,7 @@ class AgentRunner:
             )
             asset_prices = self.client.get_asset_prices_usdt(portfolio_assets)
             portfolio_analysis = self.portfolio.analyze(balances, asset_prices)
+            rebalance_plan = self.rebalance_planner.plan(portfolio_analysis)
             research_bundle = self.research.load()
             research_status = self.research.status_and_request(portfolio_analysis)
             proposal = self.ai.propose_trade(snapshots)
@@ -160,6 +163,7 @@ class AgentRunner:
                 mode=self.config.mode,
                 balances=balances,
                 portfolio_analysis=portfolio_analysis,
+                rebalance_plan=rebalance_plan,
                 snapshots=snapshots,
                 proposal=proposal,
                 risk_decision=risk_decision,

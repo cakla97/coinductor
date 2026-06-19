@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal
 
 
 class Reporter:
@@ -18,6 +18,7 @@ class Reporter:
         mode: str,
         balances: list[Balance],
         portfolio_analysis: PortfolioAnalysis,
+        rebalance_plan: RebalancePlan,
         snapshots: list[MarketSnapshot],
         proposal: TradeProposal,
         risk_decision: RiskDecision,
@@ -204,6 +205,28 @@ class Reporter:
                     "| "
                     f"{position.symbol} | {position.buy_order_id} | {position.sell_order_id or ''} | {position.quantity} | "
                     f"{position.buy_quote_usdt} | {position.sell_quote_usdt or ''} | {position.pnl_usdt or ''} |"
+                )
+            lines.append("")
+        lines.extend(
+            [
+                "## Rebalancing Preview",
+                "",
+                f"- Enabled: `{rebalance_plan.enabled}`",
+                f"- Preview only: `{rebalance_plan.preview_only}`",
+                f"- Summary: {rebalance_plan.summary}",
+                "",
+            ]
+        )
+        if rebalance_plan.steps:
+            lines.extend(
+                [
+                    "| Asset | Symbol | Side | Value USDT | Status | Reason |",
+                    "| --- | --- | --- | ---: | --- | --- |",
+                ]
+            )
+            for step in rebalance_plan.steps:
+                lines.append(
+                    f"| {step.asset} | {step.symbol or ''} | {step.side} | {step.value_usdt} | {step.status} | {step.reason} |"
                 )
             lines.append("")
         lines.extend(

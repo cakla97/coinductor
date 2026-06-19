@@ -43,10 +43,14 @@ class ConfigValidator:
                 issues.append(ConfigIssue("ERROR", f"risk.{key}", "Value must be greater than zero."))
 
     def _validate_rebalancing(self, config: dict, issues: list[ConfigIssue]) -> None:
-        allocation = config.get("rebalancing", {}).get("target_allocation", {})
+        rebalancing = config.get("rebalancing", {})
+        allocation = rebalancing.get("target_allocation", {})
         total = sum((Decimal(str(value)) for value in allocation.values()), Decimal("0"))
         if total != Decimal("100"):
             issues.append(ConfigIssue("WARNING", "rebalancing.target_allocation", f"Target allocation sums to {total}%, not 100%."))
+        for key in ("min_trade_value_usdt", "max_trade_value_usdt_per_step"):
+            if Decimal(str(rebalancing.get(key, 0))) <= 0:
+                issues.append(ConfigIssue("ERROR", f"rebalancing.{key}", "Value must be greater than zero."))
 
     def _validate_universes(self, config: dict, issues: list[ConfigIssue]) -> None:
         tracked = set(self._upper_list(config.get("portfolio", {}).get("tracked_assets", [])))

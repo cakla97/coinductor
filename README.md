@@ -52,6 +52,7 @@ Each report includes:
 - portfolio summary
 - portfolio valuation in USDT
 - rebalance gap against configured target allocation
+- rebalancing preview steps with protected-asset and trading-universe guards
 - Spot vs Flexible vs Locked balance view
 - manual execution checklist
 - paper execution simulation
@@ -262,6 +263,17 @@ Portfolio tracking is intentionally broader than trading permissions:
 Assets that cannot be priced are shown as unpriced instead of silently disappearing from totals.
 Binance internal voucher-like assets with configured prefixes, such as `LD`, are reported separately
 and excluded from valuation to avoid double counting.
+
+## Rebalancing Preview
+
+The assistant translates target allocation gaps into preview-only rebalance steps. It does not
+execute these steps. The planner:
+
+- caps each suggested step with `[rebalancing].max_trade_value_usdt_per_step`
+- ignores tiny gaps below `[rebalancing].min_trade_value_usdt`
+- blocks sells for protected assets
+- blocks symbols outside `[strategy].allowed_symbols`
+- marks USDT increases as `KEEP_CASH` instead of creating a trade
 
 Use `doctor` to validate local setup and config consistency:
 

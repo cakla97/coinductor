@@ -139,6 +139,9 @@ warn_near_range_pct = 5.0
 enabled = true
 frequency = "weekly"
 threshold_pct = 5.0
+min_trade_value_usdt = 5.0
+max_trade_value_usdt_per_step = 25.0
+preview_only = true
 
 [rebalancing.target_allocation]
 USDT = 50.0

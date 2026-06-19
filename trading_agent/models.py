@@ -134,6 +134,24 @@ class CapitalSourcingPlan:
 
 
 @dataclass(frozen=True)
+class RebalancePlanStep:
+    asset: str
+    symbol: str | None
+    side: str
+    value_usdt: Decimal
+    status: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class RebalancePlan:
+    enabled: bool
+    preview_only: bool
+    steps: tuple[RebalancePlanStep, ...]
+    summary: str
+
+
+@dataclass(frozen=True)
 class RecommendedAction:
     priority: str
     action: str

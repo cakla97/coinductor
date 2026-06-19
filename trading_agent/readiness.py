@@ -73,7 +73,8 @@ class ReadinessChecker:
             checks.append(ReadinessCheck("BLOCK", "Spot Testnet cycles", "No completed Spot Testnet BUY/SELL cycle found."))
 
         symbol_failures: list[str] = []
-        for symbol in self.config.allowed_symbols:
+        testnet_symbols = self.config.raw.get("testnet_execution", {}).get("allowed_symbols", self.config.allowed_symbols)
+        for symbol in testnet_symbols:
             try:
                 rules = BinanceClient(self.config.raw, use_testnet=True).get_symbol_rules(symbol)
             except BinanceApiError as exc:

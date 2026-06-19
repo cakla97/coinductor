@@ -180,15 +180,15 @@ class Reporter:
         if live_preview.orders:
             lines.extend(
                 [
-                    "| Symbol | Side | Type | Quote USDT | Status | Available USDT | Missing USDT | Funding Required | Confirmation Required | Validation |",
-                    "| --- | --- | --- | ---: | --- | ---: | ---: | --- | --- | --- |",
+                    "| Symbol | Side | Type | Quote Amount | Quote Asset | Status | Available Quote | Missing Quote | Funding Required | Confirmation Required | Validation |",
+                    "| --- | --- | --- | ---: | --- | --- | ---: | ---: | --- | --- | --- |",
                 ]
             )
             for order in live_preview.orders:
                 lines.append(
                     "| "
                     f"{order.symbol} | {order.side} | {order.order_type} | {order.quote_amount_usdt} | "
-                    f"{order.status} | {order.available_usdt} | {order.missing_usdt} | {order.funding_required} | "
+                    f"{order.quote_asset} | {order.status} | {order.available_usdt} | {order.missing_usdt} | {order.funding_required} | "
                     f"{order.confirmation_required} | {order.validation_summary} |"
                 )
             lines.append("")
@@ -361,7 +361,7 @@ class Reporter:
                 f"- Action: `{proposal.action}`",
                 f"- Symbol: `{proposal.symbol}`",
                 f"- Confidence: `{proposal.confidence}`",
-                f"- Quote amount: `{proposal.quote_amount_usdt} USDT`",
+                f"- Quote amount: `{proposal.quote_amount_usdt} {self._quote_asset(proposal.symbol)}`",
                 f"- Stop loss: `{proposal.stop_loss_pct}%`",
                 f"- Take profit: `{proposal.take_profit_pct}%`",
                 f"- Reason: {proposal.reason}",
@@ -370,7 +370,7 @@ class Reporter:
                 "",
                 f"- Approved: `{risk_decision.approved}`",
                 f"- Reason: {risk_decision.reason}",
-                f"- Adjusted quote amount: `{risk_decision.adjusted_quote_amount_usdt} USDT`",
+                f"- Adjusted quote amount: `{risk_decision.adjusted_quote_amount_usdt} {self._quote_asset(proposal.symbol)}`",
                 "",
                 "## Liquidity Decision",
                 "",
@@ -469,9 +469,9 @@ class Reporter:
 
     def _capital_plan_lines(self, plan: CapitalSourcingPlan) -> list[str]:
         lines = [
-            f"- Needed: `{plan.needed_usdt} USDT`",
-            f"- Available USDT: `{plan.available_usdt} USDT`",
-            f"- Missing: `{plan.missing_usdt} USDT`",
+            f"- Needed: `{plan.needed_usdt} {plan.quote_asset}`",
+            f"- Available {plan.quote_asset}: `{plan.available_usdt} {plan.quote_asset}`",
+            f"- Missing: `{plan.missing_usdt} {plan.quote_asset}`",
             f"- Recommended: `{plan.recommended}`",
             f"- Summary: {plan.summary}",
         ]
@@ -480,3 +480,10 @@ class Reporter:
             for item in plan.items:
                 lines.append(f"| {item.asset} | {item.value_usdt} | {item.action} | {item.reason} |")
         return lines
+
+    def _quote_asset(self, symbol: str) -> str:
+        symbol = symbol.upper()
+        for quote in ("USDC", "USDT", "FDUSD", "BTC", "ETH", "BNB"):
+            if symbol.endswith(quote):
+                return quote
+        return "USDT"

@@ -41,7 +41,8 @@ class BinanceClient:
     def get_balances(self) -> list[Balance]:
         if self.config["app"].get("mock_data", True):
             return [
-                Balance(asset="USDT", spot_free=Decimal("0"), flexible_amount=Decimal("250")),
+                Balance(asset="USDC", spot_free=Decimal("12"), flexible_amount=Decimal("250")),
+                Balance(asset="USDT", spot_free=Decimal("0"), flexible_amount=Decimal("0")),
                 Balance(asset="BTC", spot_free=Decimal("0.0000"), flexible_amount=Decimal("0.003"), locked_amount=Decimal("0.01")),
                 Balance(asset="ETH", spot_free=Decimal("0.000"), flexible_amount=Decimal("0.05")),
                 Balance(asset="BNB", spot_free=Decimal("0.00"), flexible_amount=Decimal("0.2")),
@@ -67,8 +68,13 @@ class BinanceClient:
         if self.config["app"].get("mock_data", True):
             prices = {
                 "BTCUSDT": Decimal("104000"),
+                "BTCUSDC": Decimal("104000"),
                 "ETHUSDT": Decimal("3600"),
+                "ETHUSDC": Decimal("3600"),
                 "BNBUSDT": Decimal("650"),
+                "BNBUSDC": Decimal("650"),
+                "SOLUSDC": Decimal("150"),
+                "WLDUSDC": Decimal("3"),
             }
             return [
                 MarketSnapshot(
@@ -90,6 +96,7 @@ class BinanceClient:
         if self.config["app"].get("mock_data", True):
             return {
                 "USDT": Decimal("1"),
+                "USDC": Decimal("1"),
                 "BTC": Decimal("104000"),
                 "ETH": Decimal("3600"),
                 "WBETH": Decimal("3700"),

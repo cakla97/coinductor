@@ -72,18 +72,20 @@ class AgentRunner:
                 weekly_loss_pct=Decimal("0"),
             )
             if risk_decision.approved:
+                quote_asset = str(self.config.raw.get("live_confirm", {}).get("quote_asset", "USDT")).upper()
                 liquidity_decision = self.earn.ensure_quote_liquidity(
                     balances=balances,
-                    quote_asset="USDT",
+                    quote_asset=quote_asset,
                     required_amount=risk_decision.adjusted_quote_amount_usdt,
                 )
             else:
                 liquidity_decision = LiquidityDecision(False, "Risk engine rejected proposal before liquidity check.", None, Decimal("0"))
             grid_recommendation = self.grid.recommend(snapshots)
             if grid_recommendation.recommended:
+                quote_asset = str(self.config.raw.get("live_confirm", {}).get("quote_asset", "USDT")).upper()
                 grid_liquidity_decision = self.earn.ensure_quote_liquidity(
                     balances=balances,
-                    quote_asset="USDT",
+                    quote_asset=quote_asset,
                     required_amount=grid_recommendation.investment_usdt,
                 )
                 grid_capital_plan = self.capital_sourcing.plan(balances, portfolio_analysis, grid_recommendation.investment_usdt)

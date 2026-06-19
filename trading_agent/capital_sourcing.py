@@ -10,12 +10,13 @@ class CapitalSourcingAdvisor:
         self.config = config
 
     def plan(self, balances: list[Balance], portfolio: PortfolioAnalysis, needed_usdt: Decimal) -> CapitalSourcingPlan:
-        available_usdt = self._available_usdt(balances)
+        quote_asset = self._quote_asset()
+        available_usdt = self._available_quote(balances, quote_asset)
         missing = max(Decimal("0"), needed_usdt - available_usdt)
         if not self.config.get("capital_sourcing", {}).get("enabled", False):
-            return self._empty(needed_usdt, available_usdt, missing, "Capital sourcing advisor is disabled.")
+            return self._empty(needed_usdt, available_usdt, missing, quote_asset, "Capital sourcing advisor is disabled.")
         if missing <= 0:
-            return self._empty(needed_usdt, available_usdt, missing, "No extra capital source is needed.")
+            return self._empty(needed_usdt, available_usdt, missing, quote_asset, "No extra capital source is needed.")
 
         items: list[CapitalSourcePlanItem] = []
         remaining = missing
@@ -44,7 +45,7 @@ class CapitalSourcingAdvisor:
             items.append(
                 CapitalSourcePlanItem(
                     asset=candidate.asset,
-                    action=f"Consider manually selling up to {self._money(value)} USDT worth of {candidate.asset} for USDT.",
+                    action=f"Consider manually selling up to {self._money(value)} USDT-equivalent worth of {candidate.asset} for {quote_asset}.",
                     value_usdt=self._money(value),
                     reason=self._reason(candidate.rebalance_action),
                 )
@@ -57,27 +58,29 @@ class CapitalSourcingAdvisor:
                 needed_usdt=self._money(needed_usdt),
                 available_usdt=self._money(available_usdt),
                 missing_usdt=self._money(missing),
+                quote_asset=quote_asset,
                 recommended=False,
-                summary="Additional USDT is needed, but no allowed source asset has enough non-protected value.",
+                summary=f"Additional {quote_asset} is needed, but no allowed source asset has enough non-protected value.",
                 items=(),
             )
 
         covered = missing - max(Decimal("0"), remaining)
-        summary = f"Manual capital sourcing can cover about {self._money(covered)} USDT of the {self._money(missing)} USDT gap."
+        summary = f"Manual capital sourcing can cover about {self._money(covered)} {quote_asset} of the {self._money(missing)} {quote_asset} gap."
         if remaining > 0:
-            summary += f" Remaining uncovered gap: {self._money(remaining)} USDT."
+            summary += f" Remaining uncovered gap: {self._money(remaining)} {quote_asset}."
         return CapitalSourcingPlan(
             needed_usdt=self._money(needed_usdt),
             available_usdt=self._money(available_usdt),
             missing_usdt=self._money(missing),
+            quote_asset=quote_asset,
             recommended=True,
             summary=summary,
             items=tuple(items),
         )
 
-    def _available_usdt(self, balances: list[Balance]) -> Decimal:
+    def _available_quote(self, balances: list[Balance], quote_asset: str) -> Decimal:
         for balance in balances:
-            if balance.asset == "USDT":
+            if balance.asset == quote_asset:
                 return balance.spot_free + balance.flexible_amount
         return Decimal("0")
 
@@ -92,11 +95,12 @@ class CapitalSourcingAdvisor:
             return "Asset has no configured target allocation and is allowed as a capital source."
         return "Asset is allowed as a capital source, but it is not overweight."
 
-    def _empty(self, needed_usdt: Decimal, available_usdt: Decimal, missing_usdt: Decimal, summary: str) -> CapitalSourcingPlan:
+    def _empty(self, needed_usdt: Decimal, available_usdt: Decimal, missing_usdt: Decimal, quote_asset: str, summary: str) -> CapitalSourcingPlan:
         return CapitalSourcingPlan(
             needed_usdt=self._money(needed_usdt),
             available_usdt=self._money(available_usdt),
             missing_usdt=self._money(missing_usdt),
+            quote_asset=quote_asset,
             recommended=False,
             summary=summary,
             items=(),
@@ -104,3 +108,6 @@ class CapitalSourcingAdvisor:
 
     def _money(self, value: Decimal) -> Decimal:
         return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    def _quote_asset(self) -> str:
+        return str(self.config.get("live_confirm", {}).get("quote_asset", self.config.get("app", {}).get("base_currency", "USDT"))).upper()

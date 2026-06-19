@@ -71,7 +71,7 @@ class RecommendedActionsBuilder:
             actions.append(
                 RecommendedAction(
                     priority="MEDIUM",
-                    action=f"For the {label}, consider sourcing {plan.missing_usdt} USDT manually; first candidate is {first.asset}.",
+                    action=f"For the {label}, consider sourcing {plan.missing_usdt} {plan.quote_asset} manually; first candidate is {first.asset}.",
                     reason=plan.summary,
                 )
             )
@@ -79,7 +79,7 @@ class RecommendedActionsBuilder:
             actions.append(
                 RecommendedAction(
                     priority="HIGH",
-                    action=f"Do not execute the {label} until the {plan.missing_usdt} USDT funding gap is resolved.",
+                    action=f"Do not execute the {label} until the {plan.missing_usdt} {plan.quote_asset} funding gap is resolved.",
                     reason=plan.summary,
                 )
             )

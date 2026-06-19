@@ -154,7 +154,9 @@ class AiAnalyst:
             )
 
     def _mock_proposal(self, snapshots: list[MarketSnapshot]) -> TradeProposal:
-        best = next((item for item in snapshots if item.symbol == "BTCUSDT"), snapshots[0])
+        allowed_symbols = [str(symbol).upper() for symbol in self.config.get("strategy", {}).get("allowed_symbols", [])]
+        preferred_symbol = "BTCUSDC" if "BTCUSDC" in allowed_symbols else "BTCUSDT"
+        best = next((item for item in snapshots if item.symbol == preferred_symbol), snapshots[0])
         orders = self.config["orders"]
         return TradeProposal(
             symbol=best.symbol,
@@ -177,9 +179,10 @@ class AiAnalyst:
         prompt = {
             "task": "Return one conservative spot trade proposal as JSON only.",
             "allowed_actions": ["BUY", "SELL", "HOLD"],
+            "allowed_symbols": self.config.get("strategy", {}).get("allowed_symbols", []),
             "snapshots": [snapshot.__dict__ for snapshot in snapshots],
             "schema": {
-                "symbol": "BTCUSDT",
+                "symbol": str(self.config.get("strategy", {}).get("allowed_symbols", ["BTCUSDT"])[0]),
                 "action": "BUY",
                 "confidence": 0.65,
                 "quote_amount_usdt": 25,

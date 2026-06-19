@@ -35,13 +35,14 @@ class GridBotAdvisor:
         grid_count = max(int(grid_config["min_grid_count"]), min(int(grid_config["max_grid_count"]), grid_count))
         investment = Decimal(str(grid_config["default_investment_usdt"]))
         investment = min(investment, Decimal(str(grid_config["max_grid_capital_usdt"])))
+        quote_asset = self._quote_asset(selected.symbol)
 
         steps = (
             "Open Binance Trade-X / Trading Bots and choose Spot Grid.",
             f"Select pair {selected.symbol}.",
             f"Set lower price to {range_low} and upper price to {range_high}.",
             f"Set grid count to {grid_count} and grid type to arithmetic.",
-            f"Allocate {investment} USDT or less, according to available trading capital.",
+            f"Allocate {investment} {quote_asset} or less, according to available trading capital.",
             f"Set stop loss around {stop_loss_price} and take profit around {take_profit_price}.",
             "After creating the bot, run this assistant again to record the new baseline.",
         )
@@ -88,3 +89,9 @@ class GridBotAdvisor:
     def _money(self, value: Decimal) -> Decimal:
         return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
+    def _quote_asset(self, symbol: str) -> str:
+        symbol = symbol.upper()
+        for quote in ("USDC", "USDT", "FDUSD", "BTC", "ETH", "BNB"):
+            if symbol.endswith(quote):
+                return quote
+        return "USDT"

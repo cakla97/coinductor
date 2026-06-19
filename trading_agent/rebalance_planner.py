@@ -19,6 +19,7 @@ class RebalancePlanner:
         preview_only = bool(rebalancing.get("preview_only", True))
         allowed_symbols = {str(symbol).upper() for symbol in self.config.get("strategy", {}).get("allowed_symbols", [])}
         protected_assets = {str(asset).upper() for asset in self.config.get("capital_sourcing", {}).get("protected_assets", [])}
+        quote_asset = str(self.config.get("live_confirm", {}).get("quote_asset", self.config.get("app", {}).get("base_currency", "USDT"))).upper()
 
         steps: list[RebalancePlanStep] = []
         for asset in portfolio.assets:
@@ -31,9 +32,9 @@ class RebalancePlanner:
                 continue
 
             if asset.rebalance_action == "REDUCE":
-                steps.append(self._reduce_step(asset.asset, abs(delta), max_per_step, allowed_symbols, protected_assets))
+                steps.append(self._reduce_step(asset.asset, abs(delta), max_per_step, allowed_symbols, protected_assets, quote_asset))
             elif asset.rebalance_action == "INCREASE":
-                steps.append(self._increase_step(asset.asset, delta, max_per_step, allowed_symbols))
+                steps.append(self._increase_step(asset.asset, delta, max_per_step, allowed_symbols, quote_asset))
 
         if not steps:
             summary = "No actionable rebalance preview steps are needed inside configured thresholds and limits."
@@ -50,6 +51,7 @@ class RebalancePlanner:
         max_per_step: Decimal,
         allowed_symbols: set[str],
         protected_assets: set[str],
+        quote_asset: str,
     ) -> RebalancePlanStep:
         if asset.upper() in protected_assets:
             return RebalancePlanStep(
@@ -60,7 +62,7 @@ class RebalancePlanner:
                 status="BLOCKED",
                 reason=f"{asset} is protected and will not be sold by the rebalancing planner.",
             )
-        symbol = f"{asset.upper()}USDT"
+        symbol = f"{asset.upper()}{quote_asset}"
         if symbol not in allowed_symbols:
             return RebalancePlanStep(
                 asset=asset,
@@ -85,17 +87,18 @@ class RebalancePlanner:
         value: Decimal,
         max_per_step: Decimal,
         allowed_symbols: set[str],
+        quote_asset: str,
     ) -> RebalancePlanStep:
-        if asset.upper() == "USDT":
+        if asset.upper() == quote_asset:
             return RebalancePlanStep(
                 asset=asset,
                 symbol=None,
                 side="KEEP_CASH",
                 value_usdt=self._money(min(value, max_per_step)),
                 status="READY",
-                reason="USDT is below target; keep or source more cash instead of placing a trade.",
+                reason=f"{quote_asset} is below target; keep or source more cash instead of placing a trade.",
             )
-        symbol = f"{asset.upper()}USDT"
+        symbol = f"{asset.upper()}{quote_asset}"
         if symbol not in allowed_symbols:
             return RebalancePlanStep(
                 asset=asset,

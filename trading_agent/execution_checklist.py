@@ -42,12 +42,13 @@ class ExecutionChecklistBuilder:
         self._append_capital_steps(items, "spot trade", spot_capital_plan)
 
         if risk_decision.approved:
+            quote_asset = self._quote_asset(proposal.symbol)
             items.append(
                 ExecutionChecklistItem(
                     priority="MANUAL",
                     step=f"Review spot trade {proposal.action} {proposal.symbol}",
                     detail=(
-                        f"Proposed amount is {risk_decision.adjusted_quote_amount_usdt} USDT. "
+                        f"Proposed amount is {risk_decision.adjusted_quote_amount_usdt} {quote_asset}. "
                         f"Use stop loss {proposal.stop_loss_pct}% and take profit {proposal.take_profit_pct}% if manually executing. "
                         "Do not execute if funding, risk, or market context has changed."
                     ),
@@ -85,7 +86,7 @@ class ExecutionChecklistBuilder:
                     detail=(
                         f"Range {grid_recommendation.range_low}-{grid_recommendation.range_high}, "
                         f"{grid_recommendation.grid_count} {grid_recommendation.grid_type} grids, "
-                        f"investment {grid_recommendation.investment_usdt} USDT, "
+                        f"investment {grid_recommendation.investment_usdt} {self._quote_asset(grid_recommendation.symbol or '')}, "
                         f"stop around {grid_recommendation.stop_loss_price}, take profit around {grid_recommendation.take_profit_price}."
                     ),
                 )
@@ -110,6 +111,13 @@ class ExecutionChecklistBuilder:
         )
         return tuple(items)
 
+    def _quote_asset(self, symbol: str) -> str:
+        symbol = symbol.upper()
+        for quote in ("USDC", "USDT", "FDUSD", "BTC", "ETH", "BNB"):
+            if symbol.endswith(quote):
+                return quote
+        return "USDT"
+
     def _append_capital_steps(self, items: list[ExecutionChecklistItem], label: str, plan: CapitalSourcingPlan) -> None:
         if plan.missing_usdt <= 0:
             return
@@ -130,4 +138,3 @@ class ExecutionChecklistBuilder:
                     detail=f"{item.action} Reason: {item.reason}",
                 )
             )
-

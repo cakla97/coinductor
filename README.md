@@ -52,7 +52,7 @@ The first run uses mock market/account data and writes:
 Each report includes:
 
 - portfolio summary
-- portfolio valuation in USDT
+- portfolio valuation in USD-like stable value, with USDC preferred for mainnet trading funds
 - rebalance gap against configured target allocation
 - rebalancing preview steps with protected-asset and trading-universe guards
 - Spot vs Flexible vs Locked balance view
@@ -257,7 +257,7 @@ Portfolio tracking is intentionally broader than trading permissions:
 - `[portfolio].tracked_assets` lists assets the assistant should price and include in portfolio analysis.
 - `[strategy].allowed_symbols` lists pairs that can be considered for spot trade recommendations.
 - `[grid_bot].allowed_symbols` lists pairs that can be considered for Spot Grid recommendations.
-- `[capital_sourcing].allowed_source_assets` lists assets that can be recommended as manual sources of USDT.
+- `[capital_sourcing].allowed_source_assets` lists assets that can be recommended as manual sources of stablecoin trading capital.
 - `[capital_sourcing].protected_assets` lists assets that should not be recommended as capital sources.
 - `[portfolio.asset_roles]` classifies assets as `CORE`, `PROTECTED`, `CAPITAL_SOURCE`,
   `SPECULATIVE_SOURCE`, `STABLE`, or another explicit role used for audit/reporting.
@@ -296,7 +296,11 @@ and live confirmation implementation exist.
 
 `LIVE_CONFIRM` starts as a mainnet preview-only layer. It can validate an approved spot
 proposal against a separate live trading API key, mainnet symbol filters, and live spot
-USDT balance, but it never submits an order in this implementation step.
+quote balance, but it never submits an order in this implementation step.
+
+Mainnet funding uses `[live_confirm].quote_asset`, currently `USDC` in `config.example.toml`.
+This keeps the assistant aligned with Binance stablecoin compliance prompts while leaving
+Spot Testnet examples on `BTCUSDT`.
 
 ```powershell
 python -m trading_agent run --config config.example.toml --real-data --live-confirm-preview
@@ -304,7 +308,7 @@ python -m trading_agent run --config config.example.toml --real-data --live-conf
 
 The report includes `Mainnet LIVE_CONFIRM Preview`. Missing
 `BINANCE_LIVE_TRADE_API_KEY` / `BINANCE_LIVE_TRADE_API_SECRET` is reported as a blocker.
-If Spot USDT is too low, the report adds a manual funding checklist. Funding remains
+If Spot quote balance is too low, the report adds a manual funding checklist. Funding remains
 manual: redeem from Flexible Earn to Spot yourself, then run live-confirm preview again.
 
 ## Safety Defaults

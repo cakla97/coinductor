@@ -128,6 +128,7 @@ class CapitalSourcingPlan:
     needed_usdt: Decimal
     available_usdt: Decimal
     missing_usdt: Decimal
+    quote_asset: str
     recommended: bool
     summary: str
     items: tuple[CapitalSourcePlanItem, ...]
@@ -380,6 +381,7 @@ class LiveOrderPreview:
     side: str
     order_type: str
     quote_amount_usdt: Decimal
+    quote_asset: str
     status: str
     validation_summary: str
     available_usdt: Decimal

@@ -92,6 +92,12 @@ class ConfigValidator:
 
     def _validate_live_confirm(self, config: dict, issues: list[ConfigIssue]) -> None:
         live = config.get("live_confirm", {})
+        quote_asset = str(live.get("quote_asset", config.get("app", {}).get("base_currency", "USDT"))).upper()
+        if quote_asset not in {"USDC", "USDT", "FDUSD"}:
+            issues.append(ConfigIssue("ERROR", "live_confirm.quote_asset", "Value must be one of USDC, USDT, or FDUSD."))
+        for symbol in self._upper_list(config.get("strategy", {}).get("allowed_symbols", [])):
+            if not symbol.endswith(quote_asset):
+                issues.append(ConfigIssue("WARNING", "strategy.allowed_symbols", f"{symbol} does not use live_confirm.quote_asset {quote_asset}."))
         if Decimal(str(live.get("max_quote_amount_usdt", 0))) <= 0:
             issues.append(ConfigIssue("ERROR", "live_confirm.max_quote_amount_usdt", "Value must be greater than zero."))
         if Decimal(str(live.get("funding_buffer_usdt", 0))) < 0:

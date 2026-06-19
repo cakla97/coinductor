@@ -152,6 +152,22 @@ class RebalancePlan:
 
 
 @dataclass(frozen=True)
+class ReadinessCheck:
+    status: str
+    name: str
+    detail: str
+
+
+@dataclass(frozen=True)
+class ReadinessReport:
+    checks: tuple[ReadinessCheck, ...]
+
+    @property
+    def has_blocks(self) -> bool:
+        return any(check.status == "BLOCK" for check in self.checks)
+
+
+@dataclass(frozen=True)
 class RecommendedAction:
     priority: str
     action: str

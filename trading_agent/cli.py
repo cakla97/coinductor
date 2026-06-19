@@ -14,6 +14,7 @@ from .config import AppConfig, load_config
 from .config_validator import ConfigValidator
 from .env import load_env_file
 from .portfolio_analyzer import PortfolioAnalyzer
+from .readiness import ReadinessChecker
 from .research import ResearchLoader
 from .runner import AgentRunner
 from .storage import Storage
@@ -34,6 +35,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_command(args, parser)
     if args.command == "doctor":
         return _doctor_command(args)
+    if args.command == "readiness":
+        return _readiness_command(args)
     if args.command == "last-report":
         return _last_report_command(args)
     if args.command == "research-request":
@@ -63,6 +66,9 @@ def _build_parser() -> argparse.ArgumentParser:
     doctor_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
     doctor_parser.add_argument("--real-data", action="store_true", help="Check Binance API read-only permissions")
     doctor_parser.add_argument("--ai-commentary", action="store_true", help="Check local OpenAI-compatible LLM endpoint")
+
+    readiness_parser = subparsers.add_parser("readiness", help="Check blockers before any future mainnet LIVE_CONFIRM mode")
+    readiness_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
 
     last_parser = subparsers.add_parser("last-report", help="Print the latest report path")
     last_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
@@ -198,6 +204,19 @@ def _doctor_command(args: argparse.Namespace) -> int:
         print(f"[{status}] {name}: {detail}")
     _print_validation(validation)
     return 0 if ok else 1
+
+
+def _readiness_command(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    report = ReadinessChecker(config).check()
+    rank = {"PASS": 0, "WARN": 1, "BLOCK": 2}
+    for check in sorted(report.checks, key=lambda item: rank.get(item.status, 99), reverse=True):
+        print(f"[{check.status}] {check.name}: {check.detail}")
+    if report.has_blocks:
+        print("Mainnet readiness: BLOCKED")
+        return 1
+    print("Mainnet readiness: PASS_WITH_WARNINGS" if any(check.status == "WARN" for check in report.checks) else "Mainnet readiness: PASS")
+    return 0
 
 
 def _check_llm(config: AppConfig) -> tuple[str, bool, str]:

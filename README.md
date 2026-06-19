@@ -32,6 +32,7 @@ Preferred CLI form:
 python -m trading_agent run --config config.example.toml
 python -m trading_agent run --config config.example.toml --real-data --ai-commentary
 python -m trading_agent doctor --config config.example.toml --real-data --ai-commentary
+python -m trading_agent readiness --config config.example.toml
 python -m trading_agent last-report --config config.example.toml
 python -m trading_agent research-request --config config.example.toml --real-data
 python -m trading_agent testnet-account --config config.example.toml
@@ -280,6 +281,15 @@ Use `doctor` to validate local setup and config consistency:
 ```powershell
 python -m trading_agent doctor --config config.example.toml --real-data --ai-commentary
 ```
+
+Use `readiness` before any future mainnet `LIVE_CONFIRM` work:
+
+```powershell
+python -m trading_agent readiness --config config.example.toml
+```
+
+This command is expected to report `BLOCKED` until a separate live trading API key
+and live confirmation implementation exist.
 
 ## Safety Defaults
 

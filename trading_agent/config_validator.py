@@ -14,6 +14,7 @@ class ConfigValidator:
         self._validate_universes(config, issues)
         self._validate_capital_sourcing(config, issues)
         self._validate_modes(config, issues)
+        self._validate_earn(config, issues)
         self._validate_binance(config, issues)
         self._validate_testnet_execution(config, issues)
         self._validate_live_confirm(config, issues)
@@ -78,6 +79,19 @@ class ConfigValidator:
             issues.append(ConfigIssue("ERROR", "app.mode", "LIVE_AUTO is outside the current MVP safety envelope."))
         if config.get("earn", {}).get("allow_locked_redeem", False):
             issues.append(ConfigIssue("ERROR", "earn.allow_locked_redeem", "Locked Earn redeem must remain disabled."))
+
+    def _validate_earn(self, config: dict, issues: list[ConfigIssue]) -> None:
+        earn = config.get("earn", {})
+        allowed = set(self._upper_list(earn.get("allowed_redeem_assets", [])))
+        auto = set(self._upper_list(earn.get("auto_redeem_assets", [])))
+        invalid_auto = sorted(auto - allowed)
+        if invalid_auto:
+            issues.append(ConfigIssue("ERROR", "earn.auto_redeem_assets", f"Auto redeem assets must also be in allowed_redeem_assets: {', '.join(invalid_auto)}."))
+        for key in ("max_redeem_per_run_usdt", "max_redeem_per_day_usdt", "max_auto_redeem_usdc_per_run", "min_auto_redeem_reserve_usdc"):
+            if Decimal(str(earn.get(key, 0))) < 0:
+                issues.append(ConfigIssue("ERROR", f"earn.{key}", "Value must be zero or greater."))
+        if str(earn.get("redeem_type", "FAST")).upper() not in {"FAST", "NORMAL"}:
+            issues.append(ConfigIssue("ERROR", "earn.redeem_type", "Value must be FAST or NORMAL."))
 
     def _validate_binance(self, config: dict, issues: list[ConfigIssue]) -> None:
         binance = config.get("binance", {})

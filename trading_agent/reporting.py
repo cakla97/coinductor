@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -23,6 +23,7 @@ class Reporter:
         proposal: TradeProposal,
         risk_decision: RiskDecision,
         trading_bankroll: TradingBankrollReport,
+        earn_redeem_plan: EarnRedeemPlan,
         paper_execution: PaperExecutionReport,
         testnet_execution: TestnetExecutionReport,
         live_preview: LivePreviewReport,
@@ -138,6 +139,23 @@ class Reporter:
                 f"- Preferred source: `{trading_bankroll.preferred_source}`",
                 f"- Flexible draw needed: `{trading_bankroll.flexible_draw_needed} {trading_bankroll.quote_asset}`",
                 f"- Summary: {trading_bankroll.summary}",
+                "",
+            ]
+        )
+        lines.extend(
+            [
+                "## Flexible Earn Redeem",
+                "",
+                f"- Enabled: `{earn_redeem_plan.enabled}`",
+                f"- Asset: `{earn_redeem_plan.asset}`",
+                f"- Amount: `{earn_redeem_plan.amount}`",
+                f"- Status: `{earn_redeem_plan.status}`",
+                f"- Product ID: `{earn_redeem_plan.product_id}`",
+                f"- Redeem type: `{earn_redeem_plan.redeem_type}`",
+                f"- Can redeem: `{earn_redeem_plan.can_redeem}`",
+                f"- Submitted: `{earn_redeem_plan.submitted}`",
+                f"- Confirmation required: `{earn_redeem_plan.confirmation_required}`",
+                f"- Message: {earn_redeem_plan.message}",
                 "",
             ]
         )
@@ -516,7 +534,7 @@ class Reporter:
                 "",
                 "## Execution",
                 "",
-                "Mainnet live orders are only created when LIVE_CONFIRM submit is explicitly requested and confirmed. Flexible Earn redeem and grid bot creation remain manual/preview-only.",
+                "Mainnet live orders and Flexible Earn redeem are only submitted when explicitly requested and confirmed. Grid bot creation remains manual/preview-only.",
                 "",
             ]
         )

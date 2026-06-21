@@ -308,8 +308,9 @@ python -m trading_agent run --config config.example.toml --real-data --live-conf
 
 The report includes `Mainnet LIVE_CONFIRM Preview`. Missing
 `BINANCE_LIVE_TRADE_API_KEY` / `BINANCE_LIVE_TRADE_API_SECRET` is reported as a blocker.
-If Spot quote balance is too low, the report adds a manual funding checklist. Funding remains
-manual: redeem from Flexible Earn to Spot yourself, then run live-confirm preview again.
+If Spot quote balance is too low, the report adds a Flexible Earn redeem plan. USDC may remain
+in Auto-Subscribe; the assistant can prepare a bounded USDC redeem back to Spot when bankroll
+policy allows it.
 
 Guarded submit requires a separate explicit command:
 
@@ -345,10 +346,16 @@ seed is treated as estimated realized profit. Reports show whether a trade would
 - `FLEXIBLE_EARN_REDEEM_REQUIRED`: quote asset must be manually redeemed from Flexible Earn
 - `INSUFFICIENT`: not enough tracked bankroll is available
 
-This is intentionally audit-first. Flexible Earn redemption and mainnet order submission remain
+This is intentionally audit-first. Flexible Earn redemption and mainnet order submission are
 guarded. The compromise policy prefers profit first, allows limited bootstrap seed while the
-strategy is new, and can recommend a bounded Flexible Earn draw when Spot capital is insufficient.
-Real Flexible Earn redemption is still not automatic in this implementation step.
+strategy is new, and can prepare a bounded USDC Flexible Earn draw when Spot capital is insufficient.
+Redeem submit requires an explicit flag and confirmation string:
+
+```powershell
+python -m trading_agent run --config config.example.toml --real-data --live-confirm-preview --earn-redeem-submit --confirm-earn-redeem CONFIRM_EARN_REDEEM
+```
+
+After a submitted redeem, rerun the assistant so it can verify Spot USDC before any mainnet order.
 
 ## Safety Defaults
 

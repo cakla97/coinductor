@@ -177,6 +177,24 @@ class BinanceClient:
             balances[asset] = balances.get(asset, Decimal("0")) + Decimal(row["totalAmount"])
         return balances
 
+    def get_flexible_positions(self, asset: str | None = None) -> list[dict]:
+        payload = self._signed_get("/sapi/v1/simple-earn/flexible/position", {"size": 100})
+        rows = list(payload.get("rows", []))
+        if asset is None:
+            return rows
+        wanted = asset.upper()
+        return [row for row in rows if str(row.get("asset", "")).upper() == wanted]
+
+    def redeem_flexible_product(self, product_id: str, amount: Decimal, redeem_type: str = "FAST") -> dict:
+        return self.signed_post(
+            "/sapi/v1/simple-earn/flexible/redeem",
+            {
+                "productId": product_id,
+                "amount": str(amount),
+                "type": redeem_type,
+            },
+        )
+
     def _get_locked_balances(self) -> dict[str, Decimal]:
         payload = self._signed_get("/sapi/v1/simple-earn/locked/position", {"size": 100})
         balances: dict[str, Decimal] = {}

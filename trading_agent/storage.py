@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -184,6 +184,19 @@ class Storage:
                 max_profit_trade_amount text,
                 flexible_draw_needed text,
                 summary text
+            );
+            create table if not exists earn_redeem_plans (
+                run_id integer,
+                enabled integer,
+                asset text,
+                amount text,
+                status text,
+                product_id text,
+                redeem_type text,
+                can_redeem integer,
+                submitted integer,
+                confirmation_required text,
+                message text
             );
             create table if not exists next_run_recommendations (
                 run_id integer,
@@ -774,6 +787,7 @@ class Storage:
             "capital_sourcing_plans",
             "capital_sourcing_items",
             "trading_bankroll_reports",
+            "earn_redeem_plans",
             "next_run_recommendations",
             "recommended_actions",
             "execution_checklist_items",
@@ -869,6 +883,39 @@ class Storage:
                 str(report.max_profit_trade_amount),
                 str(report.flexible_draw_needed),
                 report.summary,
+            ),
+        )
+        self.connection.commit()
+
+    def save_earn_redeem_plan(self, run_id: int, plan: EarnRedeemPlan) -> None:
+        self.connection.execute(
+            """
+            insert into earn_redeem_plans (
+                run_id,
+                enabled,
+                asset,
+                amount,
+                status,
+                product_id,
+                redeem_type,
+                can_redeem,
+                submitted,
+                confirmation_required,
+                message
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                int(plan.enabled),
+                plan.asset,
+                str(plan.amount),
+                plan.status,
+                plan.product_id,
+                plan.redeem_type,
+                int(plan.can_redeem),
+                int(plan.submitted),
+                plan.confirmation_required,
+                plan.message,
             ),
         )
         self.connection.commit()

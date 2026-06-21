@@ -122,6 +122,8 @@ def _add_common_run_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--no-live-confirm-preview", action="store_true", help="Disable mainnet LIVE_CONFIRM preview for this run")
     parser.add_argument("--live-confirm-submit", action="store_true", help="Request guarded mainnet LIVE_CONFIRM submission")
     parser.add_argument("--confirm-mainnet-order", default="", help="Must equal CONFIRM_MAINNET_ORDER to submit a mainnet order")
+    parser.add_argument("--earn-redeem-submit", action="store_true", help="Request guarded Flexible Earn redeem")
+    parser.add_argument("--confirm-earn-redeem", default="", help="Must equal CONFIRM_EARN_REDEEM to submit Flexible Earn redeem")
 
 
 def _run_legacy(argv: list[str]) -> int:
@@ -166,6 +168,8 @@ def _load_and_apply_config(args: argparse.Namespace, parser: argparse.ArgumentPa
         config.raw["live_confirm"]["enabled"] = True
     config.raw["_runtime"]["live_submit"] = bool(getattr(args, "live_confirm_submit", False))
     config.raw["_runtime"]["mainnet_confirm"] = getattr(args, "confirm_mainnet_order", "")
+    config.raw["_runtime"]["earn_redeem_submit"] = bool(getattr(args, "earn_redeem_submit", False))
+    config.raw["_runtime"]["earn_redeem_confirm"] = getattr(args, "confirm_earn_redeem", "")
     return config
 
 

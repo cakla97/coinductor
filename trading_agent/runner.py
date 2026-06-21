@@ -85,6 +85,7 @@ class AgentRunner:
             live_quote_cap = Decimal(str(self.config.raw.get("live_confirm", {}).get("max_quote_amount_usdt", risk_decision.adjusted_quote_amount_usdt)))
             bankroll_required = min(risk_decision.adjusted_quote_amount_usdt, live_quote_cap) if risk_decision.approved else Decimal("0")
             bankroll_report = self.bankroll.analyze(balances, bankroll_required)
+            earn_redeem_plan = self.earn.plan_flexible_redeem(liquidity_decision, bankroll_report)
             grid_recommendation = self.grid.recommend(snapshots)
             if grid_recommendation.recommended:
                 quote_asset = str(self.config.raw.get("live_confirm", {}).get("quote_asset", "USDT")).upper()
@@ -160,6 +161,7 @@ class AgentRunner:
             self.storage.save_proposal(run_id, proposal)
             self.storage.save_risk_decision(run_id, risk_decision)
             self.storage.save_trading_bankroll_report(run_id, bankroll_report)
+            self.storage.save_earn_redeem_plan(run_id, earn_redeem_plan)
             self.storage.save_paper_execution(run_id, paper_execution)
             self.storage.save_testnet_execution(run_id, testnet_execution)
             self.storage.save_live_preview(run_id, live_preview)
@@ -186,6 +188,7 @@ class AgentRunner:
                 proposal=proposal,
                 risk_decision=risk_decision,
                 trading_bankroll=bankroll_report,
+                earn_redeem_plan=earn_redeem_plan,
                 paper_execution=paper_execution,
                 testnet_execution=testnet_execution,
                 live_preview=live_preview,

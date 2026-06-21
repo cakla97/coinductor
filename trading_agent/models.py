@@ -53,6 +53,20 @@ class LiquidityDecision:
 
 
 @dataclass(frozen=True)
+class EarnRedeemPlan:
+    enabled: bool
+    asset: str | None
+    amount: Decimal
+    status: str
+    product_id: str
+    redeem_type: str
+    can_redeem: bool
+    submitted: bool
+    confirmation_required: str
+    message: str
+
+
+@dataclass(frozen=True)
 class GridRecommendation:
     recommended: bool
     symbol: str | None

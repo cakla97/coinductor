@@ -65,12 +65,16 @@ allow_flexible_redeem = true
 allow_locked_redeem = false
 redeem_destination = "SPOT"
 allowed_redeem_assets = ["USDC", "BTC", "ETH", "BNB"]
+auto_redeem_assets = ["USDC"]
 max_redeem_per_run_usdt = 50.0
 max_redeem_per_day_usdt = 100.0
+max_auto_redeem_usdc_per_run = 12.0
 min_flexible_reserve_usdt = 25.0
+min_auto_redeem_reserve_usdc = 0.0
 wait_for_redeem_seconds = 30
 require_redeem_success_before_order = true
 execute_real_redeem = false
+redeem_type = "FAST"
 
 [strategy]
 allowed_symbols = ["BTCUSDC", "ETHUSDC", "BNBUSDC"]

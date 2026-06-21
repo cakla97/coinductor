@@ -562,9 +562,19 @@ class Reporter:
             f"- Summary: {plan.summary}",
         ]
         if plan.items:
-            lines.extend(["", "| Asset | Value USDT | Action | Reason |", "| --- | ---: | --- | --- |"])
+            lines.extend(
+                [
+                    "",
+                    "| Asset | Value | Use % of Asset | Remaining Value | Remaining % | Action | Reason |",
+                    "| --- | ---: | ---: | ---: | ---: | --- | --- |",
+                ]
+            )
             for item in plan.items:
-                lines.append(f"| {item.asset} | {item.value_usdt} | {item.action} | {item.reason} |")
+                lines.append(
+                    "| "
+                    f"{item.asset} | {item.value_usdt} | {item.source_pct_of_asset}% | "
+                    f"{item.remaining_value_usdt} | {item.remaining_pct_of_asset}% | {item.action} | {item.reason} |"
+                )
         return lines
 
     def _quote_asset(self, symbol: str) -> str:

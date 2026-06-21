@@ -129,8 +129,11 @@ enabled = true
 recommend_only = true
 allowed_source_assets = ["WLD", "SOL", "BNB"]
 protected_assets = ["BTC", "ETH", "WBETH"]
-max_source_value_usdt_per_run = 50.0
-min_remaining_value_usdt_per_asset = 25.0
+max_source_value_usdt_per_run = 20.0
+max_source_pct_per_asset = 15.0
+max_total_source_pct_per_run = 10.0
+min_remaining_value_usdt_per_asset = 50.0
+min_remaining_pct_per_asset = 70.0
 prefer_overweight_assets = true
 require_manual_confirm = true
 

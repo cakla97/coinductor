@@ -72,6 +72,12 @@ class ConfigValidator:
             issues.append(ConfigIssue("ERROR", "capital_sourcing", f"Assets cannot be both source and protected: {', '.join(overlap)}."))
         if Decimal(str(capital.get("max_source_value_usdt_per_run", 0))) <= 0:
             issues.append(ConfigIssue("ERROR", "capital_sourcing.max_source_value_usdt_per_run", "Value must be greater than zero."))
+        for key in ("max_source_pct_per_asset", "max_total_source_pct_per_run", "min_remaining_pct_per_asset"):
+            value = Decimal(str(capital.get(key, 0)))
+            if value <= 0 or value > 100:
+                issues.append(ConfigIssue("ERROR", f"capital_sourcing.{key}", "Value must be greater than zero and at most 100."))
+        if Decimal(str(capital.get("min_remaining_value_usdt_per_asset", 0))) < 0:
+            issues.append(ConfigIssue("ERROR", "capital_sourcing.min_remaining_value_usdt_per_asset", "Value must be zero or greater."))
 
     def _validate_modes(self, config: dict, issues: list[ConfigIssue]) -> None:
         mode = str(config.get("app", {}).get("mode", "")).upper()

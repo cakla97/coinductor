@@ -134,6 +134,9 @@ class CapitalSourcePlanItem:
     asset: str
     action: str
     value_usdt: Decimal
+    source_pct_of_asset: Decimal
+    remaining_value_usdt: Decimal
+    remaining_pct_of_asset: Decimal
     reason: str
 
 

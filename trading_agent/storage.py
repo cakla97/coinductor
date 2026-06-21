@@ -166,6 +166,9 @@ class Storage:
                 asset text,
                 action text,
                 value_usdt text,
+                source_pct_of_asset text,
+                remaining_value_usdt text,
+                remaining_pct_of_asset text,
                 reason text
             );
             create table if not exists trading_bankroll_reports (
@@ -263,6 +266,9 @@ class Storage:
         self._ensure_column("testnet_orders", "validation_summary", "text")
         self._ensure_column("live_orders", "executed_quantity", "text")
         self._ensure_column("live_orders", "cumulative_quote_qty", "text")
+        self._ensure_column("capital_sourcing_items", "source_pct_of_asset", "text")
+        self._ensure_column("capital_sourcing_items", "remaining_value_usdt", "text")
+        self._ensure_column("capital_sourcing_items", "remaining_pct_of_asset", "text")
         self.connection.commit()
 
     def _ensure_column(self, table: str, column: str, definition: str) -> None:
@@ -841,8 +847,33 @@ class Storage:
             ),
         )
         self.connection.executemany(
-            "insert into capital_sourcing_items values (?, ?, ?, ?, ?, ?)",
-            [(run_id, plan_type, item.asset, item.action, str(item.value_usdt), item.reason) for item in plan.items],
+            """
+            insert into capital_sourcing_items (
+                run_id,
+                plan_type,
+                asset,
+                action,
+                value_usdt,
+                source_pct_of_asset,
+                remaining_value_usdt,
+                remaining_pct_of_asset,
+                reason
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    run_id,
+                    plan_type,
+                    item.asset,
+                    item.action,
+                    str(item.value_usdt),
+                    str(item.source_pct_of_asset),
+                    str(item.remaining_value_usdt),
+                    str(item.remaining_pct_of_asset),
+                    item.reason,
+                )
+                for item in plan.items
+            ],
         )
         self.connection.commit()
 

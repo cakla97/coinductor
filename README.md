@@ -262,6 +262,11 @@ Portfolio tracking is intentionally broader than trading permissions:
 - `[portfolio.asset_roles]` classifies assets as `CORE`, `PROTECTED`, `CAPITAL_SOURCE`,
   `SPECULATIVE_SOURCE`, `STABLE`, or another explicit role used for audit/reporting.
 
+Backup capital sourcing is deliberately conservative. It caps total suggested sourcing per run,
+caps each asset by percentage, and keeps both an absolute and percentage reserve in every source
+asset. Current defaults are 20 USD-like value per run, 15% max from one source asset, 10% max of
+the whole source basket per run, and at least 70% / 50 USD-like value left in each source asset.
+
 Assets that cannot be priced are shown as unpriced instead of silently disappearing from totals.
 Binance internal voucher-like assets with configured prefixes, such as `LD`, are reported separately
 and excluded from valuation to avoid double counting.

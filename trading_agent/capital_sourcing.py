@@ -20,33 +20,47 @@ class CapitalSourcingAdvisor:
 
         items: list[CapitalSourcePlanItem] = []
         remaining = missing
-        max_per_run = Decimal(str(self.config["capital_sourcing"]["max_source_value_usdt_per_run"]))
-        allowed = set(self.config["capital_sourcing"].get("allowed_source_assets", []))
-        protected = set(self.config["capital_sourcing"].get("protected_assets", []))
-        min_remaining = Decimal(str(self.config["capital_sourcing"]["min_remaining_value_usdt_per_asset"]))
+        capital_config = self.config["capital_sourcing"]
+        max_per_run = Decimal(str(capital_config["max_source_value_usdt_per_run"]))
+        max_pct_per_asset = Decimal(str(capital_config.get("max_source_pct_per_asset", "15"))) / Decimal("100")
+        max_total_pct = Decimal(str(capital_config.get("max_total_source_pct_per_run", "10"))) / Decimal("100")
+        min_remaining_value = Decimal(str(capital_config["min_remaining_value_usdt_per_asset"]))
+        min_remaining_pct = Decimal(str(capital_config.get("min_remaining_pct_per_asset", "70"))) / Decimal("100")
+        allowed = set(capital_config.get("allowed_source_assets", []))
+        protected = set(capital_config.get("protected_assets", []))
 
         candidates = [
             asset
             for asset in portfolio.assets
             if asset.asset in allowed
             and asset.asset not in protected
-            and asset.total_value_usdt > min_remaining
+            and asset.total_value_usdt > min_remaining_value
         ]
         candidates.sort(key=lambda asset: self._candidate_score(asset), reverse=True)
 
-        budget_remaining = max_per_run
+        source_pool_value = sum((asset.total_value_usdt for asset in candidates), Decimal("0"))
+        total_pct_cap = source_pool_value * max_total_pct
+        budget_remaining = min(max_per_run, total_pct_cap)
         for candidate in candidates:
             if remaining <= 0 or budget_remaining <= 0:
                 break
-            max_from_asset = max(Decimal("0"), candidate.total_value_usdt - min_remaining)
+            min_remaining_from_pct = candidate.total_value_usdt * min_remaining_pct
+            required_remaining = max(min_remaining_value, min_remaining_from_pct)
+            max_from_remaining = max(Decimal("0"), candidate.total_value_usdt - required_remaining)
+            max_from_pct = candidate.total_value_usdt * max_pct_per_asset
+            max_from_asset = min(max_from_remaining, max_from_pct)
             value = min(remaining, budget_remaining, max_from_asset)
             if value <= 0:
                 continue
+            remaining_value = candidate.total_value_usdt - value
             items.append(
                 CapitalSourcePlanItem(
                     asset=candidate.asset,
                     action=f"Consider manually selling up to {self._money(value)} USDT-equivalent worth of {candidate.asset} for {quote_asset}.",
                     value_usdt=self._money(value),
+                    source_pct_of_asset=self._pct(value, candidate.total_value_usdt),
+                    remaining_value_usdt=self._money(remaining_value),
+                    remaining_pct_of_asset=self._pct(remaining_value, candidate.total_value_usdt),
                     reason=self._reason(candidate.rebalance_action),
                 )
             )
@@ -60,9 +74,9 @@ class CapitalSourcingAdvisor:
                 missing_usdt=self._money(missing),
                 quote_asset=quote_asset,
                 recommended=False,
-                summary=f"Additional {quote_asset} is needed, but no allowed source asset has enough non-protected value.",
-                items=(),
-            )
+            summary=f"Additional {quote_asset} is needed, but no allowed source asset has enough value inside the configured reserve limits.",
+            items=(),
+        )
 
         covered = missing - max(Decimal("0"), remaining)
         summary = f"Manual capital sourcing can cover about {self._money(covered)} {quote_asset} of the {self._money(missing)} {quote_asset} gap."
@@ -108,6 +122,11 @@ class CapitalSourcingAdvisor:
 
     def _money(self, value: Decimal) -> Decimal:
         return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    def _pct(self, value: Decimal, total: Decimal) -> Decimal:
+        if total <= 0:
+            return Decimal("0")
+        return (value / total * Decimal("100")).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
 
     def _quote_asset(self) -> str:
         return str(self.config.get("live_confirm", {}).get("quote_asset", self.config.get("app", {}).get("base_currency", "USDT"))).upper()

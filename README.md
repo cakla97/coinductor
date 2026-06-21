@@ -343,6 +343,12 @@ If Spot quote balance is too low, the report adds a Flexible Earn redeem plan. U
 in Auto-Subscribe; the assistant can prepare a bounded USDC redeem back to Spot when bankroll
 policy allows it.
 
+Before any first real submit, review the `Execution Checklist` section. It includes a
+`First LIVE action gate` item with required USDC, spot-free USDC, preferred bankroll source,
+Flexible Earn draw needed, Earn redeem status, and the current LIVE_CONFIRM order status. A real
+order should be considered only when the gate shows no `BLOCKER` items and the order status is
+`PREVIEW_READY`.
+
 Guarded submit requires a separate explicit command:
 
 ```powershell

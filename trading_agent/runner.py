@@ -141,6 +141,9 @@ class AgentRunner:
                 grid_recommendation=grid_recommendation,
                 strategy_decision=strategy_decision,
                 research_status=research_status,
+                trading_bankroll=bankroll_report,
+                earn_redeem_plan=earn_redeem_plan,
+                live_preview=live_preview,
             )
             ai_commentary = self.ai.comment_on_portfolio(
                 portfolio=portfolio_analysis,

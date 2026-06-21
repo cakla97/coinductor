@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from .models import (
     CapitalSourcingPlan,
+    EarnRedeemPlan,
     ExecutionChecklistItem,
     GridRecommendation,
     LiquidityDecision,
+    LivePreviewReport,
     ResearchStatus,
     RiskDecision,
     StrategyDecision,
     TradeProposal,
+    TradingBankrollReport,
 )
 
 
@@ -24,6 +27,9 @@ class ExecutionChecklistBuilder:
         grid_recommendation: GridRecommendation,
         strategy_decision: StrategyDecision,
         research_status: ResearchStatus,
+        trading_bankroll: TradingBankrollReport,
+        earn_redeem_plan: EarnRedeemPlan,
+        live_preview: LivePreviewReport,
     ) -> tuple[ExecutionChecklistItem, ...]:
         items: list[ExecutionChecklistItem] = []
 
@@ -38,8 +44,6 @@ class ExecutionChecklistBuilder:
                     ),
                 )
             )
-
-        self._append_capital_steps(items, "spot trade", spot_capital_plan)
 
         if risk_decision.approved:
             quote_asset = self._quote_asset(proposal.symbol)
@@ -58,11 +62,8 @@ class ExecutionChecklistBuilder:
                 items.append(
                     ExecutionChecklistItem(
                         priority="MANUAL",
-                        step="Prepare spot trade liquidity",
-                        detail=(
-                            f"Redeem or otherwise make available {liquidity_decision.redeem_amount} "
-                            f"{liquidity_decision.redeem_asset} before placing the spot trade."
-                        ),
+                        step="Prepare full-size spot trade liquidity",
+                        detail=self._spot_liquidity_detail(liquidity_decision, trading_bankroll),
                     )
                 )
 
@@ -102,6 +103,15 @@ class ExecutionChecklistBuilder:
                 )
             )
 
+        self._append_first_live_action_gate(items, trading_bankroll, earn_redeem_plan, live_preview)
+        self._append_capital_steps(
+            items,
+            "full-size spot trade",
+            spot_capital_plan,
+            priority="OPTIONAL",
+            detail_prefix="Not required for the first small LIVE test. ",
+        )
+
         items.append(
             ExecutionChecklistItem(
                 priority="INFO",
@@ -111,6 +121,77 @@ class ExecutionChecklistBuilder:
         )
         return tuple(items)
 
+    def _append_first_live_action_gate(
+        self,
+        items: list[ExecutionChecklistItem],
+        bankroll: TradingBankrollReport,
+        earn_redeem_plan: EarnRedeemPlan,
+        live_preview: LivePreviewReport,
+    ) -> None:
+        items.append(
+            ExecutionChecklistItem(
+                priority="GATE",
+                step="First LIVE action gate",
+                detail=(
+                    f"Required {bankroll.required_amount} {bankroll.quote_asset}; spot free "
+                    f"{bankroll.spot_free} {bankroll.quote_asset}; preferred source "
+                    f"{bankroll.preferred_source}; flexible draw needed {bankroll.flexible_draw_needed} "
+                    f"{bankroll.quote_asset}."
+                ),
+            )
+        )
+        if earn_redeem_plan.enabled and earn_redeem_plan.status != "NOT_NEEDED":
+            priority = "MANUAL" if earn_redeem_plan.status == "PREVIEW_READY" else "BLOCKER"
+            items.append(
+                ExecutionChecklistItem(
+                    priority=priority,
+                    step="Resolve USDC Flexible Earn funding before live order",
+                    detail=(
+                        f"Earn redeem status is {earn_redeem_plan.status}; amount "
+                        f"{earn_redeem_plan.amount} {earn_redeem_plan.asset or bankroll.quote_asset}; "
+                        f"submitted={earn_redeem_plan.submitted}. {earn_redeem_plan.message}"
+                    ),
+                )
+            )
+        if not live_preview.enabled:
+            items.append(
+                ExecutionChecklistItem(
+                    priority="BLOCKER",
+                    step="Run LIVE_CONFIRM preview before submit",
+                    detail="Use --live-confirm-preview and continue only after the preview report is enabled.",
+                )
+            )
+            return
+        if not live_preview.orders:
+            items.append(
+                ExecutionChecklistItem(
+                    priority="BLOCKER",
+                    step="Wait for an actionable live order preview",
+                    detail=live_preview.summary,
+                )
+            )
+            return
+        for order in live_preview.orders:
+            if order.status == "PREVIEW_READY":
+                items.append(
+                    ExecutionChecklistItem(
+                        priority="CONFIRM",
+                        step=f"Live submit is eligible for {order.side} {order.symbol}",
+                        detail=(
+                            f"Preview passed for {order.quote_amount_usdt} {order.quote_asset}. "
+                            "Submit only with --live-confirm-submit --confirm-mainnet-order CONFIRM_MAINNET_ORDER."
+                        ),
+                    )
+                )
+            else:
+                items.append(
+                    ExecutionChecklistItem(
+                        priority="BLOCKER",
+                        step=f"Live submit blocked for {order.side} {order.symbol}",
+                        detail=f"{order.validation_summary} {order.message}",
+                    )
+                )
+
     def _quote_asset(self, symbol: str) -> str:
         symbol = symbol.upper()
         for quote in ("USDC", "USDT", "FDUSD", "BTC", "ETH", "BNB"):
@@ -118,23 +199,42 @@ class ExecutionChecklistBuilder:
                 return quote
         return "USDT"
 
-    def _append_capital_steps(self, items: list[ExecutionChecklistItem], label: str, plan: CapitalSourcingPlan) -> None:
+    def _spot_liquidity_detail(self, liquidity: LiquidityDecision, bankroll: TradingBankrollReport) -> str:
+        base = (
+            f"Full-size strategy would need {liquidity.redeem_amount} {liquidity.redeem_asset} "
+            "made available before placing the full spot trade."
+        )
+        if bankroll.flexible_draw_needed > 0 and bankroll.flexible_draw_needed < liquidity.redeem_amount:
+            return (
+                f"{base} The first small LIVE test currently needs only "
+                f"{bankroll.flexible_draw_needed} {bankroll.quote_asset}; follow the First LIVE action gate below."
+            )
+        return base
+
+    def _append_capital_steps(
+        self,
+        items: list[ExecutionChecklistItem],
+        label: str,
+        plan: CapitalSourcingPlan,
+        priority: str = "MANUAL",
+        detail_prefix: str = "",
+    ) -> None:
         if plan.missing_usdt <= 0:
             return
         if not plan.recommended:
             items.append(
                 ExecutionChecklistItem(
-                    priority="BLOCKER",
+                    priority="BLOCKER" if priority != "OPTIONAL" else "OPTIONAL",
                     step=f"Resolve {label} funding gap",
-                    detail=plan.summary,
+                    detail=f"{detail_prefix}{plan.summary}",
                 )
             )
             return
         for item in plan.items:
             items.append(
                 ExecutionChecklistItem(
-                    priority="MANUAL",
+                    priority=priority,
                     step=f"Source capital for {label} from {item.asset}",
-                    detail=f"{item.action} Reason: {item.reason}",
+                    detail=f"{detail_prefix}{item.action} Reason: {item.reason}",
                 )
             )

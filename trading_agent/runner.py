@@ -8,6 +8,7 @@ from .binance_client import BinanceClient
 from .capital_sourcing import CapitalSourcingAdvisor
 from .config import AppConfig
 from .earn_manager import EarnLiquidityManager
+from .dust_sourcing import DustSourcingAdvisor
 from .execution_checklist import ExecutionChecklistBuilder
 from .grid_advisor import GridBotAdvisor
 from .live_preview import LivePreviewExecutor
@@ -34,6 +35,7 @@ class AgentRunner:
         self.ai = AiAnalyst(config.raw)
         self.risk = RiskEngine(config.raw)
         self.earn = EarnLiquidityManager(config.raw)
+        self.dust = DustSourcingAdvisor(config.raw)
         self.grid = GridBotAdvisor(config.raw)
         self.portfolio = PortfolioAnalyzer(config.raw)
         self.capital_sourcing = CapitalSourcingAdvisor(config.raw)
@@ -63,6 +65,7 @@ class AgentRunner:
             asset_prices = self.client.get_asset_prices_usdt(portfolio_assets)
             portfolio_analysis = self.portfolio.analyze(balances, asset_prices)
             rebalance_plan = self.rebalance_planner.plan(portfolio_analysis)
+            dust_plan = self.dust.plan(portfolio_analysis)
             research_bundle = self.research.load()
             research_status = self.research.status_and_request(portfolio_analysis)
             proposal = self.ai.propose_trade(snapshots)
@@ -198,6 +201,7 @@ class AgentRunner:
                 grid_liquidity_decision=grid_liquidity_decision,
                 spot_capital_plan=spot_capital_plan,
                 grid_capital_plan=grid_capital_plan,
+                dust_plan=dust_plan,
                 strategy_decision=strategy_decision,
                 next_run=next_run_recommendation,
                 recommended_actions=recommended_actions,

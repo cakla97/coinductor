@@ -267,6 +267,10 @@ caps each asset by percentage, and keeps both an absolute and percentage reserve
 asset. Current defaults are 20 USD-like value per run, 15% max from one source asset, 10% max of
 the whole source basket per run, and at least 70% / 50 USD-like value left in each source asset.
 
+Small legacy holdings such as `PEPE`, `DOGE`, `ADA`, and `DOT` are tracked explicitly rather than
+treated as random dust. Unclassified assets outside the keep-list can be reported as airdrop/dust
+funding candidates for conversion to USDC, currently recommendation-only.
+
 Assets that cannot be priced are shown as unpriced instead of silently disappearing from totals.
 Binance internal voucher-like assets with configured prefixes, such as `LD`, are reported separately
 and excluded from valuation to avoid double counting.

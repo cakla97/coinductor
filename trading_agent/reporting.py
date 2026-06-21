@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -33,6 +33,7 @@ class Reporter:
         grid_liquidity_decision: LiquidityDecision,
         spot_capital_plan: CapitalSourcingPlan,
         grid_capital_plan: CapitalSourcingPlan,
+        dust_plan: DustConversionPlan,
         strategy_decision: StrategyDecision,
         next_run: NextRunRecommendation,
         recommended_actions: tuple[RecommendedAction, ...],
@@ -482,6 +483,23 @@ class Reporter:
                 "",
                 *self._capital_plan_lines(grid_capital_plan),
                 "",
+                "## Dust / Airdrop Funding",
+                "",
+                f"- Enabled: `{dust_plan.enabled}`",
+                f"- Quote asset: `{dust_plan.quote_asset}`",
+                f"- Recommended: `{dust_plan.recommended}`",
+                f"- Total value: `{dust_plan.total_value_usdt}`",
+                f"- Summary: {dust_plan.summary}",
+                "",
+            ]
+        )
+        if dust_plan.items:
+            lines.extend(["| Asset | Value | Action | Reason |", "| --- | ---: | --- | --- |"])
+            for item in dust_plan.items:
+                lines.append(f"| {item.asset} | {item.value_usdt} | {item.action} | {item.reason} |")
+            lines.append("")
+        lines.extend(
+            [
                 "## Strategy Decision",
                 "",
                 f"- Decision: `{strategy_decision.decision_type}`",

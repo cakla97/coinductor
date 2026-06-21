@@ -110,7 +110,7 @@ allow_seed_bootstrap = true
 max_flexible_earn_draw_usdc_per_run = 12.0
 
 [portfolio]
-tracked_assets = ["USDC", "USDT", "BNB", "BTC", "WBETH", "ETH", "SOL", "WLD"]
+tracked_assets = ["USDC", "USDT", "BNB", "BTC", "WBETH", "ETH", "SOL", "WLD", "PEPE", "ADA", "DOGE", "DOT"]
 pricing_quote_assets = ["USDC", "USDT", "FDUSD"]
 ignored_asset_prefixes = ["LD"]
 
@@ -123,6 +123,19 @@ WBETH = "PROTECTED"
 BNB = "CAPITAL_SOURCE"
 SOL = "CAPITAL_SOURCE"
 WLD = "SPECULATIVE_SOURCE"
+PEPE = "SPECULATIVE_LEGACY"
+DOGE = "SPECULATIVE_LEGACY"
+ADA = "LEGACY_ALT"
+DOT = "LEGACY_ALT"
+
+[dust_sourcing]
+enabled = true
+quote_asset = "USDC"
+exclude_assets = ["USDC", "USDT", "BNB", "BTC", "SOL", "WBETH", "ETH", "WLD", "PEPE", "ADA", "DOGE", "DOT"]
+max_convert_value_usdt_per_run = 10.0
+max_convert_pct_per_asset = 100.0
+min_convert_value_usdt_per_asset = 0.5
+recommend_only = true
 
 [capital_sourcing]
 enabled = true
@@ -164,7 +177,10 @@ enabled = true
 frequency = "weekly"
 threshold_pct = 5.0
 min_trade_value_usdt = 5.0
-max_trade_value_usdt_per_step = 25.0
+max_trade_value_usdt_per_step = 20.0
+max_trade_pct_per_asset = 15.0
+min_remaining_pct_per_asset = 70.0
+min_remaining_value_usdt_per_asset = 50.0
 preview_only = true
 
 [rebalancing.target_allocation]

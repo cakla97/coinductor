@@ -13,6 +13,7 @@ class ConfigValidator:
         self._validate_rebalancing(config, issues)
         self._validate_universes(config, issues)
         self._validate_capital_sourcing(config, issues)
+        self._validate_dust_sourcing(config, issues)
         self._validate_modes(config, issues)
         self._validate_earn(config, issues)
         self._validate_binance(config, issues)
@@ -54,6 +55,12 @@ class ConfigValidator:
         for key in ("min_trade_value_usdt", "max_trade_value_usdt_per_step"):
             if Decimal(str(rebalancing.get(key, 0))) <= 0:
                 issues.append(ConfigIssue("ERROR", f"rebalancing.{key}", "Value must be greater than zero."))
+        for key in ("max_trade_pct_per_asset", "min_remaining_pct_per_asset"):
+            value = Decimal(str(rebalancing.get(key, 0)))
+            if value <= 0 or value > 100:
+                issues.append(ConfigIssue("ERROR", f"rebalancing.{key}", "Value must be greater than zero and at most 100."))
+        if Decimal(str(rebalancing.get("min_remaining_value_usdt_per_asset", 0))) < 0:
+            issues.append(ConfigIssue("ERROR", "rebalancing.min_remaining_value_usdt_per_asset", "Value must be zero or greater."))
 
     def _validate_universes(self, config: dict, issues: list[ConfigIssue]) -> None:
         tracked = set(self._upper_list(config.get("portfolio", {}).get("tracked_assets", [])))
@@ -78,6 +85,17 @@ class ConfigValidator:
                 issues.append(ConfigIssue("ERROR", f"capital_sourcing.{key}", "Value must be greater than zero and at most 100."))
         if Decimal(str(capital.get("min_remaining_value_usdt_per_asset", 0))) < 0:
             issues.append(ConfigIssue("ERROR", "capital_sourcing.min_remaining_value_usdt_per_asset", "Value must be zero or greater."))
+
+    def _validate_dust_sourcing(self, config: dict, issues: list[ConfigIssue]) -> None:
+        dust = config.get("dust_sourcing", {})
+        if not dust:
+            return
+        for key in ("max_convert_value_usdt_per_run", "min_convert_value_usdt_per_asset"):
+            if Decimal(str(dust.get(key, 0))) < 0:
+                issues.append(ConfigIssue("ERROR", f"dust_sourcing.{key}", "Value must be zero or greater."))
+        max_pct = Decimal(str(dust.get("max_convert_pct_per_asset", 0)))
+        if max_pct <= 0 or max_pct > 100:
+            issues.append(ConfigIssue("ERROR", "dust_sourcing.max_convert_pct_per_asset", "Value must be greater than zero and at most 100."))
 
     def _validate_modes(self, config: dict, issues: list[ConfigIssue]) -> None:
         mode = str(config.get("app", {}).get("mode", "")).upper()

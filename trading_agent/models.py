@@ -152,6 +152,24 @@ class CapitalSourcingPlan:
 
 
 @dataclass(frozen=True)
+class DustConversionItem:
+    asset: str
+    value_usdt: Decimal
+    action: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class DustConversionPlan:
+    enabled: bool
+    quote_asset: str
+    total_value_usdt: Decimal
+    recommended: bool
+    summary: str
+    items: tuple[DustConversionItem, ...]
+
+
+@dataclass(frozen=True)
 class TradingBankrollReport:
     enabled: bool
     quote_asset: str

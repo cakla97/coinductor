@@ -48,11 +48,14 @@ class ConfigValidator:
 
     def _validate_rebalancing(self, config: dict, issues: list[ConfigIssue]) -> None:
         rebalancing = config.get("rebalancing", {})
+        target_mode = str(rebalancing.get("target_mode", "static")).lower()
+        if target_mode not in {"static", "baseline_current"}:
+            issues.append(ConfigIssue("ERROR", "rebalancing.target_mode", "Value must be static or baseline_current."))
         allocation = rebalancing.get("target_allocation", {})
         total = sum((Decimal(str(value)) for value in allocation.values()), Decimal("0"))
-        if total != Decimal("100"):
+        if target_mode == "static" and total != Decimal("100"):
             issues.append(ConfigIssue("WARNING", "rebalancing.target_allocation", f"Target allocation sums to {total}%, not 100%."))
-        for key in ("min_trade_value_usdt", "max_trade_value_usdt_per_step"):
+        for key in ("threshold_pct", "drift_threshold_pct", "min_trade_value_usdt", "max_trade_value_usdt_per_step"):
             if Decimal(str(rebalancing.get(key, 0))) <= 0:
                 issues.append(ConfigIssue("ERROR", f"rebalancing.{key}", "Value must be greater than zero."))
         for key in ("max_trade_pct_per_asset", "min_remaining_pct_per_asset"):

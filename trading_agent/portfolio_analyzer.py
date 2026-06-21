@@ -10,9 +10,11 @@ class PortfolioAnalyzer:
         self.config = config
 
     def analyze(self, balances: list[Balance], prices: dict[str, Decimal]) -> PortfolioAnalysis:
-        target_allocation = {
+        rebalancing = self.config.get("rebalancing", {})
+        target_mode = str(rebalancing.get("target_mode", "static")).lower()
+        configured_target_allocation = {
             asset.upper(): Decimal(str(percent))
-            for asset, percent in self.config.get("rebalancing", {}).get("target_allocation", {}).items()
+            for asset, percent in rebalancing.get("target_allocation", {}).items()
         }
         raw_rows: list[tuple[Balance, Decimal, Decimal, Decimal, Decimal]] = []
         unpriced_assets: list[str] = []
@@ -44,7 +46,8 @@ class PortfolioAnalyzer:
                 flexible_value=row[3],
                 locked_value=row[4],
                 total_value=total_value,
-                target_allocation=target_allocation,
+                target_mode=target_mode,
+                target_allocation=configured_target_allocation,
             )
             for row in sorted(raw_rows, key=lambda item: item[2] + item[3] + item[4], reverse=True)
         )
@@ -60,7 +63,7 @@ class PortfolioAnalyzer:
             assets=assets,
             unpriced_assets=tuple(sorted(unpriced_assets)),
             ignored_internal_assets=tuple(sorted(ignored_internal_assets)),
-            rebalance_summary=self._rebalance_summary(assets),
+            rebalance_summary=self._rebalance_summary(assets, target_mode),
             liquidity_summary=self._liquidity_summary(locked_pct, unpriced_assets),
         )
 
@@ -72,13 +75,14 @@ class PortfolioAnalyzer:
         flexible_value: Decimal,
         locked_value: Decimal,
         total_value: Decimal,
+        target_mode: str,
         target_allocation: dict[str, Decimal],
     ) -> PortfolioAssetValuation:
         asset_total = spot_value + flexible_value + locked_value
         allocation_pct = self._pct(asset_total, total_value)
-        target_pct = target_allocation.get(balance.asset)
+        target_pct = allocation_pct if target_mode == "baseline_current" else target_allocation.get(balance.asset)
         gap_pct = allocation_pct - target_pct if target_pct is not None else None
-        action = self._rebalance_action(gap_pct)
+        action = self._rebalance_action(gap_pct, target_mode)
         return PortfolioAssetValuation(
             asset=balance.asset,
             role=self._asset_role(balance.asset),
@@ -93,10 +97,12 @@ class PortfolioAnalyzer:
             rebalance_action=action,
         )
 
-    def _rebalance_action(self, gap_pct: Decimal | None) -> str:
+    def _rebalance_action(self, gap_pct: Decimal | None, target_mode: str) -> str:
         if gap_pct is None:
             return "NO_TARGET"
-        threshold = Decimal(str(self.config.get("rebalancing", {}).get("threshold_pct", 5)))
+        rebalancing = self.config.get("rebalancing", {})
+        threshold_key = "drift_threshold_pct" if target_mode == "baseline_current" else "threshold_pct"
+        threshold = Decimal(str(rebalancing.get(threshold_key, rebalancing.get("threshold_pct", 5))))
         if gap_pct > threshold:
             return "REDUCE"
         if gap_pct < -threshold:
@@ -111,9 +117,11 @@ class PortfolioAnalyzer:
         roles = self.config.get("portfolio", {}).get("asset_roles", {})
         return str(roles.get(asset.upper(), "UNCLASSIFIED")).upper()
 
-    def _rebalance_summary(self, assets: tuple[PortfolioAssetValuation, ...]) -> str:
+    def _rebalance_summary(self, assets: tuple[PortfolioAssetValuation, ...], target_mode: str) -> str:
         actions = [asset for asset in assets if asset.rebalance_action in {"REDUCE", "INCREASE"}]
         if not actions:
+            if target_mode == "baseline_current":
+                return "Portfolio is treated as the current allocation baseline; no drift beyond configured baseline thresholds is detected."
             return "Portfolio is within configured rebalance thresholds for targeted assets."
         fragments = [f"{asset.asset}: {asset.rebalance_action} ({asset.gap_pct:+} pp)" for asset in actions if asset.gap_pct is not None]
         return "Rebalance gaps detected: " + "; ".join(fragments)

@@ -175,7 +175,9 @@ warn_near_range_pct = 5.0
 [rebalancing]
 enabled = true
 frequency = "weekly"
+target_mode = "baseline_current"
 threshold_pct = 5.0
+drift_threshold_pct = 7.5
 min_trade_value_usdt = 5.0
 max_trade_value_usdt_per_step = 20.0
 max_trade_pct_per_asset = 15.0
@@ -184,6 +186,7 @@ min_remaining_value_usdt_per_asset = 50.0
 preview_only = true
 
 [rebalancing.target_allocation]
+# Used only when target_mode = "static".
 USDC = 50.0
 BTC = 30.0
 ETH = 15.0

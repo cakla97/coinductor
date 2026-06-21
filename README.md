@@ -277,14 +277,19 @@ and excluded from valuation to avoid double counting.
 
 ## Rebalancing Preview
 
-The assistant translates target allocation gaps into preview-only rebalance steps. It does not
-execute these steps. The planner:
+The assistant translates allocation gaps into preview-only rebalance steps. It does not execute
+these steps. The default `[rebalancing].target_mode = "baseline_current"` treats the current
+portfolio allocation as the baseline, so the assistant preserves the existing portfolio shape
+instead of forcing a static model allocation. `[rebalancing.target_allocation]` is kept for an
+optional future/static mode and is used only when `target_mode = "static"`.
+
+The planner:
 
 - caps each suggested step with `[rebalancing].max_trade_value_usdt_per_step`
 - ignores tiny gaps below `[rebalancing].min_trade_value_usdt`
 - blocks sells for protected assets
 - blocks symbols outside `[strategy].allowed_symbols`
-- marks USDT increases as `KEEP_CASH` instead of creating a trade
+- marks USDC increases as `KEEP_CASH` instead of creating a trade
 
 Use `doctor` to validate local setup and config consistency:
 

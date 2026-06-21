@@ -98,12 +98,16 @@ class LivePreviewExecutor:
         funding_required = missing_usdt > 0
         submitted = False
         order_id = ""
+        executed_quantity = Decimal("0")
+        cumulative_quote_qty = Decimal("0")
         message = "No mainnet order was submitted."
         if status == "PREVIEW_READY" and self._submit_requested():
             submit_result = self._submit_market_buy(proposal.symbol, quote_amount, intent_id)
             status = submit_result["status"]
             submitted = submit_result["submitted"]
             order_id = submit_result["order_id"]
+            executed_quantity = submit_result["executed_quantity"]
+            cumulative_quote_qty = submit_result["cumulative_quote_qty"]
             message = submit_result["message"]
         return LivePreviewReport(
             enabled=True,
@@ -124,6 +128,8 @@ class LivePreviewExecutor:
                     confirmation_required="CONFIRM_MAINNET_ORDER",
                     submitted=submitted,
                     order_id=order_id,
+                    executed_quantity=executed_quantity,
+                    cumulative_quote_qty=cumulative_quote_qty,
                     message=message,
                 ),
             ),
@@ -198,6 +204,8 @@ class LivePreviewExecutor:
                 "submitted": False,
                 "status": "SUBMIT_SKIPPED",
                 "order_id": "",
+                "executed_quantity": Decimal("0"),
+                "cumulative_quote_qty": Decimal("0"),
                 "message": "Submit requested but confirmation string did not match CONFIRM_MAINNET_ORDER.",
             }
         client_order_id = self._client_order_id(symbol, intent_id)
@@ -208,12 +216,16 @@ class LivePreviewExecutor:
                 "submitted": True,
                 "status": "SUBMIT_ERROR",
                 "order_id": "",
+                "executed_quantity": Decimal("0"),
+                "cumulative_quote_qty": Decimal("0"),
                 "message": str(exc),
             }
         return {
             "submitted": True,
             "status": str(response.get("status", "SUBMITTED")),
             "order_id": str(response.get("orderId", "")),
+            "executed_quantity": Decimal(str(response.get("executedQty", "0"))),
+            "cumulative_quote_qty": Decimal(str(response.get("cummulativeQuoteQty", "0"))),
             "message": f"Mainnet order submitted with clientOrderId {client_order_id}.",
         }
 

@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -127,6 +127,8 @@ class Storage:
                 status text,
                 submitted integer,
                 order_id text,
+                executed_quantity text,
+                cumulative_quote_qty text,
                 validation_summary text,
                 message text
             );
@@ -246,6 +248,8 @@ class Storage:
         self._ensure_column("paper_orders", "intent_id", "text")
         self._ensure_column("testnet_orders", "queried_status", "text")
         self._ensure_column("testnet_orders", "validation_summary", "text")
+        self._ensure_column("live_orders", "executed_quantity", "text")
+        self._ensure_column("live_orders", "cumulative_quote_qty", "text")
         self.connection.commit()
 
     def _ensure_column(self, table: str, column: str, definition: str) -> None:
@@ -482,9 +486,11 @@ class Storage:
                 status,
                 submitted,
                 order_id,
+                executed_quantity,
+                cumulative_quote_qty,
                 validation_summary,
                 message
-            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
@@ -498,6 +504,8 @@ class Storage:
                     order.status,
                     int(order.submitted),
                     order.order_id,
+                    str(order.executed_quantity),
+                    str(order.cumulative_quote_qty),
                     order.validation_summary,
                     order.message,
                 )
@@ -612,6 +620,127 @@ class Storage:
             total_realized_pnl_usdt=total_pnl,
             summary=summary,
         )
+
+    def get_live_position_summary(self, snapshots: list[MarketSnapshot], config: dict) -> LivePositionSummary:
+        buys = self.connection.execute(
+            """
+            select intent_id, symbol, executed_quantity, cumulative_quote_qty, order_id
+            from live_orders
+            where side = 'BUY'
+              and submitted = 1
+              and status = 'FILLED'
+              and cast(executed_quantity as real) > 0
+            order by run_id desc
+            limit 50
+            """
+        ).fetchall()
+        price_by_symbol = {snapshot.symbol: snapshot.price for snapshot in snapshots}
+        open_positions: list[LivePositionCycle] = []
+        closed_positions: list[LivePositionCycle] = []
+        total_realized = Decimal("0")
+        for buy in buys:
+            sell = self.connection.execute(
+                """
+                select executed_quantity, cumulative_quote_qty, order_id
+                from live_orders
+                where intent_id = ?
+                  and side = 'SELL'
+                  and submitted = 1
+                  and status = 'FILLED'
+                order by run_id desc
+                limit 1
+                """,
+                (f"sell-{buy['intent_id']}",),
+            ).fetchone()
+            symbol = str(buy["symbol"])
+            quantity = Decimal(str(buy["executed_quantity"] or "0"))
+            buy_quote = Decimal(str(buy["cumulative_quote_qty"] or "0"))
+            entry_price = self._safe_div(buy_quote, quantity)
+            stop_loss = entry_price * (Decimal("1") - Decimal(str(config.get("orders", {}).get("default_stop_loss_pct", "0"))) / Decimal("100"))
+            take_profit = entry_price * (Decimal("1") + Decimal(str(config.get("orders", {}).get("default_take_profit_pct", "0"))) / Decimal("100"))
+            if sell is not None:
+                sell_quote = Decimal(str(sell["cumulative_quote_qty"] or "0"))
+                pnl = sell_quote - buy_quote
+                total_realized += pnl
+                closed_positions.append(
+                    LivePositionCycle(
+                        intent_id=str(buy["intent_id"]),
+                        symbol=symbol,
+                        buy_order_id=str(buy["order_id"]),
+                        sell_order_id=str(sell["order_id"]),
+                        buy_quote=buy_quote,
+                        sell_quote=sell_quote,
+                        quantity=quantity,
+                        entry_price=entry_price,
+                        current_price=None,
+                        current_value=None,
+                        pnl_quote=pnl,
+                        pnl_pct=self._safe_pct(pnl, buy_quote),
+                        stop_loss_price=stop_loss,
+                        take_profit_price=take_profit,
+                        status="CLOSED",
+                        exit_preview_status="CLOSED",
+                        exit_preview_reason="Position is already closed.",
+                    )
+                )
+                continue
+
+            current_price = price_by_symbol.get(symbol)
+            current_value = quantity * current_price if current_price is not None else None
+            pnl = current_value - buy_quote if current_value is not None else None
+            pnl_pct = self._safe_pct(pnl, buy_quote) if pnl is not None else None
+            exit_status, exit_reason = self._exit_preview(current_price, stop_loss, take_profit)
+            open_positions.append(
+                LivePositionCycle(
+                    intent_id=str(buy["intent_id"]),
+                    symbol=symbol,
+                    buy_order_id=str(buy["order_id"]),
+                    sell_order_id=None,
+                    buy_quote=buy_quote,
+                    sell_quote=None,
+                    quantity=quantity,
+                    entry_price=entry_price,
+                    current_price=current_price,
+                    current_value=current_value,
+                    pnl_quote=pnl,
+                    pnl_pct=pnl_pct,
+                    stop_loss_price=stop_loss,
+                    take_profit_price=take_profit,
+                    status="OPEN",
+                    exit_preview_status=exit_status,
+                    exit_preview_reason=exit_reason,
+                )
+            )
+        summary = (
+            f"{len(open_positions)} open live position(s), {len(closed_positions)} closed live cycle(s), "
+            f"realized PnL {total_realized} quote units."
+        )
+        return LivePositionSummary(
+            enabled=True,
+            open_positions=tuple(open_positions),
+            closed_positions=tuple(closed_positions),
+            total_realized_pnl_quote=total_realized,
+            summary=summary,
+        )
+
+    def _safe_div(self, numerator: Decimal, denominator: Decimal) -> Decimal:
+        if denominator == 0:
+            return Decimal("0")
+        return numerator / denominator
+
+    def _safe_pct(self, pnl: Decimal, base: Decimal) -> Decimal:
+        if base == 0:
+            return Decimal("0")
+        return pnl / base * Decimal("100")
+
+    def _exit_preview(self, current_price: Decimal | None, stop_loss: Decimal, take_profit: Decimal) -> tuple[str, str]:
+        if current_price is None:
+            return "UNKNOWN_PRICE", "No current market snapshot is available for this live position."
+        if stop_loss > 0 and current_price <= stop_loss:
+            return "STOP_LOSS_REVIEW", "Current price is at or below the configured stop-loss threshold. Review guarded SELL."
+        if take_profit > 0 and current_price >= take_profit:
+            return "TAKE_PROFIT_REVIEW", "Current price is at or above the configured take-profit threshold. Review guarded SELL."
+        return "HOLD", "Position is between stop-loss and take-profit thresholds."
 
     def cleanup_old_runs(self, keep_last: int) -> int:
         if keep_last <= 0:

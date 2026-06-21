@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, ExecutionChecklistItem, LiquidityDecision, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -27,6 +27,7 @@ class Reporter:
         testnet_execution: TestnetExecutionReport,
         live_preview: LivePreviewReport,
         testnet_positions: TestnetPositionSummary,
+        live_positions: LivePositionSummary,
         liquidity_decision: LiquidityDecision,
         grid_liquidity_decision: LiquidityDecision,
         spot_capital_plan: CapitalSourcingPlan,
@@ -219,6 +220,52 @@ class Reporter:
                 for index, step in enumerate(funding_steps, start=1):
                     lines.append(f"{index}. {step}")
                 lines.append("")
+        lines.extend(
+            [
+                "## Mainnet Live Positions",
+                "",
+                f"- Enabled: `{live_positions.enabled}`",
+                f"- Summary: {live_positions.summary}",
+                f"- Realized PnL: `{live_positions.total_realized_pnl_quote}`",
+                "",
+            ]
+        )
+        if live_positions.open_positions:
+            lines.extend(
+                [
+                    "### Open Live Positions",
+                    "",
+                    "| Intent | Symbol | Buy Order ID | Quantity | Buy Quote | Entry | Current | Current Value | PnL | PnL % | Stop | Take Profit | Exit Preview | Reason |",
+                    "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
+                ]
+            )
+            for position in live_positions.open_positions:
+                lines.append(
+                    "| "
+                    f"{position.intent_id} | {position.symbol} | {position.buy_order_id} | {position.quantity} | "
+                    f"{position.buy_quote} | {position.entry_price} | {position.current_price if position.current_price is not None else ''} | "
+                    f"{position.current_value if position.current_value is not None else ''} | {position.pnl_quote if position.pnl_quote is not None else ''} | "
+                    f"{position.pnl_pct if position.pnl_pct is not None else ''} | {position.stop_loss_price} | {position.take_profit_price} | "
+                    f"{position.exit_preview_status} | {position.exit_preview_reason} |"
+                )
+            lines.append("")
+        if live_positions.closed_positions:
+            lines.extend(
+                [
+                    "### Closed Live Cycles",
+                    "",
+                    "| Intent | Symbol | Buy Order ID | Sell Order ID | Quantity | Buy Quote | Sell Quote | PnL | PnL % |",
+                    "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: |",
+                ]
+            )
+            for position in live_positions.closed_positions:
+                lines.append(
+                    "| "
+                    f"{position.intent_id} | {position.symbol} | {position.buy_order_id} | {position.sell_order_id or ''} | "
+                    f"{position.quantity} | {position.buy_quote} | {position.sell_quote or ''} | "
+                    f"{position.pnl_quote if position.pnl_quote is not None else ''} | {position.pnl_pct if position.pnl_pct is not None else ''} |"
+                )
+            lines.append("")
         lines.extend(
             [
                 "## Spot Testnet Positions",
@@ -469,7 +516,7 @@ class Reporter:
                 "",
                 "## Execution",
                 "",
-                "No mainnet live order, redeem, or grid bot was created. Spot Testnet execution may be present above when explicitly enabled.",
+                "Mainnet live orders are only created when LIVE_CONFIRM submit is explicitly requested and confirmed. Flexible Earn redeem and grid bot creation remain manual/preview-only.",
                 "",
             ]
         )

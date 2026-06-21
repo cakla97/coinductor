@@ -394,6 +394,36 @@ class TestnetPositionSummary:
 
 
 @dataclass(frozen=True)
+class LivePositionCycle:
+    intent_id: str
+    symbol: str
+    buy_order_id: str
+    sell_order_id: str | None
+    buy_quote: Decimal
+    sell_quote: Decimal | None
+    quantity: Decimal
+    entry_price: Decimal
+    current_price: Decimal | None
+    current_value: Decimal | None
+    pnl_quote: Decimal | None
+    pnl_pct: Decimal | None
+    stop_loss_price: Decimal
+    take_profit_price: Decimal
+    status: str
+    exit_preview_status: str
+    exit_preview_reason: str
+
+
+@dataclass(frozen=True)
+class LivePositionSummary:
+    enabled: bool
+    open_positions: tuple[LivePositionCycle, ...]
+    closed_positions: tuple[LivePositionCycle, ...]
+    total_realized_pnl_quote: Decimal
+    summary: str
+
+
+@dataclass(frozen=True)
 class LiveOrderPreview:
     intent_id: str
     symbol: str
@@ -410,6 +440,8 @@ class LiveOrderPreview:
     confirmation_required: str
     submitted: bool = False
     order_id: str = ""
+    executed_quantity: Decimal = Decimal("0")
+    cumulative_quote_qty: Decimal = Decimal("0")
     message: str = ""
 
 

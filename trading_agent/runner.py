@@ -175,6 +175,7 @@ class AgentRunner:
             self.storage.save_research_status(run_id, research_status)
             self.storage.save_active_strategies(run_id, active_strategies_report)
             testnet_positions = self.storage.get_testnet_position_summary()
+            live_positions = self.storage.get_live_position_summary(snapshots, self.config.raw)
             report_path = self.reporter.write_report(
                 run_id=run_id,
                 mode=self.config.mode,
@@ -189,6 +190,7 @@ class AgentRunner:
                 testnet_execution=testnet_execution,
                 live_preview=live_preview,
                 testnet_positions=testnet_positions,
+                live_positions=live_positions,
                 liquidity_decision=liquidity_decision,
                 grid_liquidity_decision=grid_liquidity_decision,
                 spot_capital_plan=spot_capital_plan,

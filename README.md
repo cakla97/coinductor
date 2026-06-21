@@ -294,9 +294,9 @@ and live confirmation implementation exist.
 
 ## LIVE_CONFIRM Preview
 
-`LIVE_CONFIRM` starts as a mainnet preview-only layer. It can validate an approved spot
-proposal against a separate live trading API key, mainnet symbol filters, and live spot
-quote balance, but it never submits an order in this implementation step.
+`LIVE_CONFIRM` defaults to a mainnet preview layer. It can validate an approved spot
+proposal against a separate live trading API key, mainnet symbol filters, live spot
+quote balance, and bankroll policy before any guarded submit is allowed.
 
 Mainnet funding uses `[live_confirm].quote_asset`, currently `USDC` in `config.example.toml`.
 This keeps the assistant aligned with Binance stablecoin compliance prompts while leaving
@@ -321,6 +321,18 @@ Submit still passes through symbol filters, balance checks, risk checks, and the
 bankroll policy. Without the exact confirmation string, the run records `SUBMIT_SKIPPED`.
 Submitted live intents are stored in SQLite so rerunning the same daily signal does not submit
 the same mainnet order twice.
+
+## Mainnet Live Positions
+
+Filled LIVE_CONFIRM mainnet BUY orders are stored in `live_orders` with executed quantity and
+cumulative quote amount. Each run builds a `Mainnet Live Positions` report from that history:
+
+- open positions show entry price, current price, unrealized PnL, stop-loss, and take-profit
+- closed cycles show realized PnL when a matching filled SELL exists
+- exit preview is report-only for now: `HOLD`, `STOP_LOSS_REVIEW`, `TAKE_PROFIT_REVIEW`, or `UNKNOWN_PRICE`
+
+Guarded SELL submission is intentionally not automatic yet. The assistant first needs to observe
+and report open live positions before it is allowed to close them.
 
 ## Trading Bankroll
 

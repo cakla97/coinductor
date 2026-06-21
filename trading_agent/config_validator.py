@@ -12,6 +12,7 @@ class ConfigValidator:
         self._validate_risk(config, issues)
         self._validate_rebalancing(config, issues)
         self._validate_universes(config, issues)
+        self._validate_grid_bot(config, issues)
         self._validate_capital_sourcing(config, issues)
         self._validate_dust_sourcing(config, issues)
         self._validate_modes(config, issues)
@@ -72,6 +73,17 @@ class ConfigValidator:
         for asset in sorted(strategy_assets | grid_assets):
             if asset and asset not in tracked:
                 issues.append(ConfigIssue("WARNING", "portfolio.tracked_assets", f"{asset} is tradable/grid-enabled but not tracked."))
+
+    def _validate_grid_bot(self, config: dict, issues: list[ConfigIssue]) -> None:
+        grid = config.get("grid_bot", {})
+        allowed = set(self._upper_list(grid.get("allowed_symbols", [])))
+        preferred = set(self._upper_list(grid.get("preferred_symbols", [])))
+        outside_allowed = sorted(preferred - allowed)
+        if outside_allowed:
+            issues.append(ConfigIssue("ERROR", "grid_bot.preferred_symbols", f"Preferred symbols must also be allowed: {', '.join(outside_allowed)}."))
+        for key in ("max_grid_capital_usdt", "max_grid_capital_pct", "default_investment_usdt"):
+            if Decimal(str(grid.get(key, 0))) <= 0:
+                issues.append(ConfigIssue("ERROR", f"grid_bot.{key}", "Value must be greater than zero."))
 
     def _validate_capital_sourcing(self, config: dict, issues: list[ConfigIssue]) -> None:
         capital = config.get("capital_sourcing", {})

@@ -259,13 +259,17 @@ Portfolio tracking is intentionally broader than trading permissions:
 - `[grid_bot].allowed_symbols` lists pairs that can be considered for Spot Grid recommendations.
 - `[capital_sourcing].allowed_source_assets` lists assets that can be recommended as manual sources of stablecoin trading capital.
 - `[capital_sourcing].protected_assets` lists assets that should not be recommended as capital sources.
-- `[portfolio.asset_roles]` classifies assets as `CORE`, `PROTECTED`, `CAPITAL_SOURCE`,
-  `SPECULATIVE_SOURCE`, `STABLE`, or another explicit role used for audit/reporting.
+- `[portfolio.asset_roles]` classifies assets as `CORE`, `PROTECTED`,
+  `PROTECTED_UTILITY`, `CAPITAL_SOURCE`, `SPECULATIVE_SOURCE`, `STABLE`, or another
+  explicit role used for audit/reporting.
 
 Backup capital sourcing is deliberately conservative. It caps total suggested sourcing per run,
 caps each asset by percentage, and keeps both an absolute and percentage reserve in every source
 asset. Current defaults are 20 USD-like value per run, 15% max from one source asset, 10% max of
 the whole source basket per run, and at least 70% / 50 USD-like value left in each source asset.
+Current source assets are `SOL` and `WLD`. `BNB` is treated as protected utility capital because
+holding it can be useful for Binance campaigns, Launchpool-style rewards, and small airdrops.
+`BTC`, `ETH`, and `WBETH` remain protected core positions.
 
 Small legacy holdings such as `PEPE`, `DOGE`, `ADA`, and `DOT` are tracked explicitly rather than
 treated as random dust. Unclassified assets outside the keep-list can be reported as airdrop/dust
@@ -290,6 +294,19 @@ The planner:
 - blocks sells for protected assets
 - blocks symbols outside `[strategy].allowed_symbols`
 - marks USDC increases as `KEEP_CASH` instead of creating a trade
+
+## Spot Grid Policy
+
+Spot Grid remains a manual Binance UI workflow because the public Spot API does not expose a
+project-supported create-grid-bot endpoint. The assistant only recommends parameters and setup
+steps. Current defaults are intentionally small:
+
+- eligible symbols: `BTCUSDC`, then `ETHUSDC`
+- max active grid bots: `1`
+- default investment: `25 USDC`
+- max grid capital: `50 USDC`
+- only range-friendly conditions are accepted: `NEUTRAL`/`RISK_ON` trend and RSI 45-65
+- no grid recommendations for BNB, SOL, WLD, PEPE, DOGE, ADA, or DOT
 
 Use `doctor` to validate local setup and config consistency:
 

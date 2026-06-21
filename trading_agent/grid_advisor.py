@@ -14,17 +14,20 @@ class GridBotAdvisor:
         if not grid_config.get("enabled", False):
             return self._empty("Grid bot advisor is disabled.")
 
+        allowed_symbols = {str(symbol).upper() for symbol in grid_config.get("allowed_symbols", [])}
+        preferred_symbols = [str(symbol).upper() for symbol in grid_config.get("preferred_symbols", grid_config.get("allowed_symbols", []))]
+        priority = {symbol: index for index, symbol in enumerate(preferred_symbols)}
         candidates = [
             snapshot
             for snapshot in snapshots
-            if snapshot.symbol in set(grid_config.get("allowed_symbols", []))
+            if snapshot.symbol.upper() in allowed_symbols
             and snapshot.trend_regime in {"NEUTRAL", "RISK_ON"}
             and Decimal("45") <= snapshot.rsi14 <= Decimal("65")
         ]
         if not candidates:
-            return self._empty("No allowed symbol currently has a range-friendly market profile.")
+            return self._empty(self._no_candidate_reason(snapshots, allowed_symbols))
 
-        selected = candidates[0]
+        selected = sorted(candidates, key=lambda snapshot: priority.get(snapshot.symbol.upper(), len(priority)))[0]
         range_width_pct = self._bounded_range_width(selected)
         half_width = range_width_pct / Decimal("2") / Decimal("100")
         range_low = self._money(selected.price * (Decimal("1") - half_width))
@@ -40,10 +43,12 @@ class GridBotAdvisor:
         steps = (
             "Open Binance Trade-X / Trading Bots and choose Spot Grid.",
             f"Select pair {selected.symbol}.",
+            "Use manual parameters rather than AI/auto mode.",
             f"Set lower price to {range_low} and upper price to {range_high}.",
             f"Set grid count to {grid_count} and grid type to arithmetic.",
             f"Allocate {investment} {quote_asset} or less, according to available trading capital.",
             f"Set stop loss around {stop_loss_price} and take profit around {take_profit_price}.",
+            f"Do not add extra capital or create another grid while max_active_grid_bots is {grid_config.get('max_active_grid_bots', 1)}.",
             "After creating the bot, run this assistant again to record the new baseline.",
         )
 
@@ -84,6 +89,19 @@ class GridBotAdvisor:
             stop_loss_price=Decimal("0"),
             take_profit_price=Decimal("0"),
             manual_steps=(),
+        )
+
+    def _no_candidate_reason(self, snapshots: list[MarketSnapshot], allowed_symbols: set[str]) -> str:
+        observed = [snapshot for snapshot in snapshots if snapshot.symbol.upper() in allowed_symbols]
+        if not observed:
+            return "No grid-allowed symbols are present in the current market snapshot."
+        details = []
+        for snapshot in observed:
+            details.append(f"{snapshot.symbol}: trend={snapshot.trend_regime}, RSI={snapshot.rsi14}")
+        return (
+            "No allowed symbol currently has a range-friendly market profile. Grid requires "
+            "NEUTRAL/RISK_ON trend and RSI between 45 and 65. Observed: "
+            + "; ".join(details)
         )
 
     def _money(self, value: Decimal) -> Decimal:

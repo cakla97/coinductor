@@ -522,7 +522,7 @@ class Reporter:
                     f"- Range high: `{grid.range_high}`",
                     f"- Grid count: `{grid.grid_count}`",
                     f"- Grid type: `{grid.grid_type}`",
-                    f"- Investment: `{grid.investment_usdt} USDT`",
+                    f"- Investment: `{self._grid_investment_text(grid)}`",
                     f"- Stop loss price: `{grid.stop_loss_price}`",
                     f"- Take profit price: `{grid.take_profit_price}`",
                     "",
@@ -601,3 +601,8 @@ class Reporter:
             if symbol.endswith(quote):
                 return quote
         return "USDT"
+
+    def _grid_investment_text(self, grid: GridRecommendation) -> str:
+        if not grid.recommended or not grid.symbol:
+            return "N/A"
+        return f"{grid.investment_usdt} {self._quote_asset(grid.symbol)}"

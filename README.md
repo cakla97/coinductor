@@ -392,6 +392,12 @@ price is between thresholds, and becomes `READY` only when a stop-loss or take-p
 triggered and Binance symbol/quantity/notional checks pass. A future guarded SELL submit should
 use a separate confirmation such as `CONFIRM_MAINNET_SELL`.
 
+For irregular/manual runs, the assistant also creates `Mainnet OCO Protection Preview`. This is a
+report-only plan for a Binance-side SELL OCO protection order using the position's take-profit
+price and stop-loss stop price. The preview validates available base balance, step size, minQty,
+minNotional, and the required price relationship. It does not place the OCO order yet; a future
+guarded submit should use a separate confirmation such as `CONFIRM_MAINNET_OCO`.
+
 ## Trading Bankroll
 
 `[trading_bankroll]` separates the bot's working capital from the rest of the portfolio.

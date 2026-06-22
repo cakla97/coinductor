@@ -15,6 +15,7 @@ from .live_exit_preview import LiveExitPreviewBuilder
 from .live_preview import LivePreviewExecutor
 from .models import AgentRunResult, LiquidityDecision
 from .next_run import NextRunAdvisor
+from .oco_protection_preview import OcoProtectionPreviewBuilder
 from .paper_executor import PaperExecutor
 from .portfolio_analyzer import PortfolioAnalyzer
 from .recommended_actions import RecommendedActionsBuilder
@@ -49,6 +50,7 @@ class AgentRunner:
         self.testnet = TestnetExecutor(config.raw)
         self.live_preview = LivePreviewExecutor(config.raw)
         self.live_exit_preview = LiveExitPreviewBuilder(config.raw)
+        self.oco_protection_preview = OcoProtectionPreviewBuilder(config.raw)
         self.bankroll = TradingBankrollAdvisor(config.raw)
         self.research = ResearchLoader(config.raw)
         self.active_strategies = ActiveStrategiesTracker(config.raw)
@@ -188,6 +190,7 @@ class AgentRunner:
             testnet_positions = self.storage.get_testnet_position_summary()
             live_positions = self.storage.get_live_position_summary(snapshots, self.config.raw)
             live_exit_preview = self.live_exit_preview.build(live_positions, balances)
+            oco_protection_preview = self.oco_protection_preview.build(live_positions, balances)
             report_path = self.reporter.write_report(
                 run_id=run_id,
                 mode=self.config.mode,
@@ -205,6 +208,7 @@ class AgentRunner:
                 testnet_positions=testnet_positions,
                 live_positions=live_positions,
                 live_exit_preview=live_exit_preview,
+                oco_protection_preview=oco_protection_preview,
                 liquidity_decision=liquidity_decision,
                 grid_liquidity_decision=grid_liquidity_decision,
                 spot_capital_plan=spot_capital_plan,

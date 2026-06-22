@@ -481,6 +481,30 @@ class LiveExitPreviewReport:
 
 
 @dataclass(frozen=True)
+class OcoProtectionPreviewItem:
+    intent_id: str
+    symbol: str
+    side: str
+    status: str
+    reason: str
+    quantity: Decimal
+    adjusted_quantity: Decimal
+    available_base: Decimal
+    take_profit_price: Decimal
+    stop_loss_stop_price: Decimal
+    estimated_take_profit_quote: Decimal
+    estimated_stop_quote: Decimal
+    confirmation_required: str
+
+
+@dataclass(frozen=True)
+class OcoProtectionPreviewReport:
+    enabled: bool
+    items: tuple[OcoProtectionPreviewItem, ...]
+    summary: str
+
+
+@dataclass(frozen=True)
 class LiveOrderPreview:
     intent_id: str
     symbol: str

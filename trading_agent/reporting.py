@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -30,6 +30,7 @@ class Reporter:
         testnet_positions: TestnetPositionSummary,
         live_positions: LivePositionSummary,
         live_exit_preview: LiveExitPreviewReport,
+        oco_protection_preview: OcoProtectionPreviewReport,
         liquidity_decision: LiquidityDecision,
         grid_liquidity_decision: LiquidityDecision,
         spot_capital_plan: CapitalSourcingPlan,
@@ -308,6 +309,31 @@ class Reporter:
                     f"{item.intent_id} | {item.symbol} | {item.side} | {item.status} | {item.quantity} | "
                     f"{item.adjusted_quantity} | {item.available_base} | {item.estimated_quote} | "
                     f"{item.exit_trigger} | {item.confirmation_required} | {item.reason} |"
+                )
+            lines.append("")
+        lines.extend(
+            [
+                "## Mainnet OCO Protection Preview",
+                "",
+                f"- Enabled: `{oco_protection_preview.enabled}`",
+                f"- Summary: {oco_protection_preview.summary}",
+                "",
+            ]
+        )
+        if oco_protection_preview.items:
+            lines.extend(
+                [
+                    "| Intent | Symbol | Side | Status | Quantity | Adjusted Quantity | Available Base | Take Profit | Stop Loss Stop | Estimated TP Quote | Estimated Stop Quote | Confirmation Required | Reason |",
+                    "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
+                ]
+            )
+            for item in oco_protection_preview.items:
+                lines.append(
+                    "| "
+                    f"{item.intent_id} | {item.symbol} | {item.side} | {item.status} | {item.quantity} | "
+                    f"{item.adjusted_quantity} | {item.available_base} | {item.take_profit_price} | "
+                    f"{item.stop_loss_stop_price} | {item.estimated_take_profit_quote} | {item.estimated_stop_quote} | "
+                    f"{item.confirmation_required} | {item.reason} |"
                 )
             lines.append("")
         lines.extend(

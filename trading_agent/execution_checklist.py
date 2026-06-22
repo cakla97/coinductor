@@ -140,7 +140,7 @@ class ExecutionChecklistBuilder:
                 ),
             )
         )
-        if earn_redeem_plan.enabled and earn_redeem_plan.status != "NOT_NEEDED":
+        if bankroll.flexible_draw_needed > 0 and earn_redeem_plan.enabled and earn_redeem_plan.status != "NOT_NEEDED":
             priority = "MANUAL" if earn_redeem_plan.status == "PREVIEW_READY" else "BLOCKER"
             items.append(
                 ExecutionChecklistItem(

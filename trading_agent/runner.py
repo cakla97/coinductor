@@ -11,6 +11,7 @@ from .earn_manager import EarnLiquidityManager
 from .dust_sourcing import DustSourcingAdvisor
 from .execution_checklist import ExecutionChecklistBuilder
 from .grid_advisor import GridBotAdvisor
+from .live_exit_preview import LiveExitPreviewBuilder
 from .live_preview import LivePreviewExecutor
 from .models import AgentRunResult, LiquidityDecision
 from .next_run import NextRunAdvisor
@@ -47,6 +48,7 @@ class AgentRunner:
         self.paper = PaperExecutor(config.raw)
         self.testnet = TestnetExecutor(config.raw)
         self.live_preview = LivePreviewExecutor(config.raw)
+        self.live_exit_preview = LiveExitPreviewBuilder(config.raw)
         self.bankroll = TradingBankrollAdvisor(config.raw)
         self.research = ResearchLoader(config.raw)
         self.active_strategies = ActiveStrategiesTracker(config.raw)
@@ -185,6 +187,7 @@ class AgentRunner:
             self.storage.save_active_strategies(run_id, active_strategies_report)
             testnet_positions = self.storage.get_testnet_position_summary()
             live_positions = self.storage.get_live_position_summary(snapshots, self.config.raw)
+            live_exit_preview = self.live_exit_preview.build(live_positions, balances)
             report_path = self.reporter.write_report(
                 run_id=run_id,
                 mode=self.config.mode,
@@ -201,6 +204,7 @@ class AgentRunner:
                 live_preview=live_preview,
                 testnet_positions=testnet_positions,
                 live_positions=live_positions,
+                live_exit_preview=live_exit_preview,
                 liquidity_decision=liquidity_decision,
                 grid_liquidity_decision=grid_liquidity_decision,
                 spot_capital_plan=spot_capital_plan,

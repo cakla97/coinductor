@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -29,6 +29,7 @@ class Reporter:
         live_preview: LivePreviewReport,
         testnet_positions: TestnetPositionSummary,
         live_positions: LivePositionSummary,
+        live_exit_preview: LiveExitPreviewReport,
         liquidity_decision: LiquidityDecision,
         grid_liquidity_decision: LiquidityDecision,
         spot_capital_plan: CapitalSourcingPlan,
@@ -283,6 +284,30 @@ class Reporter:
                     f"{position.intent_id} | {position.symbol} | {position.buy_order_id} | {position.sell_order_id or ''} | "
                     f"{position.quantity} | {position.buy_quote} | {position.sell_quote or ''} | "
                     f"{position.pnl_quote if position.pnl_quote is not None else ''} | {position.pnl_pct if position.pnl_pct is not None else ''} |"
+                )
+            lines.append("")
+        lines.extend(
+            [
+                "## Mainnet LIVE_EXIT Preview",
+                "",
+                f"- Enabled: `{live_exit_preview.enabled}`",
+                f"- Summary: {live_exit_preview.summary}",
+                "",
+            ]
+        )
+        if live_exit_preview.items:
+            lines.extend(
+                [
+                    "| Intent | Symbol | Side | Status | Quantity | Adjusted Quantity | Available Base | Estimated Quote | Trigger | Confirmation Required | Reason |",
+                    "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | --- | --- | --- |",
+                ]
+            )
+            for item in live_exit_preview.items:
+                lines.append(
+                    "| "
+                    f"{item.intent_id} | {item.symbol} | {item.side} | {item.status} | {item.quantity} | "
+                    f"{item.adjusted_quantity} | {item.available_base} | {item.estimated_quote} | "
+                    f"{item.exit_trigger} | {item.confirmation_required} | {item.reason} |"
                 )
             lines.append("")
         lines.extend(

@@ -385,6 +385,13 @@ and report open live positions before it is allowed to close them.
 mainnet live position exists. The assistant should monitor stop-loss/take-profit state first,
 then a future guarded SELL flow can be added separately.
 
+Stop-loss and take-profit are currently soft thresholds inside the assistant. They are not live
+exchange stop/OCO orders, so a position will not close automatically while the assistant is not
+running. Each run creates a `Mainnet LIVE_EXIT Preview` section. It remains `MONITORING` while
+price is between thresholds, and becomes `READY` only when a stop-loss or take-profit review is
+triggered and Binance symbol/quantity/notional checks pass. A future guarded SELL submit should
+use a separate confirmation such as `CONFIRM_MAINNET_SELL`.
+
 ## Trading Bankroll
 
 `[trading_bankroll]` separates the bot's working capital from the rest of the portfolio.

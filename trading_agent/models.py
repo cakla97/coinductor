@@ -459,6 +459,28 @@ class LivePositionSummary:
 
 
 @dataclass(frozen=True)
+class LiveExitPreviewItem:
+    intent_id: str
+    symbol: str
+    side: str
+    status: str
+    reason: str
+    quantity: Decimal
+    adjusted_quantity: Decimal
+    available_base: Decimal
+    estimated_quote: Decimal
+    exit_trigger: str
+    confirmation_required: str
+
+
+@dataclass(frozen=True)
+class LiveExitPreviewReport:
+    enabled: bool
+    items: tuple[LiveExitPreviewItem, ...]
+    summary: str
+
+
+@dataclass(frozen=True)
 class LiveOrderPreview:
     intent_id: str
     symbol: str

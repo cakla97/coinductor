@@ -49,6 +49,9 @@ The first run uses mock market/account data and writes:
 - SQLite journal to `work/trading_agent.sqlite3`
 - Markdown report to `outputs/reports/`
 
+For day-to-day operation, use [docs/RUNBOOK.md](docs/RUNBOOK.md). It lists the safe monitoring
+command, guarded submit commands, and the report sections to check before taking action.
+
 Each report includes:
 
 - portfolio summary

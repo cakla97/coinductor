@@ -213,7 +213,7 @@ class LivePreviewExecutor:
             response = self.client.submit_market_buy_quote(symbol, quote_amount, client_order_id)
         except BinanceApiError as exc:
             return {
-                "submitted": True,
+                "submitted": False,
                 "status": "SUBMIT_ERROR",
                 "order_id": "",
                 "executed_quantity": Decimal("0"),
@@ -231,4 +231,4 @@ class LivePreviewExecutor:
 
     def _client_order_id(self, symbol: str, intent_id: str) -> str:
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-        return f"bta-live-{symbol.lower()}-{intent_id[:10]}-{timestamp}"
+        return f"BTAL{symbol.upper()[:6]}{intent_id[:8]}{timestamp[-12:]}"

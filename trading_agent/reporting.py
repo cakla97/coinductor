@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -31,6 +31,7 @@ class Reporter:
         live_positions: LivePositionSummary,
         live_exit_preview: LiveExitPreviewReport,
         oco_protection_preview: OcoProtectionPreviewReport,
+        oco_status: OcoStatusReport,
         liquidity_decision: LiquidityDecision,
         grid_liquidity_decision: LiquidityDecision,
         spot_capital_plan: CapitalSourcingPlan,
@@ -334,6 +335,30 @@ class Reporter:
                     f"{item.adjusted_quantity} | {item.available_base} | {item.take_profit_price} | "
                     f"{item.stop_loss_stop_price} | {item.estimated_take_profit_quote} | {item.estimated_stop_quote} | "
                     f"{item.confirmation_required} | {item.reason} | {item.message} |"
+                )
+            lines.append("")
+        lines.extend(
+            [
+                "## Mainnet OCO Status Sync",
+                "",
+                f"- Enabled: `{oco_status.enabled}`",
+                f"- Summary: {oco_status.summary}",
+                "",
+            ]
+        )
+        if oco_status.items:
+            lines.extend(
+                [
+                    "| Intent | Symbol | Order List ID | List Order Status | List Status Type | Filled Order ID | Filled Quantity | Filled Quote | Reconciled | Message |",
+                    "| --- | --- | --- | --- | --- | --- | ---: | ---: | --- | --- |",
+                ]
+            )
+            for item in oco_status.items:
+                lines.append(
+                    "| "
+                    f"{item.intent_id} | {item.symbol} | {item.order_list_id} | {item.list_order_status} | "
+                    f"{item.list_status_type} | {item.filled_order_id} | {item.filled_quantity} | "
+                    f"{item.filled_quote} | {item.reconciled} | {item.message} |"
                 )
             lines.append("")
         lines.extend(

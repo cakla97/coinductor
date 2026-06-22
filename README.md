@@ -407,6 +407,10 @@ python -m trading_agent run --config config.example.toml --real-data --live-conf
 Only `READY` OCO protection previews are eligible. Submitted OCO intents are stored so reruns do
 not submit the same protection order list again.
 
+Each later run also performs `Mainnet OCO Status Sync`: it queries submitted Binance order lists,
+reports whether protection is still `EXECUTING`, and records a filled OCO SELL leg into
+`live_orders` so the live position becomes a closed cycle with realized PnL.
+
 ## Trading Bankroll
 
 `[trading_bankroll]` separates the bot's working capital from the rest of the portfolio.

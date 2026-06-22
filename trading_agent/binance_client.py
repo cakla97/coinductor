@@ -271,6 +271,16 @@ class BinanceClient:
             raise BinanceApiError("query_order requires order_id or client_order_id.")
         return self._signed_get("/api/v3/order", params)
 
+    def query_order_list(self, order_list_id: str | None = None, list_client_order_id: str | None = None) -> dict:
+        params: dict[str, object] = {}
+        if order_list_id:
+            params["orderListId"] = order_list_id
+        if list_client_order_id:
+            params["listClientOrderId"] = list_client_order_id
+        if "orderListId" not in params and "listClientOrderId" not in params:
+            raise BinanceApiError("query_order_list requires order_list_id or list_client_order_id.")
+        return self._signed_get("/api/v3/orderList", params)
+
     def submit_market_buy_quote(self, symbol: str, quote_amount: Decimal, client_order_id: str) -> dict:
         return self.signed_post(
             "/api/v3/order",

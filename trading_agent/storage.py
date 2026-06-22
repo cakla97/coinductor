@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -149,6 +149,19 @@ class Storage:
                 order_list_id text,
                 confirmation_required text,
                 reason text,
+                message text
+            );
+            create table if not exists oco_status_checks (
+                run_id integer,
+                intent_id text,
+                symbol text,
+                order_list_id text,
+                list_order_status text,
+                list_status_type text,
+                filled_order_id text,
+                filled_quantity text,
+                filled_quote text,
+                reconciled integer,
                 message text
             );
             create table if not exists grid_recommendations (
@@ -518,6 +531,48 @@ class Storage:
             )
         }
 
+    def get_submitted_oco_records(self) -> list[dict[str, str]]:
+        rows = self.connection.execute(
+            """
+            select intent_id, symbol, order_list_id
+            from oco_protection_orders
+            where submitted = 1
+              and order_list_id is not null
+              and order_list_id != ''
+            order by run_id desc
+            """
+        ).fetchall()
+        seen: set[str] = set()
+        records: list[dict[str, str]] = []
+        for row in rows:
+            intent_id = str(row["intent_id"])
+            if intent_id in seen:
+                continue
+            seen.add(intent_id)
+            records.append(
+                {
+                    "intent_id": intent_id,
+                    "symbol": str(row["symbol"]),
+                    "order_list_id": str(row["order_list_id"]),
+                }
+            )
+        return records
+
+    def has_live_sell_for_intent(self, sell_intent_id: str) -> bool:
+        row = self.connection.execute(
+            """
+            select 1
+            from live_orders
+            where intent_id = ?
+              and side = 'SELL'
+              and submitted = 1
+              and status = 'FILLED'
+            limit 1
+            """,
+            (sell_intent_id,),
+        ).fetchone()
+        return row is not None
+
     def save_live_preview(self, run_id: int, report: LivePreviewReport) -> None:
         self.connection.executemany(
             """
@@ -557,6 +612,90 @@ class Storage:
                 )
                 for order in report.orders
             ],
+        )
+        self.connection.commit()
+
+    def save_oco_status_report(self, run_id: int, report: OcoStatusReport) -> None:
+        self.connection.executemany(
+            """
+            insert into oco_status_checks (
+                run_id,
+                intent_id,
+                symbol,
+                order_list_id,
+                list_order_status,
+                list_status_type,
+                filled_order_id,
+                filled_quantity,
+                filled_quote,
+                reconciled,
+                message
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    run_id,
+                    item.intent_id,
+                    item.symbol,
+                    item.order_list_id,
+                    item.list_order_status,
+                    item.list_status_type,
+                    item.filled_order_id,
+                    str(item.filled_quantity),
+                    str(item.filled_quote),
+                    int(item.reconciled),
+                    item.message,
+                )
+                for item in report.items
+            ],
+        )
+        self.connection.commit()
+
+    def record_live_sell_from_oco(
+        self,
+        run_id: int,
+        intent_id: str,
+        symbol: str,
+        order_id: str,
+        executed_quantity: Decimal,
+        cumulative_quote_qty: Decimal,
+        message: str,
+    ) -> None:
+        self.connection.execute(
+            """
+            insert into live_orders (
+                run_id,
+                intent_id,
+                symbol,
+                side,
+                order_type,
+                quote_amount_usdt,
+                quote_asset,
+                status,
+                submitted,
+                order_id,
+                executed_quantity,
+                cumulative_quote_qty,
+                validation_summary,
+                message
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                intent_id,
+                symbol,
+                "SELL",
+                "OCO",
+                "0",
+                self._quote_asset(symbol),
+                "FILLED",
+                1,
+                order_id,
+                str(executed_quantity),
+                str(cumulative_quote_qty),
+                "Recorded from filled Binance OCO protection order.",
+                message,
+            ),
         )
         self.connection.commit()
 
@@ -1110,3 +1249,10 @@ class Storage:
             ],
         )
         self.connection.commit()
+
+    def _quote_asset(self, symbol: str) -> str:
+        symbol = symbol.upper()
+        for quote in ("USDC", "USDT", "FDUSD", "BTC", "ETH", "BNB"):
+            if symbol.endswith(quote):
+                return quote
+        return "USDT"

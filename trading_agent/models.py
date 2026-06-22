@@ -508,6 +508,27 @@ class OcoProtectionPreviewReport:
 
 
 @dataclass(frozen=True)
+class OcoStatusItem:
+    intent_id: str
+    symbol: str
+    order_list_id: str
+    list_order_status: str
+    list_status_type: str
+    filled_order_id: str
+    filled_quantity: Decimal
+    filled_quote: Decimal
+    reconciled: bool
+    message: str
+
+
+@dataclass(frozen=True)
+class OcoStatusReport:
+    enabled: bool
+    items: tuple[OcoStatusItem, ...]
+    summary: str
+
+
+@dataclass(frozen=True)
 class LiveOrderPreview:
     intent_id: str
     symbol: str

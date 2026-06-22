@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -130,6 +130,25 @@ class Storage:
                 executed_quantity text,
                 cumulative_quote_qty text,
                 validation_summary text,
+                message text
+            );
+            create table if not exists oco_protection_orders (
+                run_id integer,
+                intent_id text,
+                symbol text,
+                side text,
+                status text,
+                quantity text,
+                adjusted_quantity text,
+                available_base text,
+                take_profit_price text,
+                stop_loss_stop_price text,
+                estimated_take_profit_quote text,
+                estimated_stop_quote text,
+                submitted integer,
+                order_list_id text,
+                confirmation_required text,
+                reason text,
                 message text
             );
             create table if not exists grid_recommendations (
@@ -491,6 +510,14 @@ class Storage:
             )
         }
 
+    def get_existing_oco_intents(self) -> set[str]:
+        return {
+            row["intent_id"]
+            for row in self.connection.execute(
+                "select intent_id from oco_protection_orders where intent_id is not null and submitted = 1 and status not in ('SUBMIT_ERROR', 'SUBMIT_SKIPPED')"
+            )
+        }
+
     def save_live_preview(self, run_id: int, report: LivePreviewReport) -> None:
         self.connection.executemany(
             """
@@ -529,6 +556,54 @@ class Storage:
                     order.message,
                 )
                 for order in report.orders
+            ],
+        )
+        self.connection.commit()
+
+    def save_oco_protection_preview(self, run_id: int, report: OcoProtectionPreviewReport) -> None:
+        self.connection.executemany(
+            """
+            insert into oco_protection_orders (
+                run_id,
+                intent_id,
+                symbol,
+                side,
+                status,
+                quantity,
+                adjusted_quantity,
+                available_base,
+                take_profit_price,
+                stop_loss_stop_price,
+                estimated_take_profit_quote,
+                estimated_stop_quote,
+                submitted,
+                order_list_id,
+                confirmation_required,
+                reason,
+                message
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    run_id,
+                    item.intent_id,
+                    item.symbol,
+                    item.side,
+                    item.status,
+                    str(item.quantity),
+                    str(item.adjusted_quantity),
+                    str(item.available_base),
+                    str(item.take_profit_price),
+                    str(item.stop_loss_stop_price),
+                    str(item.estimated_take_profit_quote),
+                    str(item.estimated_stop_quote),
+                    int(item.submitted),
+                    item.order_list_id,
+                    item.confirmation_required,
+                    item.reason,
+                    item.message,
+                )
+                for item in report.items
             ],
         )
         self.connection.commit()

@@ -190,7 +190,12 @@ class AgentRunner:
             testnet_positions = self.storage.get_testnet_position_summary()
             live_positions = self.storage.get_live_position_summary(snapshots, self.config.raw)
             live_exit_preview = self.live_exit_preview.build(live_positions, balances)
-            oco_protection_preview = self.oco_protection_preview.build(live_positions, balances)
+            oco_protection_preview = self.oco_protection_preview.build(
+                live_positions,
+                balances,
+                existing_intents=self.storage.get_existing_oco_intents(),
+            )
+            self.storage.save_oco_protection_preview(run_id, oco_protection_preview)
             report_path = self.reporter.write_report(
                 run_id=run_id,
                 mode=self.config.mode,

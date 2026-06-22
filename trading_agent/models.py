@@ -495,6 +495,9 @@ class OcoProtectionPreviewItem:
     estimated_take_profit_quote: Decimal
     estimated_stop_quote: Decimal
     confirmation_required: str
+    submitted: bool = False
+    order_list_id: str = ""
+    message: str = ""
 
 
 @dataclass(frozen=True)

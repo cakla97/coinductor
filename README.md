@@ -398,6 +398,15 @@ price and stop-loss stop price. The preview validates available base balance, st
 minNotional, and the required price relationship. It does not place the OCO order yet; a future
 guarded submit should use a separate confirmation such as `CONFIRM_MAINNET_OCO`.
 
+Guarded OCO protection submit is intentionally separate from normal live order submit:
+
+```powershell
+python -m trading_agent run --config config.example.toml --real-data --live-confirm-preview --oco-protection-submit --confirm-mainnet-oco CONFIRM_MAINNET_OCO
+```
+
+Only `READY` OCO protection previews are eligible. Submitted OCO intents are stored so reruns do
+not submit the same protection order list again.
+
 ## Trading Bankroll
 
 `[trading_bankroll]` separates the bot's working capital from the rest of the portfolio.

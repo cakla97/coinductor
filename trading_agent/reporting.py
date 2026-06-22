@@ -323,17 +323,17 @@ class Reporter:
         if oco_protection_preview.items:
             lines.extend(
                 [
-                    "| Intent | Symbol | Side | Status | Quantity | Adjusted Quantity | Available Base | Take Profit | Stop Loss Stop | Estimated TP Quote | Estimated Stop Quote | Confirmation Required | Reason |",
-                    "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |",
+                    "| Intent | Symbol | Side | Status | Submitted | Order List ID | Quantity | Adjusted Quantity | Available Base | Take Profit | Stop Loss Stop | Estimated TP Quote | Estimated Stop Quote | Confirmation Required | Reason | Message |",
+                    "| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |",
                 ]
             )
             for item in oco_protection_preview.items:
                 lines.append(
                     "| "
-                    f"{item.intent_id} | {item.symbol} | {item.side} | {item.status} | {item.quantity} | "
+                    f"{item.intent_id} | {item.symbol} | {item.side} | {item.status} | {item.submitted} | {item.order_list_id} | {item.quantity} | "
                     f"{item.adjusted_quantity} | {item.available_base} | {item.take_profit_price} | "
                     f"{item.stop_loss_stop_price} | {item.estimated_take_profit_quote} | {item.estimated_stop_quote} | "
-                    f"{item.confirmation_required} | {item.reason} |"
+                    f"{item.confirmation_required} | {item.reason} | {item.message} |"
                 )
             lines.append("")
         lines.extend(

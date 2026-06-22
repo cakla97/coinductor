@@ -283,6 +283,33 @@ class BinanceClient:
             },
         )
 
+    def submit_sell_oco_protection(
+        self,
+        symbol: str,
+        quantity: Decimal,
+        take_profit_price: Decimal,
+        stop_loss_stop_price: Decimal,
+        list_client_order_id: str,
+        above_client_order_id: str,
+        below_client_order_id: str,
+    ) -> dict:
+        return self.signed_post(
+            "/api/v3/orderList/oco",
+            {
+                "symbol": symbol.upper(),
+                "side": "SELL",
+                "quantity": str(quantity),
+                "listClientOrderId": list_client_order_id,
+                "aboveType": "LIMIT_MAKER",
+                "abovePrice": str(take_profit_price),
+                "aboveClientOrderId": above_client_order_id,
+                "belowType": "STOP_LOSS",
+                "belowStopPrice": str(stop_loss_stop_price),
+                "belowClientOrderId": below_client_order_id,
+                "newOrderRespType": "RESULT",
+            },
+        )
+
     def _public_get(self, path: str, params: dict[str, object] | None = None) -> list | dict:
         query = urlencode(params or {})
         suffix = f"?{query}" if query else ""

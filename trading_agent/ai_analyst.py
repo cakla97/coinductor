@@ -5,18 +5,23 @@ import json
 import os
 import urllib.request
 
-from .models import ActiveStrategiesReport, AiCommentary, CapitalSourcingPlan, GridRecommendation, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, CapitalSourcingPlan, GridRecommendation, LivePositionSummary, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class AiAnalyst:
     def __init__(self, config: dict):
         self.config = config
 
-    def propose_trade(self, snapshots: list[MarketSnapshot]) -> TradeProposal:
+    def propose_trade(self, snapshots: list[MarketSnapshot], live_positions: LivePositionSummary | None = None) -> TradeProposal:
+        if self._open_live_position_blocks_buy(live_positions):
+            return self._hold_proposal(
+                snapshots,
+                "Open live position guard: an existing live position is being monitored, so no new BUY is proposed.",
+            )
         ai_config = self.config.get("ai", {})
         if not ai_config.get("enabled", False):
             return self._mock_proposal(snapshots)
-        return self._openai_compatible_proposal(snapshots)
+        return self._openai_compatible_proposal(snapshots, live_positions)
 
     def comment_on_portfolio(
         self,
@@ -155,8 +160,17 @@ class AiAnalyst:
 
     def _mock_proposal(self, snapshots: list[MarketSnapshot]) -> TradeProposal:
         allowed_symbols = [str(symbol).upper() for symbol in self.config.get("strategy", {}).get("allowed_symbols", [])]
-        preferred_symbol = "BTCUSDC" if "BTCUSDC" in allowed_symbols else "BTCUSDT"
-        best = next((item for item in snapshots if item.symbol == preferred_symbol), snapshots[0])
+        candidates = [snapshot for snapshot in snapshots if snapshot.symbol.upper() in allowed_symbols]
+        if not candidates:
+            return self._hold_proposal(snapshots, "Fallback analyst: no allowed symbols are present in market snapshots.")
+        buy_candidates = [snapshot for snapshot in candidates if self._is_fallback_buy_candidate(snapshot)]
+        if not buy_candidates:
+            observed = "; ".join(f"{item.symbol}: trend={item.trend_regime}, RSI={item.rsi14}" for item in candidates)
+            return self._hold_proposal(
+                snapshots,
+                "Fallback analyst: no allowed symbol passed conservative BUY filters. Observed: " + observed,
+            )
+        best = sorted(buy_candidates, key=self._fallback_score, reverse=True)[0]
         orders = self.config["orders"]
         return TradeProposal(
             symbol=best.symbol,
@@ -165,10 +179,13 @@ class AiAnalyst:
             quote_amount_usdt=Decimal(str(self.config["strategy"]["quote_amount_usdt"])),
             stop_loss_pct=Decimal(str(orders["default_stop_loss_pct"])),
             take_profit_pct=Decimal(str(orders["default_take_profit_pct"])),
-            reason="Mock analyst: trend regime is RISK_ON and BTC is above long-term trend filter.",
+            reason=(
+                f"Fallback analyst: {best.symbol} passed conservative filters "
+                f"(trend={best.trend_regime}, RSI={best.rsi14}, price above EMA200)."
+            ),
         )
 
-    def _openai_compatible_proposal(self, snapshots: list[MarketSnapshot]) -> TradeProposal:
+    def _openai_compatible_proposal(self, snapshots: list[MarketSnapshot], live_positions: LivePositionSummary | None) -> TradeProposal:
         ai_config = self.config["ai"]
         base_url = os.getenv(ai_config["base_url_env"], "").rstrip("/")
         api_key = os.getenv(ai_config["api_key_env"], "")
@@ -180,6 +197,22 @@ class AiAnalyst:
             "task": "Return one conservative spot trade proposal as JSON only.",
             "allowed_actions": ["BUY", "SELL", "HOLD"],
             "allowed_symbols": self.config.get("strategy", {}).get("allowed_symbols", []),
+            "guardrails": [
+                "Prefer HOLD when market context is unclear.",
+                "Do not propose symbols outside allowed_symbols.",
+                "Use BUY only for a clearly favorable setup; execution still requires deterministic guards.",
+            ],
+            "open_live_positions": [
+                {
+                    "symbol": position.symbol,
+                    "quantity": str(position.quantity),
+                    "entry_price": str(position.entry_price),
+                    "current_price": str(position.current_price) if position.current_price is not None else None,
+                    "pnl_pct": str(position.pnl_pct) if position.pnl_pct is not None else None,
+                    "exit_preview_status": position.exit_preview_status,
+                }
+                for position in (live_positions.open_positions if live_positions is not None else ())
+            ],
             "snapshots": [snapshot.__dict__ for snapshot in snapshots],
             "schema": {
                 "symbol": str(self.config.get("strategy", {}).get("allowed_symbols", ["BTCUSDT"])[0]),
@@ -205,6 +238,41 @@ class AiAnalyst:
             take_profit_pct=Decimal(str(data["take_profit_pct"])),
             reason=str(data["reason"]),
         )
+
+    def _open_live_position_blocks_buy(self, live_positions: LivePositionSummary | None) -> bool:
+        guard = self.config.get("live_position_guard", {})
+        if not guard.get("block_new_buy_when_open", True):
+            return False
+        return live_positions is not None and bool(live_positions.open_positions)
+
+    def _hold_proposal(self, snapshots: list[MarketSnapshot], reason: str) -> TradeProposal:
+        allowed_symbols = [str(symbol).upper() for symbol in self.config.get("strategy", {}).get("allowed_symbols", [])]
+        symbol = allowed_symbols[0] if allowed_symbols else (snapshots[0].symbol if snapshots else "BTCUSDC")
+        orders = self.config["orders"]
+        return TradeProposal(
+            symbol=symbol,
+            action="HOLD",
+            confidence=Decimal("1"),
+            quote_amount_usdt=Decimal("0"),
+            stop_loss_pct=Decimal(str(orders["default_stop_loss_pct"])),
+            take_profit_pct=Decimal(str(orders["default_take_profit_pct"])),
+            reason=reason,
+        )
+
+    def _is_fallback_buy_candidate(self, snapshot: MarketSnapshot) -> bool:
+        return (
+            snapshot.trend_regime == "RISK_ON"
+            and snapshot.price > snapshot.ema200
+            and Decimal("45") <= snapshot.rsi14 <= Decimal("68")
+        )
+
+    def _fallback_score(self, snapshot: MarketSnapshot) -> Decimal:
+        score = Decimal("0")
+        if snapshot.volume_trend == "rising":
+            score += Decimal("1")
+        score += max(Decimal("0"), Decimal("68") - abs(snapshot.rsi14 - Decimal("56")))
+        score += (snapshot.price - snapshot.ema200) / snapshot.ema200 * Decimal("10")
+        return score
 
     def _chat_json(self, system: str, user: str) -> str:
         ai_config = self.config["ai"]

@@ -101,6 +101,9 @@ max_quote_amount_usdt = 10.0
 funding_buffer_usdt = 1.0
 quote_asset = "USDC"
 
+[live_position_guard]
+block_new_buy_when_open = true
+
 [trading_bankroll]
 enabled = true
 quote_asset = "USDC"

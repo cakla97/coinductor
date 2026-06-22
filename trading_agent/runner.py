@@ -68,7 +68,8 @@ class AgentRunner:
             dust_plan = self.dust.plan(portfolio_analysis)
             research_bundle = self.research.load()
             research_status = self.research.status_and_request(portfolio_analysis)
-            proposal = self.ai.propose_trade(snapshots)
+            pre_trade_live_positions = self.storage.get_live_position_summary(snapshots, self.config.raw)
+            proposal = self.ai.propose_trade(snapshots, live_positions=pre_trade_live_positions)
             trades_today = self.storage.count_trades_today()
             risk_decision = self.risk.evaluate(
                 proposal=proposal,

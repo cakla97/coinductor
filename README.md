@@ -100,6 +100,15 @@ Then set `commentary_enabled = true` under `[ai]` in your local config. AI comme
 is explanatory only; deterministic risk, liquidity, grid, and capital sourcing rules
 remain authoritative.
 
+AI trade proposals can also use the same OpenAI-compatible endpoint when `[ai].enabled = true`.
+The model is only an analysis/ranking layer over `[strategy].allowed_symbols`; it cannot expand
+the trading universe or bypass deterministic guards. With the current config it may only choose
+between `BTCUSDC`, `ETHUSDC`, or `HOLD`.
+
+When `[ai].enabled = false`, the fallback analyst is conservative: it returns `BUY` only when an
+allowed symbol has a `RISK_ON` snapshot, price above EMA200, and RSI in the configured safe band.
+Otherwise it returns `HOLD`.
+
 For a one-off run without editing config:
 
 ```powershell
@@ -371,6 +380,10 @@ cumulative quote amount. Each run builds a `Mainnet Live Positions` report from 
 
 Guarded SELL submission is intentionally not automatic yet. The assistant first needs to observe
 and report open live positions before it is allowed to close them.
+
+`[live_position_guard].block_new_buy_when_open = true` prevents new BUY proposals while an open
+mainnet live position exists. The assistant should monitor stop-loss/take-profit state first,
+then a future guarded SELL flow can be added separately.
 
 ## Trading Bankroll
 

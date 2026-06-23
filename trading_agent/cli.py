@@ -115,6 +115,8 @@ def _add_common_run_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--mock-data", action="store_true", help="Force mock data even if config disables it")
     parser.add_argument("--ai-commentary", action="store_true", help="Enable optional local LLM commentary for this run")
     parser.add_argument("--no-ai-commentary", action="store_true", help="Disable optional local LLM commentary for this run")
+    parser.add_argument("--ai-proposals", action="store_true", help="Enable local LLM symbol ranking and trade proposals for this run")
+    parser.add_argument("--no-ai-proposals", action="store_true", help="Disable local LLM trade proposals for this run")
     parser.add_argument("--testnet-execution", action="store_true", help="Enable Spot Testnet execution for approved spot proposals")
     parser.add_argument("--no-testnet-execution", action="store_true", help="Disable Spot Testnet execution for this run")
     parser.add_argument("--confirm-testnet-order", default="", help="Must equal CONFIRM_TESTNET_ORDER to submit a Spot Testnet order")
@@ -150,6 +152,12 @@ def _load_and_apply_config(args: argparse.Namespace, parser: argparse.ArgumentPa
         config.raw["ai"]["commentary_enabled"] = True
     if getattr(args, "no_ai_commentary", False):
         config.raw["ai"]["commentary_enabled"] = False
+    if getattr(args, "ai_proposals", False) and getattr(args, "no_ai_proposals", False):
+        parser.error("--ai-proposals and --no-ai-proposals cannot be used together")
+    if getattr(args, "ai_proposals", False):
+        config.raw["ai"]["enabled"] = True
+    if getattr(args, "no_ai_proposals", False):
+        config.raw["ai"]["enabled"] = False
     if getattr(args, "testnet_execution", False) and getattr(args, "no_testnet_execution", False):
         parser.error("--testnet-execution and --no-testnet-execution cannot be used together")
     config.raw.setdefault("testnet_execution", {})

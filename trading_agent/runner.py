@@ -74,8 +74,14 @@ class AgentRunner:
             dust_plan = self.dust.plan(portfolio_analysis)
             research_bundle = self.research.load()
             research_status = self.research.status_and_request(portfolio_analysis)
+            oco_status_report = self.oco_status.sync(run_id)
+            decision_memory = self.storage.get_ai_decision_memory(self.config.raw)
             pre_trade_live_positions = self.storage.get_live_position_summary(snapshots, self.config.raw)
-            proposal = self.ai.propose_trade(snapshots, live_positions=pre_trade_live_positions)
+            proposal = self.ai.propose_trade(
+                snapshots,
+                live_positions=pre_trade_live_positions,
+                decision_memory=decision_memory,
+            )
             trades_today = self.storage.count_trades_today()
             risk_decision = self.risk.evaluate(
                 proposal=proposal,
@@ -166,6 +172,7 @@ class AgentRunner:
                 research=research_bundle,
                 research_status=research_status,
                 active_strategies=active_strategies_report,
+                decision_memory=decision_memory,
             )
 
             self.storage.save_balances(run_id, balances)
@@ -189,7 +196,6 @@ class AgentRunner:
             self.storage.save_research_notes(run_id, research_bundle)
             self.storage.save_research_status(run_id, research_status)
             self.storage.save_active_strategies(run_id, active_strategies_report)
-            oco_status_report = self.oco_status.sync(run_id)
             self.storage.save_oco_status_report(run_id, oco_status_report)
             testnet_positions = self.storage.get_testnet_position_summary()
             live_positions = self.storage.get_live_position_summary(snapshots, self.config.raw)
@@ -232,6 +238,7 @@ class AgentRunner:
                 research=research_bundle,
                 research_status=research_status,
                 active_strategies=active_strategies_report,
+                decision_memory=decision_memory,
             )
             self.storage.cleanup_old_runs(int(self.config.raw.get("retention", {}).get("keep_database_runs", 500)))
             status = "OK"

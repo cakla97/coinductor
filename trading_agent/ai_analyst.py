@@ -5,14 +5,19 @@ import json
 import os
 import urllib.request
 
-from .models import ActiveStrategiesReport, AiCommentary, CapitalSourcingPlan, GridRecommendation, LivePositionSummary, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, CapitalSourcingPlan, GridRecommendation, LivePositionSummary, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class AiAnalyst:
     def __init__(self, config: dict):
         self.config = config
 
-    def propose_trade(self, snapshots: list[MarketSnapshot], live_positions: LivePositionSummary | None = None) -> TradeProposal:
+    def propose_trade(
+        self,
+        snapshots: list[MarketSnapshot],
+        live_positions: LivePositionSummary | None = None,
+        decision_memory: AiDecisionMemory | None = None,
+    ) -> TradeProposal:
         if self._open_live_position_blocks_buy(live_positions):
             return self._hold_proposal(
                 snapshots,
@@ -21,7 +26,19 @@ class AiAnalyst:
         ai_config = self.config.get("ai", {})
         if not ai_config.get("enabled", False):
             return self._mock_proposal(snapshots)
-        return self._openai_compatible_proposal(snapshots, live_positions)
+        try:
+            return self._openai_compatible_proposal(snapshots, live_positions, decision_memory)
+        except Exception as exc:
+            fallback = self._mock_proposal(snapshots)
+            return TradeProposal(
+                symbol=fallback.symbol,
+                action=fallback.action,
+                confidence=fallback.confidence,
+                quote_amount_usdt=fallback.quote_amount_usdt,
+                stop_loss_pct=fallback.stop_loss_pct,
+                take_profit_pct=fallback.take_profit_pct,
+                reason=f"Local AI proposal failed ({exc}); {fallback.reason}",
+            )
 
     def comment_on_portfolio(
         self,
@@ -38,6 +55,7 @@ class AiAnalyst:
         research: ResearchBundle,
         research_status: ResearchStatus,
         active_strategies: ActiveStrategiesReport,
+        decision_memory: AiDecisionMemory,
     ) -> AiCommentary:
         ai_config = self.config.get("ai", {})
         if not ai_config.get("commentary_enabled", False):
@@ -116,6 +134,11 @@ class AiAnalyst:
                     for item in active_strategies.grid_bots
                 ],
             },
+            "decision_memory": self._memory_payload(decision_memory),
+            "memory_usage_rules": [
+                "Do not claim a recurring or similar historical pattern unless pattern_inference_allowed is true.",
+                "With a smaller sample, describe closed cycles only as isolated observations.",
+            ],
             "deterministic_outputs": {
                 "trade_proposal": proposal.__dict__,
                 "risk_decision": risk_decision.__dict__,
@@ -185,7 +208,12 @@ class AiAnalyst:
             ),
         )
 
-    def _openai_compatible_proposal(self, snapshots: list[MarketSnapshot], live_positions: LivePositionSummary | None) -> TradeProposal:
+    def _openai_compatible_proposal(
+        self,
+        snapshots: list[MarketSnapshot],
+        live_positions: LivePositionSummary | None,
+        decision_memory: AiDecisionMemory | None,
+    ) -> TradeProposal:
         ai_config = self.config["ai"]
         base_url = os.getenv(ai_config["base_url_env"], "").rstrip("/")
         api_key = os.getenv(ai_config["api_key_env"], "")
@@ -194,13 +222,20 @@ class AiAnalyst:
             return self._mock_proposal(snapshots)
 
         prompt = {
-            "task": "Return one conservative spot trade proposal as JSON only.",
-            "allowed_actions": ["BUY", "SELL", "HOLD"],
+            "task": (
+                "Rank the allowed symbols and return one conservative spot action as JSON only. "
+                "You choose only action, symbol, confidence, and reason. Position size and exits are deterministic."
+            ),
+            "allowed_actions": ["BUY", "HOLD"],
             "allowed_symbols": self.config.get("strategy", {}).get("allowed_symbols", []),
             "guardrails": [
                 "Prefer HOLD when market context is unclear.",
                 "Do not propose symbols outside allowed_symbols.",
                 "Use BUY only for a clearly favorable setup; execution still requires deterministic guards.",
+                "Do not propose SELL; exits are handled by the separate OCO/position workflow.",
+                "Historical outcomes are limited context, not proof that the same setup will repeat.",
+                "Do not overfit to one win or loss and do not use martingale or revenge-trading logic.",
+                "Do not claim a recurring or similar historical pattern unless decision_memory.pattern_inference_allowed is true.",
             ],
             "open_live_positions": [
                 {
@@ -214,13 +249,11 @@ class AiAnalyst:
                 for position in (live_positions.open_positions if live_positions is not None else ())
             ],
             "snapshots": [snapshot.__dict__ for snapshot in snapshots],
+            "decision_memory": self._memory_payload(decision_memory),
             "schema": {
                 "symbol": str(self.config.get("strategy", {}).get("allowed_symbols", ["BTCUSDT"])[0]),
                 "action": "BUY",
                 "confidence": 0.65,
-                "quote_amount_usdt": 25,
-                "stop_loss_pct": 1.5,
-                "take_profit_pct": 3.0,
                 "reason": "short explanation",
             },
         }
@@ -229,15 +262,64 @@ class AiAnalyst:
             user=json.dumps(prompt, default=str),
         )
         data = json.loads(content)
+        allowed_symbols = [str(symbol).upper() for symbol in self.config.get("strategy", {}).get("allowed_symbols", [])]
+        action = str(data.get("action", "HOLD")).upper()
+        symbol = str(data.get("symbol", allowed_symbols[0] if allowed_symbols else "")).upper()
+        confidence = self._bounded_decimal(data.get("confidence", "0"), Decimal("0"), Decimal("1"))
+        if action not in {"BUY", "HOLD"}:
+            return self._hold_proposal(snapshots, f"Local AI returned unsupported action {action}.")
+        if symbol not in allowed_symbols:
+            return self._hold_proposal(snapshots, f"Local AI returned non-whitelisted symbol {symbol}.")
+        if action == "HOLD":
+            return self._hold_proposal(snapshots, f"Local AI: {str(data.get('reason', 'No favorable setup.')).strip()}")
+        orders = self.config["orders"]
         return TradeProposal(
-            symbol=str(data["symbol"]).upper(),
-            action=str(data["action"]).upper(),
-            confidence=Decimal(str(data["confidence"])),
-            quote_amount_usdt=Decimal(str(data["quote_amount_usdt"])),
-            stop_loss_pct=Decimal(str(data["stop_loss_pct"])),
-            take_profit_pct=Decimal(str(data["take_profit_pct"])),
-            reason=str(data["reason"]),
+            symbol=symbol,
+            action=action,
+            confidence=confidence,
+            quote_amount_usdt=Decimal(str(self.config["strategy"]["quote_amount_usdt"])),
+            stop_loss_pct=Decimal(str(orders["default_stop_loss_pct"])),
+            take_profit_pct=Decimal(str(orders["default_take_profit_pct"])),
+            reason=f"Local AI ranking: {str(data.get('reason', '')).strip()}",
         )
+
+    def _memory_payload(self, memory: AiDecisionMemory | None) -> dict:
+        if memory is None or not memory.enabled:
+            return {"enabled": False, "summary": "No decision memory supplied.", "recent_closed_cycles": []}
+        min_cycles = int(self.config.get("ai_memory", {}).get("min_cycles_for_pattern_inference", 3))
+        return {
+            "enabled": True,
+            "summary": memory.summary,
+            "sample_size": len(memory.recent_cycles),
+            "min_cycles_for_pattern_inference": min_cycles,
+            "pattern_inference_allowed": len(memory.recent_cycles) >= min_cycles,
+            "wins": memory.wins,
+            "losses": memory.losses,
+            "total_realized_pnl_quote": str(memory.total_realized_pnl_quote),
+            "recent_closed_cycles": [
+                {
+                    "symbol": cycle.symbol,
+                    "buy_run_id": cycle.buy_run_id,
+                    "entry_price": str(cycle.entry_price),
+                    "exit_price": str(cycle.exit_price),
+                    "pnl_quote": str(cycle.pnl_quote),
+                    "pnl_pct": str(cycle.pnl_pct),
+                    "entry_trend_regime": cycle.entry_trend_regime,
+                    "entry_rsi14": str(cycle.entry_rsi14) if cycle.entry_rsi14 is not None else None,
+                    "entry_price_vs_ema200_pct": (
+                        str(cycle.entry_price_vs_ema200_pct)
+                        if cycle.entry_price_vs_ema200_pct is not None
+                        else None
+                    ),
+                    "proposal_reason": cycle.proposal_reason,
+                }
+                for cycle in memory.recent_cycles
+            ],
+        }
+
+    def _bounded_decimal(self, value: object, minimum: Decimal, maximum: Decimal) -> Decimal:
+        parsed = Decimal(str(value))
+        return min(max(parsed, minimum), maximum)
 
     def _open_live_position_blocks_buy(self, live_positions: LivePositionSummary | None) -> bool:
         guard = self.config.get("live_position_guard", {})

@@ -51,6 +51,20 @@ python -m trading_agent run --config config.example.toml --real-data --live-conf
 Treat LLM output as context only. Deterministic guards still control trading universe, bankroll,
 position guard, OCO state, and submit eligibility.
 
+## Local LLM Proposal Preview
+
+To let Qwen rank the allowed BTC/ETH market snapshots and choose `BUY` or `HOLD` without submitting:
+
+```powershell
+python -m trading_agent run --config config.example.toml --real-data --live-confirm-preview --ai-proposals
+```
+
+The report shows the proposal, deterministic risk decision, and the bounded `AI Decision Memory`
+used as context. The memory is built from closed live cycles in SQLite, survives report rotation,
+and is limited by `[ai_memory].max_closed_cycles`. Do not combine this evaluation command with a
+submit flag. Review the preview first, then use a separate guarded action run only if appropriate.
+Pattern language is disabled until `[ai_memory].min_cycles_for_pattern_inference` cycles exist.
+
 ## Guarded USDC Flexible Earn Redeem
 
 Use only when the report shows `Flexible Earn Redeem` status `PREVIEW_READY` and the `Execution

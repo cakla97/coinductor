@@ -38,6 +38,31 @@ class TradeProposal:
 
 
 @dataclass(frozen=True)
+class ClosedTradeMemory:
+    symbol: str
+    buy_run_id: int
+    entry_price: Decimal
+    exit_price: Decimal
+    pnl_quote: Decimal
+    pnl_pct: Decimal
+    entry_trend_regime: str
+    entry_rsi14: Decimal | None
+    entry_price_vs_ema200_pct: Decimal | None
+    proposal_reason: str
+
+
+@dataclass(frozen=True)
+class AiDecisionMemory:
+    enabled: bool
+    total_closed_cycles: int
+    wins: int
+    losses: int
+    total_realized_pnl_quote: Decimal
+    recent_cycles: tuple[ClosedTradeMemory, ...]
+    summary: str
+
+
+@dataclass(frozen=True)
 class RiskDecision:
     approved: bool
     reason: str

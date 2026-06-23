@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -318,7 +318,18 @@ class Storage:
         self.connection.commit()
 
     def count_trades_today(self) -> int:
-        return 0
+        row = self.connection.execute(
+            """
+            select count(distinct live.intent_id) as trade_count
+            from live_orders live
+            join runs on runs.id = live.run_id
+            where live.side = 'BUY'
+              and live.submitted = 1
+              and live.status = 'FILLED'
+              and date(runs.started_at) = date('now')
+            """
+        ).fetchone()
+        return int(row["trade_count"] or 0)
 
     def save_balances(self, run_id: int, balances: list[Balance]) -> None:
         self.connection.executemany(
@@ -959,6 +970,108 @@ class Storage:
             total_realized_pnl_quote=total_realized,
             summary=summary,
         )
+
+    def get_ai_decision_memory(self, config: dict) -> AiDecisionMemory:
+        memory_config = config.get("ai_memory", {})
+        enabled = bool(memory_config.get("enabled", True))
+        max_cycles = max(1, min(int(memory_config.get("max_closed_cycles", 10)), 50))
+        if not enabled:
+            return AiDecisionMemory(False, 0, 0, 0, Decimal("0"), (), "AI decision memory is disabled.")
+
+        buys = self.connection.execute(
+            """
+            select run_id, intent_id, symbol, executed_quantity, cumulative_quote_qty
+            from live_orders
+            where side = 'BUY'
+              and submitted = 1
+              and status = 'FILLED'
+              and cast(executed_quantity as real) > 0
+            order by run_id desc
+            limit 50
+            """
+        ).fetchall()
+        cycles: list[ClosedTradeMemory] = []
+        for buy in buys:
+            sell = self.connection.execute(
+                """
+                select executed_quantity, cumulative_quote_qty
+                from live_orders
+                where intent_id = ?
+                  and side = 'SELL'
+                  and submitted = 1
+                  and status = 'FILLED'
+                order by run_id desc
+                limit 1
+                """,
+                (f"sell-{buy['intent_id']}",),
+            ).fetchone()
+            if sell is None:
+                continue
+
+            quantity = Decimal(str(buy["executed_quantity"] or "0"))
+            buy_quote = Decimal(str(buy["cumulative_quote_qty"] or "0"))
+            sell_quantity = Decimal(str(sell["executed_quantity"] or "0"))
+            sell_quote = Decimal(str(sell["cumulative_quote_qty"] or "0"))
+            closed_quantity = min(quantity, sell_quantity)
+            if quantity <= 0 or closed_quantity <= 0:
+                continue
+            allocated_buy_quote = buy_quote * self._safe_div(closed_quantity, quantity)
+            pnl = sell_quote - allocated_buy_quote
+            entry_price = self._safe_div(buy_quote, quantity)
+            exit_price = self._safe_div(sell_quote, closed_quantity)
+            snapshot = self.connection.execute(
+                """
+                select price, rsi14, ema200, trend_regime
+                from market_snapshots
+                where run_id = ? and symbol = ?
+                limit 1
+                """,
+                (buy["run_id"], buy["symbol"]),
+            ).fetchone()
+            proposal = self.connection.execute(
+                """
+                select reason
+                from ai_proposals
+                where run_id = ? and symbol = ?
+                limit 1
+                """,
+                (buy["run_id"], buy["symbol"]),
+            ).fetchone()
+            rsi = Decimal(str(snapshot["rsi14"])) if snapshot is not None and snapshot["rsi14"] is not None else None
+            ema200 = Decimal(str(snapshot["ema200"])) if snapshot is not None and snapshot["ema200"] is not None else None
+            snapshot_price = Decimal(str(snapshot["price"])) if snapshot is not None and snapshot["price"] is not None else None
+            price_vs_ema = (
+                self._safe_pct(snapshot_price - ema200, ema200)
+                if snapshot_price is not None and ema200 is not None and ema200 != 0
+                else None
+            )
+            cycles.append(
+                ClosedTradeMemory(
+                    symbol=str(buy["symbol"]),
+                    buy_run_id=int(buy["run_id"]),
+                    entry_price=entry_price,
+                    exit_price=exit_price,
+                    pnl_quote=pnl,
+                    pnl_pct=self._safe_pct(pnl, allocated_buy_quote),
+                    entry_trend_regime=str(snapshot["trend_regime"]) if snapshot is not None else "UNKNOWN",
+                    entry_rsi14=rsi,
+                    entry_price_vs_ema200_pct=price_vs_ema,
+                    proposal_reason=str(proposal["reason"]) if proposal is not None else "",
+                )
+            )
+            if len(cycles) >= max_cycles:
+                break
+
+        wins = sum(1 for cycle in cycles if cycle.pnl_quote > 0)
+        losses = sum(1 for cycle in cycles if cycle.pnl_quote < 0)
+        total_pnl = sum((cycle.pnl_quote for cycle in cycles), Decimal("0"))
+        summary = (
+            f"{len(cycles)} recent closed live cycle(s): {wins} win(s), {losses} loss(es), "
+            f"realized PnL {total_pnl} quote units."
+            if cycles
+            else "No closed live cycles are available for AI decision memory yet."
+        )
+        return AiDecisionMemory(True, len(cycles), wins, losses, total_pnl, tuple(cycles), summary)
 
     def _safe_div(self, numerator: Decimal, denominator: Decimal) -> Decimal:
         if denominator == 0:

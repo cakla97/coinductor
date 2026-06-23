@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -45,6 +45,7 @@ class Reporter:
         research: ResearchBundle,
         research_status: ResearchStatus,
         active_strategies: ActiveStrategiesReport,
+        decision_memory: AiDecisionMemory,
     ) -> Path:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = self.reports_dir / f"{timestamp}_run-{run_id}.md"
@@ -528,6 +529,14 @@ class Reporter:
                 f"- Stop loss: `{proposal.stop_loss_pct}%`",
                 f"- Take profit: `{proposal.take_profit_pct}%`",
                 f"- Reason: {proposal.reason}",
+                "",
+                "### AI Decision Memory",
+                "",
+                f"- Enabled: `{decision_memory.enabled}`",
+                f"- Summary: {decision_memory.summary}",
+                f"- Closed cycles supplied: `{len(decision_memory.recent_cycles)}`",
+                f"- Wins / losses: `{decision_memory.wins} / {decision_memory.losses}`",
+                f"- Realized PnL in supplied cycles: `{decision_memory.total_realized_pnl_quote}` quote units",
                 "",
                 "## Risk Decision",
                 "",

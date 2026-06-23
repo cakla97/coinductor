@@ -436,6 +436,27 @@ python -m trading_agent run --config config.example.toml --real-data --live-conf
 
 After a submitted redeem, rerun the assistant so it can verify Spot USDC before any mainnet order.
 
+## Local LLM Trade Ranking
+
+Use `--ai-proposals` to let the local Qwen endpoint rank `strategy.allowed_symbols` and choose
+between `BUY` and `HOLD` for one run:
+
+```powershell
+python -m trading_agent run --config config.example.toml --real-data --live-confirm-preview --ai-proposals
+```
+
+This command is preview-safe unless a separate guarded submit flag and its exact confirmation are
+also supplied. Qwen cannot choose position size, stop-loss, or take-profit; those values come from
+the deterministic config and still pass through the risk, bankroll, open-position, and idempotency
+guards. It also cannot propose `SELL`; exits remain owned by the OCO/position workflow.
+
+`[ai_memory]` supplies a bounded history of recent closed mainnet cycles from SQLite to Qwen. The
+memory contains entry conditions and realized results, not raw report files and not model training.
+This keeps the input small, structured, auditable, and independent of report rotation. Historical
+outcomes are explicitly treated as context rather than proof that a setup will repeat.
+The model may describe recurring patterns only after
+`[ai_memory].min_cycles_for_pattern_inference` closed cycles are available.
+
 ## Safety Defaults
 
 Real trading and real redeem are disabled by default. Before enabling anything live:

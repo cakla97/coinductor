@@ -21,6 +21,7 @@ class ConfigValidator:
         self._validate_testnet_execution(config, issues)
         self._validate_live_confirm(config, issues)
         self._validate_trading_bankroll(config, issues)
+        self._validate_ai_memory(config, issues)
         self._validate_retention(config, issues)
         return ConfigValidationResult(tuple(issues))
 
@@ -170,6 +171,23 @@ class ConfigValidator:
         for key in ("initial_seed_usdc", "max_flexible_earn_draw_usdc_per_run"):
             if Decimal(str(bankroll.get(key, 0))) < 0:
                 issues.append(ConfigIssue("ERROR", f"trading_bankroll.{key}", "Value must be zero or greater."))
+
+    def _validate_ai_memory(self, config: dict, issues: list[ConfigIssue]) -> None:
+        memory = config.get("ai_memory", {})
+        if not memory:
+            return
+        max_cycles = int(memory.get("max_closed_cycles", 0))
+        if max_cycles <= 0 or max_cycles > 50:
+            issues.append(ConfigIssue("ERROR", "ai_memory.max_closed_cycles", "Value must be between 1 and 50."))
+        min_patterns = int(memory.get("min_cycles_for_pattern_inference", 3))
+        if min_patterns <= 0 or min_patterns > max_cycles:
+            issues.append(
+                ConfigIssue(
+                    "ERROR",
+                    "ai_memory.min_cycles_for_pattern_inference",
+                    "Value must be greater than zero and at most max_closed_cycles.",
+                )
+            )
 
     def _validate_retention(self, config: dict, issues: list[ConfigIssue]) -> None:
         retention = config.get("retention", {})

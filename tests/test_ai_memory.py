@@ -64,4 +64,3 @@ def test_memory_uses_proportional_cost_basis_for_partial_oco_sell(tmp_path) -> N
     assert cycle.pnl_quote.quantize(Decimal("0.000001")) == Decimal("-0.135793")
     assert cycle.entry_trend_regime == "RISK_OFF"
     assert cycle.entry_rsi14 == Decimal("47.5")
-    assert storage.count_trades_today() == 1

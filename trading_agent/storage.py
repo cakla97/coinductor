@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluation, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluation, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -133,6 +133,25 @@ class Storage:
                 approved integer,
                 reason text,
                 adjusted_quote_amount_usdt text
+            );
+            create table if not exists live_risk_states (
+                run_id integer,
+                enabled integer,
+                loss_basis_quote text,
+                trades_today integer,
+                daily_realized_pnl_quote text,
+                weekly_realized_pnl_quote text,
+                daily_loss_pct text,
+                weekly_loss_pct text,
+                consecutive_losses integer,
+                last_loss_at text,
+                hours_since_last_loss text,
+                cooldown_active integer,
+                daily_limit_reached integer,
+                weekly_limit_reached integer,
+                consecutive_loss_limit_reached integer,
+                kill_switch_active integer,
+                summary text
             );
             create table if not exists paper_orders (
                 run_id integer,
@@ -367,19 +386,158 @@ class Storage:
         self.connection.execute("update runs set status = ?, summary = ? where id = ?", (status, summary, run_id))
         self.connection.commit()
 
-    def count_trades_today(self) -> int:
-        row = self.connection.execute(
+    def get_live_risk_state(self, current_run_id: int, config: dict) -> LiveRiskState:
+        risk = config.get("risk", {})
+        basis = Decimal(str(config.get("trading_bankroll", {}).get("initial_seed_usdc", "0")))
+        if basis <= 0:
+            basis = Decimal("1")
+        trades_row = self.connection.execute(
             """
             select count(distinct live.intent_id) as trade_count
             from live_orders live
-            join runs on runs.id = live.run_id
+            join runs order_run on order_run.id = live.run_id
+            join runs current_run on current_run.id = ?
             where live.side = 'BUY'
               and live.submitted = 1
               and live.status = 'FILLED'
-              and date(runs.started_at) = date('now')
-            """
+              and date(order_run.started_at) = date(current_run.started_at)
+            """,
+            (current_run_id,),
         ).fetchone()
-        return int(row["trade_count"] or 0)
+        cycles = self._closed_live_cycles_with_times()
+        current_started = self.connection.execute(
+            "select started_at from runs where id = ?",
+            (current_run_id,),
+        ).fetchone()["started_at"]
+        current_epoch = self.connection.execute(
+            "select cast(strftime('%s', ?) as integer) as epoch",
+            (current_started,),
+        ).fetchone()["epoch"]
+        current_date = str(current_started)[:10]
+        week_start = self.connection.execute(
+            "select date(?, 'weekday 0', '-6 days') as week_start",
+            (current_started,),
+        ).fetchone()["week_start"]
+        daily_pnl = sum(
+            (cycle["pnl"] for cycle in cycles if cycle["closed_at"][:10] == current_date),
+            Decimal("0"),
+        )
+        weekly_pnl = sum(
+            (cycle["pnl"] for cycle in cycles if week_start <= cycle["closed_at"][:10] <= current_date),
+            Decimal("0"),
+        )
+        daily_loss_pct = self._loss_pct(daily_pnl, basis)
+        weekly_loss_pct = self._loss_pct(weekly_pnl, basis)
+        consecutive_losses = 0
+        for cycle in sorted(cycles, key=lambda item: (item["closed_at"], item["sell_run_id"]), reverse=True):
+            if cycle["pnl"] < 0:
+                consecutive_losses += 1
+            else:
+                break
+        loss_cycles = [cycle for cycle in cycles if cycle["pnl"] < 0]
+        latest_loss = max(loss_cycles, key=lambda item: (item["closed_at"], item["sell_run_id"])) if loss_cycles else None
+        last_loss_at = latest_loss["closed_at"] if latest_loss is not None else None
+        hours_since_last_loss = None
+        if last_loss_at is not None:
+            loss_epoch = self.connection.execute(
+                "select cast(strftime('%s', ?) as integer) as epoch",
+                (last_loss_at,),
+            ).fetchone()["epoch"]
+            hours_since_last_loss = Decimal(str(current_epoch - loss_epoch)) / Decimal("3600")
+        cooldown_hours = Decimal(str(risk.get("cooldown_after_loss_hours", 0)))
+        cooldown_active = (
+            hours_since_last_loss is not None
+            and cooldown_hours > 0
+            and hours_since_last_loss < cooldown_hours
+        )
+        daily_limit = daily_loss_pct >= Decimal(str(risk.get("max_daily_loss_pct", "0")))
+        weekly_limit = weekly_loss_pct >= Decimal(str(risk.get("max_weekly_loss_pct", "0")))
+        consecutive_limit = consecutive_losses >= int(risk.get("max_consecutive_losses", 0))
+        kill_switch = bool(risk.get("kill_switch_enabled", True)) and (
+            daily_limit or weekly_limit or consecutive_limit
+        )
+        summary = (
+            f"{int(trades_row['trade_count'] or 0)} trade(s) today; daily PnL {daily_pnl}, "
+            f"weekly PnL {weekly_pnl}; loss {daily_loss_pct:.4f}% daily / "
+            f"{weekly_loss_pct:.4f}% weekly; {consecutive_losses} consecutive loss(es)."
+        )
+        if cooldown_active:
+            summary += (
+                f" Loss cooldown active: {hours_since_last_loss:.2f} of "
+                f"{cooldown_hours:.2f} hours elapsed."
+            )
+        if kill_switch:
+            summary += " Kill switch is active."
+        return LiveRiskState(
+            enabled=True,
+            loss_basis_quote=basis,
+            trades_today=int(trades_row["trade_count"] or 0),
+            daily_realized_pnl_quote=daily_pnl,
+            weekly_realized_pnl_quote=weekly_pnl,
+            daily_loss_pct=daily_loss_pct,
+            weekly_loss_pct=weekly_loss_pct,
+            consecutive_losses=consecutive_losses,
+            last_loss_at=last_loss_at,
+            hours_since_last_loss=hours_since_last_loss,
+            cooldown_active=cooldown_active,
+            daily_limit_reached=daily_limit,
+            weekly_limit_reached=weekly_limit,
+            consecutive_loss_limit_reached=consecutive_limit,
+            kill_switch_active=kill_switch,
+            summary=summary,
+        )
+
+    def _closed_live_cycles_with_times(self) -> list[dict[str, object]]:
+        buys = self.connection.execute(
+            """
+            select run_id, intent_id, executed_quantity, cumulative_quote_qty
+            from live_orders
+            where side = 'BUY'
+              and submitted = 1
+              and status = 'FILLED'
+              and cast(executed_quantity as real) > 0
+            """
+        ).fetchall()
+        cycles: list[dict[str, object]] = []
+        for buy in buys:
+            sell = self.connection.execute(
+                """
+                select live.run_id, live.executed_quantity, live.cumulative_quote_qty, runs.started_at
+                from live_orders live
+                join runs on runs.id = live.run_id
+                where live.intent_id = ?
+                  and live.side = 'SELL'
+                  and live.submitted = 1
+                  and live.status = 'FILLED'
+                order by live.run_id desc
+                limit 1
+                """,
+                (f"sell-{buy['intent_id']}",),
+            ).fetchone()
+            if sell is None:
+                continue
+            buy_quantity = Decimal(str(buy["executed_quantity"] or "0"))
+            sell_quantity = Decimal(str(sell["executed_quantity"] or "0"))
+            if buy_quantity <= 0 or sell_quantity <= 0:
+                continue
+            buy_quote = Decimal(str(buy["cumulative_quote_qty"] or "0"))
+            sell_quote = Decimal(str(sell["cumulative_quote_qty"] or "0"))
+            closed_quantity = min(buy_quantity, sell_quantity)
+            allocated_buy_quote = buy_quote * self._safe_div(closed_quantity, buy_quantity)
+            cycles.append(
+                {
+                    "buy_run_id": int(buy["run_id"]),
+                    "sell_run_id": int(sell["run_id"]),
+                    "closed_at": str(sell["started_at"]),
+                    "pnl": sell_quote - allocated_buy_quote,
+                }
+            )
+        return cycles
+
+    def _loss_pct(self, pnl: Decimal, basis: Decimal) -> Decimal:
+        if pnl >= 0 or basis <= 0:
+            return Decimal("0")
+        return abs(pnl) / basis * Decimal("100")
 
     def save_balances(self, run_id: int, balances: list[Balance]) -> None:
         self.connection.executemany(
@@ -674,6 +832,35 @@ class Storage:
         self.connection.execute(
             "insert into risk_decisions values (?, ?, ?, ?)",
             (run_id, int(decision.approved), decision.reason, str(decision.adjusted_quote_amount_usdt)),
+        )
+        self.connection.commit()
+
+    def save_live_risk_state(self, run_id: int, state: LiveRiskState) -> None:
+        self.connection.execute(
+            """
+            insert into live_risk_states values (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )
+            """,
+            (
+                run_id,
+                int(state.enabled),
+                str(state.loss_basis_quote),
+                state.trades_today,
+                str(state.daily_realized_pnl_quote),
+                str(state.weekly_realized_pnl_quote),
+                str(state.daily_loss_pct),
+                str(state.weekly_loss_pct),
+                state.consecutive_losses,
+                state.last_loss_at,
+                str(state.hours_since_last_loss) if state.hours_since_last_loss is not None else None,
+                int(state.cooldown_active),
+                int(state.daily_limit_reached),
+                int(state.weekly_limit_reached),
+                int(state.consecutive_loss_limit_reached),
+                int(state.kill_switch_active),
+                state.summary,
+            ),
         )
         self.connection.commit()
 
@@ -1366,6 +1553,7 @@ class Storage:
             "ai_proposals",
             "shadow_signals",
             "risk_decisions",
+            "live_risk_states",
             "paper_orders",
             "testnet_orders",
             "live_orders",

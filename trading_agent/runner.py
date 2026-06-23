@@ -88,12 +88,11 @@ class AgentRunner:
                 decision_memory=decision_memory,
                 market_research=market_research_report,
             )
-            trades_today = self.storage.count_trades_today()
+            risk_state = self.storage.get_live_risk_state(run_id, self.config.raw)
             risk_decision = self.risk.evaluate(
                 proposal=proposal,
-                trades_today=trades_today,
-                daily_loss_pct=Decimal("0"),
-                weekly_loss_pct=Decimal("0"),
+                risk_state=risk_state,
+                snapshots=snapshots,
             )
             if risk_decision.approved:
                 quote_asset = str(self.config.raw.get("live_confirm", {}).get("quote_asset", "USDT")).upper()
@@ -188,6 +187,7 @@ class AgentRunner:
             self.storage.save_market_snapshots(run_id, snapshots)
             self.storage.save_market_research(run_id, market_research_report)
             self.storage.save_proposal(run_id, proposal)
+            self.storage.save_live_risk_state(run_id, risk_state)
             self.storage.save_risk_decision(run_id, risk_decision)
             self.storage.save_trading_bankroll_report(run_id, bankroll_report)
             self.storage.save_earn_redeem_plan(run_id, earn_redeem_plan)
@@ -224,6 +224,7 @@ class AgentRunner:
                 snapshots=snapshots,
                 market_research=market_research_report,
                 proposal=proposal,
+                risk_state=risk_state,
                 risk_decision=risk_decision,
                 trading_bankroll=bankroll_report,
                 earn_redeem_plan=earn_redeem_plan,

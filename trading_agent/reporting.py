@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluationReport, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluationReport, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -22,6 +22,7 @@ class Reporter:
         snapshots: list[MarketSnapshot],
         market_research: MarketResearchReport,
         proposal: TradeProposal,
+        risk_state: LiveRiskState,
         risk_decision: RiskDecision,
         trading_bankroll: TradingBankrollReport,
         earn_redeem_plan: EarnRedeemPlan,
@@ -634,6 +635,22 @@ class Reporter:
                 )
         lines.extend(
             [
+                "",
+                "## Live Risk State",
+                "",
+                f"- Summary: {risk_state.summary}",
+                f"- Loss basis: `{risk_state.loss_basis_quote}` quote units",
+                f"- Trades today: `{risk_state.trades_today}`",
+                f"- Daily realized PnL: `{risk_state.daily_realized_pnl_quote}`",
+                f"- Weekly realized PnL: `{risk_state.weekly_realized_pnl_quote}`",
+                f"- Daily / weekly loss: `{risk_state.daily_loss_pct:.4f}% / {risk_state.weekly_loss_pct:.4f}%`",
+                f"- Consecutive losses: `{risk_state.consecutive_losses}`",
+                f"- Last loss at: `{risk_state.last_loss_at}`",
+                f"- Hours since last loss: `{risk_state.hours_since_last_loss}`",
+                f"- Cooldown active: `{risk_state.cooldown_active}`",
+                f"- Daily / weekly limit reached: `{risk_state.daily_limit_reached} / {risk_state.weekly_limit_reached}`",
+                f"- Consecutive-loss limit reached: `{risk_state.consecutive_loss_limit_reached}`",
+                f"- Kill switch active: `{risk_state.kill_switch_active}`",
                 "",
                 "## Risk Decision",
                 "",

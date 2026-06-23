@@ -10,6 +10,7 @@ class ConfigValidator:
         issues: list[ConfigIssue] = []
         self._validate_portfolio(config, issues)
         self._validate_risk(config, issues)
+        self._validate_consensus(config, issues)
         self._validate_rebalancing(config, issues)
         self._validate_universes(config, issues)
         self._validate_grid_bot(config, issues)
@@ -49,6 +50,21 @@ class ConfigValidator:
         ]:
             if Decimal(str(risk.get(key, 0))) <= 0:
                 issues.append(ConfigIssue("ERROR", f"risk.{key}", "Value must be greater than zero."))
+
+    def _validate_consensus(self, config: dict, issues: list[ConfigIssue]) -> None:
+        consensus = config.get("consensus", {})
+        if not consensus:
+            return
+        min_rsi = Decimal(str(consensus.get("min_rsi14", 0)))
+        max_rsi = Decimal(str(consensus.get("max_rsi14", 0)))
+        if min_rsi < 0 or max_rsi > 100 or min_rsi >= max_rsi:
+            issues.append(
+                ConfigIssue(
+                    "ERROR",
+                    "consensus",
+                    "RSI bounds must satisfy 0 <= min_rsi14 < max_rsi14 <= 100.",
+                )
+            )
 
     def _validate_rebalancing(self, config: dict, issues: list[ConfigIssue]) -> None:
         rebalancing = config.get("rebalancing", {})

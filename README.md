@@ -501,6 +501,25 @@ SQLite and follow the normal database-run retention.
 perform portfolio analysis and evaluate due older signals, but do not add another highly correlated
 shadow sample. The report identifies the blocking run and remaining cooldown time.
 
+## Live Risk State And Consensus
+
+Every run now rebuilds live risk state from closed mainnet cycles in SQLite. Realized PnL is
+assigned to the SELL/OCO close time and partial exits use proportional BUY cost basis. Daily and
+weekly loss percentages use `[trading_bankroll].initial_seed_usdc` as the conservative loss basis.
+
+The risk state enforces:
+
+- mainnet BUY count for the current UTC day
+- daily and weekly realized-loss limits
+- consecutive losing cycles
+- cooldown after the most recent realized loss
+- derived kill switch when a configured loss boundary is reached
+
+`[consensus]` is a second deterministic gate for BUY proposals. By default, the selected symbol
+must be `RISK_ON`, above EMA200, and have RSI14 between 45 and 68. Qwen can rank BTC/ETH and explain
+its choice, but cannot bypass these market conditions, bankroll rules, OCO workflow, or the live
+risk state.
+
 ## Safety Defaults
 
 Real trading and real redeem are disabled by default. Before enabling anything live:

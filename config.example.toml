@@ -75,6 +75,14 @@ cooldown_after_loss_hours = 24
 max_consecutive_losses = 2
 kill_switch_enabled = true
 
+[consensus]
+enabled = true
+require_risk_on = true
+require_price_above_ema200 = true
+min_rsi14 = 45.0
+max_rsi14 = 68.0
+require_rising_volume = false
+
 [orders]
 require_stop_loss = true
 default_stop_loss_pct = 1.5

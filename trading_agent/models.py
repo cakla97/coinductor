@@ -160,6 +160,26 @@ class RiskDecision:
 
 
 @dataclass(frozen=True)
+class LiveRiskState:
+    enabled: bool
+    loss_basis_quote: Decimal
+    trades_today: int
+    daily_realized_pnl_quote: Decimal
+    weekly_realized_pnl_quote: Decimal
+    daily_loss_pct: Decimal
+    weekly_loss_pct: Decimal
+    consecutive_losses: int
+    last_loss_at: str | None
+    hours_since_last_loss: Decimal | None
+    cooldown_active: bool
+    daily_limit_reached: bool
+    weekly_limit_reached: bool
+    consecutive_loss_limit_reached: bool
+    kill_switch_active: bool
+    summary: str
+
+
+@dataclass(frozen=True)
 class LiquidityDecision:
     approved: bool
     reason: str

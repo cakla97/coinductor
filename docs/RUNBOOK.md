@@ -97,6 +97,23 @@ Only one new shadow signal is recorded per `[shadow_evaluation].min_signal_inter
 20 hours. A repeated run during this window should show `Recording status: SKIPPED_COOLDOWN`; this is
 expected and prevents multiple samples from the same market episode.
 
+## Live Risk State
+
+Every safe run contains `Live Risk State`. Before any future mainnet BUY, verify:
+
+- `Kill switch active` is `False`
+- `Cooldown active` is `False`
+- daily and weekly limits are not reached
+- the number of trades today is below `[risk].max_trades_per_day`
+- the final `Risk Decision` also passed the deterministic consensus gate
+
+Loss percentages are measured against `[trading_bankroll].initial_seed_usdc`. Closed OCO cycles are
+dated by the SELL reconciliation run, so a loss blocks the day it was realized. The configured
+24-hour loss cooldown can continue blocking BUY after the UTC daily limit resets.
+
+The default consensus requires `RISK_ON`, price above EMA200, and RSI14 from 45 to 68. A Qwen BUY
+outside these conditions must remain rejected even at high model confidence.
+
 ## Guarded USDC Flexible Earn Redeem
 
 Use only when the report shows `Flexible Earn Redeem` status `PREVIEW_READY` and the `Execution

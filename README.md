@@ -497,6 +497,10 @@ The default threshold is 0.5% and results are measured before fees. If historica
 be loaded, the report clearly marks use of the current-price fallback. Shadow records live in
 SQLite and follow the normal database-run retention.
 
+`min_signal_interval_hours` defaults to 20 hours. Additional Qwen runs inside that cooldown still
+perform portfolio analysis and evaluate due older signals, but do not add another highly correlated
+shadow sample. The report identifies the blocking run and remaining cooldown time.
+
 ## Safety Defaults
 
 Real trading and real redeem are disabled by default. Before enabling anything live:

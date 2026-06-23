@@ -558,6 +558,44 @@ class Storage:
         self.connection.commit()
         return cursor.rowcount == 1
 
+    def get_shadow_signal_cooldown(
+        self,
+        current_run_id: int,
+        min_interval_hours: int,
+    ) -> dict[str, object] | None:
+        row = self.connection.execute(
+            """
+            select
+                signal.run_id,
+                signal.symbol,
+                signal.action,
+                signal.status,
+                (julianday(current_run.started_at) - julianday(signal_run.started_at)) * 24
+                    as elapsed_hours
+            from shadow_signals signal
+            join runs signal_run on signal_run.id = signal.run_id
+            join runs current_run on current_run.id = ?
+            where signal.run_id != ?
+              and signal_run.status = 'OK'
+            order by signal_run.started_at desc, signal.run_id desc
+            limit 1
+            """,
+            (current_run_id, current_run_id),
+        ).fetchone()
+        if row is None:
+            return None
+        elapsed = Decimal(str(row["elapsed_hours"]))
+        if elapsed >= Decimal(min_interval_hours):
+            return None
+        return {
+            "run_id": int(row["run_id"]),
+            "symbol": str(row["symbol"]),
+            "action": str(row["action"]),
+            "status": str(row["status"]),
+            "elapsed_hours": elapsed,
+            "remaining_hours": max(Decimal("0"), Decimal(min_interval_hours) - elapsed),
+        }
+
     def get_due_shadow_signals(self, current_run_id: int) -> list[sqlite3.Row]:
         return self.connection.execute(
             """

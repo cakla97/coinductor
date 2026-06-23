@@ -247,6 +247,15 @@ class ConfigValidator:
                     "Value must be between 1 hour and 30 days.",
                 )
             )
+        min_interval = int(shadow.get("min_signal_interval_hours", 0))
+        if min_interval <= 0 or min_interval > horizon:
+            issues.append(
+                ConfigIssue(
+                    "ERROR",
+                    "shadow_evaluation.min_signal_interval_hours",
+                    "Value must be greater than zero and at most horizon_hours.",
+                )
+            )
         threshold = Decimal(str(shadow.get("decision_threshold_pct", 0)))
         if threshold < 0 or threshold > 20:
             issues.append(

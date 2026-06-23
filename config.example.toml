@@ -60,6 +60,7 @@ min_cycles_for_pattern_inference = 3
 enabled = true
 require_ai_enabled = true
 horizon_hours = 24
+min_signal_interval_hours = 20
 decision_threshold_pct = 0.5
 
 [risk]

@@ -141,6 +141,8 @@ class ShadowEvaluation:
 class ShadowEvaluationReport:
     enabled: bool
     current_signal: ShadowSignal | None
+    recording_status: str
+    recording_message: str
     newly_evaluated: tuple[ShadowEvaluation, ...]
     pending_count: int
     completed_count: int

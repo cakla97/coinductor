@@ -22,10 +22,22 @@ class ShadowEvaluator:
     ) -> ShadowEvaluationReport:
         shadow = self.config.get("shadow_evaluation", {})
         if not shadow.get("enabled", True):
-            return ShadowEvaluationReport(False, None, (), 0, 0, 0, 0, 0, "Shadow evaluation is disabled.")
+            return ShadowEvaluationReport(
+                False,
+                None,
+                "DISABLED",
+                "Shadow evaluation is disabled.",
+                (),
+                0,
+                0,
+                0,
+                0,
+                0,
+                "Shadow evaluation is disabled.",
+            )
 
         newly_evaluated = self._evaluate_due(run_id, snapshots)
-        current_signal = self._record_current(run_id, proposal, snapshots)
+        current_signal, recording_status, recording_message = self._record_current(run_id, proposal, snapshots)
         counts = self.storage.get_shadow_evaluation_counts()
         summary = (
             f"{counts['pending']} pending, {counts['completed']} completed shadow signal(s): "
@@ -34,6 +46,8 @@ class ShadowEvaluator:
         return ShadowEvaluationReport(
             enabled=True,
             current_signal=current_signal,
+            recording_status=recording_status,
+            recording_message=recording_message,
             newly_evaluated=tuple(newly_evaluated),
             pending_count=counts["pending"],
             completed_count=counts["completed"],
@@ -48,14 +62,23 @@ class ShadowEvaluator:
         run_id: int,
         proposal: TradeProposal,
         snapshots: list[MarketSnapshot],
-    ) -> ShadowSignal | None:
+    ) -> tuple[ShadowSignal | None, str, str]:
         shadow = self.config.get("shadow_evaluation", {})
         if shadow.get("require_ai_enabled", True) and not self.config.get("ai", {}).get("enabled", False):
-            return None
+            return None, "SKIPPED_AI_DISABLED", "AI proposals are disabled, so no shadow signal was recorded."
+        min_interval = int(shadow.get("min_signal_interval_hours", 20))
+        cooldown = self.storage.get_shadow_signal_cooldown(run_id, min_interval)
+        if cooldown is not None:
+            message = (
+                f"Shadow signal skipped: run {cooldown['run_id']} already recorded "
+                f"{cooldown['action']} {cooldown['symbol']} {cooldown['elapsed_hours']:.2f} hours ago. "
+                f"Approximately {cooldown['remaining_hours']:.2f} hours remain in the {min_interval}-hour cooldown."
+            )
+            return None, "SKIPPED_COOLDOWN", message
         price_by_symbol = {snapshot.symbol.upper(): snapshot.price for snapshot in snapshots}
         entry_price = price_by_symbol.get(proposal.symbol.upper())
         if entry_price is None or entry_price <= 0:
-            return None
+            return None, "SKIPPED_NO_PRICE", f"No positive market price is available for {proposal.symbol}."
         horizon_hours = int(shadow.get("horizon_hours", 24))
         universe_prices = {symbol: str(price) for symbol, price in price_by_symbol.items() if price > 0}
         inserted = self.storage.save_shadow_signal(
@@ -66,8 +89,8 @@ class ShadowEvaluator:
             universe_entry_prices=json.dumps(universe_prices, sort_keys=True),
         )
         if not inserted:
-            return None
-        return ShadowSignal(
+            return None, "SKIPPED_DUPLICATE_RUN", f"Run {run_id} already has a shadow signal."
+        signal = ShadowSignal(
             run_id=run_id,
             symbol=proposal.symbol,
             action=proposal.action,
@@ -76,6 +99,7 @@ class ShadowEvaluator:
             horizon_hours=horizon_hours,
             status="PENDING",
         )
+        return signal, "RECORDED", f"Recorded shadow signal {proposal.action} {proposal.symbol} for run {run_id}."
 
     def _evaluate_due(self, run_id: int, snapshots: list[MarketSnapshot]) -> list[ShadowEvaluation]:
         price_by_symbol = {snapshot.symbol.upper(): snapshot.price for snapshot in snapshots}

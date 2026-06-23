@@ -93,6 +93,10 @@ The `Price Source` column should normally be `BINANCE_1M_AT_HORIZON`, even when 
 not running at the evaluation time. A fallback source means the historical candle request failed
 and should be treated as lower-quality evidence. Shadow evaluation never submits an order.
 
+Only one new shadow signal is recorded per `[shadow_evaluation].min_signal_interval_hours`, currently
+20 hours. A repeated run during this window should show `Recording status: SKIPPED_COOLDOWN`; this is
+expected and prevents multiple samples from the same market episode.
+
 ## Guarded USDC Flexible Earn Redeem
 
 Use only when the report shows `Flexible Earn Redeem` status `PREVIEW_READY` and the `Execution

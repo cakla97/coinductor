@@ -21,6 +21,7 @@ def _config() -> dict:
             "enabled": True,
             "require_ai_enabled": True,
             "horizon_hours": 24,
+            "min_signal_interval_hours": 20,
             "decision_threshold_pct": 0.5,
         },
     }
@@ -124,4 +125,23 @@ def test_shadow_signal_is_not_recorded_when_ai_is_disabled(tmp_path) -> None:
     report = evaluator.process(run_id, _proposal("HOLD"), _snapshots())
 
     assert report.current_signal is None
+    assert report.recording_status == "SKIPPED_AI_DISABLED"
     assert report.pending_count == 0
+
+
+def test_repeated_run_inside_cooldown_does_not_create_duplicate_signal(tmp_path) -> None:
+    storage = Storage(tmp_path / "agent.sqlite3")
+    evaluator = ShadowEvaluator(_config(), storage)
+    first_run = storage.start_run("DRY_RUN")
+    first = evaluator.process(first_run, _proposal("HOLD"), _snapshots())
+    storage.finish_run(first_run, "OK", "done")
+
+    second_run = storage.start_run("DRY_RUN")
+    second = evaluator.process(second_run, _proposal("BUY"), _snapshots())
+
+    assert first.recording_status == "RECORDED"
+    assert second.current_signal is None
+    assert second.recording_status == "SKIPPED_COOLDOWN"
+    assert f"run {first_run}" in second.recording_message
+    count = storage.connection.execute("select count(*) as count from shadow_signals").fetchone()["count"]
+    assert count == 1

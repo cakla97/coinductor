@@ -595,6 +595,8 @@ class Reporter:
                 "",
                 f"- Enabled: `{shadow_evaluation.enabled}`",
                 f"- Summary: {shadow_evaluation.summary}",
+                f"- Recording status: `{shadow_evaluation.recording_status}`",
+                f"- Recording detail: {shadow_evaluation.recording_message}",
                 f"- Pending / completed: `{shadow_evaluation.pending_count} / {shadow_evaluation.completed_count}`",
                 f"- Correct / wrong / neutral: `{shadow_evaluation.correct_count} / {shadow_evaluation.wrong_count} / {shadow_evaluation.neutral_count}`",
             ]

@@ -892,8 +892,12 @@ class Storage:
             stop_loss = entry_price * (Decimal("1") - Decimal(str(config.get("orders", {}).get("default_stop_loss_pct", "0"))) / Decimal("100"))
             take_profit = entry_price * (Decimal("1") + Decimal(str(config.get("orders", {}).get("default_take_profit_pct", "0"))) / Decimal("100"))
             if sell is not None:
+                sell_quantity = Decimal(str(sell["executed_quantity"] or "0"))
                 sell_quote = Decimal(str(sell["cumulative_quote_qty"] or "0"))
-                pnl = sell_quote - buy_quote
+                closed_quantity = min(quantity, sell_quantity)
+                allocated_buy_quote = buy_quote * self._safe_div(closed_quantity, quantity)
+                pnl = sell_quote - allocated_buy_quote
+                residual_quantity = max(Decimal("0"), quantity - closed_quantity)
                 total_realized += pnl
                 closed_positions.append(
                     LivePositionCycle(
@@ -901,19 +905,19 @@ class Storage:
                         symbol=symbol,
                         buy_order_id=str(buy["order_id"]),
                         sell_order_id=str(sell["order_id"]),
-                        buy_quote=buy_quote,
+                        buy_quote=allocated_buy_quote,
                         sell_quote=sell_quote,
-                        quantity=quantity,
+                        quantity=closed_quantity,
                         entry_price=entry_price,
                         current_price=None,
                         current_value=None,
                         pnl_quote=pnl,
-                        pnl_pct=self._safe_pct(pnl, buy_quote),
+                        pnl_pct=self._safe_pct(pnl, allocated_buy_quote),
                         stop_loss_price=stop_loss,
                         take_profit_price=take_profit,
                         status="CLOSED",
                         exit_preview_status="CLOSED",
-                        exit_preview_reason="Position is already closed.",
+                        exit_preview_reason=f"Position strategy cycle is closed; residual base dust is {residual_quantity}.",
                     )
                 )
                 continue

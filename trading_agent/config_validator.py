@@ -22,6 +22,7 @@ class ConfigValidator:
         self._validate_live_confirm(config, issues)
         self._validate_trading_bankroll(config, issues)
         self._validate_ai_memory(config, issues)
+        self._validate_market_research(config, issues)
         self._validate_retention(config, issues)
         return ConfigValidationResult(tuple(issues))
 
@@ -186,6 +187,49 @@ class ConfigValidator:
                     "ERROR",
                     "ai_memory.min_cycles_for_pattern_inference",
                     "Value must be greater than zero and at most max_closed_cycles.",
+                )
+            )
+
+    def _validate_market_research(self, config: dict, issues: list[ConfigIssue]) -> None:
+        research = config.get("market_research", {})
+        if not research:
+            return
+        quote_asset = str(research.get("breadth_quote_asset", "")).upper()
+        if quote_asset not in {"USDC", "USDT", "FDUSD"}:
+            issues.append(
+                ConfigIssue(
+                    "ERROR",
+                    "market_research.breadth_quote_asset",
+                    "Value must be one of USDC, USDT, or FDUSD.",
+                )
+            )
+        if Decimal(str(research.get("min_quote_volume_24h", 0))) < 0:
+            issues.append(
+                ConfigIssue(
+                    "ERROR",
+                    "market_research.min_quote_volume_24h",
+                    "Value must be zero or greater.",
+                )
+            )
+        max_movers = int(research.get("max_movers", 0))
+        if max_movers <= 0 or max_movers > 20:
+            issues.append(ConfigIssue("ERROR", "market_research.max_movers", "Value must be between 1 and 20."))
+        interval = str(research.get("multi_timeframe_interval", ""))
+        if interval not in {"1h", "2h", "4h", "6h", "8h", "12h", "1d"}:
+            issues.append(
+                ConfigIssue(
+                    "ERROR",
+                    "market_research.multi_timeframe_interval",
+                    "Use a supported Binance interval between 1h and 1d.",
+                )
+            )
+        kline_limit = int(research.get("kline_limit", 0))
+        if kline_limit < 180 or kline_limit > 1000:
+            issues.append(
+                ConfigIssue(
+                    "ERROR",
+                    "market_research.kline_limit",
+                    "Value must be between 180 and 1000 to cover the configured 30-day context.",
                 )
             )
 

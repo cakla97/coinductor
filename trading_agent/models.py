@@ -27,6 +27,53 @@ class MarketSnapshot:
 
 
 @dataclass(frozen=True)
+class MarketMover:
+    symbol: str
+    change_24h_pct: Decimal
+    quote_volume_24h: Decimal
+
+
+@dataclass(frozen=True)
+class SymbolMarketResearch:
+    symbol: str
+    change_24h_pct: Decimal
+    return_7d_pct: Decimal | None
+    return_30d_pct: Decimal | None
+    quote_volume_24h: Decimal
+    trades_24h: int
+    range_24h_pct: Decimal
+    atr_pct: Decimal
+    price_vs_ema200_pct: Decimal
+    relative_strength_vs_btc_24h_pct: Decimal | None
+    volume_trend: str
+    trend_regime: str
+
+
+@dataclass(frozen=True)
+class MarketBreadth:
+    quote_asset: str
+    symbols_analyzed: int
+    advancing: int
+    declining: int
+    unchanged: int
+    advance_pct: Decimal
+    median_change_24h_pct: Decimal
+    top_gainers: tuple[MarketMover, ...]
+    top_losers: tuple[MarketMover, ...]
+    top_volume: tuple[MarketMover, ...]
+
+
+@dataclass(frozen=True)
+class MarketResearchReport:
+    enabled: bool
+    status: str
+    symbols: tuple[SymbolMarketResearch, ...]
+    breadth: MarketBreadth | None
+    errors: tuple[str, ...]
+    summary: str
+
+
+@dataclass(frozen=True)
 class TradeProposal:
     symbol: str
     action: str

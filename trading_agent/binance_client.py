@@ -135,6 +135,21 @@ class BinanceClient:
         payload = self._public_get("/api/v3/ticker/price", {"symbol": symbol.upper()})
         return Decimal(str(payload["price"]))
 
+    def get_24h_tickers(self) -> list[dict]:
+        payload = self._public_get("/api/v3/ticker/24hr")
+        if not isinstance(payload, list):
+            raise BinanceApiError("Unexpected Binance 24h ticker response.")
+        return payload
+
+    def get_klines(self, symbol: str, interval: str, limit: int) -> list[list]:
+        payload = self._public_get(
+            "/api/v3/klines",
+            {"symbol": symbol.upper(), "interval": interval, "limit": limit},
+        )
+        if not isinstance(payload, list):
+            raise BinanceApiError(f"Unexpected Binance kline response for {symbol.upper()}.")
+        return payload
+
     def assert_read_only_permissions(self) -> None:
         if self.use_testnet:
             raise BinanceApiError("Read-only permission check uses /sapi and is not available on Spot Testnet.")
@@ -204,7 +219,7 @@ class BinanceClient:
         return balances
 
     def _get_market_snapshot(self, symbol: str) -> MarketSnapshot:
-        klines = self._public_get("/api/v3/klines", {"symbol": symbol, "interval": "1d", "limit": 210})
+        klines = self.get_klines(symbol, "1d", 210)
         closes = [Decimal(row[4]) for row in klines]
         highs = [Decimal(row[2]) for row in klines]
         lows = [Decimal(row[3]) for row in klines]

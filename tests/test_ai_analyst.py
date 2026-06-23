@@ -93,3 +93,15 @@ def test_sell_action_becomes_hold(monkeypatch) -> None:
 
     assert proposal.action == "HOLD"
     assert "unsupported action SELL" in proposal.reason
+
+
+def test_small_memory_sample_is_withheld_from_trade_ranking() -> None:
+    config = _config()
+    config["ai_memory"] = {"min_cycles_for_pattern_inference": 3}
+    analyst = AiAnalyst(config)
+
+    payload = analyst._memory_payload(_memory(), include_small_sample=False)
+
+    assert payload["pattern_inference_allowed"] is False
+    assert payload["recent_closed_cycles"] == []
+    assert "withheld from trade ranking" in payload["summary"]

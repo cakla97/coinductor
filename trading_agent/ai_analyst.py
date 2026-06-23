@@ -5,7 +5,7 @@ import json
 import os
 import urllib.request
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, CapitalSourcingPlan, GridRecommendation, LivePositionSummary, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, CapitalSourcingPlan, GridRecommendation, LivePositionSummary, MarketResearchReport, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class AiAnalyst:
@@ -17,6 +17,7 @@ class AiAnalyst:
         snapshots: list[MarketSnapshot],
         live_positions: LivePositionSummary | None = None,
         decision_memory: AiDecisionMemory | None = None,
+        market_research: MarketResearchReport | None = None,
     ) -> TradeProposal:
         if self._open_live_position_blocks_buy(live_positions):
             return self._hold_proposal(
@@ -27,7 +28,7 @@ class AiAnalyst:
         if not ai_config.get("enabled", False):
             return self._mock_proposal(snapshots)
         try:
-            return self._openai_compatible_proposal(snapshots, live_positions, decision_memory)
+            return self._openai_compatible_proposal(snapshots, live_positions, decision_memory, market_research)
         except Exception as exc:
             fallback = self._mock_proposal(snapshots)
             return TradeProposal(
@@ -56,6 +57,7 @@ class AiAnalyst:
         research_status: ResearchStatus,
         active_strategies: ActiveStrategiesReport,
         decision_memory: AiDecisionMemory,
+        market_research: MarketResearchReport,
     ) -> AiCommentary:
         ai_config = self.config.get("ai", {})
         if not ai_config.get("commentary_enabled", False):
@@ -99,6 +101,7 @@ class AiAnalyst:
                 }
                 for snapshot in snapshots
             ],
+            "local_market_research": self._market_research_payload(market_research),
             "external_research_notes": [
                 {
                     "source": note.source,
@@ -134,7 +137,7 @@ class AiAnalyst:
                     for item in active_strategies.grid_bots
                 ],
             },
-            "decision_memory": self._memory_payload(decision_memory),
+            "decision_memory": self._memory_payload(decision_memory, include_small_sample=True),
             "memory_usage_rules": [
                 "Do not claim a recurring or similar historical pattern unless pattern_inference_allowed is true.",
                 "With a smaller sample, describe closed cycles only as isolated observations.",
@@ -213,6 +216,7 @@ class AiAnalyst:
         snapshots: list[MarketSnapshot],
         live_positions: LivePositionSummary | None,
         decision_memory: AiDecisionMemory | None,
+        market_research: MarketResearchReport | None,
     ) -> TradeProposal:
         ai_config = self.config["ai"]
         base_url = os.getenv(ai_config["base_url_env"], "").rstrip("/")
@@ -236,6 +240,8 @@ class AiAnalyst:
                 "Historical outcomes are limited context, not proof that the same setup will repeat.",
                 "Do not overfit to one win or loss and do not use martingale or revenge-trading logic.",
                 "Do not claim a recurring or similar historical pattern unless decision_memory.pattern_inference_allowed is true.",
+                "Market breadth, top gainers, and volume rankings are context only, never standalone BUY signals.",
+                "If local market research is PARTIAL, explicitly reduce reliance on missing fields.",
             ],
             "open_live_positions": [
                 {
@@ -249,7 +255,8 @@ class AiAnalyst:
                 for position in (live_positions.open_positions if live_positions is not None else ())
             ],
             "snapshots": [snapshot.__dict__ for snapshot in snapshots],
-            "decision_memory": self._memory_payload(decision_memory),
+            "local_market_research": self._market_research_payload(market_research),
+            "decision_memory": self._memory_payload(decision_memory, include_small_sample=False),
             "schema": {
                 "symbol": str(self.config.get("strategy", {}).get("allowed_symbols", ["BTCUSDT"])[0]),
                 "action": "BUY",
@@ -283,16 +290,75 @@ class AiAnalyst:
             reason=f"Local AI ranking: {str(data.get('reason', '')).strip()}",
         )
 
-    def _memory_payload(self, memory: AiDecisionMemory | None) -> dict:
+    def _market_research_payload(self, research: MarketResearchReport | None) -> dict:
+        if research is None or not research.enabled:
+            return {"enabled": False, "status": "DISABLED", "summary": "No local market research supplied."}
+        breadth = research.breadth
+        return {
+            "enabled": True,
+            "source": "Binance public market-data endpoints collected by the local Python runtime",
+            "status": research.status,
+            "summary": research.summary,
+            "warnings": list(research.errors),
+            "breadth": {
+                "quote_asset": breadth.quote_asset,
+                "symbols_analyzed": breadth.symbols_analyzed,
+                "advancing": breadth.advancing,
+                "declining": breadth.declining,
+                "advance_pct": str(breadth.advance_pct),
+                "median_change_24h_pct": str(breadth.median_change_24h_pct),
+                "top_gainers": [item.__dict__ for item in breadth.top_gainers],
+                "top_losers": [item.__dict__ for item in breadth.top_losers],
+                "top_volume": [item.__dict__ for item in breadth.top_volume],
+            }
+            if breadth is not None
+            else None,
+            "allowed_symbol_research": [
+                {
+                    "symbol": item.symbol,
+                    "change_24h_pct": str(item.change_24h_pct),
+                    "return_7d_pct": str(item.return_7d_pct) if item.return_7d_pct is not None else None,
+                    "return_30d_pct": str(item.return_30d_pct) if item.return_30d_pct is not None else None,
+                    "quote_volume_24h": str(item.quote_volume_24h),
+                    "trades_24h": item.trades_24h,
+                    "range_24h_pct": str(item.range_24h_pct),
+                    "atr_pct": str(item.atr_pct),
+                    "price_vs_ema200_pct": str(item.price_vs_ema200_pct),
+                    "relative_strength_vs_btc_24h_pct": (
+                        str(item.relative_strength_vs_btc_24h_pct)
+                        if item.relative_strength_vs_btc_24h_pct is not None
+                        else None
+                    ),
+                    "volume_trend": item.volume_trend,
+                    "trend_regime": item.trend_regime,
+                }
+                for item in research.symbols
+            ],
+        }
+
+    def _memory_payload(self, memory: AiDecisionMemory | None, include_small_sample: bool = True) -> dict:
         if memory is None or not memory.enabled:
             return {"enabled": False, "summary": "No decision memory supplied.", "recent_closed_cycles": []}
         min_cycles = int(self.config.get("ai_memory", {}).get("min_cycles_for_pattern_inference", 3))
+        pattern_allowed = len(memory.recent_cycles) >= min_cycles
+        if not pattern_allowed and not include_small_sample:
+            return {
+                "enabled": True,
+                "summary": (
+                    f"{len(memory.recent_cycles)} closed cycle(s) exist, below the minimum sample "
+                    f"of {min_cycles}; outcomes are withheld from trade ranking."
+                ),
+                "sample_size": len(memory.recent_cycles),
+                "min_cycles_for_pattern_inference": min_cycles,
+                "pattern_inference_allowed": False,
+                "recent_closed_cycles": [],
+            }
         return {
             "enabled": True,
             "summary": memory.summary,
             "sample_size": len(memory.recent_cycles),
             "min_cycles_for_pattern_inference": min_cycles,
-            "pattern_inference_allowed": len(memory.recent_cycles) >= min_cycles,
+            "pattern_inference_allowed": pattern_allowed,
             "wins": memory.wins,
             "losses": memory.losses,
             "total_realized_pnl_quote": str(memory.total_realized_pnl_quote),

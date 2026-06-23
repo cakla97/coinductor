@@ -25,6 +25,15 @@ freshness_hours = 24
 request_symbols = ["BTCUSDC", "ETHUSDC", "BNBUSDC", "SOLUSDC", "WLDUSDC"]
 request_assets = ["BTC", "ETH", "WBETH", "BNB", "SOL", "WLD"]
 
+[market_research]
+enabled = true
+breadth_quote_asset = "USDC"
+min_quote_volume_24h = 1000000.0
+max_movers = 5
+multi_timeframe_interval = "4h"
+kline_limit = 180
+excluded_breadth_assets = ["USDC", "USDT", "FDUSD", "TUSD", "DAI", "USD1", "USDE", "EURI", "EUR"]
+
 [binance]
 testnet = false
 api_base_url = "https://api.binance.com"

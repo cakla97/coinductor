@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -20,6 +20,7 @@ class Reporter:
         portfolio_analysis: PortfolioAnalysis,
         rebalance_plan: RebalancePlan,
         snapshots: list[MarketSnapshot],
+        market_research: MarketResearchReport,
         proposal: TradeProposal,
         risk_decision: RiskDecision,
         trading_bankroll: TradingBankrollReport,
@@ -520,6 +521,57 @@ class Reporter:
         lines.extend(
             [
                 "",
+                "## Local Binance Market Research",
+                "",
+                f"- Enabled: `{market_research.enabled}`",
+                f"- Status: `{market_research.status}`",
+                f"- Summary: {market_research.summary}",
+            ]
+        )
+        if market_research.errors:
+            lines.extend(["", "### Research Warnings", ""])
+            for error in market_research.errors:
+                lines.append(f"- {error}")
+        if market_research.symbols:
+            lines.extend(
+                [
+                    "",
+                    "### Allowed Symbol Context",
+                    "",
+                    "| Symbol | 24h | 7d | 30d | 24h Range | ATR % | vs EMA200 | vs BTC 24h | 24h Quote Volume | Trades |",
+                    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+                ]
+            )
+            for item in market_research.symbols:
+                lines.append(
+                    f"| {item.symbol} | {item.change_24h_pct:.2f}% | {self._optional_pct(item.return_7d_pct)} | "
+                    f"{self._optional_pct(item.return_30d_pct)} | {item.range_24h_pct:.2f}% | {item.atr_pct:.2f}% | "
+                    f"{item.price_vs_ema200_pct:.2f}% | {self._optional_pct(item.relative_strength_vs_btc_24h_pct)} | "
+                    f"{item.quote_volume_24h:.2f} | {item.trades_24h} |"
+                )
+        if market_research.breadth is not None:
+            breadth = market_research.breadth
+            lines.extend(
+                [
+                    "",
+                    "### Market Breadth",
+                    "",
+                    f"- Quote universe: `{breadth.quote_asset}`",
+                    f"- Liquid symbols analyzed: `{breadth.symbols_analyzed}`",
+                    f"- Advancing / declining / unchanged: `{breadth.advancing} / {breadth.declining} / {breadth.unchanged}`",
+                    f"- Advance ratio: `{breadth.advance_pct:.2f}%`",
+                    f"- Median 24h change: `{breadth.median_change_24h_pct:.2f}%`",
+                    "",
+                    "| Group | Symbols |",
+                    "| --- | --- |",
+                    f"| Top gainers | {self._movers(breadth.top_gainers)} |",
+                    f"| Top losers | {self._movers(breadth.top_losers)} |",
+                    f"| Top volume | {self._movers(breadth.top_volume)} |",
+                ]
+            )
+        lines.extend(
+            [
+                "",
                 "## AI Proposal",
                 "",
                 f"- Action: `{proposal.action}`",
@@ -686,6 +738,14 @@ class Reporter:
             if symbol.endswith(quote):
                 return quote
         return "USDT"
+
+    def _optional_pct(self, value) -> str:
+        return f"{value:.2f}%" if value is not None else "n/a"
+
+    def _movers(self, movers) -> str:
+        if not movers:
+            return "none"
+        return ", ".join(f"{item.symbol} ({item.change_24h_pct:+.2f}%)" for item in movers)
 
     def _grid_investment_text(self, grid: GridRecommendation) -> str:
         if not grid.recommended or not grid.symbol:

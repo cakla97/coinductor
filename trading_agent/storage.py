@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -69,6 +69,35 @@ class Storage:
                 ema50 text,
                 ema200 text,
                 atr14 text,
+                trend_regime text
+            );
+            create table if not exists market_research_reports (
+                run_id integer,
+                enabled integer,
+                status text,
+                summary text,
+                errors text,
+                quote_asset text,
+                symbols_analyzed integer,
+                advancing integer,
+                declining integer,
+                unchanged integer,
+                advance_pct text,
+                median_change_24h_pct text
+            );
+            create table if not exists market_research_symbols (
+                run_id integer,
+                symbol text,
+                change_24h_pct text,
+                return_7d_pct text,
+                return_30d_pct text,
+                quote_volume_24h text,
+                trades_24h integer,
+                range_24h_pct text,
+                atr_pct text,
+                price_vs_ema200_pct text,
+                relative_strength_vs_btc_24h_pct text,
+                volume_trend text,
                 trend_regime text
             );
             create table if not exists ai_proposals (
@@ -412,6 +441,62 @@ class Storage:
             [
                 (run_id, s.symbol, str(s.price), str(s.rsi14), str(s.ema20), str(s.ema50), str(s.ema200), str(s.atr14), s.trend_regime)
                 for s in snapshots
+            ],
+        )
+        self.connection.commit()
+
+    def save_market_research(self, run_id: int, report: MarketResearchReport) -> None:
+        breadth = report.breadth
+        self.connection.execute(
+            """
+            insert into market_research_reports (
+                run_id, enabled, status, summary, errors, quote_asset, symbols_analyzed,
+                advancing, declining, unchanged, advance_pct, median_change_24h_pct
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                int(report.enabled),
+                report.status,
+                report.summary,
+                "\n".join(report.errors),
+                breadth.quote_asset if breadth is not None else None,
+                breadth.symbols_analyzed if breadth is not None else 0,
+                breadth.advancing if breadth is not None else 0,
+                breadth.declining if breadth is not None else 0,
+                breadth.unchanged if breadth is not None else 0,
+                str(breadth.advance_pct) if breadth is not None else None,
+                str(breadth.median_change_24h_pct) if breadth is not None else None,
+            ),
+        )
+        self.connection.executemany(
+            """
+            insert into market_research_symbols (
+                run_id, symbol, change_24h_pct, return_7d_pct, return_30d_pct,
+                quote_volume_24h, trades_24h, range_24h_pct, atr_pct,
+                price_vs_ema200_pct, relative_strength_vs_btc_24h_pct,
+                volume_trend, trend_regime
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    run_id,
+                    item.symbol,
+                    str(item.change_24h_pct),
+                    str(item.return_7d_pct) if item.return_7d_pct is not None else None,
+                    str(item.return_30d_pct) if item.return_30d_pct is not None else None,
+                    str(item.quote_volume_24h),
+                    item.trades_24h,
+                    str(item.range_24h_pct),
+                    str(item.atr_pct),
+                    str(item.price_vs_ema200_pct),
+                    str(item.relative_strength_vs_btc_24h_pct)
+                    if item.relative_strength_vs_btc_24h_pct is not None
+                    else None,
+                    item.volume_trend,
+                    item.trend_regime,
+                )
+                for item in report.symbols
             ],
         )
         self.connection.commit()
@@ -1114,6 +1199,8 @@ class Storage:
             "portfolio_valuations",
             "portfolio_summaries",
             "market_snapshots",
+            "market_research_reports",
+            "market_research_symbols",
             "ai_proposals",
             "risk_decisions",
             "paper_orders",

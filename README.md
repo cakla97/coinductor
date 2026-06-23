@@ -456,6 +456,28 @@ This keeps the input small, structured, auditable, and independent of report rot
 outcomes are explicitly treated as context rather than proof that a setup will repeat.
 The model may describe recurring patterns only after
 `[ai_memory].min_cycles_for_pattern_inference` closed cycles are available.
+Until that threshold is reached, individual outcomes remain visible in reports and commentary but
+are withheld from the trade-ranking prompt.
+
+## Local Binance Market Research
+
+`[market_research]` is the default standalone research layer. It uses Binance public endpoints
+directly from Python, requires no web-search subscription, and does not require Binance Skills.
+Each run collects:
+
+- 24-hour price change, range, quote volume, and trade count
+- 7-day and approximately 30-day returns from 4-hour K-lines
+- ATR percentage, distance from EMA200, and relative strength versus BTC
+- liquidity-filtered USDC market breadth, gainers, losers, and volume leaders
+
+The result is included in the Markdown report, stored in SQLite under the normal run retention,
+and supplied to Qwen as structured context. Rankings are not standalone BUY signals. If a public
+endpoint fails or returns malformed data, the research section becomes `PARTIAL` and the portfolio,
+OCO, and reporting workflow continues.
+
+Binance AI Agent Skills remain optional supplemental research. Their notes can still be placed in
+`research/notes/`, but normal local runs no longer depend on that manual step for broader market
+context.
 
 ## Safety Defaults
 

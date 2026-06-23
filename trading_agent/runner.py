@@ -13,6 +13,7 @@ from .execution_checklist import ExecutionChecklistBuilder
 from .grid_advisor import GridBotAdvisor
 from .live_exit_preview import LiveExitPreviewBuilder
 from .live_preview import LivePreviewExecutor
+from .market_research import MarketResearchCollector
 from .models import AgentRunResult, LiquidityDecision
 from .next_run import NextRunAdvisor
 from .oco_protection_preview import OcoProtectionPreviewBuilder
@@ -50,6 +51,7 @@ class AgentRunner:
         self.paper = PaperExecutor(config.raw)
         self.testnet = TestnetExecutor(config.raw)
         self.live_preview = LivePreviewExecutor(config.raw)
+        self.market_research = MarketResearchCollector(config.raw, self.client)
         self.live_exit_preview = LiveExitPreviewBuilder(config.raw)
         self.oco_protection_preview = OcoProtectionPreviewBuilder(config.raw)
         self.oco_status = OcoStatusSynchronizer(config.raw, self.storage)
@@ -63,6 +65,7 @@ class AgentRunner:
         try:
             balances = self.client.get_balances()
             snapshots = self.client.get_market_snapshots(self.config.allowed_symbols)
+            market_research_report = self.market_research.collect(snapshots)
             active_strategies_report = self.active_strategies.evaluate(snapshots)
             portfolio_assets = sorted(
                 {balance.asset for balance in balances}
@@ -81,6 +84,7 @@ class AgentRunner:
                 snapshots,
                 live_positions=pre_trade_live_positions,
                 decision_memory=decision_memory,
+                market_research=market_research_report,
             )
             trades_today = self.storage.count_trades_today()
             risk_decision = self.risk.evaluate(
@@ -173,11 +177,13 @@ class AgentRunner:
                 research_status=research_status,
                 active_strategies=active_strategies_report,
                 decision_memory=decision_memory,
+                market_research=market_research_report,
             )
 
             self.storage.save_balances(run_id, balances)
             self.storage.save_portfolio_analysis(run_id, portfolio_analysis)
             self.storage.save_market_snapshots(run_id, snapshots)
+            self.storage.save_market_research(run_id, market_research_report)
             self.storage.save_proposal(run_id, proposal)
             self.storage.save_risk_decision(run_id, risk_decision)
             self.storage.save_trading_bankroll_report(run_id, bankroll_report)
@@ -213,6 +219,7 @@ class AgentRunner:
                 portfolio_analysis=portfolio_analysis,
                 rebalance_plan=rebalance_plan,
                 snapshots=snapshots,
+                market_research=market_research_report,
                 proposal=proposal,
                 risk_decision=risk_decision,
                 trading_bankroll=bankroll_report,

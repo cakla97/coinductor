@@ -65,6 +65,22 @@ and is limited by `[ai_memory].max_closed_cycles`. Do not combine this evaluatio
 submit flag. Review the preview first, then use a separate guarded action run only if appropriate.
 Pattern language is disabled until `[ai_memory].min_cycles_for_pattern_inference` cycles exist.
 
+## Automatic Local Market Research
+
+No separate command is required. When `[market_research].enabled = true`, every normal run queries
+Binance public market endpoints before Qwen ranking and writes `Local Binance Market Research` into
+the report. This layer is free and local except for the direct HTTPS calls to Binance.
+
+Expected status:
+
+- `OK`: breadth and all allowed-symbol multi-timeframe data were collected
+- `PARTIAL`: one or more public requests or fields failed; the main run still continues
+- `DISABLED`: the feature was disabled in config
+- `MOCK`: deterministic mock data was used
+
+Treat top gainers, losers, and volume leaders as market context only. They do not expand
+`strategy.allowed_symbols` and cannot bypass deterministic risk or submission guards.
+
 ## Guarded USDC Flexible Earn Redeem
 
 Use only when the report shows `Flexible Earn Redeem` status `PREVIEW_READY` and the `Execution

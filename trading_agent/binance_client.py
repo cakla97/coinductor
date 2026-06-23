@@ -150,6 +150,20 @@ class BinanceClient:
             raise BinanceApiError(f"Unexpected Binance kline response for {symbol.upper()}.")
         return payload
 
+    def get_historical_close(self, symbol: str, timestamp_ms: int) -> Decimal:
+        payload = self._public_get(
+            "/api/v3/klines",
+            {
+                "symbol": symbol.upper(),
+                "interval": "1m",
+                "startTime": timestamp_ms,
+                "limit": 1,
+            },
+        )
+        if not isinstance(payload, list) or not payload:
+            raise BinanceApiError(f"No historical candle returned for {symbol.upper()} at {timestamp_ms}.")
+        return Decimal(str(payload[0][4]))
+
     def assert_read_only_permissions(self) -> None:
         if self.use_testnet:
             raise BinanceApiError("Read-only permission check uses /sapi and is not available on Spot Testnet.")

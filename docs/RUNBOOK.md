@@ -81,6 +81,18 @@ Expected status:
 Treat top gainers, losers, and volume leaders as market context only. They do not expand
 `strategy.allowed_symbols` and cannot bypass deterministic risk or submission guards.
 
+## Qwen Shadow Evaluation
+
+Shadow tracking is automatic on runs using `--ai-proposals`. The current report should show a new
+`PENDING` signal. On the first run after its 24-hour horizon, the report adds a verdict:
+
+- `BUY_GAIN`, `BUY_LOSS`, or `BUY_FLAT`
+- `HOLD_AVOIDED_LOSS`, `HOLD_MISSED_GAIN`, or `HOLD_NEUTRAL`
+
+The `Price Source` column should normally be `BINANCE_1M_AT_HORIZON`, even when the application was
+not running at the evaluation time. A fallback source means the historical candle request failed
+and should be treated as lower-quality evidence. Shadow evaluation never submits an order.
+
 ## Guarded USDC Flexible Earn Redeem
 
 Use only when the report shows `Flexible Earn Redeem` status `PREVIEW_READY` and the `Execution

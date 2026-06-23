@@ -23,6 +23,7 @@ class ConfigValidator:
         self._validate_trading_bankroll(config, issues)
         self._validate_ai_memory(config, issues)
         self._validate_market_research(config, issues)
+        self._validate_shadow_evaluation(config, issues)
         self._validate_retention(config, issues)
         return ConfigValidationResult(tuple(issues))
 
@@ -230,6 +231,29 @@ class ConfigValidator:
                     "ERROR",
                     "market_research.kline_limit",
                     "Value must be between 180 and 1000 to cover the configured 30-day context.",
+                )
+            )
+
+    def _validate_shadow_evaluation(self, config: dict, issues: list[ConfigIssue]) -> None:
+        shadow = config.get("shadow_evaluation", {})
+        if not shadow:
+            return
+        horizon = int(shadow.get("horizon_hours", 0))
+        if horizon <= 0 or horizon > 24 * 30:
+            issues.append(
+                ConfigIssue(
+                    "ERROR",
+                    "shadow_evaluation.horizon_hours",
+                    "Value must be between 1 hour and 30 days.",
+                )
+            )
+        threshold = Decimal(str(shadow.get("decision_threshold_pct", 0)))
+        if threshold < 0 or threshold > 20:
+            issues.append(
+                ConfigIssue(
+                    "ERROR",
+                    "shadow_evaluation.decision_threshold_pct",
+                    "Value must be between 0 and 20 percent.",
                 )
             )
 

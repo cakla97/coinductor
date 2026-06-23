@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluationReport, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -47,6 +47,7 @@ class Reporter:
         research_status: ResearchStatus,
         active_strategies: ActiveStrategiesReport,
         decision_memory: AiDecisionMemory,
+        shadow_evaluation: ShadowEvaluationReport,
     ) -> Path:
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         path = self.reports_dir / f"{timestamp}_run-{run_id}.md"
@@ -589,6 +590,48 @@ class Reporter:
                 f"- Closed cycles supplied: `{len(decision_memory.recent_cycles)}`",
                 f"- Wins / losses: `{decision_memory.wins} / {decision_memory.losses}`",
                 f"- Realized PnL in supplied cycles: `{decision_memory.total_realized_pnl_quote}` quote units",
+                "",
+                "### Qwen Shadow Evaluation",
+                "",
+                f"- Enabled: `{shadow_evaluation.enabled}`",
+                f"- Summary: {shadow_evaluation.summary}",
+                f"- Pending / completed: `{shadow_evaluation.pending_count} / {shadow_evaluation.completed_count}`",
+                f"- Correct / wrong / neutral: `{shadow_evaluation.correct_count} / {shadow_evaluation.wrong_count} / {shadow_evaluation.neutral_count}`",
+            ]
+        )
+        if shadow_evaluation.current_signal is not None:
+            signal = shadow_evaluation.current_signal
+            lines.extend(
+                [
+                    "",
+                    "#### Current Shadow Signal",
+                    "",
+                    f"- Run: `{signal.run_id}`",
+                    f"- Action / symbol: `{signal.action} {signal.symbol}`",
+                    f"- Entry price: `{signal.entry_price}`",
+                    f"- Confidence: `{signal.confidence}`",
+                    f"- Evaluation horizon: `{signal.horizon_hours} hours`",
+                    f"- Status: `{signal.status}`",
+                ]
+            )
+        if shadow_evaluation.newly_evaluated:
+            lines.extend(
+                [
+                    "",
+                    "#### Newly Evaluated Signals",
+                    "",
+                    "| Signal Run | Action | Symbol | Evaluated After | Symbol Return | Best Universe Result | Verdict | Score | Price Source |",
+                    "| ---: | --- | --- | ---: | ---: | --- | --- | --- | --- |",
+                ]
+            )
+            for item in shadow_evaluation.newly_evaluated:
+                lines.append(
+                    f"| {item.signal_run_id} | {item.action} | {item.symbol} | {item.elapsed_hours:.2f}h | "
+                    f"{item.symbol_return_pct:+.2f}% | {item.best_universe_symbol} "
+                    f"({item.best_universe_return_pct:+.2f}%) | {item.verdict} | {item.score} | {item.price_source} |"
+                )
+        lines.extend(
+            [
                 "",
                 "## Risk Decision",
                 "",

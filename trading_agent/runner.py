@@ -25,6 +25,7 @@ from .rebalance_planner import RebalancePlanner
 from .reporting import Reporter
 from .research import ResearchLoader
 from .risk_engine import RiskEngine
+from .shadow_evaluator import ShadowEvaluator
 from .storage import Storage
 from .strategy_decision import StrategyDecisionEngine
 from .testnet_executor import TestnetExecutor
@@ -38,6 +39,7 @@ class AgentRunner:
         self.client = BinanceClient(config.raw)
         self.ai = AiAnalyst(config.raw)
         self.risk = RiskEngine(config.raw)
+        self.shadow = ShadowEvaluator(config.raw, self.storage, self.client)
         self.earn = EarnLiquidityManager(config.raw)
         self.dust = DustSourcingAdvisor(config.raw)
         self.grid = GridBotAdvisor(config.raw)
@@ -179,6 +181,7 @@ class AgentRunner:
                 decision_memory=decision_memory,
                 market_research=market_research_report,
             )
+            shadow_evaluation = self.shadow.process(run_id, proposal, snapshots)
 
             self.storage.save_balances(run_id, balances)
             self.storage.save_portfolio_analysis(run_id, portfolio_analysis)
@@ -246,6 +249,7 @@ class AgentRunner:
                 research_status=research_status,
                 active_strategies=active_strategies_report,
                 decision_memory=decision_memory,
+                shadow_evaluation=shadow_evaluation,
             )
             self.storage.cleanup_old_runs(int(self.config.raw.get("retention", {}).get("keep_database_runs", 500)))
             status = "OK"

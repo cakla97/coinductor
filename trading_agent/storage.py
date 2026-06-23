@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluation, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -107,6 +107,26 @@ class Storage:
                 confidence text,
                 quote_amount_usdt text,
                 reason text
+            );
+            create table if not exists shadow_signals (
+                run_id integer primary key,
+                symbol text,
+                action text,
+                confidence text,
+                entry_price text,
+                horizon_hours integer,
+                status text,
+                universe_entry_prices text,
+                proposal_reason text,
+                evaluated_run_id integer,
+                evaluation_price text,
+                elapsed_hours text,
+                symbol_return_pct text,
+                best_universe_symbol text,
+                best_universe_return_pct text,
+                verdict text,
+                score text,
+                price_source text
             );
             create table if not exists risk_decisions (
                 run_id integer,
@@ -330,6 +350,7 @@ class Storage:
         self._ensure_column("capital_sourcing_items", "source_pct_of_asset", "text")
         self._ensure_column("capital_sourcing_items", "remaining_value_usdt", "text")
         self._ensure_column("capital_sourcing_items", "remaining_pct_of_asset", "text")
+        self._ensure_column("shadow_signals", "price_source", "text")
         self.connection.commit()
 
     def _ensure_column(self, table: str, column: str, definition: str) -> None:
@@ -507,6 +528,109 @@ class Storage:
             (run_id, proposal.symbol, proposal.action, str(proposal.confidence), str(proposal.quote_amount_usdt), proposal.reason),
         )
         self.connection.commit()
+
+    def save_shadow_signal(
+        self,
+        run_id: int,
+        proposal: TradeProposal,
+        entry_price: Decimal,
+        horizon_hours: int,
+        universe_entry_prices: str,
+    ) -> bool:
+        cursor = self.connection.execute(
+            """
+            insert or ignore into shadow_signals (
+                run_id, symbol, action, confidence, entry_price, horizon_hours, status,
+                universe_entry_prices, proposal_reason
+            ) values (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)
+            """,
+            (
+                run_id,
+                proposal.symbol,
+                proposal.action,
+                str(proposal.confidence),
+                str(entry_price),
+                horizon_hours,
+                universe_entry_prices,
+                proposal.reason,
+            ),
+        )
+        self.connection.commit()
+        return cursor.rowcount == 1
+
+    def get_due_shadow_signals(self, current_run_id: int) -> list[sqlite3.Row]:
+        return self.connection.execute(
+            """
+            select
+                signal.*,
+                (julianday(current_run.started_at) - julianday(signal_run.started_at)) * 24
+                    as evaluation_delay_hours,
+                (cast(strftime('%s', signal_run.started_at) as integer) + signal.horizon_hours * 3600) * 1000
+                    as target_timestamp_ms
+            from shadow_signals signal
+            join runs signal_run on signal_run.id = signal.run_id
+            join runs current_run on current_run.id = ?
+            where signal.status = 'PENDING'
+              and signal_run.status = 'OK'
+              and signal.run_id != ?
+              and (julianday(current_run.started_at) - julianday(signal_run.started_at)) * 24 >= signal.horizon_hours
+            order by signal.run_id
+            """,
+            (current_run_id, current_run_id),
+        ).fetchall()
+
+    def complete_shadow_signal(self, evaluation: ShadowEvaluation) -> None:
+        self.connection.execute(
+            """
+            update shadow_signals
+            set status = 'EVALUATED',
+                evaluated_run_id = ?,
+                evaluation_price = ?,
+                elapsed_hours = ?,
+                symbol_return_pct = ?,
+                best_universe_symbol = ?,
+                best_universe_return_pct = ?,
+                verdict = ?,
+                score = ?,
+                price_source = ?
+            where run_id = ? and status = 'PENDING'
+            """,
+            (
+                evaluation.evaluated_run_id,
+                str(evaluation.evaluation_price),
+                str(evaluation.elapsed_hours),
+                str(evaluation.symbol_return_pct),
+                evaluation.best_universe_symbol,
+                str(evaluation.best_universe_return_pct),
+                evaluation.verdict,
+                evaluation.score,
+                evaluation.price_source,
+                evaluation.signal_run_id,
+            ),
+        )
+        self.connection.commit()
+
+    def get_shadow_evaluation_counts(self) -> dict[str, int]:
+        row = self.connection.execute(
+            """
+            select
+                sum(case when signal.status = 'PENDING' then 1 else 0 end) as pending,
+                sum(case when signal.status = 'EVALUATED' then 1 else 0 end) as completed,
+                sum(case when signal.score = 'CORRECT' then 1 else 0 end) as correct,
+                sum(case when signal.score = 'WRONG' then 1 else 0 end) as wrong,
+                sum(case when signal.score = 'NEUTRAL' then 1 else 0 end) as neutral
+            from shadow_signals signal
+            join runs on runs.id = signal.run_id
+            where runs.status in ('RUNNING', 'OK')
+            """
+        ).fetchone()
+        return {
+            "pending": int(row["pending"] or 0),
+            "completed": int(row["completed"] or 0),
+            "correct": int(row["correct"] or 0),
+            "wrong": int(row["wrong"] or 0),
+            "neutral": int(row["neutral"] or 0),
+        }
 
     def save_risk_decision(self, run_id: int, decision: RiskDecision) -> None:
         self.connection.execute(
@@ -1202,6 +1326,7 @@ class Storage:
             "market_research_reports",
             "market_research_symbols",
             "ai_proposals",
+            "shadow_signals",
             "risk_decisions",
             "paper_orders",
             "testnet_orders",

@@ -110,6 +110,47 @@ class AiDecisionMemory:
 
 
 @dataclass(frozen=True)
+class ShadowSignal:
+    run_id: int
+    symbol: str
+    action: str
+    confidence: Decimal
+    entry_price: Decimal
+    horizon_hours: int
+    status: str
+
+
+@dataclass(frozen=True)
+class ShadowEvaluation:
+    signal_run_id: int
+    evaluated_run_id: int
+    symbol: str
+    action: str
+    entry_price: Decimal
+    evaluation_price: Decimal
+    elapsed_hours: Decimal
+    symbol_return_pct: Decimal
+    best_universe_symbol: str
+    best_universe_return_pct: Decimal
+    verdict: str
+    score: str
+    price_source: str
+
+
+@dataclass(frozen=True)
+class ShadowEvaluationReport:
+    enabled: bool
+    current_signal: ShadowSignal | None
+    newly_evaluated: tuple[ShadowEvaluation, ...]
+    pending_count: int
+    completed_count: int
+    correct_count: int
+    wrong_count: int
+    neutral_count: int
+    summary: str
+
+
+@dataclass(frozen=True)
 class RiskDecision:
     approved: bool
     reason: str

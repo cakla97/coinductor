@@ -56,6 +56,12 @@ enabled = true
 max_closed_cycles = 10
 min_cycles_for_pattern_inference = 3
 
+[shadow_evaluation]
+enabled = true
+require_ai_enabled = true
+horizon_hours = 24
+decision_threshold_pct = 0.5
+
 [risk]
 max_trades_per_day = 1
 max_daily_loss_pct = 1.0

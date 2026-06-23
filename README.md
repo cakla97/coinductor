@@ -479,6 +479,24 @@ Binance AI Agent Skills remain optional supplemental research. Their notes can s
 `research/notes/`, but normal local runs no longer depend on that manual step for broader market
 context.
 
+## Qwen Shadow Evaluation
+
+`[shadow_evaluation]` measures local Qwen proposals without placing orders. It is active only on
+runs where AI proposals are enabled. Each proposal stores the allowed-universe entry prices in
+SQLite and remains `PENDING` until the configured horizon, currently 24 hours.
+
+At the first later run, the evaluator requests Binance 1-minute candles at the exact horizon:
+
+- `BUY` is correct when the selected symbol gains at least the configured threshold
+- `BUY` is wrong when it loses at least that threshold
+- `HOLD` is wrong when any allowed symbol offered a threshold-sized gain
+- `HOLD` is correct when even the best allowed symbol fell by at least that threshold
+- smaller changes are neutral
+
+The default threshold is 0.5% and results are measured before fees. If historical candles cannot
+be loaded, the report clearly marks use of the current-price fallback. Shadow records live in
+SQLite and follow the normal database-run retention.
+
 ## Safety Defaults
 
 Real trading and real redeem are disabled by default. Before enabling anything live:

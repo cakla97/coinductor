@@ -3,10 +3,9 @@ from __future__ import annotations
 from dataclasses import replace
 from decimal import Decimal
 from pathlib import Path
-import os
-import tomllib
 
-from .models import ActiveGridBot
+from .models import ActiveGridBot, ActiveRebalancingBot
+from .strategy_state import read_state, write_state
 
 
 class GridRegistry:
@@ -15,10 +14,7 @@ class GridRegistry:
         self.path = Path(str(config.get("app", {}).get("active_strategies_path", "state/active_strategies.toml")))
 
     def list_bots(self) -> tuple[ActiveGridBot, ...]:
-        if not self.path.exists():
-            return ()
-        with self.path.open("rb") as handle:
-            raw = tomllib.load(handle)
+        raw = read_state(self.path)
         return tuple(self._from_row(row) for row in raw.get("grid_bots", []))
 
     def validate_new(self, bot: ActiveGridBot) -> tuple[str, ...]:
@@ -100,32 +96,20 @@ class GridRegistry:
         )
 
     def _write(self, bots: tuple[ActiveGridBot, ...]) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        lines = ["# Managed by trading-agent grid registry. Edit only while the assistant is stopped.", ""]
-        for bot in bots:
-            lines.extend(
-                [
-                    "[[grid_bots]]",
-                    f'name = "{self._escape(bot.name)}"',
-                    f'binance_bot_id = "{self._escape(bot.binance_bot_id)}"',
-                    f'symbol = "{bot.symbol}"',
-                    f"range_low = {bot.range_low}",
-                    f"range_high = {bot.range_high}",
-                    f"grid_count = {bot.grid_count}",
-                    f'grid_type = "{bot.grid_type}"',
-                    f"investment_usdt = {bot.investment_usdt}",
-                    f"entry_price = {bot.entry_price}",
-                    f"stop_loss_price = {bot.stop_loss_price}",
-                    f"take_profit_price = {bot.take_profit_price}",
-                    f'created_at = "{self._escape(bot.created_at)}"',
-                    f'status = "{bot.status}"',
-                    f'notes = "{self._escape(bot.notes)}"',
-                    "",
-                ]
-            )
-        temporary = self.path.with_suffix(self.path.suffix + ".tmp")
-        temporary.write_text("\n".join(lines), encoding="utf-8")
-        os.replace(temporary, self.path)
+        raw = read_state(self.path)
+        rebalancing = tuple(self._rebalancing_from_row(row) for row in raw.get("rebalancing_bots", []))
+        write_state(self.path, bots, rebalancing)
 
-    def _escape(self, value: str) -> str:
-        return value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+    def _rebalancing_from_row(self, row: dict) -> ActiveRebalancingBot:
+        return ActiveRebalancingBot(
+            name=str(row.get("name", "")),
+            binance_bot_id=str(row.get("binance_bot_id", "")),
+            assets=tuple(str(item).upper() for item in row.get("assets", [])),
+            target_weights_pct=tuple(Decimal(str(item)) for item in row.get("target_weights_pct", [])),
+            entry_prices_usdt=tuple(Decimal(str(item)) for item in row.get("entry_prices_usdt", [])),
+            investment_usdt=Decimal(str(row.get("investment_usdt", "0"))),
+            threshold_pct=Decimal(str(row.get("threshold_pct", "0"))),
+            created_at=str(row.get("created_at", "")),
+            status=str(row.get("status", "ACTIVE")).upper(),
+            notes=str(row.get("notes", "")),
+        )

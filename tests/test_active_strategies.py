@@ -2,7 +2,8 @@ from decimal import Decimal
 
 from trading_agent.active_strategies import ActiveStrategiesTracker
 from trading_agent.grid_registry import GridRegistry
-from trading_agent.models import ActiveGridBot, MarketSnapshot
+from trading_agent.models import ActiveGridBot, ActiveRebalancingBot, MarketSnapshot
+from trading_agent.rebalancing_registry import RebalancingRegistry
 
 
 def _config(path, max_runtime_days: int = 14) -> dict:
@@ -79,3 +80,33 @@ def test_runtime_expiry_is_reported(tmp_path) -> None:
 
     assert report.grid_bots[0].state == "RUNTIME_EXPIRED"
     assert report.grid_bots[0].age_days is not None
+
+
+def test_rebalancing_bot_reports_theoretical_threshold_drift(tmp_path) -> None:
+    config = _config(tmp_path / "active.toml")
+    config["rebalancing_bot"] = {
+        "allowed_assets": ["BTC", "ETH"],
+        "min_assets": 2,
+    }
+    bot = ActiveRebalancingBot(
+        name="core-rebalance",
+        binance_bot_id="rb-123",
+        assets=("BTC", "ETH"),
+        target_weights_pct=(Decimal("50"), Decimal("50")),
+        entry_prices_usdt=(Decimal("100"), Decimal("100")),
+        investment_usdt=Decimal("100"),
+        threshold_pct=Decimal("5"),
+        created_at="2026-06-24T10:00:00+00:00",
+        status="ACTIVE",
+        notes="test",
+    )
+    RebalancingRegistry(config).register(bot, "CONFIRM_REBALANCING_REGISTER")
+
+    report = ActiveStrategiesTracker(config).evaluate(
+        [_snapshot("100")],
+        {"BTC": Decimal("120"), "ETH": Decimal("80")},
+    )
+
+    assert report.rebalancing_bots[0].state == "THRESHOLD_REACHED"
+    assert report.rebalancing_bots[0].current_weights_pct == (Decimal("60.00"), Decimal("40.00"))
+    assert report.rebalancing_bots[0].max_drift_pct == Decimal("10.00")

@@ -70,12 +70,12 @@ class AgentRunner:
             balances = self.client.get_balances()
             snapshots = self.client.get_market_snapshots(self.config.allowed_symbols)
             market_research_report = self.market_research.collect(snapshots)
-            active_strategies_report = self.active_strategies.evaluate(snapshots)
             portfolio_assets = sorted(
                 {balance.asset for balance in balances}
                 | {asset.upper() for asset in self.config.raw.get("portfolio", {}).get("tracked_assets", [])}
             )
             asset_prices = self.client.get_asset_prices_usdt(portfolio_assets)
+            active_strategies_report = self.active_strategies.evaluate(snapshots, asset_prices)
             portfolio_analysis = self.portfolio.analyze(balances, asset_prices)
             rebalance_plan = self.rebalance_planner.plan(portfolio_analysis)
             rebalancing_bot_recommendation = self.rebalancing_bot.recommend(portfolio_analysis)

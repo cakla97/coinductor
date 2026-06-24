@@ -242,6 +242,8 @@ BNB = 5.0
 enabled = true
 # Binance bot creation remains manual. The advisor only proposes guarded parameters.
 mode = "THRESHOLD"
+# WLD stays outside the core bot: threshold rebalancing would systematically buy
+# more of this speculative allocation during sharp declines.
 allowed_assets = ["BTC", "ETH", "SOL"]
 min_assets = 2
 threshold_pct = 5.0

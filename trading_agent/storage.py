@@ -387,6 +387,21 @@ class Storage:
                 distance_to_upper_pct text,
                 recommendation text
             );
+            create table if not exists active_rebalancing_evaluations (
+                run_id integer,
+                name text,
+                binance_bot_id text,
+                assets text,
+                target_weights_pct text,
+                current_weights_pct text,
+                entry_prices_usdt text,
+                investment_usdt text,
+                threshold_pct text,
+                max_drift_pct text,
+                state text,
+                age_days text,
+                recommendation text
+            );
             """
         )
         self._ensure_column("portfolio_summaries", "unpriced_assets", "text")
@@ -1621,6 +1636,7 @@ class Storage:
             "research_notes",
             "research_statuses",
             "active_grid_evaluations",
+            "active_rebalancing_evaluations",
         ]
         for table in tables:
             self.connection.execute(f"delete from {table} where run_id in ({placeholders})", old_ids)
@@ -1928,6 +1944,33 @@ class Storage:
                     str(item.age_days) if item.age_days is not None else None,
                 )
                 for item in report.grid_bots
+            ],
+        )
+        self.connection.executemany(
+            """
+            insert into active_rebalancing_evaluations (
+                run_id, name, binance_bot_id, assets, target_weights_pct,
+                current_weights_pct, entry_prices_usdt, investment_usdt,
+                threshold_pct, max_drift_pct, state, age_days, recommendation
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    run_id,
+                    item.bot.name,
+                    item.bot.binance_bot_id,
+                    "\n".join(item.bot.assets),
+                    "\n".join(str(value) for value in item.bot.target_weights_pct),
+                    "\n".join(str(value) for value in item.current_weights_pct),
+                    "\n".join(str(value) for value in item.bot.entry_prices_usdt),
+                    str(item.bot.investment_usdt),
+                    str(item.bot.threshold_pct),
+                    str(item.max_drift_pct) if item.max_drift_pct is not None else None,
+                    item.state,
+                    str(item.age_days) if item.age_days is not None else None,
+                    item.recommendation,
+                )
+                for item in report.rebalancing_bots
             ],
         )
         self.connection.commit()

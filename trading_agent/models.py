@@ -499,10 +499,35 @@ class ActiveGridEvaluation:
 
 
 @dataclass(frozen=True)
+class ActiveRebalancingBot:
+    name: str
+    binance_bot_id: str
+    assets: tuple[str, ...]
+    target_weights_pct: tuple[Decimal, ...]
+    entry_prices_usdt: tuple[Decimal, ...]
+    investment_usdt: Decimal
+    threshold_pct: Decimal
+    created_at: str
+    status: str
+    notes: str
+
+
+@dataclass(frozen=True)
+class ActiveRebalancingEvaluation:
+    bot: ActiveRebalancingBot
+    current_weights_pct: tuple[Decimal, ...]
+    max_drift_pct: Decimal | None
+    state: str
+    age_days: Decimal | None
+    recommendation: str
+
+
+@dataclass(frozen=True)
 class ActiveStrategiesReport:
     enabled: bool
     grid_bots: tuple[ActiveGridEvaluation, ...]
     summary: str
+    rebalancing_bots: tuple[ActiveRebalancingEvaluation, ...] = ()
 
 
 @dataclass(frozen=True)

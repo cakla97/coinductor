@@ -15,3 +15,15 @@ take_profit_price = 72100
 created_at = "2026-06-24T12:00:00+00:00"
 status = "ACTIVE"
 notes = "Example only. Do not use as live state."
+
+[[rebalancing_bots]]
+name = "core-rebalancing-example"
+binance_bot_id = "replace-with-binance-id"
+assets = ["BTC", "ETH", "SOL"]
+target_weights_pct = [52.9, 23.4, 23.7]
+entry_prices_usdt = [61116.76, 1781.44, 67.89]
+investment_usdt = 100
+threshold_pct = 5
+created_at = "2026-06-24T12:00:00+00:00"
+status = "ACTIVE"
+notes = "Example only. Register the exact values shown by Binance."

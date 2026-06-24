@@ -491,6 +491,30 @@ class Reporter:
                     f"{item.recommendation} |"
                 )
             lines.append("")
+        if active_strategies.rebalancing_bots:
+            lines.extend(
+                [
+                    "### Active Rebalancing Bots",
+                    "",
+                    "| Name | Binance Bot ID | Assets | Target Weights | Current Theoretical Weights | Threshold | Investment | Age | State | Recommendation |",
+                    "| --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | --- |",
+                ]
+            )
+            for item in active_strategies.rebalancing_bots:
+                target = ", ".join(
+                    f"{asset} {weight}%" for asset, weight in zip(item.bot.assets, item.bot.target_weights_pct)
+                )
+                current = ", ".join(
+                    f"{asset} {weight}%"
+                    for asset, weight in zip(item.bot.assets, item.current_weights_pct)
+                ) or "Unavailable"
+                lines.append(
+                    "| "
+                    f"{item.bot.name} | {item.bot.binance_bot_id} | {', '.join(item.bot.assets)} | "
+                    f"{target} | {current} | {item.bot.threshold_pct}% | {item.bot.investment_usdt} | "
+                    f"{item.age_days if item.age_days is not None else ''}d | {item.state} | {item.recommendation} |"
+                )
+            lines.append("")
         lines.extend(
             [
                 "## Executive Summary",

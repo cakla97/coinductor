@@ -14,13 +14,14 @@ from .config import AppConfig, load_config
 from .config_validator import ConfigValidator
 from .env import load_env_file
 from .grid_registry import GridRegistry
+from .rebalancing_registry import RebalancingRegistry
 from .portfolio_analyzer import PortfolioAnalyzer
 from .readiness import ReadinessChecker
 from .research import ResearchLoader
 from .runner import AgentRunner
 from .storage import Storage
 from .testnet_executor import TestnetExecutor
-from .models import ActiveGridBot, TestnetExecutedOrder, TestnetExecutionReport
+from .models import ActiveGridBot, ActiveRebalancingBot, TestnetExecutedOrder, TestnetExecutionReport
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -56,6 +57,10 @@ def main(argv: list[str] | None = None) -> int:
         return _grid_register_command(args, parser)
     if args.command == "grid-set-status":
         return _grid_set_status_command(args)
+    if args.command == "rebalancing-register":
+        return _rebalancing_register_command(args, parser)
+    if args.command == "rebalancing-set-status":
+        return _rebalancing_set_status_command(args)
     parser.error(f"Unknown command {args.command}")
     return 2
 
@@ -155,6 +160,43 @@ def _build_parser() -> argparse.ArgumentParser:
         "--confirm",
         default="",
         help="Must equal CONFIRM_GRID_STATUS to modify local state",
+    )
+
+    rebalancing_register_parser = subparsers.add_parser(
+        "rebalancing-register",
+        help="Preview or register a manually created Binance Rebalancing Bot",
+    )
+    rebalancing_register_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    rebalancing_register_parser.add_argument("--name", required=True, help="Unique local bot name")
+    rebalancing_register_parser.add_argument("--binance-bot-id", default="", help="Optional Binance bot/strategy id")
+    rebalancing_register_parser.add_argument("--assets", required=True, help="Comma-separated assets in Binance order")
+    rebalancing_register_parser.add_argument("--target-weights", required=True, help="Comma-separated target percentages")
+    rebalancing_register_parser.add_argument("--entry-prices", required=True, help="Comma-separated USDC entry prices")
+    rebalancing_register_parser.add_argument("--investment", required=True, help="Exact Binance bot investment")
+    rebalancing_register_parser.add_argument("--threshold", required=True, help="Exact Binance rebalance threshold percentage")
+    rebalancing_register_parser.add_argument("--created-at", default="", help="ISO timestamp, default current UTC time")
+    rebalancing_register_parser.add_argument("--notes", default="", help="Optional local notes")
+    rebalancing_register_parser.add_argument(
+        "--confirm",
+        default="",
+        help="Must equal CONFIRM_REBALANCING_REGISTER to write local state",
+    )
+
+    rebalancing_status_parser = subparsers.add_parser(
+        "rebalancing-set-status",
+        help="Preview or update local status for a registered Rebalancing Bot",
+    )
+    rebalancing_status_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    rebalancing_status_parser.add_argument("--name", required=True, help="Registered local bot name")
+    rebalancing_status_parser.add_argument(
+        "--status",
+        required=True,
+        choices=["ACTIVE", "PAUSED", "STOPPED", "CLOSED"],
+    )
+    rebalancing_status_parser.add_argument(
+        "--confirm",
+        default="",
+        help="Must equal CONFIRM_REBALANCING_STATUS to modify local state",
     )
     return parser
 
@@ -586,6 +628,66 @@ def _grid_set_status_command(args: argparse.Namespace) -> int:
         print(f"[BLOCK] {exc}")
         return 1
     print(f"Updated grid {args.name} to {args.status}.")
+    return 0
+
+
+def _rebalancing_register_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    config = load_config(args.config)
+    created_at = args.created_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    try:
+        assets = tuple(item.strip().upper() for item in str(args.assets).split(",") if item.strip())
+        weights = tuple(Decimal(item.strip()) for item in str(args.target_weights).split(",") if item.strip())
+        prices = tuple(Decimal(item.strip()) for item in str(args.entry_prices).split(",") if item.strip())
+        bot = ActiveRebalancingBot(
+            name=str(args.name),
+            binance_bot_id=str(args.binance_bot_id),
+            assets=assets,
+            target_weights_pct=weights,
+            entry_prices_usdt=prices,
+            investment_usdt=Decimal(str(args.investment)),
+            threshold_pct=Decimal(str(args.threshold)),
+            created_at=created_at,
+            status="ACTIVE",
+            notes=str(args.notes),
+        )
+    except Exception as exc:
+        parser.error(f"Invalid rebalancing parameter: {exc}")
+    registry = RebalancingRegistry(config.raw)
+    issues = registry.validate_new(bot)
+    print("Rebalancing Bot registration preview:")
+    print(f"  state file: {registry.path}")
+    print(f"  name / Binance id: {bot.name} / {bot.binance_bot_id or 'not supplied'}")
+    print(f"  assets: {', '.join(bot.assets)}")
+    print(f"  target weights: {', '.join(str(item) + '%' for item in bot.target_weights_pct)}")
+    print(f"  entry prices: {', '.join(str(item) for item in bot.entry_prices_usdt)} USDC")
+    print(f"  investment / threshold: {bot.investment_usdt} / {bot.threshold_pct}%")
+    print(f"  created at: {bot.created_at}")
+    if issues:
+        for issue in issues:
+            print(f"[BLOCK] {issue}")
+        return 1
+    if args.confirm != "CONFIRM_REBALANCING_REGISTER":
+        print("Not written. Add --confirm CONFIRM_REBALANCING_REGISTER after matching these values with Binance.")
+        return 0
+    registry.register(bot, args.confirm)
+    print(f"Registered Rebalancing Bot {bot.name} in {registry.path}.")
+    return 0
+
+
+def _rebalancing_set_status_command(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    registry = RebalancingRegistry(config.raw)
+    print(f"Rebalancing Bot status preview: {args.name} -> {args.status}")
+    print(f"State file: {registry.path}")
+    if args.confirm != "CONFIRM_REBALANCING_STATUS":
+        print("Not written. Add --confirm CONFIRM_REBALANCING_STATUS to update local state.")
+        return 0
+    try:
+        registry.set_status(str(args.name), str(args.status), args.confirm)
+    except ValueError as exc:
+        print(f"[BLOCK] {exc}")
+        return 1
+    print(f"Updated Rebalancing Bot {args.name} to {args.status}.")
     return 0
 
 

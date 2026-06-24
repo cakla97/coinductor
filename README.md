@@ -592,6 +592,35 @@ preview to generate parameters from the current portfolio:
 python -m trading_agent run --config config.example.toml --real-data
 ```
 
+After manually creating the bot in Binance, preview its local registration:
+
+```powershell
+python -m trading_agent rebalancing-register --config config.example.toml `
+  --name core-rebalance-1 `
+  --binance-bot-id 123456789 `
+  --assets BTC,ETH,SOL `
+  --target-weights 52.9,23.4,23.7 `
+  --entry-prices 61116.76,1781.44,67.89 `
+  --investment 100 `
+  --threshold 5
+```
+
+The command writes nothing until the exact confirmation is added:
+
+```powershell
+  --confirm CONFIRM_REBALANCING_REGISTER
+```
+
+Each later real-data run reports theoretical current basket weights and maximum drift.
+This is a local price-based monitor, not a claim about Binance's internal bot PnL or
+executed rebalance history. Update lifecycle state when the bot is paused or closed:
+
+```powershell
+python -m trading_agent rebalancing-set-status --config config.example.toml `
+  --name core-rebalance-1 --status CLOSED `
+  --confirm CONFIRM_REBALANCING_STATUS
+```
+
 Append `--confirm CONFIRM_GRID_STATUS` only after the Binance-side status really changed.
 
 ## Safety Defaults

@@ -12,6 +12,7 @@ class ConfigValidator:
         self._validate_risk(config, issues)
         self._validate_consensus(config, issues)
         self._validate_rebalancing(config, issues)
+        self._validate_rebalancing_bot(config, issues)
         self._validate_universes(config, issues)
         self._validate_grid_bot(config, issues)
         self._validate_capital_sourcing(config, issues)
@@ -84,6 +85,21 @@ class ConfigValidator:
                 issues.append(ConfigIssue("ERROR", f"rebalancing.{key}", "Value must be greater than zero and at most 100."))
         if Decimal(str(rebalancing.get("min_remaining_value_usdt_per_asset", 0))) < 0:
             issues.append(ConfigIssue("ERROR", "rebalancing.min_remaining_value_usdt_per_asset", "Value must be zero or greater."))
+
+    def _validate_rebalancing_bot(self, config: dict, issues: list[ConfigIssue]) -> None:
+        bot = config.get("rebalancing_bot", {})
+        if not bot:
+            return
+        if str(bot.get("mode", "")).upper() not in {"THRESHOLD", "PERIODIC"}:
+            issues.append(ConfigIssue("ERROR", "rebalancing_bot.mode", "Value must be THRESHOLD or PERIODIC."))
+        allowed = self._upper_list(bot.get("allowed_assets", []))
+        if len(set(allowed)) < 2:
+            issues.append(ConfigIssue("ERROR", "rebalancing_bot.allowed_assets", "At least two unique assets are required."))
+        for key in ("threshold_pct", "min_asset_value_usdt", "min_investment_usdt", "max_investment_usdt", "max_portfolio_pct"):
+            if Decimal(str(bot.get(key, 0))) <= 0:
+                issues.append(ConfigIssue("ERROR", f"rebalancing_bot.{key}", "Value must be greater than zero."))
+        if Decimal(str(bot.get("min_investment_usdt", 0))) > Decimal(str(bot.get("max_investment_usdt", 0))):
+            issues.append(ConfigIssue("ERROR", "rebalancing_bot", "min_investment_usdt cannot exceed max_investment_usdt."))
 
     def _validate_universes(self, config: dict, issues: list[ConfigIssue]) -> None:
         tracked = set(self._upper_list(config.get("portfolio", {}).get("tracked_assets", [])))

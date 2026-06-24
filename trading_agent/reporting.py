@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluationReport, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluationReport, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:
@@ -19,6 +19,7 @@ class Reporter:
         balances: list[Balance],
         portfolio_analysis: PortfolioAnalysis,
         rebalance_plan: RebalancePlan,
+        rebalancing_bot_recommendation: RebalancingBotRecommendation,
         snapshots: list[MarketSnapshot],
         market_research: MarketResearchReport,
         proposal: TradeProposal,
@@ -426,6 +427,40 @@ class Reporter:
                 lines.append(
                     f"| {step.asset} | {step.symbol or ''} | {step.side} | {step.value_usdt} | {step.status} | {step.reason} |"
                 )
+            lines.append("")
+        lines.extend(
+            [
+                "## Binance Rebalancing Bot Advisor",
+                "",
+                f"- Enabled: `{rebalancing_bot_recommendation.enabled}`",
+                f"- Deployment allowed: `{rebalancing_bot_recommendation.deployment_allowed}`",
+                f"- Mode: `{rebalancing_bot_recommendation.mode or 'N/A'}`",
+                f"- Threshold: `{rebalancing_bot_recommendation.threshold_pct}%`",
+                f"- Guarded investment: `{rebalancing_bot_recommendation.investment_usdt} USDC-equivalent`",
+                f"- Summary: {rebalancing_bot_recommendation.summary}",
+                "",
+            ]
+        )
+        if rebalancing_bot_recommendation.assets:
+            lines.extend(
+                [
+                    "| Asset | Role | Current Value | Portfolio Weight | Bot Target | Status | Reason |",
+                    "| --- | --- | ---: | ---: | ---: | --- | --- |",
+                ]
+            )
+            for item in rebalancing_bot_recommendation.assets:
+                lines.append(
+                    f"| {item.asset} | {item.role} | {item.current_value_usdt} | "
+                    f"{item.current_weight_pct}% | {item.target_weight_pct}% | {item.status} | {item.reason} |"
+                )
+            lines.append("")
+        if rebalancing_bot_recommendation.blockers:
+            lines.extend(["### Deployment Blockers", ""])
+            lines.extend(f"- {item}" for item in rebalancing_bot_recommendation.blockers)
+            lines.append("")
+        if rebalancing_bot_recommendation.manual_steps:
+            lines.extend(["### Manual Setup", ""])
+            lines.extend(f"{index}. {item}" for index, item in enumerate(rebalancing_bot_recommendation.manual_steps, start=1))
             lines.append("")
         lines.extend(
             [

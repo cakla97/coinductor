@@ -237,3 +237,15 @@ USDC = 50.0
 BTC = 30.0
 ETH = 15.0
 BNB = 5.0
+
+[rebalancing_bot]
+enabled = true
+# Binance bot creation remains manual. The advisor only proposes guarded parameters.
+mode = "THRESHOLD"
+allowed_assets = ["BTC", "ETH", "SOL"]
+min_assets = 2
+threshold_pct = 5.0
+min_asset_value_usdt = 25.0
+min_investment_usdt = 50.0
+max_investment_usdt = 100.0
+max_portfolio_pct = 12.5

@@ -359,6 +359,32 @@ class RebalancePlan:
 
 
 @dataclass(frozen=True)
+class RebalancingBotAsset:
+    asset: str
+    current_value_usdt: Decimal
+    current_weight_pct: Decimal
+    target_weight_pct: Decimal
+    role: str
+    status: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class RebalancingBotRecommendation:
+    enabled: bool
+    recommended: bool
+    deployment_allowed: bool
+    mode: str
+    threshold_pct: Decimal
+    investment_usdt: Decimal
+    assets: tuple[RebalancingBotAsset, ...]
+    excluded_assets: tuple[str, ...]
+    blockers: tuple[str, ...]
+    manual_steps: tuple[str, ...]
+    summary: str
+
+
+@dataclass(frozen=True)
 class ReadinessCheck:
     status: str
     name: str

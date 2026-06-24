@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluation, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluation, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -252,6 +252,28 @@ class Storage:
                 estimated_quote_per_grid text,
                 estimated_grid_spacing_pct text,
                 blockers text
+            );
+            create table if not exists rebalancing_bot_recommendations (
+                run_id integer,
+                enabled integer,
+                recommended integer,
+                deployment_allowed integer,
+                mode text,
+                threshold_pct text,
+                investment_usdt text,
+                excluded_assets text,
+                blockers text,
+                summary text
+            );
+            create table if not exists rebalancing_bot_assets (
+                run_id integer,
+                asset text,
+                current_value_usdt text,
+                current_weight_pct text,
+                target_weight_pct text,
+                role text,
+                status text,
+                reason text
             );
             create table if not exists strategy_decisions (
                 run_id integer,
@@ -1585,6 +1607,8 @@ class Storage:
             "testnet_orders",
             "live_orders",
             "grid_recommendations",
+            "rebalancing_bot_recommendations",
+            "rebalancing_bot_assets",
             "strategy_decisions",
             "capital_sourcing_plans",
             "capital_sourcing_items",
@@ -1633,6 +1657,54 @@ class Storage:
                 str(recommendation.estimated_grid_spacing_pct),
                 "\n".join(recommendation.blockers),
             ),
+        )
+        self.connection.commit()
+
+    def save_rebalancing_bot_recommendation(
+        self,
+        run_id: int,
+        recommendation: RebalancingBotRecommendation,
+    ) -> None:
+        self.connection.execute(
+            """
+            insert into rebalancing_bot_recommendations (
+                run_id, enabled, recommended, deployment_allowed, mode, threshold_pct,
+                investment_usdt, excluded_assets, blockers, summary
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                int(recommendation.enabled),
+                int(recommendation.recommended),
+                int(recommendation.deployment_allowed),
+                recommendation.mode,
+                str(recommendation.threshold_pct),
+                str(recommendation.investment_usdt),
+                "\n".join(recommendation.excluded_assets),
+                "\n".join(recommendation.blockers),
+                recommendation.summary,
+            ),
+        )
+        self.connection.executemany(
+            """
+            insert into rebalancing_bot_assets (
+                run_id, asset, current_value_usdt, current_weight_pct, target_weight_pct,
+                role, status, reason
+            ) values (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    run_id,
+                    item.asset,
+                    str(item.current_value_usdt),
+                    str(item.current_weight_pct),
+                    str(item.target_weight_pct),
+                    item.role,
+                    item.status,
+                    item.reason,
+                )
+                for item in recommendation.assets
+            ],
         )
         self.connection.commit()
 

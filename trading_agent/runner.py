@@ -22,6 +22,7 @@ from .paper_executor import PaperExecutor
 from .portfolio_analyzer import PortfolioAnalyzer
 from .recommended_actions import RecommendedActionsBuilder
 from .rebalance_planner import RebalancePlanner
+from .rebalancing_bot_advisor import RebalancingBotAdvisor
 from .reporting import Reporter
 from .research import ResearchLoader
 from .risk_engine import RiskEngine
@@ -46,6 +47,7 @@ class AgentRunner:
         self.portfolio = PortfolioAnalyzer(config.raw)
         self.capital_sourcing = CapitalSourcingAdvisor(config.raw)
         self.rebalance_planner = RebalancePlanner(config.raw)
+        self.rebalancing_bot = RebalancingBotAdvisor(config.raw)
         self.strategy = StrategyDecisionEngine()
         self.next_run = NextRunAdvisor()
         self.actions = RecommendedActionsBuilder()
@@ -76,6 +78,7 @@ class AgentRunner:
             asset_prices = self.client.get_asset_prices_usdt(portfolio_assets)
             portfolio_analysis = self.portfolio.analyze(balances, asset_prices)
             rebalance_plan = self.rebalance_planner.plan(portfolio_analysis)
+            rebalancing_bot_recommendation = self.rebalancing_bot.recommend(portfolio_analysis)
             dust_plan = self.dust.plan(portfolio_analysis)
             research_bundle = self.research.load()
             research_status = self.research.status_and_request(portfolio_analysis)
@@ -201,6 +204,7 @@ class AgentRunner:
             self.storage.save_testnet_execution(run_id, testnet_execution)
             self.storage.save_live_preview(run_id, live_preview)
             self.storage.save_grid_recommendation(run_id, grid_recommendation)
+            self.storage.save_rebalancing_bot_recommendation(run_id, rebalancing_bot_recommendation)
             self.storage.save_capital_sourcing_plan(run_id, "SPOT_TRADE", spot_capital_plan)
             self.storage.save_capital_sourcing_plan(run_id, "GRID_BOT", grid_capital_plan)
             self.storage.save_strategy_decision(run_id, strategy_decision)
@@ -227,6 +231,7 @@ class AgentRunner:
                 balances=balances,
                 portfolio_analysis=portfolio_analysis,
                 rebalance_plan=rebalance_plan,
+                rebalancing_bot_recommendation=rebalancing_bot_recommendation,
                 snapshots=snapshots,
                 market_research=market_research_report,
                 proposal=proposal,

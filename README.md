@@ -574,6 +574,24 @@ python -m trading_agent grid-set-status --config config.example.toml `
   --name eth-grid-1 --status CLOSED
 ```
 
+## Binance Rebalancing Bot Advisor
+
+Each normal run also creates a recommend-only Binance Rebalancing Bot proposal. It:
+
+- preserves relative weights inside the configured eligible basket,
+- defaults to threshold rebalancing to avoid unnecessary periodic turnover,
+- caps proposed investment by an absolute and portfolio-percentage limit,
+- keeps BNB and other excluded portfolio roles outside the bot,
+- treats WBETH-to-ETH as a separate manual decision and blocks deployment until resolved,
+- stores each recommendation and target basket in SQLite for later comparison.
+
+The advisor never creates the Binance bot or converts protected assets. Use a real-data
+preview to generate parameters from the current portfolio:
+
+```powershell
+python -m trading_agent run --config config.example.toml --real-data
+```
+
 Append `--confirm CONFIRM_GRID_STATUS` only after the Binance-side status really changed.
 
 ## Safety Defaults

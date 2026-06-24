@@ -78,7 +78,7 @@ class AgentRunner:
             active_strategies_report = self.active_strategies.evaluate(snapshots, asset_prices)
             portfolio_analysis = self.portfolio.analyze(balances, asset_prices)
             rebalance_plan = self.rebalance_planner.plan(portfolio_analysis)
-            rebalancing_bot_recommendation = self.rebalancing_bot.recommend(portfolio_analysis)
+            rebalancing_bot_recommendation = self.rebalancing_bot.recommend(portfolio_analysis, balances)
             dust_plan = self.dust.plan(portfolio_analysis)
             research_bundle = self.research.load()
             research_status = self.research.status_and_request(portfolio_analysis)
@@ -210,6 +210,12 @@ class AgentRunner:
             self.storage.save_rebalancing_bot_recommendation(run_id, rebalancing_bot_recommendation)
             self.storage.save_capital_sourcing_plan(run_id, "SPOT_TRADE", spot_capital_plan)
             self.storage.save_capital_sourcing_plan(run_id, "GRID_BOT", grid_capital_plan)
+            if rebalancing_bot_recommendation.funding_plan is not None:
+                self.storage.save_capital_sourcing_plan(
+                    run_id,
+                    "REBALANCING_BOT",
+                    rebalancing_bot_recommendation.funding_plan,
+                )
             self.storage.save_strategy_decision(run_id, strategy_decision)
             self.storage.save_next_run_recommendation(run_id, next_run_recommendation)
             self.storage.save_recommended_actions(run_id, recommended_actions)

@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from decimal import Decimal, ROUND_HALF_UP
 
-from .models import PortfolioAnalysis, PortfolioAssetValuation, RebalancingBotAsset, RebalancingBotRecommendation
+from .models import Balance, CapitalSourcePlanItem, CapitalSourcingPlan, PortfolioAnalysis, PortfolioAssetValuation, RebalancingBotAsset, RebalancingBotRecommendation
 
 
 class RebalancingBotAdvisor:
     def __init__(self, config: dict):
         self.config = config
 
-    def recommend(self, portfolio: PortfolioAnalysis) -> RebalancingBotRecommendation:
+    def recommend(self, portfolio: PortfolioAnalysis, balances: list[Balance] | None = None) -> RebalancingBotRecommendation:
         config = self.config.get("rebalancing_bot", {})
         if not config.get("enabled", False):
             return self._empty("Rebalancing Bot advisor is disabled.")
@@ -74,6 +74,14 @@ class RebalancingBotAdvisor:
             blockers.append(
                 f"guarded investment {self._money(investment)} is below configured minimum {self._money(minimum_investment)}"
             )
+        funding_plan = self._funding_plan(portfolio, balances or [], investment)
+        if funding_plan.missing_usdt > 0:
+            covered = sum((item.value_usdt for item in funding_plan.items), Decimal("0"))
+            uncovered = max(Decimal("0"), funding_plan.missing_usdt - covered)
+            if uncovered > 0:
+                blockers.append(
+                    f"safe funding plan leaves {self._money(uncovered)} USDC uncovered without using protected assets"
+                )
 
         protected = {str(asset).upper() for asset in self.config.get("capital_sourcing", {}).get("protected_assets", [])}
         excluded = tuple(
@@ -100,8 +108,11 @@ class RebalancingBotAdvisor:
             assets=tuple(assets),
             excluded_assets=excluded,
             blockers=tuple(blockers),
-            manual_steps=self._manual_steps(assets, mode, threshold, investment, protected, deployment_allowed),
+            manual_steps=self._manual_steps(
+                assets, mode, threshold, investment, protected, deployment_allowed, funding_plan
+            ),
             summary=summary,
+            funding_plan=funding_plan,
         )
 
     def _manual_steps(
@@ -112,12 +123,15 @@ class RebalancingBotAdvisor:
         investment: Decimal,
         protected: set[str],
         deployment_allowed: bool,
+        funding_plan: CapitalSourcingPlan,
     ) -> tuple[str, ...]:
         if not deployment_allowed:
-            return (
+            steps = [
                 "Do not create a Rebalancing Bot while any deployment blocker remains.",
-                "Resolve the WBETH/ETH decision or funding minimum, then rerun the assistant.",
-            )
+            ]
+            steps.extend(item.action for item in funding_plan.items)
+            steps.append(funding_plan.summary)
+            return tuple(steps)
         allocation = ", ".join(f"{item.asset} {item.target_weight_pct}%" for item in assets)
         protected_note = ", ".join(sorted(protected)) or "none"
         return (
@@ -130,6 +144,92 @@ class RebalancingBotAdvisor:
             f"Do not fund it by automatically selling protected assets ({protected_note}).",
             "Review Binance minimum allocation and investment requirements before confirming.",
             "Record the created bot parameters in the local strategy registry before the next run.",
+        )
+
+    def _funding_plan(
+        self,
+        portfolio: PortfolioAnalysis,
+        balances: list[Balance],
+        investment: Decimal,
+    ) -> CapitalSourcingPlan:
+        quote_asset = str(self.config.get("live_confirm", {}).get("quote_asset", "USDC")).upper()
+        available = next(
+            (
+                balance.spot_free + balance.flexible_amount
+                for balance in balances
+                if balance.asset.upper() == quote_asset
+            ),
+            Decimal("0"),
+        )
+        missing = max(Decimal("0"), investment - available)
+        funding = self.config.get("rebalancing_bot", {}).get("funding", {})
+        priority = [str(asset).upper() for asset in funding.get("source_priority", [])]
+        full_exit = {str(asset).upper() for asset in funding.get("full_exit_assets", [])}
+        reserves = {str(asset).upper() for asset in funding.get("reserve_source_assets", [])}
+        protected = {str(asset).upper() for asset in self.config.get("capital_sourcing", {}).get("protected_assets", [])}
+        default_pct = Decimal(str(funding.get("max_source_pct_per_reserve_asset", "15"))) / Decimal("100")
+        wld_pct = Decimal(str(funding.get("max_source_pct_wld", "30"))) / Decimal("100")
+        min_remaining = Decimal(str(funding.get("min_remaining_value_usdt", "50")))
+        by_asset = {item.asset.upper(): item for item in portfolio.assets}
+        remaining = missing
+        items: list[CapitalSourcePlanItem] = []
+
+        for asset in priority:
+            if remaining <= 0 or asset in protected or asset not in by_asset:
+                continue
+            valuation = by_asset[asset]
+            if asset in full_exit:
+                maximum = valuation.total_value_usdt
+                reason = "Small legacy/speculative holding is configured for full conversion to fund the bot."
+            elif asset in reserves:
+                pct = wld_pct if asset == "WLD" else default_pct
+                maximum = min(
+                    valuation.total_value_usdt * pct,
+                    max(Decimal("0"), valuation.total_value_usdt - min_remaining),
+                )
+                reason = "Reserve source is capped by percentage and minimum remaining-value limits."
+            else:
+                continue
+            value = min(remaining, maximum)
+            if value <= 0:
+                continue
+            remaining_value = valuation.total_value_usdt - value
+            items.append(
+                CapitalSourcePlanItem(
+                    asset=asset,
+                    action=f"Convert approximately {self._money(value)} USDC-equivalent of {asset} to {quote_asset}.",
+                    value_usdt=self._money(value),
+                    source_pct_of_asset=self._one_decimal(value / valuation.total_value_usdt * Decimal("100")),
+                    remaining_value_usdt=self._money(remaining_value),
+                    remaining_pct_of_asset=self._one_decimal(remaining_value / valuation.total_value_usdt * Decimal("100")),
+                    reason=reason,
+                )
+            )
+            remaining -= value
+
+        covered = sum((item.value_usdt for item in items), Decimal("0"))
+        uncovered = max(Decimal("0"), missing - covered)
+        if missing <= 0:
+            summary = f"Existing {quote_asset} balance fully covers the {self._money(investment)} setup."
+        elif uncovered <= 0:
+            summary = (
+                f"Existing {self._money(available)} {quote_asset} plus proposed conversions cover "
+                f"the {self._money(investment)} investment."
+            )
+        else:
+            summary = (
+                f"Use existing {self._money(available)} {quote_asset} and convert about {self._money(covered)} "
+                f"from allowed sources. Remaining gap: {self._money(uncovered)} {quote_asset}; "
+                "do not fill it from protected BTC, ETH, WBETH, or BNB without a separate policy decision."
+            )
+        return CapitalSourcingPlan(
+            needed_usdt=self._money(investment),
+            available_usdt=self._money(available),
+            missing_usdt=self._money(missing),
+            quote_asset=quote_asset,
+            recommended=bool(items),
+            summary=summary,
+            items=tuple(items),
         )
 
     def _balanced_weights(self, weights: list[Decimal]) -> list[Decimal]:
@@ -151,6 +251,7 @@ class RebalancingBotAdvisor:
             blockers=(summary,),
             manual_steps=(),
             summary=summary,
+            funding_plan=None,
         )
 
     def _money(self, value: Decimal) -> Decimal:

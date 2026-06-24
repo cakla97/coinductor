@@ -382,6 +382,7 @@ class RebalancingBotRecommendation:
     blockers: tuple[str, ...]
     manual_steps: tuple[str, ...]
     summary: str
+    funding_plan: CapitalSourcingPlan | None = None
 
 
 @dataclass(frozen=True)

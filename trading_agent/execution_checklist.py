@@ -132,6 +132,25 @@ class ExecutionChecklistBuilder:
                     ),
                 )
             )
+        elif rebalancing_bot_recommendation.funding_plan is not None:
+            for source in rebalancing_bot_recommendation.funding_plan.items:
+                items.append(
+                    ExecutionChecklistItem(
+                        priority="MANUAL",
+                        step=f"Prepare {source.asset} funding for Rebalancing Bot",
+                        detail=(
+                            f"{source.action} Keep approximately {source.remaining_value_usdt} USDC-equivalent "
+                            f"({source.remaining_pct_of_asset}%) in {source.asset}. {source.reason}"
+                        ),
+                    )
+                )
+            items.append(
+                ExecutionChecklistItem(
+                    priority="BLOCKER",
+                    step="Resolve remaining Rebalancing Bot funding gap",
+                    detail=rebalancing_bot_recommendation.funding_plan.summary,
+                )
+            )
 
         self._append_first_live_action_gate(items, trading_bankroll, earn_redeem_plan, live_preview)
         self._append_capital_steps(

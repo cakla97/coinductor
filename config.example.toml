@@ -248,6 +248,15 @@ allowed_assets = ["BTC", "ETH", "SOL"]
 min_assets = 2
 threshold_pct = 5.0
 min_asset_value_usdt = 25.0
-min_investment_usdt = 50.0
-max_investment_usdt = 100.0
-max_portfolio_pct = 12.5
+min_investment_usdt = 200.0
+max_investment_usdt = 200.0
+max_portfolio_pct = 25.0
+
+[rebalancing_bot.funding]
+# One-time setup funding. Protected BTC/ETH/WBETH/BNB are never included.
+source_priority = ["PEPE", "DOGE", "ADA", "DOT", "WLD", "SOL"]
+full_exit_assets = ["PEPE", "DOGE", "ADA", "DOT"]
+reserve_source_assets = ["WLD", "SOL"]
+max_source_pct_per_reserve_asset = 15.0
+max_source_pct_wld = 30.0
+min_remaining_value_usdt = 50.0

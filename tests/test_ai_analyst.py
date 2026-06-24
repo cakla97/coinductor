@@ -196,3 +196,51 @@ def test_rebalancing_assessment_rejects_grid_market_contamination() -> None:
 
     assert "rejected" in result
     assert "Manual WBETH decision required." in result
+
+
+def test_rebalancing_assessment_rejects_funding_recalculation_phrase() -> None:
+    analyst = AiAnalyst(_config())
+    recommendation = RebalancingBotRecommendation(
+        enabled=True,
+        recommended=False,
+        deployment_allowed=False,
+        mode="THRESHOLD",
+        threshold_pct=Decimal("5"),
+        investment_usdt=Decimal("200"),
+        assets=(),
+        excluded_assets=(),
+        blockers=("Safe funding gap remains.",),
+        manual_steps=(),
+        summary="test",
+    )
+
+    result = analyst._validate_rebalancing_assessment(
+        "The funding plan only covers 11.80 USDC.",
+        recommendation,
+    )
+
+    assert "rejected" in result
+
+
+def test_rebalancing_assessment_rejects_target_weight_as_threshold_drift() -> None:
+    analyst = AiAnalyst(_config())
+    recommendation = RebalancingBotRecommendation(
+        enabled=True,
+        recommended=False,
+        deployment_allowed=False,
+        mode="THRESHOLD",
+        threshold_pct=Decimal("5"),
+        investment_usdt=Decimal("200"),
+        assets=(),
+        excluded_assets=(),
+        blockers=("Safe funding gap remains.",),
+        manual_steps=(),
+        summary="test",
+    )
+
+    result = analyst._validate_rebalancing_assessment(
+        "The target allocation exceeds the 5% threshold.",
+        recommendation,
+    )
+
+    assert "rejected" in result

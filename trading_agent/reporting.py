@@ -455,6 +455,32 @@ class Reporter:
                     f"{item.current_weight_pct}% | {item.target_weight_pct}% | {item.status} | {item.reason} |"
                 )
             lines.append("")
+        funding = rebalancing_bot_recommendation.funding_plan
+        if funding is not None:
+            lines.extend(
+                [
+                    "### Funding Plan",
+                    "",
+                    f"- Required investment: `{funding.needed_usdt} {funding.quote_asset}`",
+                    f"- Existing Spot + Flexible: `{funding.available_usdt} {funding.quote_asset}`",
+                    f"- Initial funding gap: `{funding.missing_usdt} {funding.quote_asset}`",
+                    f"- Summary: {funding.summary}",
+                    "",
+                ]
+            )
+            if funding.items:
+                lines.extend(
+                    [
+                        "| Source Asset | Convert Value | Source % | Remaining Value | Remaining % | Reason |",
+                        "| --- | ---: | ---: | ---: | ---: | --- |",
+                    ]
+                )
+                for item in funding.items:
+                    lines.append(
+                        f"| {item.asset} | {item.value_usdt} | {item.source_pct_of_asset}% | "
+                        f"{item.remaining_value_usdt} | {item.remaining_pct_of_asset}% | {item.reason} |"
+                    )
+                lines.append("")
         if rebalancing_bot_recommendation.blockers:
             lines.extend(["### Deployment Blockers", ""])
             lines.extend(f"- {item}" for item in rebalancing_bot_recommendation.blockers)

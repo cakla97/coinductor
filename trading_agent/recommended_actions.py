@@ -17,6 +17,16 @@ class RecommendedActionsBuilder:
     ) -> tuple[RecommendedAction, ...]:
         actions: list[RecommendedAction] = []
 
+        funding = rebalancing_bot_recommendation.funding_plan
+        if funding is not None and funding.missing_usdt > 0:
+            actions.append(
+                RecommendedAction(
+                    priority="HIGH" if not rebalancing_bot_recommendation.deployment_allowed else "MEDIUM",
+                    action="Review the Rebalancing Bot USDC funding plan.",
+                    reason=funding.summary,
+                )
+            )
+
         if rebalancing_bot_recommendation.recommended:
             basket = ", ".join(
                 f"{item.asset} {item.target_weight_pct}%"

@@ -593,6 +593,12 @@ preview to generate parameters from the current portfolio:
 python -m trading_agent run --config config.example.toml --real-data
 ```
 
+The configured Binance minimum is `200 USDC`. Before recommending creation, the
+assistant builds a separate setup funding plan: existing Spot/Flexible USDC first,
+full conversion of configured small legacy holdings, then capped portions of WLD and
+SOL. Any remaining gap stays blocked rather than being taken from protected BTC, ETH,
+WBETH, or BNB.
+
 After manually creating the bot in Binance, preview its local registration:
 
 ```powershell

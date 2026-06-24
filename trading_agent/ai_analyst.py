@@ -218,7 +218,8 @@ class AiAnalyst:
                 "Evaluate only this deterministic Binance Rebalancing Bot proposal in 1-3 concise sentences. "
                 "Discuss concentration, target composition, threshold, and the listed blockers. "
                 "Do not mention Grid bots, market status, RSI, trend regimes, or any blocker absent from blockers. "
-                "Do not alter weights or deployment_allowed. Output JSON only."
+                "Do not alter weights or deployment_allowed. Do not recompute funding arithmetic; use the supplied "
+                "funding summary and precomputed totals exactly. Output JSON only."
             ),
             "proposal": payload,
             "schema": {"assessment": "1-3 concise sentences"},
@@ -238,9 +239,20 @@ class AiAnalyst:
         assessment: str,
         recommendation: RebalancingBotRecommendation,
     ) -> str:
-        unsupported_markers = ("grid", "market status", "market state", "rsi", "trend regime", "suitable", "watch")
+        unsupported_markers = (
+            "grid",
+            "market status",
+            "market state",
+            "rsi",
+            "trend regime",
+            "suitable",
+            "watch",
+            "only covers",
+        )
         blockers_text = " ".join(recommendation.blockers).lower()
-        unsupported = any(marker in assessment.lower() and marker not in blockers_text for marker in unsupported_markers)
+        lowered = assessment.lower()
+        unsupported = any(marker in lowered and marker not in blockers_text for marker in unsupported_markers)
+        unsupported = unsupported or ("exceed" in lowered and "threshold" in lowered)
         if not assessment or unsupported:
             basket = ", ".join(f"{item.asset} {item.target_weight_pct}%" for item in recommendation.assets) or "no eligible basket"
             blocker = "; ".join(item.rstrip(".") for item in recommendation.blockers) or "none"
@@ -251,6 +263,17 @@ class AiAnalyst:
         return assessment
 
     def _rebalancing_payload(self, recommendation: RebalancingBotRecommendation) -> dict:
+        conversion_total = (
+            sum((item.value_usdt for item in recommendation.funding_plan.items), Decimal("0"))
+            if recommendation.funding_plan is not None
+            else Decimal("0")
+        )
+        covered_total = (
+            recommendation.funding_plan.available_usdt + conversion_total
+            if recommendation.funding_plan is not None
+            else Decimal("0")
+        )
+        uncovered_total = max(Decimal("0"), recommendation.investment_usdt - covered_total)
         return {
             "enabled": recommendation.enabled,
             "recommended": recommendation.recommended,
@@ -273,6 +296,18 @@ class AiAnalyst:
             "excluded_assets": list(recommendation.excluded_assets),
             "blockers": list(recommendation.blockers),
             "summary": recommendation.summary,
+            "funding_plan": {
+                "needed_usdt": str(recommendation.funding_plan.needed_usdt),
+                "available_usdt": str(recommendation.funding_plan.available_usdt),
+                "missing_usdt": str(recommendation.funding_plan.missing_usdt),
+                "conversion_total_usdt": str(conversion_total),
+                "covered_total_usdt": str(covered_total),
+                "uncovered_total_usdt": str(uncovered_total),
+                "summary": recommendation.funding_plan.summary,
+                "items": [item.__dict__ for item in recommendation.funding_plan.items],
+            }
+            if recommendation.funding_plan is not None
+            else None,
         }
 
     def _mock_proposal(self, snapshots: list[MarketSnapshot]) -> TradeProposal:

@@ -388,6 +388,13 @@ class Storage:
         self._ensure_column("grid_recommendations", "estimated_quote_per_grid", "text")
         self._ensure_column("grid_recommendations", "estimated_grid_spacing_pct", "text")
         self._ensure_column("grid_recommendations", "blockers", "text")
+        self._ensure_column("active_grid_evaluations", "binance_bot_id", "text")
+        self._ensure_column("active_grid_evaluations", "grid_count", "integer")
+        self._ensure_column("active_grid_evaluations", "grid_type", "text")
+        self._ensure_column("active_grid_evaluations", "entry_price", "text")
+        self._ensure_column("active_grid_evaluations", "stop_loss_price", "text")
+        self._ensure_column("active_grid_evaluations", "take_profit_price", "text")
+        self._ensure_column("active_grid_evaluations", "age_days", "text")
         self.connection.commit()
 
     def _ensure_column(self, table: str, column: str, definition: str) -> None:
@@ -1819,7 +1826,14 @@ class Storage:
 
     def save_active_strategies(self, run_id: int, report: ActiveStrategiesReport) -> None:
         self.connection.executemany(
-            "insert into active_grid_evaluations values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            """
+            insert into active_grid_evaluations (
+                run_id, name, symbol, range_low, range_high, investment_usdt, current_price,
+                state, distance_to_lower_pct, distance_to_upper_pct, recommendation,
+                binance_bot_id, grid_count, grid_type, entry_price, stop_loss_price,
+                take_profit_price, age_days
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
             [
                 (
                     run_id,
@@ -1833,6 +1847,13 @@ class Storage:
                     str(item.distance_to_lower_pct) if item.distance_to_lower_pct is not None else None,
                     str(item.distance_to_upper_pct) if item.distance_to_upper_pct is not None else None,
                     item.recommendation,
+                    item.bot.binance_bot_id,
+                    item.bot.grid_count,
+                    item.bot.grid_type,
+                    str(item.bot.entry_price),
+                    str(item.bot.stop_loss_price),
+                    str(item.bot.take_profit_price),
+                    str(item.age_days) if item.age_days is not None else None,
                 )
                 for item in report.grid_bots
             ],

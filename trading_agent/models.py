@@ -446,10 +446,16 @@ class ResearchStatus:
 @dataclass(frozen=True)
 class ActiveGridBot:
     name: str
+    binance_bot_id: str
     symbol: str
     range_low: Decimal
     range_high: Decimal
+    grid_count: int
+    grid_type: str
     investment_usdt: Decimal
+    entry_price: Decimal
+    stop_loss_price: Decimal
+    take_profit_price: Decimal
     created_at: str
     status: str
     notes: str
@@ -462,6 +468,7 @@ class ActiveGridEvaluation:
     state: str
     distance_to_lower_pct: Decimal | None
     distance_to_upper_pct: Decimal | None
+    age_days: Decimal | None
     recommendation: str
 
 

@@ -128,8 +128,34 @@ also verify Binance's displayed minimum investment and estimated profit/grid bec
 limits may change.
 
 After manually creating a grid, copy `state/active_strategies.example.toml` to
-`state/active_strategies.toml`, replace the example with the exact real symbol, range, investment,
-and creation date, then rerun the assistant.
+`state/active_strategies.toml` only for manual recovery. The preferred path is the guarded registry:
+
+```powershell
+python -m trading_agent grid-register --config config.example.toml `
+  --name <local-name> --binance-bot-id <id-from-binance> `
+  --symbol <BTCUSDC-or-ETHUSDC> `
+  --range-low <exact-low> --range-high <exact-high> `
+  --grid-count <exact-count> --grid-type ARITHMETIC `
+  --investment <exact-usdc> --entry-price <creation-price> `
+  --stop-loss <exact-stop> --take-profit <exact-take>
+```
+
+Run this first without confirmation. It must show a clean preview. Then rerun with
+`--confirm CONFIRM_GRID_REGISTER`. Registration is local only and never creates a Binance bot.
+
+Active-grid report states include:
+
+- `IN_RANGE`, `NEAR_LOWER`, `NEAR_UPPER`
+- `BELOW_RANGE`, `ABOVE_RANGE`
+- `STOP_LOSS_BREACH`, `TAKE_PROFIT_REACHED`
+- `RUNTIME_EXPIRED`, `UNKNOWN_PRICE`
+
+After changing the real bot in Binance, keep local state synchronized:
+
+```powershell
+python -m trading_agent grid-set-status --config config.example.toml `
+  --name <local-name> --status CLOSED --confirm CONFIRM_GRID_STATUS
+```
 
 ## Guarded USDC Flexible Earn Redeem
 

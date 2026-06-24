@@ -2,10 +2,16 @@
 
 [[grid_bots]]
 name = "btc-grid-example"
+binance_bot_id = "replace-with-binance-id"
 symbol = "BTCUSDC"
 range_low = 55000
 range_high = 70000
+grid_count = 10
+grid_type = "ARITHMETIC"
 investment_usdt = 25
-created_at = "2026-06-23"
+entry_price = 62500
+stop_loss_price = 53350
+take_profit_price = 72100
+created_at = "2026-06-24T12:00:00+00:00"
 status = "ACTIVE"
 notes = "Example only. Do not use as live state."

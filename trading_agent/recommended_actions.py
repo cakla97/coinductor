@@ -17,10 +17,20 @@ class RecommendedActionsBuilder:
         actions: list[RecommendedAction] = []
 
         for grid in active_strategies.grid_bots:
-            if grid.state in {"BELOW_RANGE", "ABOVE_RANGE", "NEAR_LOWER", "NEAR_UPPER", "UNKNOWN_PRICE"}:
+            if grid.state in {
+                "STOP_LOSS_BREACH",
+                "TAKE_PROFIT_REACHED",
+                "RUNTIME_EXPIRED",
+                "BELOW_RANGE",
+                "ABOVE_RANGE",
+                "NEAR_LOWER",
+                "NEAR_UPPER",
+                "UNKNOWN_PRICE",
+            }:
+                high_states = {"STOP_LOSS_BREACH", "TAKE_PROFIT_REACHED", "RUNTIME_EXPIRED", "BELOW_RANGE", "ABOVE_RANGE"}
                 actions.append(
                     RecommendedAction(
-                        priority="HIGH" if grid.state in {"BELOW_RANGE", "ABOVE_RANGE"} else "MEDIUM",
+                        priority="HIGH" if grid.state in high_states else "MEDIUM",
                         action=f"Review active grid bot {grid.bot.name or grid.bot.symbol}.",
                         reason=grid.recommendation,
                     )

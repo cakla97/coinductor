@@ -537,6 +537,45 @@ Grid count is constrained by `min_quote_per_grid_usdt`. With the default 25 USDC
 Reports include estimated quote/grid, spacing, blockers, stop-loss, take-profit, and exact manual
 Binance setup steps. The project never creates the Binance bot automatically.
 
+## Register And Monitor A Manual Grid
+
+After the Spot Grid is actually created in Binance, preview local registration using the exact
+values displayed by Binance:
+
+```powershell
+python -m trading_agent grid-register --config config.example.toml `
+  --name eth-grid-1 `
+  --binance-bot-id 123456789 `
+  --symbol ETHUSDC `
+  --range-low 1505.34 `
+  --range-high 1869.39 `
+  --grid-count 10 `
+  --grid-type ARITHMETIC `
+  --investment 25 `
+  --entry-price 1660 `
+  --stop-loss 1460.18 `
+  --take-profit 1925.47
+```
+
+Preview never writes the state file. After matching every value against Binance, append:
+
+```powershell
+--confirm CONFIRM_GRID_REGISTER
+```
+
+The local registry enforces symbol/range/stop/take-profit validity, unique names/Binance IDs, and
+`max_active_grid_bots`. Later runs monitor current price, range boundaries, registered stop-loss
+and take-profit, and `[grid_bot].max_runtime_days`.
+
+When the Binance bot is paused, stopped, or closed, update the local lifecycle state:
+
+```powershell
+python -m trading_agent grid-set-status --config config.example.toml `
+  --name eth-grid-1 --status CLOSED
+```
+
+Append `--confirm CONFIRM_GRID_STATUS` only after the Binance-side status really changed.
+
 ## Safety Defaults
 
 Real trading and real redeem are disabled by default. Before enabling anything live:

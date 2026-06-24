@@ -13,13 +13,14 @@ from .binance_client import BinanceApiError, BinanceClient
 from .config import AppConfig, load_config
 from .config_validator import ConfigValidator
 from .env import load_env_file
+from .grid_registry import GridRegistry
 from .portfolio_analyzer import PortfolioAnalyzer
 from .readiness import ReadinessChecker
 from .research import ResearchLoader
 from .runner import AgentRunner
 from .storage import Storage
 from .testnet_executor import TestnetExecutor
-from .models import TestnetExecutedOrder, TestnetExecutionReport
+from .models import ActiveGridBot, TestnetExecutedOrder, TestnetExecutionReport
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -51,6 +52,10 @@ def main(argv: list[str] | None = None) -> int:
         return _testnet_symbol_command(args)
     if args.command == "testnet-order-status":
         return _testnet_order_status_command(args, parser)
+    if args.command == "grid-register":
+        return _grid_register_command(args, parser)
+    if args.command == "grid-set-status":
+        return _grid_set_status_command(args)
     parser.error(f"Unknown command {args.command}")
     return 2
 
@@ -106,6 +111,51 @@ def _build_parser() -> argparse.ArgumentParser:
     order_status_parser.add_argument("--symbol", required=True, help="Spot symbol, for example BTCUSDT")
     order_status_parser.add_argument("--order-id", default="", help="Binance orderId")
     order_status_parser.add_argument("--client-order-id", default="", help="Client order id")
+
+    grid_register_parser = subparsers.add_parser(
+        "grid-register",
+        help="Preview or register a manually created Binance Spot Grid bot",
+    )
+    grid_register_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    grid_register_parser.add_argument("--name", required=True, help="Unique local grid name")
+    grid_register_parser.add_argument("--binance-bot-id", default="", help="Optional Binance bot/strategy id")
+    grid_register_parser.add_argument("--symbol", required=True, help="Grid symbol, for example BTCUSDC")
+    grid_register_parser.add_argument("--range-low", required=True, help="Exact Binance lower price")
+    grid_register_parser.add_argument("--range-high", required=True, help="Exact Binance upper price")
+    grid_register_parser.add_argument("--grid-count", required=True, type=int, help="Exact Binance grid count")
+    grid_register_parser.add_argument("--grid-type", default="ARITHMETIC", choices=["ARITHMETIC", "GEOMETRIC"])
+    grid_register_parser.add_argument("--investment", required=True, help="Exact quote investment")
+    grid_register_parser.add_argument("--entry-price", required=True, help="Price shown when the grid was created")
+    grid_register_parser.add_argument("--stop-loss", required=True, help="Registered stop-loss price")
+    grid_register_parser.add_argument("--take-profit", required=True, help="Registered take-profit price")
+    grid_register_parser.add_argument(
+        "--created-at",
+        default="",
+        help="ISO timestamp, default current UTC time",
+    )
+    grid_register_parser.add_argument("--notes", default="", help="Optional local notes")
+    grid_register_parser.add_argument(
+        "--confirm",
+        default="",
+        help="Must equal CONFIRM_GRID_REGISTER to write state/active_strategies.toml",
+    )
+
+    grid_status_parser = subparsers.add_parser(
+        "grid-set-status",
+        help="Preview or update local status for a registered grid bot",
+    )
+    grid_status_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    grid_status_parser.add_argument("--name", required=True, help="Registered local grid name")
+    grid_status_parser.add_argument(
+        "--status",
+        required=True,
+        choices=["ACTIVE", "PAUSED", "STOPPED", "CLOSED"],
+    )
+    grid_status_parser.add_argument(
+        "--confirm",
+        default="",
+        help="Must equal CONFIRM_GRID_STATUS to modify local state",
+    )
     return parser
 
 
@@ -474,6 +524,68 @@ def _testnet_order_status_command(args: argparse.Namespace, parser: argparse.Arg
     print(f"Status: {order.get('status', '')}")
     print(f"Executed quantity: {order.get('executedQty', '')}")
     print(f"Cumulative quote: {order.get('cummulativeQuoteQty', '')}")
+    return 0
+
+
+def _grid_register_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
+    config = load_config(args.config)
+    created_at = args.created_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    try:
+        bot = ActiveGridBot(
+            name=str(args.name),
+            binance_bot_id=str(args.binance_bot_id),
+            symbol=str(args.symbol).upper(),
+            range_low=Decimal(str(args.range_low)),
+            range_high=Decimal(str(args.range_high)),
+            grid_count=int(args.grid_count),
+            grid_type=str(args.grid_type).upper(),
+            investment_usdt=Decimal(str(args.investment)),
+            entry_price=Decimal(str(args.entry_price)),
+            stop_loss_price=Decimal(str(args.stop_loss)),
+            take_profit_price=Decimal(str(args.take_profit)),
+            created_at=created_at,
+            status="ACTIVE",
+            notes=str(args.notes),
+        )
+    except Exception as exc:
+        parser.error(f"Invalid grid parameter: {exc}")
+    registry = GridRegistry(config.raw)
+    issues = registry.validate_new(bot)
+    print("Grid registration preview:")
+    print(f"  state file: {registry.path}")
+    print(f"  name / Binance id: {bot.name} / {bot.binance_bot_id or 'not supplied'}")
+    print(f"  symbol: {bot.symbol}")
+    print(f"  range: {bot.range_low} - {bot.range_high}")
+    print(f"  grids: {bot.grid_count} {bot.grid_type}")
+    print(f"  investment: {bot.investment_usdt}")
+    print(f"  entry / stop / take: {bot.entry_price} / {bot.stop_loss_price} / {bot.take_profit_price}")
+    print(f"  created at: {bot.created_at}")
+    if issues:
+        for issue in issues:
+            print(f"[BLOCK] {issue}")
+        return 1
+    if args.confirm != "CONFIRM_GRID_REGISTER":
+        print("Not written. Add --confirm CONFIRM_GRID_REGISTER after matching these values with Binance.")
+        return 0
+    registry.register(bot, args.confirm)
+    print(f"Registered grid {bot.name} in {registry.path}.")
+    return 0
+
+
+def _grid_set_status_command(args: argparse.Namespace) -> int:
+    config = load_config(args.config)
+    registry = GridRegistry(config.raw)
+    print(f"Grid status preview: {args.name} -> {args.status}")
+    print(f"State file: {registry.path}")
+    if args.confirm != "CONFIRM_GRID_STATUS":
+        print("Not written. Add --confirm CONFIRM_GRID_STATUS to update local state.")
+        return 0
+    try:
+        registry.set_status(str(args.name), str(args.status), args.confirm)
+    except ValueError as exc:
+        print(f"[BLOCK] {exc}")
+        return 1
+    print(f"Updated grid {args.name} to {args.status}.")
     return 0
 
 

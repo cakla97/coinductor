@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
-import tomllib
 
+from .grid_registry import GridRegistry
 from .models import ActiveGridBot, ActiveGridEvaluation, ActiveStrategiesReport, MarketSnapshot
 
 
@@ -21,50 +22,57 @@ class ActiveStrategiesTracker:
             return ActiveStrategiesReport(
                 enabled=True,
                 grid_bots=(),
-                summary=f"No active strategies file found at {path}. Copy state/active_strategies.example.toml when you manually create a grid bot.",
+                summary=(
+                    f"No active strategies file found at {path}. After manually creating a Binance grid, "
+                    "use `python -m trading_agent grid-register` to register its exact values."
+                ),
             )
 
-        bots = self._load_grid_bots(path)
+        bots = GridRegistry(self.config).list_bots()
         prices = {snapshot.symbol: snapshot.price for snapshot in snapshots}
         evaluations = tuple(self._evaluate_bot(bot, prices.get(bot.symbol)) for bot in bots if bot.status.upper() == "ACTIVE")
         if not evaluations:
             summary = "No active grid bots are marked ACTIVE."
         else:
-            out_of_range = [item for item in evaluations if item.state in {"BELOW_RANGE", "ABOVE_RANGE"}]
-            if out_of_range:
-                summary = f"{len(out_of_range)} active grid bot(s) are outside configured range and need review."
+            urgent = [
+                item
+                for item in evaluations
+                if item.state in {"STOP_LOSS_BREACH", "TAKE_PROFIT_REACHED", "RUNTIME_EXPIRED", "BELOW_RANGE", "ABOVE_RANGE"}
+            ]
+            if urgent:
+                summary = f"{len(urgent)} active grid bot(s) need lifecycle review."
             else:
                 summary = f"{len(evaluations)} active grid bot(s) are being tracked."
         return ActiveStrategiesReport(enabled=True, grid_bots=evaluations, summary=summary)
 
-    def _load_grid_bots(self, path: Path) -> tuple[ActiveGridBot, ...]:
-        with path.open("rb") as handle:
-            raw = tomllib.load(handle)
-        bots = []
-        for row in raw.get("grid_bots", []):
-            bots.append(
-                ActiveGridBot(
-                    name=str(row.get("name", "")),
-                    symbol=str(row["symbol"]).upper(),
-                    range_low=Decimal(str(row["range_low"])),
-                    range_high=Decimal(str(row["range_high"])),
-                    investment_usdt=Decimal(str(row.get("investment_usdt", "0"))),
-                    created_at=str(row.get("created_at", "")),
-                    status=str(row.get("status", "ACTIVE")).upper(),
-                    notes=str(row.get("notes", "")),
-                )
-            )
-        return tuple(bots)
-
     def _evaluate_bot(self, bot: ActiveGridBot, price: Decimal | None) -> ActiveGridEvaluation:
+        age_days = self._age_days(bot.created_at)
         if price is None:
-            return ActiveGridEvaluation(bot, None, "UNKNOWN_PRICE", None, None, "Current symbol price is unavailable; review manually.")
+            return ActiveGridEvaluation(
+                bot,
+                None,
+                "UNKNOWN_PRICE",
+                None,
+                None,
+                age_days,
+                "Current symbol price is unavailable; review manually.",
+            )
 
         distance_lower = self._pct(price - bot.range_low, bot.range_low)
         distance_upper = self._pct(bot.range_high - price, bot.range_high)
         warn_pct = Decimal(str(self.config.get("active_strategies", {}).get("warn_near_range_pct", 5)))
+        max_runtime = Decimal(str(self.config.get("grid_bot", {}).get("max_runtime_days", 14)))
 
-        if price < bot.range_low:
+        if bot.stop_loss_price > 0 and price <= bot.stop_loss_price:
+            state = "STOP_LOSS_BREACH"
+            recommendation = "Price reached the registered stop-loss. Review and stop the Binance grid immediately."
+        elif bot.take_profit_price > 0 and price >= bot.take_profit_price:
+            state = "TAKE_PROFIT_REACHED"
+            recommendation = "Price reached the registered take-profit. Review closing the grid and securing proceeds."
+        elif age_days is not None and age_days >= max_runtime:
+            state = "RUNTIME_EXPIRED"
+            recommendation = f"Grid age reached {age_days:.1f} days, above the configured {max_runtime} days. Review closure or recreation."
+        elif price < bot.range_low:
             state = "BELOW_RANGE"
             recommendation = "Price is below grid range. Review whether to stop, widen, or recreate the grid."
         elif price > bot.range_high:
@@ -86,6 +94,7 @@ class ActiveStrategiesTracker:
             state=state,
             distance_to_lower_pct=self._percent(distance_lower),
             distance_to_upper_pct=self._percent(distance_upper),
+            age_days=self._one_decimal(age_days) if age_days is not None else None,
             recommendation=recommendation,
         )
 
@@ -97,3 +106,17 @@ class ActiveStrategiesTracker:
     def _percent(self, value: Decimal) -> Decimal:
         return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
+    def _one_decimal(self, value: Decimal) -> Decimal:
+        return value.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+
+    def _age_days(self, created_at: str) -> Decimal | None:
+        if not created_at:
+            return None
+        try:
+            created = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+        seconds = (datetime.now(timezone.utc) - created.astimezone(timezone.utc)).total_seconds()
+        return max(Decimal("0"), Decimal(str(seconds)) / Decimal("86400"))

@@ -439,14 +439,17 @@ class Reporter:
         if active_strategies.grid_bots:
             lines.extend(
                 [
-                    "| Name | Symbol | Range | Current Price | State | Distance Lower | Distance Upper | Recommendation |",
-                    "| --- | --- | ---: | ---: | --- | ---: | ---: | --- |",
+                    "| Name | Binance Bot ID | Symbol | Range | Stop / Take | Grids | Investment | Age | Current Price | State | Distance Lower | Distance Upper | Recommendation |",
+                    "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | --- |",
                 ]
             )
             for item in active_strategies.grid_bots:
                 lines.append(
                     "| "
-                    f"{item.bot.name} | {item.bot.symbol} | {item.bot.range_low}-{item.bot.range_high} | "
+                    f"{item.bot.name} | {item.bot.binance_bot_id} | {item.bot.symbol} | "
+                    f"{item.bot.range_low}-{item.bot.range_high} | {item.bot.stop_loss_price}/{item.bot.take_profit_price} | "
+                    f"{item.bot.grid_count} {item.bot.grid_type} | {item.bot.investment_usdt} | "
+                    f"{item.age_days if item.age_days is not None else ''}d | "
                     f"{item.current_price if item.current_price is not None else ''} | {item.state} | "
                     f"{item.distance_to_lower_pct if item.distance_to_lower_pct is not None else ''}% | "
                     f"{item.distance_to_upper_pct if item.distance_to_upper_pct is not None else ''}% | "

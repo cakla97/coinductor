@@ -79,7 +79,8 @@ class AiAnalyst:
             "ai_role_limits": [
                 "The rebalancing bot proposal below is deterministic and recommend-only.",
                 "Assess concentration, basket composition, threshold, and blockers; do not change target weights or unlock deployment.",
-                "Never recommend bypassing a protected-asset rule or automatic WBETH-to-ETH conversion.",
+                "WBETH remains protected outside the bot. Do not recommend converting or selling it automatically.",
+                "When ETH is marked FUNDED_FROM_USDC, evaluate it as a new bot allocation funded by separate USDC capital.",
                 "Treat WLD as speculative and excluded unless deterministic configuration explicitly includes it.",
                 "For rebalancing, the blockers field is authoritative. Do not copy Grid market status or invent any other blocker.",
                 "If the rebalancing blockers do not mention market conditions, do not claim that rebalancing waits for a market regime.",

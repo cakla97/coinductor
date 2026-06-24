@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .models import ActiveStrategiesReport, CapitalSourcingPlan, GridRecommendation, NextRunRecommendation, RecommendedAction, RiskDecision, StrategyDecision
+from .models import ActiveStrategiesReport, CapitalSourcingPlan, GridRecommendation, NextRunRecommendation, RebalancingBotRecommendation, RecommendedAction, RiskDecision, StrategyDecision
 
 
 class RecommendedActionsBuilder:
@@ -9,12 +9,30 @@ class RecommendedActionsBuilder:
         strategy_decision: StrategyDecision,
         risk_decision: RiskDecision,
         grid_recommendation: GridRecommendation,
+        rebalancing_bot_recommendation: RebalancingBotRecommendation,
         spot_capital_plan: CapitalSourcingPlan,
         grid_capital_plan: CapitalSourcingPlan,
         next_run: NextRunRecommendation,
         active_strategies: ActiveStrategiesReport,
     ) -> tuple[RecommendedAction, ...]:
         actions: list[RecommendedAction] = []
+
+        if rebalancing_bot_recommendation.recommended:
+            basket = ", ".join(
+                f"{item.asset} {item.target_weight_pct}%"
+                for item in rebalancing_bot_recommendation.assets
+            )
+            actions.append(
+                RecommendedAction(
+                    priority="MEDIUM",
+                    action="Review manual Binance Rebalancing Bot setup.",
+                    reason=(
+                        f"Deterministic advisor allows a {rebalancing_bot_recommendation.mode.lower()} setup "
+                        f"with {basket}, threshold {rebalancing_bot_recommendation.threshold_pct}%, and "
+                        f"maximum investment {rebalancing_bot_recommendation.investment_usdt} USDC-equivalent."
+                    ),
+                )
+            )
 
         for grid in active_strategies.grid_bots:
             if grid.state in {

@@ -7,6 +7,7 @@ from .models import (
     GridRecommendation,
     LiquidityDecision,
     LivePreviewReport,
+    RebalancingBotRecommendation,
     ResearchStatus,
     RiskDecision,
     StrategyDecision,
@@ -25,6 +26,7 @@ class ExecutionChecklistBuilder:
         spot_capital_plan: CapitalSourcingPlan,
         grid_capital_plan: CapitalSourcingPlan,
         grid_recommendation: GridRecommendation,
+        rebalancing_bot_recommendation: RebalancingBotRecommendation,
         strategy_decision: StrategyDecision,
         research_status: ResearchStatus,
         trading_bankroll: TradingBankrollReport,
@@ -103,6 +105,34 @@ class ExecutionChecklistBuilder:
                 )
             )
 
+        if rebalancing_bot_recommendation.recommended:
+            allocation = ", ".join(
+                f"{item.asset} {item.target_weight_pct}%"
+                for item in rebalancing_bot_recommendation.assets
+            )
+            items.append(
+                ExecutionChecklistItem(
+                    priority="MANUAL",
+                    step="Create Binance Rebalancing Bot manually",
+                    detail=(
+                        f"Use {allocation}; {rebalancing_bot_recommendation.mode.title()} mode; "
+                        f"threshold {rebalancing_bot_recommendation.threshold_pct}%; investment no more than "
+                        f"{rebalancing_bot_recommendation.investment_usdt} USDC-equivalent. "
+                        "Fund from separate USDC, keep WBETH outside the bot, and verify Binance minimums before confirming."
+                    ),
+                )
+            )
+            items.append(
+                ExecutionChecklistItem(
+                    priority="MANUAL",
+                    step="Register the created Rebalancing Bot locally",
+                    detail=(
+                        "Use `python -m trading_agent rebalancing-register` with the exact Binance bot ID, "
+                        "weights, entry prices, investment, and threshold shown after creation."
+                    ),
+                )
+            )
+
         self._append_first_live_action_gate(items, trading_bankroll, earn_redeem_plan, live_preview)
         self._append_capital_steps(
             items,
@@ -116,7 +146,7 @@ class ExecutionChecklistBuilder:
             ExecutionChecklistItem(
                 priority="INFO",
                 step="No automatic execution was performed",
-                detail="This run did not place orders, redeem Earn products, or create grid bots.",
+                detail="This run did not place orders, redeem Earn products, or create Binance trading bots.",
             )
         )
         return tuple(items)

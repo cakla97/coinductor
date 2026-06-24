@@ -123,22 +123,22 @@ def test_rebalancing_payload_preserves_deterministic_blocker() -> None:
                 current_weight_pct=Decimal("12"),
                 target_weight_pct=Decimal("23.4"),
                 role="PROTECTED",
-                status="REQUIRES_CONVERSION",
-                reason="WBETH conversion is manual.",
+                status="FUNDED_FROM_USDC",
+                reason="WBETH remains protected and ETH is funded from USDC.",
             ),
         ),
         excluded_assets=("WLD",),
-        blockers=("Do not convert protected WBETH automatically.",),
+        blockers=(),
         manual_steps=(),
-        summary="Blocked pending manual WBETH decision.",
+        summary="ETH allocation is funded from separate USDC.",
     )
 
     payload = analyst._rebalancing_payload(recommendation)
 
     assert payload["deployment_allowed"] is False
-    assert payload["assets"][0]["status"] == "REQUIRES_CONVERSION"
+    assert payload["assets"][0]["status"] == "FUNDED_FROM_USDC"
     assert payload["excluded_assets"] == ["WLD"]
-    assert payload["blockers"] == ["Do not convert protected WBETH automatically."]
+    assert payload["blockers"] == []
 
 
 def test_rebalancing_payload_has_no_inferred_market_blocker() -> None:

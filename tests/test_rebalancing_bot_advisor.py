@@ -60,7 +60,7 @@ def test_preserves_relative_weights_and_caps_investment() -> None:
     assert "BNB" in result.excluded_assets
 
 
-def test_material_wbeth_blocks_automatic_eth_assumption() -> None:
+def test_material_wbeth_informs_eth_weight_without_forcing_conversion() -> None:
     portfolio = _portfolio(
         _asset("BTC", "CORE", "300", "50"),
         _asset("WBETH", "PROTECTED", "200", "33.3"),
@@ -69,8 +69,8 @@ def test_material_wbeth_blocks_automatic_eth_assumption() -> None:
 
     result = RebalancingBotAdvisor(_config()).recommend(portfolio)
 
-    assert result.deployment_allowed is False
-    assert any("WBETH" in blocker for blocker in result.blockers)
+    assert result.deployment_allowed is True
+    assert not result.blockers
     assert [item.asset for item in result.assets] == ["BTC", "ETH", "SOL"]
-    assert result.assets[1].status == "REQUIRES_CONVERSION"
-    assert result.manual_steps[0].startswith("Do not create")
+    assert result.assets[1].status == "FUNDED_FROM_USDC"
+    assert any("Keep existing WBETH outside" in step for step in result.manual_steps)

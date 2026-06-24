@@ -582,7 +582,8 @@ Each normal run also creates a recommend-only Binance Rebalancing Bot proposal. 
 - defaults to threshold rebalancing to avoid unnecessary periodic turnover,
 - caps proposed investment by an absolute and portfolio-percentage limit,
 - keeps BNB and other excluded portfolio roles outside the bot,
-- treats WBETH-to-ETH as a separate manual decision and blocks deployment until resolved,
+- uses WBETH only as a reference for existing ETH exposure while keeping it protected outside the bot,
+- funds the bot's ETH allocation from the separate USDC investment rather than converting WBETH,
 - stores each recommendation and target basket in SQLite for later comparison.
 
 The advisor never creates the Binance bot or converts protected assets. Use a real-data

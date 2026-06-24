@@ -40,12 +40,12 @@ class RebalancingBotAdvisor:
                     (
                         "ETH",
                         by_asset["WBETH"],
-                        "REQUIRES_CONVERSION",
-                        "Target uses current WBETH value as ETH exposure; conversion must be a separate manual decision.",
+                        "FUNDED_FROM_USDC",
+                        (
+                            "Target uses protected WBETH only as a reference for current ETH exposure. "
+                            "The bot's ETH allocation must be funded from its separate USDC investment."
+                        ),
                     )
-                )
-                blockers.append(
-                    "WBETH is the material ETH exposure, but the proposed bot uses ETH; do not convert protected WBETH automatically."
                 )
         if len(eligible) < minimum_assets:
             blockers.append(f"only {len(eligible)} eligible assets meet the minimum value; at least {minimum_assets} are required")
@@ -125,6 +125,8 @@ class RebalancingBotAdvisor:
             f"Choose Manual setup and add: {allocation}.",
             f"Select {mode.title()} rebalancing and set the threshold to {self._one_decimal(threshold)}%.",
             f"Invest no more than {self._money(investment)} USDC-equivalent.",
+            "Fund the bot from its separate USDC allocation; let Binance acquire the configured ETH share inside the bot.",
+            "Keep existing WBETH outside the bot and do not convert or sell it automatically.",
             f"Do not fund it by automatically selling protected assets ({protected_note}).",
             "Review Binance minimum allocation and investment requirements before confirming.",
             "Record the created bot parameters in the local strategy registry before the next run.",

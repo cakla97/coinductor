@@ -357,7 +357,8 @@ class Storage:
                 summary text,
                 risks text,
                 watchlist text,
-                raw_response text
+                raw_response text,
+                rebalancing_assessment text
             );
             create table if not exists research_notes (
                 run_id integer,
@@ -432,6 +433,7 @@ class Storage:
         self._ensure_column("active_grid_evaluations", "stop_loss_price", "text")
         self._ensure_column("active_grid_evaluations", "take_profit_price", "text")
         self._ensure_column("active_grid_evaluations", "age_days", "text")
+        self._ensure_column("ai_commentaries", "rebalancing_assessment", "text")
         self.connection.commit()
 
     def _ensure_column(self, table: str, column: str, definition: str) -> None:
@@ -1878,7 +1880,11 @@ class Storage:
 
     def save_ai_commentary(self, run_id: int, commentary: AiCommentary) -> None:
         self.connection.execute(
-            "insert into ai_commentaries values (?, ?, ?, ?, ?, ?)",
+            """
+            insert into ai_commentaries (
+                run_id, enabled, summary, risks, watchlist, raw_response, rebalancing_assessment
+            ) values (?, ?, ?, ?, ?, ?, ?)
+            """,
             (
                 run_id,
                 int(commentary.enabled),
@@ -1886,6 +1892,7 @@ class Storage:
                 "\n".join(commentary.risks),
                 "\n".join(commentary.watchlist),
                 commentary.raw_response,
+                commentary.rebalancing_assessment,
             ),
         )
         self.connection.commit()

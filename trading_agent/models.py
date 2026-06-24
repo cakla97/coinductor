@@ -437,6 +437,7 @@ class AiCommentary:
     risks: tuple[str, ...]
     watchlist: tuple[str, ...]
     raw_response: str
+    rebalancing_assessment: str = ""
 
 
 @dataclass(frozen=True)

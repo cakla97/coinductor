@@ -621,6 +621,11 @@ python -m trading_agent rebalancing-set-status --config config.example.toml `
   --confirm CONFIRM_REBALANCING_STATUS
 ```
 
+When local AI commentary is enabled, Qwen receives a separate focused copy of the
+deterministic Rebalancing Bot proposal. Its assessment is advisory only. A validator
+rejects the text if it introduces Grid conditions, market-status blockers, or other
+facts absent from the deterministic proposal; the report then shows a guarded fallback.
+
 Append `--confirm CONFIRM_GRID_STATUS` only after the Binance-side status really changed.
 
 ## Safety Defaults

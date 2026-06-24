@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from trading_agent.ai_analyst import AiAnalyst
-from trading_agent.models import AiDecisionMemory, MarketSnapshot
+from trading_agent.models import AiDecisionMemory, MarketSnapshot, RebalancingBotAsset, RebalancingBotRecommendation
 
 
 def _config() -> dict:
@@ -105,3 +105,94 @@ def test_small_memory_sample_is_withheld_from_trade_ranking() -> None:
     assert payload["pattern_inference_allowed"] is False
     assert payload["recent_closed_cycles"] == []
     assert "withheld from trade ranking" in payload["summary"]
+
+
+def test_rebalancing_payload_preserves_deterministic_blocker() -> None:
+    analyst = AiAnalyst(_config())
+    recommendation = RebalancingBotRecommendation(
+        enabled=True,
+        recommended=False,
+        deployment_allowed=False,
+        mode="THRESHOLD",
+        threshold_pct=Decimal("5"),
+        investment_usdt=Decimal("100"),
+        assets=(
+            RebalancingBotAsset(
+                asset="ETH",
+                current_value_usdt=Decimal("95"),
+                current_weight_pct=Decimal("12"),
+                target_weight_pct=Decimal("23.4"),
+                role="PROTECTED",
+                status="REQUIRES_CONVERSION",
+                reason="WBETH conversion is manual.",
+            ),
+        ),
+        excluded_assets=("WLD",),
+        blockers=("Do not convert protected WBETH automatically.",),
+        manual_steps=(),
+        summary="Blocked pending manual WBETH decision.",
+    )
+
+    payload = analyst._rebalancing_payload(recommendation)
+
+    assert payload["deployment_allowed"] is False
+    assert payload["assets"][0]["status"] == "REQUIRES_CONVERSION"
+    assert payload["excluded_assets"] == ["WLD"]
+    assert payload["blockers"] == ["Do not convert protected WBETH automatically."]
+
+
+def test_rebalancing_payload_has_no_inferred_market_blocker() -> None:
+    analyst = AiAnalyst(_config())
+    recommendation = RebalancingBotRecommendation(
+        enabled=True,
+        recommended=False,
+        deployment_allowed=False,
+        mode="THRESHOLD",
+        threshold_pct=Decimal("5"),
+        investment_usdt=Decimal("100"),
+        assets=(),
+        excluded_assets=(),
+        blockers=("Manual WBETH decision required.",),
+        manual_steps=(),
+        summary="Blocked by WBETH decision.",
+    )
+
+    payload = analyst._rebalancing_payload(recommendation)
+
+    assert payload["blockers"] == ["Manual WBETH decision required."]
+    assert "market_status" not in payload
+
+
+def test_rebalancing_assessment_rejects_grid_market_contamination() -> None:
+    analyst = AiAnalyst(_config())
+    recommendation = RebalancingBotRecommendation(
+        enabled=True,
+        recommended=False,
+        deployment_allowed=False,
+        mode="THRESHOLD",
+        threshold_pct=Decimal("5"),
+        investment_usdt=Decimal("100"),
+        assets=(
+            RebalancingBotAsset(
+                asset="BTC",
+                current_value_usdt=Decimal("200"),
+                current_weight_pct=Decimal("25"),
+                target_weight_pct=Decimal("60"),
+                role="CORE",
+                status="ELIGIBLE",
+                reason="test",
+            ),
+        ),
+        excluded_assets=("WLD",),
+        blockers=("Manual WBETH decision required.",),
+        manual_steps=(),
+        summary="test",
+    )
+
+    result = analyst._validate_rebalancing_assessment(
+        "Wait for Grid market status to become SUITABLE.",
+        recommendation,
+    )
+
+    assert "rejected" in result
+    assert "Manual WBETH decision required." in result

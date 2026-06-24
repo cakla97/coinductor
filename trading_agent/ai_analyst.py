@@ -5,7 +5,7 @@ import json
 import os
 import urllib.request
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, CapitalSourcingPlan, GridRecommendation, LivePositionSummary, MarketResearchReport, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, CapitalSourcingPlan, GridRecommendation, LivePositionSummary, MarketResearchReport, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
 class AiAnalyst:
@@ -48,6 +48,7 @@ class AiAnalyst:
         proposal: TradeProposal,
         risk_decision: RiskDecision,
         grid_recommendation: GridRecommendation,
+        rebalancing_bot_recommendation: RebalancingBotRecommendation,
         spot_capital_plan: CapitalSourcingPlan,
         grid_capital_plan: CapitalSourcingPlan,
         strategy_decision: StrategyDecision,
@@ -72,8 +73,17 @@ class AiAnalyst:
         prompt = {
             "task": (
                 "Write a concise portfolio-manager commentary. Do not invent data. Do not give financial guarantees. "
-                "Respect deterministic decisions and risk limits. Output JSON only."
+                "Respect deterministic decisions and risk limits. Do not assess rebalancing in this general summary; "
+                "a separate focused assessment handles it. Output JSON only."
             ),
+            "ai_role_limits": [
+                "The rebalancing bot proposal below is deterministic and recommend-only.",
+                "Assess concentration, basket composition, threshold, and blockers; do not change target weights or unlock deployment.",
+                "Never recommend bypassing a protected-asset rule or automatic WBETH-to-ETH conversion.",
+                "Treat WLD as speculative and excluded unless deterministic configuration explicitly includes it.",
+                "For rebalancing, the blockers field is authoritative. Do not copy Grid market status or invent any other blocker.",
+                "If the rebalancing blockers do not mention market conditions, do not claim that rebalancing waits for a market regime.",
+            ],
             "portfolio": {
                 "total_value_usdt": str(portfolio.total_value_usdt),
                 "liquid_value_usdt": str(portfolio.liquid_value_usdt),
@@ -136,6 +146,19 @@ class AiAnalyst:
                     }
                     for item in active_strategies.grid_bots
                 ],
+                "rebalancing_bots": [
+                    {
+                        "name": item.bot.name,
+                        "assets": list(item.bot.assets),
+                        "target_weights_pct": [str(value) for value in item.bot.target_weights_pct],
+                        "current_weights_pct": [str(value) for value in item.current_weights_pct],
+                        "threshold_pct": str(item.bot.threshold_pct),
+                        "max_drift_pct": str(item.max_drift_pct) if item.max_drift_pct is not None else None,
+                        "state": item.state,
+                        "recommendation": item.recommendation,
+                    }
+                    for item in active_strategies.rebalancing_bots
+                ],
             },
             "decision_memory": self._memory_payload(decision_memory, include_small_sample=True),
             "memory_usage_rules": [
@@ -146,6 +169,7 @@ class AiAnalyst:
                 "trade_proposal": proposal.__dict__,
                 "risk_decision": risk_decision.__dict__,
                 "grid_recommendation": grid_recommendation.__dict__,
+                "rebalancing_bot_recommendation": self._rebalancing_payload(rebalancing_bot_recommendation),
                 "spot_capital_plan": spot_capital_plan.__dict__,
                 "grid_capital_plan": grid_capital_plan.__dict__,
                 "strategy_decision": {
@@ -168,12 +192,14 @@ class AiAnalyst:
                 user=json.dumps(prompt, default=str),
             )
             data = json.loads(content)
+            rebalancing_assessment = self._focused_rebalancing_assessment(rebalancing_bot_recommendation)
             return AiCommentary(
                 enabled=True,
                 summary=str(data.get("summary", "")).strip() or "AI commentary returned no summary.",
                 risks=tuple(str(item) for item in data.get("risks", [])[:5]),
                 watchlist=tuple(str(item) for item in data.get("watchlist", [])[:5]),
                 raw_response=content,
+                rebalancing_assessment=rebalancing_assessment,
             )
         except Exception as exc:
             return AiCommentary(
@@ -183,6 +209,70 @@ class AiAnalyst:
                 watchlist=(),
                 raw_response="",
             )
+
+    def _focused_rebalancing_assessment(self, recommendation: RebalancingBotRecommendation) -> str:
+        payload = self._rebalancing_payload(recommendation)
+        prompt = {
+            "task": (
+                "Evaluate only this deterministic Binance Rebalancing Bot proposal in 1-3 concise sentences. "
+                "Discuss concentration, target composition, threshold, and the listed blockers. "
+                "Do not mention Grid bots, market status, RSI, trend regimes, or any blocker absent from blockers. "
+                "Do not alter weights or deployment_allowed. Output JSON only."
+            ),
+            "proposal": payload,
+            "schema": {"assessment": "1-3 concise sentences"},
+        }
+        try:
+            content = self._chat_json(
+                system="You are reviewing one deterministic rebalancing proposal. Use only supplied facts. Output valid JSON only.",
+                user=json.dumps(prompt, default=str),
+            )
+            assessment = str(json.loads(content).get("assessment", "")).strip()
+        except Exception:
+            assessment = ""
+        return self._validate_rebalancing_assessment(assessment, recommendation)
+
+    def _validate_rebalancing_assessment(
+        self,
+        assessment: str,
+        recommendation: RebalancingBotRecommendation,
+    ) -> str:
+        unsupported_markers = ("grid", "market status", "market state", "rsi", "trend regime", "suitable", "watch")
+        blockers_text = " ".join(recommendation.blockers).lower()
+        unsupported = any(marker in assessment.lower() and marker not in blockers_text for marker in unsupported_markers)
+        if not assessment or unsupported:
+            basket = ", ".join(f"{item.asset} {item.target_weight_pct}%" for item in recommendation.assets) or "no eligible basket"
+            blocker = "; ".join(item.rstrip(".") for item in recommendation.blockers) or "none"
+            return (
+                f"Focused AI assessment was rejected or unavailable because it introduced unsupported context. "
+                f"Deterministic proposal remains {basket}; authoritative blockers: {blocker}."
+            )
+        return assessment
+
+    def _rebalancing_payload(self, recommendation: RebalancingBotRecommendation) -> dict:
+        return {
+            "enabled": recommendation.enabled,
+            "recommended": recommendation.recommended,
+            "deployment_allowed": recommendation.deployment_allowed,
+            "mode": recommendation.mode,
+            "threshold_pct": str(recommendation.threshold_pct),
+            "investment_usdt": str(recommendation.investment_usdt),
+            "assets": [
+                {
+                    "asset": item.asset,
+                    "current_value_usdt": str(item.current_value_usdt),
+                    "current_weight_pct": str(item.current_weight_pct),
+                    "target_weight_pct": str(item.target_weight_pct),
+                    "role": item.role,
+                    "status": item.status,
+                    "reason": item.reason,
+                }
+                for item in recommendation.assets
+            ],
+            "excluded_assets": list(recommendation.excluded_assets),
+            "blockers": list(recommendation.blockers),
+            "summary": recommendation.summary,
+        }
 
     def _mock_proposal(self, snapshots: list[MarketSnapshot]) -> TradeProposal:
         allowed_symbols = [str(symbol).upper() for symbol in self.config.get("strategy", {}).get("allowed_symbols", [])]

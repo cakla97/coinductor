@@ -178,6 +178,7 @@ class AgentRunner:
                 proposal=proposal,
                 risk_decision=risk_decision,
                 grid_recommendation=grid_recommendation,
+                rebalancing_bot_recommendation=rebalancing_bot_recommendation,
                 spot_capital_plan=spot_capital_plan,
                 grid_capital_plan=grid_capital_plan,
                 strategy_decision=strategy_decision,

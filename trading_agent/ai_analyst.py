@@ -329,6 +329,8 @@ class AiAnalyst:
                         if item.relative_strength_vs_btc_24h_pct is not None
                         else None
                     ),
+                    "support_30d": str(item.support_30d) if item.support_30d is not None else None,
+                    "resistance_30d": str(item.resistance_30d) if item.resistance_30d is not None else None,
                     "volume_trend": item.volume_trend,
                     "trend_regime": item.trend_regime,
                 }

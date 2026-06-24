@@ -97,6 +97,8 @@ class Storage:
                 atr_pct text,
                 price_vs_ema200_pct text,
                 relative_strength_vs_btc_24h_pct text,
+                support_30d text,
+                resistance_30d text,
                 volume_trend text,
                 trend_regime text
             );
@@ -242,7 +244,14 @@ class Storage:
                 grid_count integer,
                 investment_usdt text,
                 stop_loss_price text,
-                take_profit_price text
+                take_profit_price text,
+                market_status text,
+                deployment_allowed integer,
+                score text,
+                range_width_pct text,
+                estimated_quote_per_grid text,
+                estimated_grid_spacing_pct text,
+                blockers text
             );
             create table if not exists strategy_decisions (
                 run_id integer,
@@ -370,6 +379,15 @@ class Storage:
         self._ensure_column("capital_sourcing_items", "remaining_value_usdt", "text")
         self._ensure_column("capital_sourcing_items", "remaining_pct_of_asset", "text")
         self._ensure_column("shadow_signals", "price_source", "text")
+        self._ensure_column("market_research_symbols", "support_30d", "text")
+        self._ensure_column("market_research_symbols", "resistance_30d", "text")
+        self._ensure_column("grid_recommendations", "market_status", "text")
+        self._ensure_column("grid_recommendations", "deployment_allowed", "integer")
+        self._ensure_column("grid_recommendations", "score", "text")
+        self._ensure_column("grid_recommendations", "range_width_pct", "text")
+        self._ensure_column("grid_recommendations", "estimated_quote_per_grid", "text")
+        self._ensure_column("grid_recommendations", "estimated_grid_spacing_pct", "text")
+        self._ensure_column("grid_recommendations", "blockers", "text")
         self.connection.commit()
 
     def _ensure_column(self, table: str, column: str, definition: str) -> None:
@@ -654,8 +672,8 @@ class Storage:
                 run_id, symbol, change_24h_pct, return_7d_pct, return_30d_pct,
                 quote_volume_24h, trades_24h, range_24h_pct, atr_pct,
                 price_vs_ema200_pct, relative_strength_vs_btc_24h_pct,
-                volume_trend, trend_regime
-            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                support_30d, resistance_30d, volume_trend, trend_regime
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
@@ -672,6 +690,8 @@ class Storage:
                     str(item.relative_strength_vs_btc_24h_pct)
                     if item.relative_strength_vs_btc_24h_pct is not None
                     else None,
+                    str(item.support_30d) if item.support_30d is not None else None,
+                    str(item.resistance_30d) if item.resistance_30d is not None else None,
                     item.volume_trend,
                     item.trend_regime,
                 )
@@ -1579,7 +1599,14 @@ class Storage:
 
     def save_grid_recommendation(self, run_id: int, recommendation: GridRecommendation) -> None:
         self.connection.execute(
-            "insert into grid_recommendations values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            """
+            insert into grid_recommendations (
+                run_id, recommended, symbol, reason, range_low, range_high, grid_count,
+                investment_usdt, stop_loss_price, take_profit_price, market_status,
+                deployment_allowed, score, range_width_pct, estimated_quote_per_grid,
+                estimated_grid_spacing_pct, blockers
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
             (
                 run_id,
                 int(recommendation.recommended),
@@ -1591,6 +1618,13 @@ class Storage:
                 str(recommendation.investment_usdt),
                 str(recommendation.stop_loss_price),
                 str(recommendation.take_profit_price),
+                recommendation.market_status,
+                int(recommendation.deployment_allowed),
+                str(recommendation.score),
+                str(recommendation.range_width_pct),
+                str(recommendation.estimated_quote_per_grid),
+                str(recommendation.estimated_grid_spacing_pct),
+                "\n".join(recommendation.blockers),
             ),
         )
         self.connection.commit()

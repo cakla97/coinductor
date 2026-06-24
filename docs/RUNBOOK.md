@@ -114,6 +114,23 @@ dated by the SELL reconciliation run, so a loss blocks the day it was realized. 
 The default consensus requires `RISK_ON`, price above EMA200, and RSI14 from 45 to 68. A Qwen BUY
 outside these conditions must remain rejected even at high model confidence.
 
+## Spot Grid Advisor V2
+
+Review `Spot Grid Recommendation` even when the overall strategy decision is `HOLD`. Its fields
+have separate meanings:
+
+- `Market status: SUITABLE` means the range model likes current conditions
+- `Deployment allowed: True` means no risk/cooldown/active-bot/capital blocker remains
+- `Recommended: True` requires both of the above
+
+Never create a grid from `WATCH`, `REJECTED`, or `Deployment allowed: False`. Before manual setup,
+also verify Binance's displayed minimum investment and estimated profit/grid because exchange-side
+limits may change.
+
+After manually creating a grid, copy `state/active_strategies.example.toml` to
+`state/active_strategies.toml`, replace the example with the exact real symbol, range, investment,
+and creation date, then rerun the assistant.
+
 ## Guarded USDC Flexible Earn Redeem
 
 Use only when the report shows `Flexible Earn Redeem` status `PREVIEW_READY` and the `Execution

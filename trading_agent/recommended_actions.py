@@ -34,6 +34,14 @@ class RecommendedActionsBuilder:
                     reason="Current market profile looks suitable for a range strategy, but bot creation is recommend-only.",
                 )
             )
+        elif grid_recommendation.symbol and grid_recommendation.market_status in {"SUITABLE", "WATCH"}:
+            actions.append(
+                RecommendedAction(
+                    priority="MEDIUM" if grid_recommendation.market_status == "SUITABLE" else "LOW",
+                    action=f"Monitor grid conditions for {grid_recommendation.symbol}; do not create it yet.",
+                    reason=grid_recommendation.reason,
+                )
+            )
         elif risk_decision.approved:
             actions.append(
                 RecommendedAction(

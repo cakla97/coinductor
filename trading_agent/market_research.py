@@ -44,9 +44,13 @@ class MarketResearchCollector:
                     errors.append(f"No 24h ticker was returned for {snapshot.symbol}.")
                     continue
                 closes: list[Decimal] = []
+                highs: list[Decimal] = []
+                lows: list[Decimal] = []
                 try:
                     klines = self.client.get_klines(snapshot.symbol, interval, kline_limit)
                     closes = [Decimal(str(row[4])) for row in klines]
+                    highs = [Decimal(str(row[2])) for row in klines]
+                    lows = [Decimal(str(row[3])) for row in klines]
                 except Exception as exc:
                     errors.append(f"{snapshot.symbol} multi-timeframe data failed: {exc}")
 
@@ -63,6 +67,8 @@ class MarketResearchCollector:
                         atr_pct=self._safe_pct(snapshot.atr14, snapshot.price),
                         price_vs_ema200_pct=self._safe_pct(snapshot.price - snapshot.ema200, snapshot.ema200),
                         relative_strength_vs_btc_24h_pct=change_24h - btc_change if btc_change is not None else None,
+                        support_30d=min(lows[-180:]) if len(lows) >= 180 else None,
+                        resistance_30d=max(highs[-180:]) if len(highs) >= 180 else None,
                         volume_trend=snapshot.volume_trend,
                         trend_regime=snapshot.trend_regime,
                     )
@@ -143,6 +149,8 @@ class MarketResearchCollector:
                 atr_pct=self._safe_pct(snapshot.atr14, snapshot.price),
                 price_vs_ema200_pct=self._safe_pct(snapshot.price - snapshot.ema200, snapshot.ema200),
                 relative_strength_vs_btc_24h_pct=Decimal("0"),
+                support_30d=snapshot.price * Decimal("0.9"),
+                resistance_30d=snapshot.price * Decimal("1.1"),
                 volume_trend=snapshot.volume_trend,
                 trend_regime=snapshot.trend_regime,
             )

@@ -520,6 +520,23 @@ must be `RISK_ON`, above EMA200, and have RSI14 between 45 and 68. Qwen can rank
 its choice, but cannot bypass these market conditions, bankroll rules, OCO workflow, or the live
 risk state.
 
+## Spot Grid Advisor V2
+
+The grid advisor evaluates every symbol in `[grid_bot].allowed_symbols` and separates:
+
+- `market_status`: `SUITABLE`, `WATCH`, or `REJECTED`
+- `deployment_allowed`: whether risk, cooldown, active-bot count, and capital-per-grid checks allow setup
+- `recommended`: true only when both market suitability and deployment eligibility pass
+
+Candidate scoring uses trend regime, RSI, ATR percentage, distance from EMA200, and 7-day
+directionality. Grid boundaries combine ATR with EMA20/EMA50 and 30-day support/resistance from
+the local Binance research layer. The range is still capped by configured percentage limits.
+
+Grid count is constrained by `min_quote_per_grid_usdt`. With the default 25 USDC allocation and
+2.5 USDC minimum, the advisor proposes at most 10 grids rather than mechanically using 20.
+Reports include estimated quote/grid, spacing, blockers, stop-loss, take-profit, and exact manual
+Binance setup steps. The project never creates the Binance bot automatically.
+
 ## Safety Defaults
 
 Real trading and real redeem are disabled by default. Before enabling anything live:

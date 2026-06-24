@@ -24,7 +24,7 @@ class FakeClient:
         rows = []
         for _ in range(limit):
             price *= multiplier
-            rows.append([0, "0", "0", "0", str(price), "0"])
+            rows.append([0, "0", str(price * Decimal("1.01")), str(price * Decimal("0.99")), str(price), "0"])
         return rows
 
 
@@ -94,6 +94,8 @@ def test_collects_multitimeframe_context_and_filtered_breadth(tmp_path) -> None:
     assert len(report.symbols) == 2
     assert report.symbols[0].return_7d_pct is not None
     assert report.symbols[0].return_30d_pct is not None
+    assert report.symbols[0].support_30d is not None
+    assert report.symbols[0].resistance_30d is not None
     assert report.symbols[1].relative_strength_vs_btc_24h_pct == Decimal("-3")
     assert report.breadth is not None
     assert report.breadth.symbols_analyzed == 3

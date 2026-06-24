@@ -45,6 +45,8 @@ class SymbolMarketResearch:
     atr_pct: Decimal
     price_vs_ema200_pct: Decimal
     relative_strength_vs_btc_24h_pct: Decimal | None
+    support_30d: Decimal | None
+    resistance_30d: Decimal | None
     volume_trend: str
     trend_regime: str
 
@@ -202,17 +204,33 @@ class EarnRedeemPlan:
 
 
 @dataclass(frozen=True)
+class GridCandidateAssessment:
+    symbol: str
+    score: Decimal
+    market_status: str
+    reason: str
+
+
+@dataclass(frozen=True)
 class GridRecommendation:
     recommended: bool
+    market_status: str
+    deployment_allowed: bool
     symbol: str | None
     reason: str
+    score: Decimal
     range_low: Decimal
     range_high: Decimal
+    range_width_pct: Decimal
     grid_count: int
     grid_type: str
+    estimated_quote_per_grid: Decimal
+    estimated_grid_spacing_pct: Decimal
     investment_usdt: Decimal
     stop_loss_price: Decimal
     take_profit_price: Decimal
+    blockers: tuple[str, ...]
+    candidate_assessments: tuple[GridCandidateAssessment, ...]
     manual_steps: tuple[str, ...]
 
 

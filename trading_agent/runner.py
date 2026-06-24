@@ -107,7 +107,13 @@ class AgentRunner:
             bankroll_required = min(risk_decision.adjusted_quote_amount_usdt, live_quote_cap) if risk_decision.approved else Decimal("0")
             bankroll_report = self.bankroll.analyze(balances, bankroll_required)
             earn_redeem_plan = self.earn.plan_flexible_redeem(liquidity_decision, bankroll_report)
-            grid_recommendation = self.grid.recommend(snapshots)
+            grid_recommendation = self.grid.recommend(
+                snapshots=snapshots,
+                market_research=market_research_report,
+                active_strategies=active_strategies_report,
+                risk_state=risk_state,
+                portfolio_value_usdt=portfolio_analysis.total_value_usdt,
+            )
             if grid_recommendation.recommended:
                 quote_asset = str(self.config.raw.get("live_confirm", {}).get("quote_asset", "USDT")).upper()
                 grid_liquidity_decision = self.earn.ensure_quote_liquidity(

@@ -540,14 +540,15 @@ class Reporter:
                     "",
                     "### Allowed Symbol Context",
                     "",
-                    "| Symbol | 24h | 7d | 30d | 24h Range | ATR % | vs EMA200 | vs BTC 24h | 24h Quote Volume | Trades |",
-                    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+                    "| Symbol | 24h | 7d | 30d | 30d Support | 30d Resistance | 24h Range | ATR % | vs EMA200 | vs BTC 24h | 24h Quote Volume | Trades |",
+                    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
                 ]
             )
             for item in market_research.symbols:
                 lines.append(
                     f"| {item.symbol} | {item.change_24h_pct:.2f}% | {self._optional_pct(item.return_7d_pct)} | "
-                    f"{self._optional_pct(item.return_30d_pct)} | {item.range_24h_pct:.2f}% | {item.atr_pct:.2f}% | "
+                    f"{self._optional_pct(item.return_30d_pct)} | {item.support_30d or 'n/a'} | "
+                    f"{item.resistance_30d or 'n/a'} | {item.range_24h_pct:.2f}% | {item.atr_pct:.2f}% | "
                     f"{item.price_vs_ema200_pct:.2f}% | {self._optional_pct(item.relative_strength_vs_btc_24h_pct)} | "
                     f"{item.quote_volume_24h:.2f} | {item.trades_24h} |"
                 )
@@ -715,18 +716,44 @@ class Reporter:
                     "## Spot Grid Recommendation",
                     "",
                     f"- Recommended: `{grid.recommended}`",
+                    f"- Market status: `{grid.market_status}`",
+                    f"- Deployment allowed: `{grid.deployment_allowed}`",
                     f"- Symbol: `{grid.symbol}`",
                     f"- Reason: {grid.reason}",
+                    f"- Suitability score: `{grid.score}/100`",
                     f"- Range low: `{grid.range_low}`",
                     f"- Range high: `{grid.range_high}`",
+                    f"- Range width: `{grid.range_width_pct}%`",
                     f"- Grid count: `{grid.grid_count}`",
                     f"- Grid type: `{grid.grid_type}`",
+                    f"- Estimated quote per grid: `{grid.estimated_quote_per_grid}`",
+                    f"- Estimated grid spacing: `{grid.estimated_grid_spacing_pct}%`",
                     f"- Investment: `{self._grid_investment_text(grid)}`",
                     f"- Stop loss price: `{grid.stop_loss_price}`",
                     f"- Take profit price: `{grid.take_profit_price}`",
                     "",
                 ]
             )
+            if grid.blockers:
+                lines.extend(["### Deployment Blockers", ""])
+                for blocker in grid.blockers:
+                    lines.append(f"- {blocker}")
+                lines.append("")
+            if grid.candidate_assessments:
+                lines.extend(
+                    [
+                        "### Candidate Comparison",
+                        "",
+                        "| Symbol | Score | Market Status | Assessment |",
+                        "| --- | ---: | --- | --- |",
+                    ]
+                )
+                for candidate in grid.candidate_assessments:
+                    lines.append(
+                        f"| {candidate.symbol} | {candidate.score}/100 | "
+                        f"{candidate.market_status} | {candidate.reason} |"
+                    )
+                lines.append("")
             if grid.manual_steps:
                 lines.extend(["### Manual Setup Steps", ""])
                 for index, step in enumerate(grid.manual_steps, start=1):
@@ -810,6 +837,6 @@ class Reporter:
         return ", ".join(f"{item.symbol} ({item.change_24h_pct:+.2f}%)" for item in movers)
 
     def _grid_investment_text(self, grid: GridRecommendation) -> str:
-        if not grid.recommended or not grid.symbol:
+        if not grid.symbol:
             return "N/A"
         return f"{grid.investment_usdt} {self._quote_asset(grid.symbol)}"

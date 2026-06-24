@@ -103,6 +103,31 @@ class ConfigValidator:
         for key in ("max_grid_capital_usdt", "max_grid_capital_pct", "default_investment_usdt"):
             if Decimal(str(grid.get(key, 0))) <= 0:
                 issues.append(ConfigIssue("ERROR", f"grid_bot.{key}", "Value must be greater than zero."))
+        for key in (
+            "min_quote_per_grid_usdt",
+            "min_atr_pct",
+            "max_atr_pct",
+            "max_abs_ema200_distance_pct",
+            "max_abs_7d_return_pct",
+            "suitable_score",
+            "watch_score",
+            "atr_range_multiplier",
+        ):
+            if Decimal(str(grid.get(key, 0))) <= 0:
+                issues.append(ConfigIssue("ERROR", f"grid_bot.{key}", "Value must be greater than zero."))
+        min_rsi = Decimal(str(grid.get("min_rsi14", 0)))
+        target_rsi = Decimal(str(grid.get("target_rsi14", 0)))
+        max_rsi = Decimal(str(grid.get("max_rsi14", 0)))
+        if not Decimal("0") <= min_rsi < target_rsi < max_rsi <= Decimal("100"):
+            issues.append(
+                ConfigIssue(
+                    "ERROR",
+                    "grid_bot",
+                    "RSI values must satisfy 0 <= min_rsi14 < target_rsi14 < max_rsi14 <= 100.",
+                )
+            )
+        if Decimal(str(grid.get("watch_score", 0))) >= Decimal(str(grid.get("suitable_score", 0))):
+            issues.append(ConfigIssue("ERROR", "grid_bot.watch_score", "Value must be below suitable_score."))
 
     def _validate_capital_sourcing(self, config: dict, issues: list[ConfigIssue]) -> None:
         capital = config.get("capital_sourcing", {})

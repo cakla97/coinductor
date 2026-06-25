@@ -52,6 +52,21 @@ The first run uses mock market/account data and writes:
 For day-to-day operation, use [docs/RUNBOOK.md](docs/RUNBOOK.md). It lists the safe monitoring
 command, guarded submit commands, and the report sections to check before taking action.
 
+## Coinductor Desktop Preview
+
+The Stage A desktop shell uses PySide6/QML while preserving the deterministic engine
+and CLI.
+
+```powershell
+python -m pip install -e ".[desktop]"
+python -m coinductor.desktop
+```
+
+The first desktop milestone supports background analysis runs, real/mock data,
+optional local AI summaries, mainnet preview, dashboard metrics, recommended actions,
+and opening the full Markdown report. Confirmed order submission remains outside this
+initial desktop screen and cannot be enabled by its run dialog.
+
 Each report includes:
 
 - portfolio summary

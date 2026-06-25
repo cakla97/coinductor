@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "binance-trading-agent"
 version = "0.1.0"
@@ -7,8 +11,21 @@ dependencies = [
   "truststore>=0.10.4",
 ]
 
+[project.optional-dependencies]
+desktop = [
+  "PySide6>=6.8,<7",
+]
+
 [project.scripts]
 trading-agent = "trading_agent.cli:main"
+coinductor = "coinductor.desktop:main"
+
+[tool.setuptools.packages.find]
+include = ["trading_agent*", "coinductor*"]
+exclude = ["outputs*", "research*", "state*", "work*", "tests*"]
+
+[tool.setuptools.package-data]
+coinductor = ["qml/*.qml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

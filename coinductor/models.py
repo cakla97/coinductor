@@ -1,0 +1,36 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from decimal import Decimal
+
+
+@dataclass(frozen=True)
+class RunOptions:
+    config_path: str = "config.example.toml"
+    data_mode: str = "REAL"
+    ai_summary: bool = True
+    ai_proposals: bool = False
+    live_preview: bool = True
+
+
+@dataclass(frozen=True)
+class ActionSummary:
+    priority: str
+    action: str
+    reason: str
+
+
+@dataclass(frozen=True)
+class DesktopRunResult:
+    run_id: int
+    status: str
+    report_path: str
+    decision: str
+    decision_summary: str
+    risk_approved: bool
+    risk_reason: str
+    portfolio_value: Decimal
+    liquid_value: Decimal
+    locked_value: Decimal
+    ai_summary: str
+    actions: tuple[ActionSummary, ...]

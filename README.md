@@ -599,6 +599,19 @@ full conversion of configured small legacy holdings, then capped portions of WLD
 SOL. Any remaining gap stays blocked rather than being taken from protected BTC, ETH,
 WBETH, or BNB.
 
+The current mobile-form policy is:
+
+- start from `Equal`, then manually enter the advisor's custom BTC/ETH/SOL weights;
+- do not use `Market Cap`, because it would make the basket follow global market-cap
+  dominance rather than the user's portfolio policy;
+- enable Auto Rebalance `By Ratio` at `10%` for the small MVP allocation;
+- leave `Trigger Price`, `Stop Trigger`, and `Sell All Coins on Stop` disabled initially.
+
+For Spot Grid manual setup, choose the quote asset (`USDC`) in the Investment dropdown,
+leave `Trading Up` and `Grid Trigger` disabled, and enable `TP/SL` with the advisor's
+prices. `Sell All Base Coin on Stop` is suitable only for the isolated grid allocation
+when stopping the bot should close its remaining base-asset exposure.
+
 After manually creating the bot in Binance, preview its local registration:
 
 ```powershell

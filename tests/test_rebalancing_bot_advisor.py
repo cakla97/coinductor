@@ -31,6 +31,8 @@ def _config() -> dict:
         "rebalancing_bot": {
             "enabled": True,
             "mode": "THRESHOLD",
+            "allocation_method": "CUSTOM",
+            "auto_rebalance_mode": "BY_RATIO",
             "allowed_assets": ["BTC", "ETH", "SOL"],
             "min_assets": 2,
             "threshold_pct": 5,
@@ -38,6 +40,9 @@ def _config() -> dict:
             "min_investment_usdt": 200,
             "max_investment_usdt": 200,
             "max_portfolio_pct": 100,
+            "trigger_price_enabled": False,
+            "stop_trigger_enabled": False,
+            "sell_all_coins_on_stop": False,
             "funding": {
                 "source_priority": ["PEPE", "DOGE", "ADA", "DOT", "WLD", "SOL"],
                 "full_exit_assets": ["PEPE", "DOGE", "ADA", "DOT"],
@@ -88,6 +93,9 @@ def test_material_wbeth_informs_eth_weight_without_forcing_conversion() -> None:
     assert [item.asset for item in result.assets] == ["BTC", "ETH", "SOL"]
     assert result.assets[1].status == "FUNDED_FROM_USDC"
     assert any("Keep existing WBETH outside" in step for step in result.manual_steps)
+    assert any("Select Equal" in step for step in result.manual_steps)
+    assert any("By Ratio" in step for step in result.manual_steps)
+    assert any("Sell All Coins on Stop: OFF" in step for step in result.manual_steps)
 
 
 def test_funding_plan_uses_legacy_then_capped_reserves_and_reports_gap() -> None:
@@ -115,3 +123,5 @@ def test_funding_plan_uses_legacy_then_capped_reserves_and_reports_gap() -> None
     assert result.funding_plan.items[4].value_usdt == Decimal("10.00")
     assert result.funding_plan.items[5].value_usdt == Decimal("14.40")
     assert any("uncovered" in blocker for blocker in result.blockers)
+    assert any("After funding is complete" in step for step in result.manual_steps)
+    assert any("By Ratio" in step for step in result.manual_steps)

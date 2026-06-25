@@ -115,10 +115,10 @@ class ExecutionChecklistBuilder:
                     priority="MANUAL",
                     step="Create Binance Rebalancing Bot manually",
                     detail=(
-                        f"Use {allocation}; {rebalancing_bot_recommendation.mode.title()} mode; "
-                        f"threshold {rebalancing_bot_recommendation.threshold_pct}%; investment no more than "
-                        f"{rebalancing_bot_recommendation.investment_usdt} USDC-equivalent. "
-                        "Fund from separate USDC, keep WBETH outside the bot, and verify Binance minimums before confirming."
+                        f"Start with Equal, manually edit to {allocation}; enable Auto Rebalance By Ratio at "
+                        f"{rebalancing_bot_recommendation.threshold_pct}%; investment no more than "
+                        f"{rebalancing_bot_recommendation.investment_usdt} USDC. Keep Trigger Price and Stop Trigger OFF, "
+                        "Sell All Coins on Stop OFF, fund from separate USDC, and keep WBETH outside the bot."
                     ),
                 )
             )

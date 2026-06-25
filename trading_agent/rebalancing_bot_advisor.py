@@ -21,6 +21,8 @@ class RebalancingBotAdvisor:
         maximum_portfolio_pct = Decimal(str(config.get("max_portfolio_pct", "15"))) / Decimal("100")
         threshold = Decimal(str(config.get("threshold_pct", "5")))
         mode = str(config.get("mode", "THRESHOLD")).upper()
+        allocation_method = str(config.get("allocation_method", "CUSTOM")).upper()
+        auto_rebalance_mode = str(config.get("auto_rebalance_mode", "BY_RATIO")).upper()
         by_asset = {item.asset.upper(): item for item in portfolio.assets}
 
         eligible: list[tuple[str, PortfolioAssetValuation, str, str]] = []
@@ -109,7 +111,18 @@ class RebalancingBotAdvisor:
             excluded_assets=excluded,
             blockers=tuple(blockers),
             manual_steps=self._manual_steps(
-                assets, mode, threshold, investment, protected, deployment_allowed, funding_plan
+                assets,
+                mode,
+                threshold,
+                investment,
+                protected,
+                deployment_allowed,
+                funding_plan,
+                allocation_method,
+                auto_rebalance_mode,
+                bool(config.get("trigger_price_enabled", False)),
+                bool(config.get("stop_trigger_enabled", False)),
+                bool(config.get("sell_all_coins_on_stop", False)),
             ),
             summary=summary,
             funding_plan=funding_plan,
@@ -124,20 +137,37 @@ class RebalancingBotAdvisor:
         protected: set[str],
         deployment_allowed: bool,
         funding_plan: CapitalSourcingPlan,
+        allocation_method: str,
+        auto_rebalance_mode: str,
+        trigger_price_enabled: bool,
+        stop_trigger_enabled: bool,
+        sell_all_coins_on_stop: bool,
     ) -> tuple[str, ...]:
+        allocation = ", ".join(f"{item.asset} {item.target_weight_pct}%" for item in assets)
+        allocation_instruction = (
+            "Select Equal as the starting layout, then manually edit the percentages"
+            if allocation_method == "CUSTOM"
+            else f"Select {allocation_method.replace('_', ' ').title()}"
+        )
+        form_steps = [
+            f"After funding is complete: {allocation_instruction}; use {allocation}.",
+            f"Enable Auto Rebalance, choose {auto_rebalance_mode.replace('_', ' ').title()}, and set {self._one_decimal(threshold)}%.",
+            f"Trigger Price: {'ON' if trigger_price_enabled else 'OFF'} for the initial deployment.",
+            f"Stop Trigger: {'ON' if stop_trigger_enabled else 'OFF'} for the initial deployment.",
+            f"Sell All Coins on Stop: {'ON' if sell_all_coins_on_stop else 'OFF'} to avoid unintended liquidation on a manual stop.",
+        ]
         if not deployment_allowed:
             steps = [
                 "Do not create a Rebalancing Bot while any deployment blocker remains.",
             ]
             steps.extend(item.action for item in funding_plan.items)
             steps.append(funding_plan.summary)
+            steps.extend(form_steps)
             return tuple(steps)
-        allocation = ", ".join(f"{item.asset} {item.target_weight_pct}%" for item in assets)
         protected_note = ", ".join(sorted(protected)) or "none"
         return (
             "Open Binance Home > Trading Bots > Rebalancing Bot.",
-            f"Choose Manual setup and add: {allocation}.",
-            f"Select {mode.title()} rebalancing and set the threshold to {self._one_decimal(threshold)}%.",
+            *form_steps,
             f"Invest no more than {self._money(investment)} USDC-equivalent.",
             "Fund the bot from its separate USDC allocation; let Binance acquire the configured ETH share inside the bot.",
             "Keep existing WBETH outside the bot and do not convert or sell it automatically.",

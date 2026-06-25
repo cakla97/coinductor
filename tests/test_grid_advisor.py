@@ -125,6 +125,9 @@ def test_selects_best_range_candidate_and_caps_grid_count_by_capital() -> None:
     assert recommendation.estimated_quote_per_grid == Decimal("2.50")
     assert recommendation.range_low < btc.price < recommendation.range_high
     assert [item.symbol for item in recommendation.candidate_assessments] == ["BTCUSDC", "ETHUSDC"]
+    assert any("Investment currency dropdown select USDC" in step for step in recommendation.manual_steps)
+    assert any("Trading Up OFF" in step for step in recommendation.manual_steps)
+    assert any("Enable TP/SL" in step for step in recommendation.manual_steps)
 
 
 def test_suitable_grid_is_blocked_by_live_risk_state() -> None:

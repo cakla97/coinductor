@@ -92,6 +92,10 @@ class ConfigValidator:
             return
         if str(bot.get("mode", "")).upper() not in {"THRESHOLD", "PERIODIC"}:
             issues.append(ConfigIssue("ERROR", "rebalancing_bot.mode", "Value must be THRESHOLD or PERIODIC."))
+        if str(bot.get("allocation_method", "CUSTOM")).upper() not in {"CUSTOM", "EQUAL", "MARKET_CAP"}:
+            issues.append(ConfigIssue("ERROR", "rebalancing_bot.allocation_method", "Value must be CUSTOM, EQUAL, or MARKET_CAP."))
+        if str(bot.get("auto_rebalance_mode", "BY_RATIO")).upper() not in {"BY_RATIO", "BY_TIME"}:
+            issues.append(ConfigIssue("ERROR", "rebalancing_bot.auto_rebalance_mode", "Value must be BY_RATIO or BY_TIME."))
         allowed = self._upper_list(bot.get("allowed_assets", []))
         if len(set(allowed)) < 2:
             issues.append(ConfigIssue("ERROR", "rebalancing_bot.allowed_assets", "At least two unique assets are required."))

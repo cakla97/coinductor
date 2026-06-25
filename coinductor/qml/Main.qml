@@ -575,10 +575,155 @@ ApplicationWindow {
                 width: Math.max(window.width - 288, 692)
                 spacing: 18
                 Text { text: "Settings"; color: textPrimary; font.pixelSize: 26; font.bold: true }
-                Text { text: "Configuration and onboarding arrive in the next desktop milestone."; color: textSecondary; font.pixelSize: 13 }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Choose a starting path and verify this computer before connecting services."
+                        color: textSecondary
+                        font.pixelSize: 13
+                    }
+                    Button {
+                        text: "Refresh checks"
+                        onClicked: appController.refreshSetup()
+                    }
+                }
+
+                Text { text: "How are you starting?"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 12
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 150
+                        radius: 7
+                        color: appController.onboardingPath === "EXISTING" ? "#1d332d" : panel
+                        border.color: appController.onboardingPath === "EXISTING" ? accent : border
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 18
+                            spacing: 8
+                            Text { text: "I already have a portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Connect Binance read-only access, classify current assets, then test guarded automation."
+                                color: textSecondary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                            }
+                            Item { Layout.fillHeight: true }
+                            Text { text: "Analyze existing allocation"; color: accent; font.pixelSize: 11; font.bold: true }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: appController.selectOnboardingPath("EXISTING")
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 150
+                        radius: 7
+                        color: appController.onboardingPath === "FIRST_PORTFOLIO" ? "#1d332d" : panel
+                        border.color: appController.onboardingPath === "FIRST_PORTFOLIO" ? accent : border
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 18
+                            spacing: 8
+                            Text { text: "Build my first portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Start from USDC, choose a risk profile, simulate a staged entry, and activate automation gradually."
+                                color: textSecondary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                            }
+                            Item { Layout.fillHeight: true }
+                            Text { text: "Create a controlled starting plan"; color: accent; font.pixelSize: 11; font.bold: true }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: appController.selectOnboardingPath("FIRST_PORTFOLIO")
+                        }
+                    }
+                }
+
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 150
+                    Layout.preferredHeight: appController.onboardingPath === "" ? 0 : 74
+                    visible: appController.onboardingPath !== ""
+                    radius: 7
+                    color: panelRaised
+                    border.color: border
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.onboardingPath === "EXISTING"
+                                ? "Next: validate read-only Binance access and run an initial portfolio classification."
+                                : "Next: define budget, risk profile, reserve, and a testnet-first staged USDC deployment plan."
+                            color: textPrimary
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                        }
+                        Text { text: "Wizard continues next milestone"; color: textSecondary; font.pixelSize: 10 }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text { text: "System readiness"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                    Item { Layout.fillWidth: true }
+                    Text { text: appController.setupSummary; color: textSecondary; font.pixelSize: 12 }
+                }
+
+                ListView {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: contentHeight
+                    interactive: false
+                    spacing: 6
+                    model: appController.setupChecks
+                    delegate: Rectangle {
+                        required property var modelData
+                        width: ListView.view.width
+                        height: 54
+                        radius: 6
+                        color: panel
+                        border.color: border
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            spacing: 12
+                            Rectangle {
+                                Layout.preferredWidth: 8
+                                Layout.preferredHeight: 8
+                                radius: 4
+                                color: modelData.status === "PASS" ? accent
+                                    : modelData.status === "WARN" ? warning : "#ee6b6e"
+                            }
+                            Text { Layout.preferredWidth: 155; text: modelData.name; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                            Text { Layout.preferredWidth: 70; text: modelData.group; color: textSecondary; font.pixelSize: 10 }
+                            Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 11; elide: Text.ElideRight }
+                            Text {
+                                Layout.preferredWidth: 55
+                                text: modelData.status
+                                color: modelData.status === "PASS" ? accent
+                                    : modelData.status === "WARN" ? warning : "#ee6b6e"
+                                font.pixelSize: 10
+                                font.bold: true
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 132
                     radius: 7
                     color: panel
                     border.color: border
@@ -587,9 +732,9 @@ ApplicationWindow {
                         anchors.margins: 18
                         spacing: 9
                         Text { text: "Safety baseline"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                        Text { text: "Analysis never submits orders from this screen."; color: textSecondary; font.pixelSize: 12 }
-                        Text { text: "API secrets remain in the local .env file."; color: textSecondary; font.pixelSize: 12 }
-                        Text { text: "Live execution keeps its separate preview and confirmation gates."; color: textSecondary; font.pixelSize: 12 }
+                        Text { text: "Checks only report whether secrets exist; they never display or transmit them."; color: textSecondary; font.pixelSize: 12 }
+                        Text { text: "Selecting an onboarding path does not place orders or change configuration."; color: textSecondary; font.pixelSize: 12 }
+                        Text { text: "Live execution retains separate preview, limits, and explicit confirmation gates."; color: textSecondary; font.pixelSize: 12 }
                     }
                 }
             }

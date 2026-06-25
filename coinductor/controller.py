@@ -9,6 +9,7 @@ from .application import CoinductorApplication
 from .assistant import LocalHelpAssistant
 from .desktop_store import DesktopStore
 from .models import DesktopRunResult, RunOptions
+from .setup_service import SetupService
 
 
 class AnalysisWorker(QObject):
@@ -42,6 +43,7 @@ class AppController(QObject):
     dataChanged = Signal()
     pageChanged = Signal()
     assistantChanged = Signal()
+    setupChanged = Signal()
 
     def __init__(self):
         super().__init__()
@@ -67,7 +69,9 @@ class AppController(QObject):
             }
         ]
         self._current_page = 0
+        self._onboarding_path = ""
         self._snapshot = DesktopStore().load()
+        self._setup_snapshot = SetupService().inspect()
         self._assistant = LocalHelpAssistant()
         self._thread: QThread | None = None
         self._worker: AnalysisWorker | None = None
@@ -137,6 +141,20 @@ class AppController(QObject):
     def currentPage(self) -> int:
         return self._current_page
 
+    @Property("QVariantList", notify=setupChanged)
+    def setupChecks(self) -> list[dict[str, str]]:
+        return list(self._setup_snapshot.checks)
+
+    @Property(str, notify=setupChanged)
+    def setupSummary(self) -> str:
+        if self._setup_snapshot.blocked:
+            return f"{self._setup_snapshot.blocked} blocker(s) require attention"
+        return f"{self._setup_snapshot.passed} ready, {self._setup_snapshot.warnings} optional item(s)"
+
+    @Property(str, notify=setupChanged)
+    def onboardingPath(self) -> str:
+        return self._onboarding_path
+
     @Property(bool, notify=stateChanged)
     def hasReport(self) -> bool:
         return bool(self._report_path)
@@ -147,6 +165,19 @@ class AppController(QObject):
             return
         self._current_page = index
         self.pageChanged.emit()
+
+    @Slot()
+    def refreshSetup(self) -> None:
+        self._setup_snapshot = SetupService().inspect()
+        self.setupChanged.emit()
+
+    @Slot(str)
+    def selectOnboardingPath(self, path: str) -> None:
+        normalized = path.strip().upper()
+        if normalized not in {"EXISTING", "FIRST_PORTFOLIO"}:
+            return
+        self._onboarding_path = normalized
+        self.setupChanged.emit()
 
     @Slot(str)
     def askAssistant(self, question: str) -> None:

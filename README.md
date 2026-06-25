@@ -51,6 +51,8 @@ The first run uses mock market/account data and writes:
 
 For day-to-day operation, use [docs/RUNBOOK.md](docs/RUNBOOK.md). It lists the safe monitoring
 command, guarded submit commands, and the report sections to check before taking action.
+The desktop and open-source direction is tracked in [docs/ROADMAP.md](docs/ROADMAP.md),
+including onboarding for both existing portfolios and users starting from USDC.
 
 ## Coinductor Desktop Preview
 

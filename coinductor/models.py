@@ -42,3 +42,11 @@ class DesktopSnapshot:
     portfolio_assets: tuple[dict[str, str], ...]
     strategies: tuple[dict[str, str], ...]
     run_history: tuple[dict[str, str], ...]
+
+
+@dataclass(frozen=True)
+class SetupSnapshot:
+    checks: tuple[dict[str, str], ...]
+    passed: int
+    warnings: int
+    blocked: int

@@ -6,6 +6,8 @@ from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices
 
 from .application import CoinductorApplication
+from .assistant import LocalHelpAssistant
+from .desktop_store import DesktopStore
 from .models import DesktopRunResult, RunOptions
 
 
@@ -37,6 +39,9 @@ class AppController(QObject):
     busyChanged = Signal()
     stateChanged = Signal()
     actionsChanged = Signal()
+    dataChanged = Signal()
+    pageChanged = Signal()
+    assistantChanged = Signal()
 
     def __init__(self):
         super().__init__()
@@ -52,8 +57,21 @@ class AppController(QObject):
         self._ai_summary = "No summary available."
         self._report_path = ""
         self._actions: list[dict[str, str]] = []
+        self._portfolio_assets: list[dict[str, str]] = []
+        self._strategies: list[dict[str, str]] = []
+        self._run_history: list[dict[str, str]] = []
+        self._assistant_messages: list[dict[str, str]] = [
+            {
+                "role": "assistant",
+                "text": "Ask me about the latest run, portfolio roles, risk controls, Grid, or Rebalancing.",
+            }
+        ]
+        self._current_page = 0
+        self._snapshot = DesktopStore().load()
+        self._assistant = LocalHelpAssistant()
         self._thread: QThread | None = None
         self._worker: AnalysisWorker | None = None
+        self._apply_snapshot()
 
     @Property(bool, notify=busyChanged)
     def busy(self) -> bool:
@@ -99,9 +117,47 @@ class AppController(QObject):
     def actions(self) -> list[dict[str, str]]:
         return self._actions
 
+    @Property("QVariantList", notify=dataChanged)
+    def portfolioAssets(self) -> list[dict[str, str]]:
+        return self._portfolio_assets
+
+    @Property("QVariantList", notify=dataChanged)
+    def strategies(self) -> list[dict[str, str]]:
+        return self._strategies
+
+    @Property("QVariantList", notify=dataChanged)
+    def runHistory(self) -> list[dict[str, str]]:
+        return self._run_history
+
+    @Property("QVariantList", notify=assistantChanged)
+    def assistantMessages(self) -> list[dict[str, str]]:
+        return self._assistant_messages
+
+    @Property(int, notify=pageChanged)
+    def currentPage(self) -> int:
+        return self._current_page
+
     @Property(bool, notify=stateChanged)
     def hasReport(self) -> bool:
         return bool(self._report_path)
+
+    @Slot(int)
+    def setCurrentPage(self, index: int) -> None:
+        if index == self._current_page:
+            return
+        self._current_page = index
+        self.pageChanged.emit()
+
+    @Slot(str)
+    def askAssistant(self, question: str) -> None:
+        text = question.strip()
+        if not text:
+            return
+        self._assistant_messages.append({"role": "user", "text": text})
+        self._assistant_messages.append(
+            {"role": "assistant", "text": self._assistant.answer(text, self._snapshot)}
+        )
+        self.assistantChanged.emit()
 
     @Slot(str, bool, bool, bool)
     def runAnalysis(
@@ -164,7 +220,12 @@ class AppController(QObject):
         ]
         self._status_text = f"Run {result.run_id} completed"
         self._progress = 100
+        self._snapshot = DesktopStore().load()
+        self._portfolio_assets = list(self._snapshot.portfolio_assets)
+        self._strategies = list(self._snapshot.strategies)
+        self._run_history = list(self._snapshot.run_history)
         self.actionsChanged.emit()
+        self.dataChanged.emit()
         self.stateChanged.emit()
 
     @Slot(str)
@@ -184,3 +245,10 @@ class AppController(QObject):
             return
         self._busy = value
         self.busyChanged.emit()
+
+    def _apply_snapshot(self) -> None:
+        self._portfolio_assets = list(self._snapshot.portfolio_assets)
+        self._strategies = list(self._snapshot.strategies)
+        self._run_history = list(self._snapshot.run_history)
+        if self._snapshot.latest_run is not None:
+            self._on_completed(self._snapshot.latest_run)

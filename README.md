@@ -62,10 +62,15 @@ python -m pip install -e ".[desktop]"
 python -m coinductor.desktop
 ```
 
-The first desktop milestone supports background analysis runs, real/mock data,
-optional local AI summaries, mainnet preview, dashboard metrics, recommended actions,
-and opening the full Markdown report. Confirmed order submission remains outside this
-initial desktop screen and cannot be enabled by its run dialog.
+The desktop preview supports background analysis runs, real/mock data, optional local
+AI summaries, mainnet preview, dashboard metrics, recommended actions, and opening the
+full Markdown report. It also loads the latest real run at startup and provides views
+for portfolio roles and liquidity, Grid/Rebalancing recommendations, the latest 30
+runs, and an offline project-help assistant grounded in local SQLite data.
+
+Opening Coinductor does not call Binance, run Qwen, redeem Earn, or submit an order.
+Confirmed execution remains outside the desktop analysis dialog and cannot be enabled
+by it.
 
 Each report includes:
 

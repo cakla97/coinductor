@@ -66,18 +66,24 @@ ApplicationWindow {
                     model: ["Overview", "Portfolio", "Strategies", "Run History", "AI Assistant", "Settings"]
                     delegate: Rectangle {
                         required property string modelData
+                        required property int index
                         Layout.fillWidth: true
                         Layout.preferredHeight: 42
                         radius: 6
-                        color: modelData === "Overview" ? panelRaised : "transparent"
-                        border.color: modelData === "Overview" ? border : "transparent"
+                        color: appController.currentPage === index ? panelRaised : "transparent"
+                        border.color: appController.currentPage === index ? border : "transparent"
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             anchors.left: parent.left
                             anchors.leftMargin: 14
                             text: modelData
-                            color: modelData === "Overview" ? textPrimary : textSecondary
+                            color: appController.currentPage === index ? textPrimary : textSecondary
                             font.pixelSize: 14
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: appController.setCurrentPage(index)
                         }
                     }
                 }
@@ -115,6 +121,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
+            visible: appController.currentPage === 0
 
             ColumnLayout {
                 x: 28
@@ -284,6 +291,305 @@ ApplicationWindow {
                                 wrapMode: Text.WordWrap
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            visible: appController.currentPage === 1
+
+            ColumnLayout {
+                x: 28
+                y: 28
+                width: Math.max(window.width - 288, 692)
+                spacing: 18
+
+                Text { text: "Portfolio"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { text: "Latest real-run valuation, asset roles, and liquidity location"; color: textSecondary; font.pixelSize: 13 }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 42
+                    color: panelRaised
+                    border.color: border
+                    radius: 6
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 14
+                        anchors.rightMargin: 14
+                        spacing: 12
+                        Text { Layout.preferredWidth: 70; text: "ASSET"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 125; text: "ROLE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 120; text: "VALUE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 75; text: "SHARE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.fillWidth: true; text: "LIQUIDITY"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 90; text: "ACTION"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                    }
+                }
+
+                ListView {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Math.max(420, contentHeight)
+                    spacing: 6
+                    model: appController.portfolioAssets
+                    delegate: Rectangle {
+                        required property var modelData
+                        width: ListView.view.width
+                        height: 58
+                        radius: 6
+                        color: panel
+                        border.color: border
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            spacing: 12
+                            Text { Layout.preferredWidth: 70; text: modelData.asset; color: textPrimary; font.pixelSize: 14; font.bold: true }
+                            Text { Layout.preferredWidth: 125; text: modelData.role; color: textSecondary; font.pixelSize: 11; elide: Text.ElideRight }
+                            Text { Layout.preferredWidth: 120; text: modelData.value; color: textPrimary; font.pixelSize: 12 }
+                            Text { Layout.preferredWidth: 75; text: modelData.allocation; color: textPrimary; font.pixelSize: 12 }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Text { text: "Spot " + modelData.spot + "   Flexible " + modelData.flexible; color: textSecondary; font.pixelSize: 10 }
+                                Text { text: "Locked " + modelData.locked; color: textSecondary; font.pixelSize: 10 }
+                            }
+                            Text {
+                                Layout.preferredWidth: 90
+                                text: modelData.action
+                                color: modelData.action === "HOLD" ? textSecondary : accent
+                                font.pixelSize: 11
+                                font.bold: true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            visible: appController.currentPage === 2
+
+            ColumnLayout {
+                x: 28
+                y: 28
+                width: Math.max(window.width - 288, 692)
+                spacing: 18
+
+                Text { text: "Strategies"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { text: "Guarded recommendations for Binance-native automation"; color: textSecondary; font.pixelSize: 13 }
+
+                ListView {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Math.max(460, contentHeight)
+                    spacing: 10
+                    model: appController.strategies
+                    delegate: Rectangle {
+                        required property var modelData
+                        width: ListView.view.width
+                        height: 142
+                        radius: 7
+                        color: panel
+                        border.color: border
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 18
+                            spacing: 8
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Text { text: modelData.type; color: textPrimary; font.pixelSize: 17; font.bold: true }
+                                Text { text: modelData.name; color: accent; font.pixelSize: 14; font.bold: true }
+                                Item { Layout.fillWidth: true }
+                                Text {
+                                    text: modelData.status
+                                    color: modelData.status === "READY" ? accent : warning
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                }
+                            }
+                            RowLayout {
+                                spacing: 24
+                                Text { text: "Capital  " + modelData.capital; color: textSecondary; font.pixelSize: 12 }
+                                Text { text: modelData.allowed; color: textSecondary; font.pixelSize: 12 }
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: modelData.detail
+                                color: textSecondary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                                maximumLineCount: 3
+                                elide: Text.ElideRight
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            visible: appController.currentPage === 3
+
+            ColumnLayout {
+                x: 28
+                y: 28
+                width: Math.max(window.width - 288, 692)
+                spacing: 18
+
+                Text { text: "Run History"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { text: "The latest 30 analytical runs"; color: textSecondary; font.pixelSize: 13 }
+
+                ListView {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: Math.max(480, contentHeight)
+                    spacing: 6
+                    model: appController.runHistory
+                    delegate: Rectangle {
+                        required property var modelData
+                        width: ListView.view.width
+                        height: 78
+                        radius: 6
+                        color: panel
+                        border.color: border
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 14
+                            spacing: 14
+                            ColumnLayout {
+                                Layout.preferredWidth: 85
+                                Text { text: "RUN " + modelData.runId; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                                Text { text: modelData.dataMode; color: modelData.dataMode === "REAL" ? accent : warning; font.pixelSize: 10; font.bold: true }
+                            }
+                            ColumnLayout {
+                                Layout.preferredWidth: 145
+                                Text { text: modelData.startedAt; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                Text { text: modelData.status; color: textPrimary; font.pixelSize: 11 }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Text { text: modelData.decision; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: modelData.summary
+                                    color: textSecondary
+                                    font.pixelSize: 11
+                                    elide: Text.ElideRight
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            visible: appController.currentPage === 4
+
+            ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 28
+                spacing: 14
+
+                Text { text: "AI Assistant"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { text: "Offline project help grounded in your latest real run"; color: textSecondary; font.pixelSize: 13 }
+
+                ListView {
+                    id: assistantList
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: 10
+                    clip: true
+                    model: appController.assistantMessages
+                    onCountChanged: positionViewAtEnd()
+                    delegate: Item {
+                        required property var modelData
+                        width: ListView.view.width
+                        height: messageBubble.implicitHeight
+                        Rectangle {
+                            id: messageBubble
+                            width: Math.min(parent.width * 0.72, Math.max(280, messageText.implicitWidth + 30))
+                            implicitHeight: messageText.implicitHeight + 24
+                            anchors.right: modelData.role === "user" ? parent.right : undefined
+                            anchors.left: modelData.role === "user" ? undefined : parent.left
+                            radius: 7
+                            color: modelData.role === "user" ? "#234f43" : panel
+                            border.color: modelData.role === "user" ? "#337660" : border
+                            Text {
+                                id: messageText
+                                anchors.fill: parent
+                                anchors.margins: 12
+                                text: modelData.text
+                                color: textPrimary
+                                font.pixelSize: 13
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+                    TextField {
+                        id: assistantInput
+                        Layout.fillWidth: true
+                        placeholderText: "Ask about the latest run, portfolio, risk, Grid..."
+                        onAccepted: {
+                            appController.askAssistant(text)
+                            clear()
+                        }
+                    }
+                    Button {
+                        text: "Send"
+                        enabled: assistantInput.text.trim().length > 0
+                        onClicked: {
+                            appController.askAssistant(assistantInput.text)
+                            assistantInput.clear()
+                        }
+                    }
+                }
+            }
+        }
+
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            visible: appController.currentPage === 5
+
+            ColumnLayout {
+                x: 28
+                y: 28
+                width: Math.max(window.width - 288, 692)
+                spacing: 18
+                Text { text: "Settings"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { text: "Configuration and onboarding arrive in the next desktop milestone."; color: textSecondary; font.pixelSize: 13 }
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 150
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 9
+                        Text { text: "Safety baseline"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                        Text { text: "Analysis never submits orders from this screen."; color: textSecondary; font.pixelSize: 12 }
+                        Text { text: "API secrets remain in the local .env file."; color: textSecondary; font.pixelSize: 12 }
+                        Text { text: "Live execution keeps its separate preview and confirmation gates."; color: textSecondary; font.pixelSize: 12 }
                     }
                 }
             }

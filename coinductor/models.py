@@ -34,3 +34,11 @@ class DesktopRunResult:
     locked_value: Decimal
     ai_summary: str
     actions: tuple[ActionSummary, ...]
+
+
+@dataclass(frozen=True)
+class DesktopSnapshot:
+    latest_run: DesktopRunResult | None
+    portfolio_assets: tuple[dict[str, str], ...]
+    strategies: tuple[dict[str, str], ...]
+    run_history: tuple[dict[str, str], ...]

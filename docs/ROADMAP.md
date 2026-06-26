@@ -26,9 +26,13 @@ bypass those controls.
 
 - connect read-only Binance access
 - run the first complete portfolio inventory
-- review and edit asset classification
+- review and edit asset classification with manual per-asset policy overrides
 - approve trading, Grid, funding, protected, legacy, and dust universes
 - simulate policies on Testnet before enabling guarded mainnet actions
+
+Manual asset overrides may change whether an asset is eligible for trading, Grid,
+Rebalancing, funding, or dust conversion. They must not disable global risk
+limits, protected-asset checks, OCO requirements, or loss kill switches.
 
 ### A4. Build my first portfolio
 
@@ -61,6 +65,8 @@ The application must present this as an automation plan, not a promise of profit
 - human-readable guard failures
 - explicit confirmation phrases for submissions
 - manual Binance Grid/Rebalancing creation instructions and local registration
+- guarded manual trade intent overrides that can challenge a HOLD signal but
+  still must pass funding, exposure, stop-loss, and kill-switch checks
 
 ## Stage B: Open-source Distribution
 

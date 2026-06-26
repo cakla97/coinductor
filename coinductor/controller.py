@@ -7,6 +7,7 @@ from PySide6.QtGui import QDesktopServices
 
 from .application import CoinductorApplication
 from .assistant import LocalHelpAssistant
+from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService
 from .desktop_store import DesktopStore
 from .models import ConnectionCheckResult, DesktopRunResult, RunOptions
@@ -95,6 +96,8 @@ class AppController(QObject):
         self._snapshot = DesktopStore().load()
         self._setup_snapshot = SetupService().inspect()
         self._assistant = LocalHelpAssistant()
+        self._asset_policy_store = AssetPolicyStore()
+        self._asset_role_overrides = self._asset_policy_store.load()
         self._thread: QThread | None = None
         self._worker: AnalysisWorker | None = None
         self._connection_thread: QThread | None = None
@@ -186,6 +189,10 @@ class AppController(QObject):
     @Property(str, notify=dataChanged)
     def onboardingReviewSummary(self) -> str:
         return self._onboarding_review_summary
+
+    @Property("QVariantList", notify=dataChanged)
+    def assetRoleOptions(self) -> list[str]:
+        return self._asset_policy_store.role_options
 
     @Property(bool, notify=connectionChanged)
     def checkingConnection(self) -> bool:
@@ -293,6 +300,14 @@ class AppController(QObject):
     def runInitialClassification(self) -> None:
         self.runAnalysis("REAL", True, False, True)
 
+    @Slot(str, str)
+    def saveAssetRoleOverride(self, asset: str, role: str) -> None:
+        self._asset_policy_store.save_role(asset, role)
+        self._asset_role_overrides = self._asset_policy_store.load()
+        self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)
+        self._refresh_onboarding_review()
+        self.dataChanged.emit()
+
     @Slot()
     def openReport(self) -> None:
         if self._report_path:
@@ -321,7 +336,8 @@ class AppController(QObject):
         self._status_text = f"Run {result.run_id} completed"
         self._progress = 100
         self._snapshot = DesktopStore().load()
-        self._portfolio_assets = list(self._snapshot.portfolio_assets)
+        self._asset_role_overrides = self._asset_policy_store.load()
+        self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)
         self._strategies = list(self._snapshot.strategies)
         self._run_history = list(self._snapshot.run_history)
         self._refresh_onboarding_review()
@@ -367,7 +383,7 @@ class AppController(QObject):
         self.busyChanged.emit()
 
     def _apply_snapshot(self) -> None:
-        self._portfolio_assets = list(self._snapshot.portfolio_assets)
+        self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)
         self._strategies = list(self._snapshot.strategies)
         self._run_history = list(self._snapshot.run_history)
         self._refresh_onboarding_review()
@@ -435,3 +451,18 @@ class AppController(QObject):
                 "detail": "Small assets that can be considered for USDC funding when allowed.",
             },
         ]
+
+    def _apply_asset_role_overrides(self, assets: tuple[dict[str, str], ...]) -> list[dict[str, str]]:
+        enriched: list[dict[str, str]] = []
+        for item in assets:
+            row = dict(item)
+            asset = str(row.get("asset", "")).upper()
+            base_role = str(row.get("role", "UNCLASSIFIED") or "UNCLASSIFIED").upper()
+            override = self._asset_role_overrides.get(asset)
+            effective = override or base_role
+            row["baseRole"] = base_role
+            row["role"] = effective
+            row["roleOverride"] = override or "SYSTEM_DEFAULT"
+            row["policySource"] = "MANUAL" if override else "SYSTEM"
+            enriched.append(row)
+        return enriched

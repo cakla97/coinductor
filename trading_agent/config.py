@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 import tomllib
 
+from .asset_policy import apply_asset_policy_overrides
+
 
 @dataclass(frozen=True)
 class AppConfig:
@@ -35,5 +37,5 @@ def load_config(path: str | Path) -> AppConfig:
     config_path = Path(path)
     with config_path.open("rb") as handle:
         raw = tomllib.load(handle)
+    raw = apply_asset_policy_overrides(raw)
     return AppConfig(raw=raw, path=config_path)
-

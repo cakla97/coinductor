@@ -325,11 +325,11 @@ ApplicationWindow {
                         anchors.rightMargin: 14
                         spacing: 12
                         Text { Layout.preferredWidth: 70; text: "ASSET"; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                        Text { Layout.preferredWidth: 125; text: "ROLE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 190; text: "POLICY"; color: textSecondary; font.pixelSize: 10; font.bold: true }
                         Text { Layout.preferredWidth: 120; text: "VALUE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
                         Text { Layout.preferredWidth: 75; text: "SHARE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
                         Text { Layout.fillWidth: true; text: "LIQUIDITY"; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                        Text { Layout.preferredWidth: 90; text: "ACTION"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 78; text: "SOURCE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
                     }
                 }
 
@@ -341,7 +341,7 @@ ApplicationWindow {
                     delegate: Rectangle {
                         required property var modelData
                         width: ListView.view.width
-                        height: 58
+                        height: 76
                         radius: 6
                         color: panel
                         border.color: border
@@ -351,7 +351,28 @@ ApplicationWindow {
                             anchors.rightMargin: 14
                             spacing: 12
                             Text { Layout.preferredWidth: 70; text: modelData.asset; color: textPrimary; font.pixelSize: 14; font.bold: true }
-                            Text { Layout.preferredWidth: 125; text: modelData.role; color: textSecondary; font.pixelSize: 11; elide: Text.ElideRight }
+                            ColumnLayout {
+                                Layout.preferredWidth: 190
+                                spacing: 3
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: modelData.role
+                                    color: modelData.policySource === "MANUAL" ? accent : textSecondary
+                                    font.pixelSize: 10
+                                    font.bold: modelData.policySource === "MANUAL"
+                                    elide: Text.ElideRight
+                                }
+                                ComboBox {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 30
+                                    model: appController.assetRoleOptions
+                                    currentIndex: appController.assetRoleOptions.indexOf(modelData.roleOverride)
+                                    font.pixelSize: 10
+                                    onActivated: function(index) {
+                                        appController.saveAssetRoleOverride(modelData.asset, appController.assetRoleOptions[index])
+                                    }
+                                }
+                            }
                             Text { Layout.preferredWidth: 120; text: modelData.value; color: textPrimary; font.pixelSize: 12 }
                             Text { Layout.preferredWidth: 75; text: modelData.allocation; color: textPrimary; font.pixelSize: 12 }
                             ColumnLayout {
@@ -360,12 +381,21 @@ ApplicationWindow {
                                 Text { text: "Spot " + modelData.spot + "   Flexible " + modelData.flexible; color: textSecondary; font.pixelSize: 10 }
                                 Text { text: "Locked " + modelData.locked; color: textSecondary; font.pixelSize: 10 }
                             }
-                            Text {
-                                Layout.preferredWidth: 90
-                                text: modelData.action
-                                color: modelData.action === "HOLD" ? textSecondary : accent
-                                font.pixelSize: 11
-                                font.bold: true
+                            ColumnLayout {
+                                Layout.preferredWidth: 78
+                                spacing: 3
+                                Text {
+                                    text: modelData.policySource
+                                    color: modelData.policySource === "MANUAL" ? accent : textSecondary
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                }
+                                Text {
+                                    text: modelData.action
+                                    color: modelData.action === "HOLD" ? textSecondary : accent
+                                    font.pixelSize: 10
+                                    elide: Text.ElideRight
+                                }
                             }
                         }
                     }

@@ -21,6 +21,13 @@ bypass those controls.
 - guided Binance read-only, Testnet, live-key, and AI-provider setup
 - explicit network checks only after user action
 - local configuration editor with validation and safe defaults
+- onboarding profile choices: Use safe defaults, Guide me, or Advanced setup
+
+The onboarding questionnaire must stay optional and short. Users can skip it with
+a conservative safe default profile. Guided setup should ask only a small number
+of plain-language questions first, then leave deeper tuning under Advanced setup.
+AI may explain questions and suggest choices, but deterministic defaults must be
+usable without any AI provider.
 
 ### A3. Existing portfolio onboarding
 
@@ -50,6 +57,12 @@ This path is for a user who starts with no crypto portfolio.
 Portfolio templates will be deterministic and versioned. AI can explain trade-offs
 or help choose among eligible templates, but cannot invent unrestricted allocations.
 The application must present this as an automation plan, not a promise of profit.
+
+First-portfolio onboarding starts from the same profile system as existing
+portfolio onboarding. The safe default is beginner-friendly, recommend-only, and
+does not enable live spot trades or Grid deployment. The guided profile should
+produce a recommended deposit currency, minimum useful capital range, starting
+portfolio template, automation level, and suggested run cadence.
 
 ### A5. AI provider layer
 

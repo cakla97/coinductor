@@ -13,6 +13,7 @@ from .connection_check import ConnectionCheckService
 from .desktop_store import DesktopStore
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
 from .setup_service import SetupService
+from .user_profile_service import UserProfileService
 
 
 class AnalysisWorker(QObject):
@@ -96,6 +97,7 @@ class AppController(QObject):
     setupChanged = Signal()
     connectionChanged = Signal()
     aiProviderChanged = Signal()
+    userProfileChanged = Signal()
 
     def __init__(self):
         super().__init__()
@@ -134,6 +136,8 @@ class AppController(QObject):
         self._snapshot = DesktopStore().load()
         self._setup_snapshot = SetupService().inspect()
         self._ai_provider_snapshot = AiProviderService().inspect()
+        self._user_profile_service = UserProfileService()
+        self._user_profile_snapshot = self._user_profile_service.inspect()
         self._asset_policy_store = AssetPolicyStore()
         self._asset_role_overrides = self._asset_policy_store.load()
         self._thread: QThread | None = None
@@ -248,6 +252,18 @@ class AppController(QObject):
     def aiProviderHealthDetail(self) -> str:
         return self._ai_provider_health_detail
 
+    @Property(str, notify=userProfileChanged)
+    def userProfileSummary(self) -> str:
+        return self._user_profile_snapshot.summary
+
+    @Property(bool, notify=userProfileChanged)
+    def userProfileConfigured(self) -> bool:
+        return self._user_profile_snapshot.configured
+
+    @Property("QVariantList", notify=userProfileChanged)
+    def userProfileFields(self) -> list[dict[str, str]]:
+        return list(self._user_profile_snapshot.fields)
+
     @Property(str, notify=setupChanged)
     def onboardingPath(self) -> str:
         return self._onboarding_path
@@ -291,8 +307,10 @@ class AppController(QObject):
     def refreshSetup(self) -> None:
         self._setup_snapshot = SetupService().inspect()
         self._ai_provider_snapshot = AiProviderService().inspect()
+        self._user_profile_snapshot = self._user_profile_service.inspect()
         self.setupChanged.emit()
         self.aiProviderChanged.emit()
+        self.userProfileChanged.emit()
 
     @Slot(str)
     def selectOnboardingPath(self, path: str) -> None:
@@ -301,6 +319,12 @@ class AppController(QObject):
             return
         self._onboarding_path = normalized
         self.setupChanged.emit()
+
+    @Slot()
+    def useSafeDefaultProfile(self) -> None:
+        path = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
+        self._user_profile_snapshot = self._user_profile_service.save_safe_default(path)
+        self.userProfileChanged.emit()
 
     @Slot()
     def checkBinanceReadOnly(self) -> None:

@@ -69,3 +69,10 @@ class AiProviderSnapshot:
 class AiProviderHealthResult:
     status: str
     detail: str
+
+
+@dataclass(frozen=True)
+class UserProfileSnapshot:
+    configured: bool
+    summary: str
+    fields: tuple[dict[str, str], ...]

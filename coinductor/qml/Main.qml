@@ -852,6 +852,69 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
+                    Layout.preferredHeight: 240
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 12
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+                                Text { text: "Onboarding profile"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: appController.userProfileSummary
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            Button {
+                                text: "Use safe defaults"
+                                onClicked: appController.useSafeDefaultProfile()
+                            }
+                            Button {
+                                text: "Guide me"
+                                enabled: false
+                            }
+                            Button {
+                                text: "Advanced"
+                                enabled: false
+                            }
+                        }
+                        ListView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            interactive: false
+                            spacing: 6
+                            model: appController.userProfileFields
+                            delegate: Rectangle {
+                                required property var modelData
+                                width: ListView.view.width
+                                height: 36
+                                radius: 5
+                                color: panelRaised
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 12
+                                    spacing: 12
+                                    Text { Layout.preferredWidth: 120; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                    Text { Layout.preferredWidth: 150; text: modelData.value; color: accent; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
+                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
                     Layout.preferredHeight: appController.onboardingPath === "" ? 0 : 96
                     visible: appController.onboardingPath !== ""
                     radius: 7

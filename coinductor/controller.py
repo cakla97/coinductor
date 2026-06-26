@@ -7,7 +7,7 @@ from PySide6.QtGui import QDesktopServices
 
 from .ai_provider import AiProviderService
 from .application import CoinductorApplication
-from .assistant import LocalHelpAssistant
+from .assistant import ProviderBackedAssistant
 from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService
 from .desktop_store import DesktopStore
@@ -69,6 +69,23 @@ class AiProviderHealthWorker(QObject):
             self.finished.emit()
 
 
+class AssistantWorker(QObject):
+    completed = Signal(str)
+    finished = Signal()
+
+    def __init__(self, question: str, snapshot):
+        super().__init__()
+        self.question = question
+        self.snapshot = snapshot
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            self.completed.emit(ProviderBackedAssistant().answer(self.question, self.snapshot))
+        finally:
+            self.finished.emit()
+
+
 class AppController(QObject):
     busyChanged = Signal()
     stateChanged = Signal()
@@ -111,12 +128,12 @@ class AppController(QObject):
         self._connection_status = "Not checked"
         self._connection_detail = "Run the read-only check from Settings before live analysis."
         self._checking_ai_provider = False
+        self._assistant_busy = False
         self._ai_provider_health_status = "Not checked"
         self._ai_provider_health_detail = "Run an AI provider check after configuring LLM_BASE_URL and LLM_MODEL."
         self._snapshot = DesktopStore().load()
         self._setup_snapshot = SetupService().inspect()
         self._ai_provider_snapshot = AiProviderService().inspect()
-        self._assistant = LocalHelpAssistant()
         self._asset_policy_store = AssetPolicyStore()
         self._asset_role_overrides = self._asset_policy_store.load()
         self._thread: QThread | None = None
@@ -125,6 +142,8 @@ class AppController(QObject):
         self._connection_worker: ConnectionCheckWorker | None = None
         self._ai_provider_thread: QThread | None = None
         self._ai_provider_worker: AiProviderHealthWorker | None = None
+        self._assistant_thread: QThread | None = None
+        self._assistant_worker: AssistantWorker | None = None
         self._apply_snapshot()
 
     @Property(bool, notify=busyChanged)
@@ -186,6 +205,10 @@ class AppController(QObject):
     @Property("QVariantList", notify=assistantChanged)
     def assistantMessages(self) -> list[dict[str, str]]:
         return self._assistant_messages
+
+    @Property(bool, notify=assistantChanged)
+    def assistantBusy(self) -> bool:
+        return self._assistant_busy
 
     @Property(int, notify=pageChanged)
     def currentPage(self) -> int:
@@ -324,13 +347,23 @@ class AppController(QObject):
     @Slot(str)
     def askAssistant(self, question: str) -> None:
         text = question.strip()
-        if not text:
+        if not text or self._assistant_busy:
             return
         self._assistant_messages.append({"role": "user", "text": text})
-        self._assistant_messages.append(
-            {"role": "assistant", "text": self._assistant.answer(text, self._snapshot)}
-        )
+        self._assistant_messages.append({"role": "assistant", "text": "Thinking..."})
+        self._assistant_busy = True
         self.assistantChanged.emit()
+
+        self._assistant_thread = QThread(self)
+        self._assistant_worker = AssistantWorker(text, self._snapshot)
+        self._assistant_worker.moveToThread(self._assistant_thread)
+        self._assistant_thread.started.connect(self._assistant_worker.run)
+        self._assistant_worker.completed.connect(self._on_assistant_completed)
+        self._assistant_worker.finished.connect(self._assistant_thread.quit)
+        self._assistant_worker.finished.connect(self._assistant_worker.deleteLater)
+        self._assistant_thread.finished.connect(self._assistant_thread.deleteLater)
+        self._assistant_thread.finished.connect(self._clear_assistant_worker)
+        self._assistant_thread.start()
 
     @Slot(str, bool, bool, bool)
     def runAnalysis(
@@ -446,6 +479,14 @@ class AppController(QObject):
         self._ai_provider_health_detail = message
         self.aiProviderChanged.emit()
 
+    @Slot(str)
+    def _on_assistant_completed(self, answer: str) -> None:
+        if self._assistant_messages and self._assistant_messages[-1]["text"] == "Thinking...":
+            self._assistant_messages[-1] = {"role": "assistant", "text": answer}
+        else:
+            self._assistant_messages.append({"role": "assistant", "text": answer})
+        self.assistantChanged.emit()
+
     @Slot()
     def _clear_worker(self) -> None:
         self._worker = None
@@ -465,6 +506,13 @@ class AppController(QObject):
         self._ai_provider_thread = None
         self._checking_ai_provider = False
         self.aiProviderChanged.emit()
+
+    @Slot()
+    def _clear_assistant_worker(self) -> None:
+        self._assistant_worker = None
+        self._assistant_thread = None
+        self._assistant_busy = False
+        self.assistantChanged.emit()
 
     def _set_busy(self, value: bool) -> None:
         if self._busy == value:

@@ -535,7 +535,7 @@ ApplicationWindow {
                 spacing: 14
 
                 Text { text: "AI Assistant"; color: textPrimary; font.pixelSize: 26; font.bold: true }
-                Text { text: "Offline project help grounded in your latest real run"; color: textSecondary; font.pixelSize: 13 }
+                Text { text: "Read-only help with offline fallback and optional configured AI provider"; color: textSecondary; font.pixelSize: 13 }
 
                 ListView {
                     id: assistantList
@@ -578,14 +578,15 @@ ApplicationWindow {
                         id: assistantInput
                         Layout.fillWidth: true
                         placeholderText: "Ask about the latest run, portfolio, risk, Grid..."
+                        enabled: !appController.assistantBusy
                         onAccepted: {
                             appController.askAssistant(text)
                             clear()
                         }
                     }
                     Button {
-                        text: "Send"
-                        enabled: assistantInput.text.trim().length > 0
+                        text: appController.assistantBusy ? "Thinking..." : "Send"
+                        enabled: assistantInput.text.trim().length > 0 && !appController.assistantBusy
                         onClicked: {
                             appController.askAssistant(assistantInput.text)
                             assistantInput.clear()

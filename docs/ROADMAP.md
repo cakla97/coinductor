@@ -58,6 +58,35 @@ The application must present this as an automation plan, not a promise of profit
 - optional user-supplied API keys for supported cloud providers
 - clear disclosure of which data leaves the computer
 - provider health checks, timeouts, and deterministic fallback
+- project context pack that explains app concepts, reports, roles, risk gates,
+  Binance workflows, and current feature limits to any connected assistant
+
+### A5.1. Assistant command layer
+
+The assistant should help users understand and operate Coinductor without hunting
+through every screen. It can answer questions, explain report sections, summarize
+portfolio state, and prepare safe app actions. Any action that changes settings,
+policy, funding, or execution state must be represented as a structured intent
+validated by deterministic code.
+
+- read-only Q&A over project docs, latest report, portfolio roles, strategy state,
+  and setup status
+- report explainer for sections such as risk decision, capital sourcing, Grid,
+  Rebalancing, AI commentary, and recommended actions
+- app navigation help, including where to find settings, logs, reports, and
+  strategy registration screens
+- safe asset policy commands such as "classify BNB as GRID_CANDIDATE", with a
+  confirmation preview before writing overrides
+- market-data questions backed by configured data providers, not model memory;
+  for example BTC price, recent trend, or symbol health
+- standalone market analysis requests that do not run the full bot and do not
+  submit orders
+- explicit refusal or escalation when a requested action would bypass risk gates,
+  protected assets, stop-loss/OCO requirements, or live confirmation rules
+
+The first implementation should use a small allowlist of command intents. Broad
+natural-language automation comes later, after enough validation and UI review
+exists.
 
 ### A6. Desktop execution workflows
 

@@ -705,7 +705,7 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: appController.onboardingPath === "" ? 0 : 74
+                    Layout.preferredHeight: appController.onboardingPath === "" ? 0 : 96
                     visible: appController.onboardingPath !== ""
                     radius: 7
                     color: panelRaised
@@ -722,7 +722,70 @@ ApplicationWindow {
                             font.pixelSize: 12
                             wrapMode: Text.WordWrap
                         }
-                        Text { text: "Wizard continues next milestone"; color: textSecondary; font.pixelSize: 10 }
+                        Button {
+                            text: appController.onboardingPath === "EXISTING"
+                                ? (appController.busy ? "Running..." : "Run classification")
+                                : "Planned"
+                            enabled: appController.onboardingPath === "EXISTING" && !appController.busy
+                            onClicked: appController.runInitialClassification()
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: appController.onboardingPath === "EXISTING" ? 260 : 0
+                    visible: appController.onboardingPath === "EXISTING"
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 12
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+                                Text { text: "Portfolio classification review"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: appController.onboardingReviewSummary
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            Button {
+                                text: "Open report"
+                                enabled: appController.hasReport
+                                onClicked: appController.openReport()
+                            }
+                        }
+                        ListView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            interactive: false
+                            spacing: 6
+                            model: appController.onboardingReview
+                            delegate: Rectangle {
+                                required property var modelData
+                                width: ListView.view.width
+                                height: 38
+                                radius: 5
+                                color: panelRaised
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 12
+                                    spacing: 12
+                                    Text { Layout.preferredWidth: 150; text: modelData.label; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                    Text { Layout.preferredWidth: 130; text: modelData.value; color: accent; font.pixelSize: 12; font.bold: true; elide: Text.ElideRight }
+                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 11; elide: Text.ElideRight }
+                                }
+                            }
+                        }
                     }
                 }
 

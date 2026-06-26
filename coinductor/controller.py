@@ -79,6 +79,8 @@ class AppController(QObject):
         self._portfolio_assets: list[dict[str, str]] = []
         self._strategies: list[dict[str, str]] = []
         self._run_history: list[dict[str, str]] = []
+        self._onboarding_review: list[dict[str, str]] = []
+        self._onboarding_review_summary = "Run a real analysis to prepare portfolio classification."
         self._assistant_messages: list[dict[str, str]] = [
             {
                 "role": "assistant",
@@ -176,6 +178,14 @@ class AppController(QObject):
     @Property(str, notify=setupChanged)
     def onboardingPath(self) -> str:
         return self._onboarding_path
+
+    @Property("QVariantList", notify=dataChanged)
+    def onboardingReview(self) -> list[dict[str, str]]:
+        return self._onboarding_review
+
+    @Property(str, notify=dataChanged)
+    def onboardingReviewSummary(self) -> str:
+        return self._onboarding_review_summary
 
     @Property(bool, notify=connectionChanged)
     def checkingConnection(self) -> bool:
@@ -280,6 +290,10 @@ class AppController(QObject):
         self._thread.start()
 
     @Slot()
+    def runInitialClassification(self) -> None:
+        self.runAnalysis("REAL", True, False, True)
+
+    @Slot()
     def openReport(self) -> None:
         if self._report_path:
             QDesktopServices.openUrl(QUrl.fromLocalFile(self._report_path))
@@ -310,6 +324,7 @@ class AppController(QObject):
         self._portfolio_assets = list(self._snapshot.portfolio_assets)
         self._strategies = list(self._snapshot.strategies)
         self._run_history = list(self._snapshot.run_history)
+        self._refresh_onboarding_review()
         self.actionsChanged.emit()
         self.dataChanged.emit()
         self.stateChanged.emit()
@@ -355,5 +370,68 @@ class AppController(QObject):
         self._portfolio_assets = list(self._snapshot.portfolio_assets)
         self._strategies = list(self._snapshot.strategies)
         self._run_history = list(self._snapshot.run_history)
+        self._refresh_onboarding_review()
         if self._snapshot.latest_run is not None:
             self._on_completed(self._snapshot.latest_run)
+
+    def _refresh_onboarding_review(self) -> None:
+        assets = self._portfolio_assets
+        if not assets:
+            self._onboarding_review_summary = "No real portfolio classification has been loaded yet."
+            self._onboarding_review = (
+                [
+                    {
+                        "label": "Portfolio classification",
+                        "value": "Not loaded",
+                        "detail": "Run initial classification after the read-only connection check passes.",
+                    },
+                    {
+                        "label": "Execution readiness",
+                        "value": "Waiting",
+                        "detail": "The desktop app can review data before any guarded live action is exposed here.",
+                    },
+                ]
+            )
+            return
+
+        role_counts: dict[str, int] = {}
+        for asset in assets:
+            role = str(asset.get("role", "UNCLASSIFIED") or "UNCLASSIFIED")
+            role_counts[role] = role_counts.get(role, 0) + 1
+        top_asset = assets[0]
+        protected = sum(count for role, count in role_counts.items() if "PROTECTED" in role or "CORE" in role)
+        source = sum(count for role, count in role_counts.items() if "SOURCE" in role or "FUNDING" in role)
+        tradable = sum(count for role, count in role_counts.items() if "TRADING" in role or "QUOTE" in role)
+        dust = sum(count for role, count in role_counts.items() if "DUST" in role or "AIRDROP" in role)
+        latest_run = self._snapshot.latest_run.run_id if self._snapshot.latest_run is not None else "unknown"
+        self._onboarding_review_summary = (
+            f"Latest real classification: run {latest_run}, {len(assets)} tracked asset(s). "
+            "Review roles before enabling any guarded execution."
+        )
+        self._onboarding_review = [
+            {
+                "label": "Tracked assets",
+                "value": str(len(assets)),
+                "detail": "Assets from the latest real portfolio valuation.",
+            },
+            {
+                "label": "Largest holding",
+                "value": f"{top_asset.get('asset', 'UNKNOWN')} {top_asset.get('value', '')}".strip(),
+                "detail": str(top_asset.get("role", "UNCLASSIFIED")),
+            },
+            {
+                "label": "Protected/Core",
+                "value": str(protected),
+                "detail": "Assets treated as long-term holdings or utility reserves.",
+            },
+            {
+                "label": "Trading/Funding",
+                "value": str(tradable + source),
+                "detail": "Assets available to strategy logic within configured limits.",
+            },
+            {
+                "label": "Dust/Airdrop",
+                "value": str(dust),
+                "detail": "Small assets that can be considered for USDC funding when allowed.",
+            },
+        ]

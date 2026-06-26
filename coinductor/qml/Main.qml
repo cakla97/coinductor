@@ -107,10 +107,12 @@ ApplicationWindow {
                                 width: 8
                                 height: 8
                                 radius: 4
-                                color: accent
+                                color: appController.binanceConnectionStatus === "Connected" ? accent
+                                    : appController.binanceConnectionStatus === "Checking" ? warning
+                                    : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : textSecondary
                                 anchors.verticalCenter: parent.verticalCenter
                             }
-                            Text { text: "Not checked"; color: textPrimary; font.pixelSize: 13 }
+                            Text { text: appController.binanceConnectionStatus; color: textPrimary; font.pixelSize: 13 }
                         }
                     }
                 }
@@ -586,6 +588,56 @@ ApplicationWindow {
                     Button {
                         text: "Refresh checks"
                         onClicked: appController.refreshSetup()
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 104
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 16
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+                            Text { text: "Binance read-only connection"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.binanceConnectionDetail
+                                color: textSecondary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                        Rectangle {
+                            Layout.preferredWidth: 96
+                            Layout.preferredHeight: 30
+                            radius: 5
+                            color: appController.binanceConnectionStatus === "Connected" ? "#17372d"
+                                : appController.binanceConnectionStatus === "Checking" ? "#3a3020"
+                                : appController.binanceConnectionStatus === "Blocked" ? "#3a2226" : panelRaised
+                            border.color: appController.binanceConnectionStatus === "Connected" ? accent
+                                : appController.binanceConnectionStatus === "Checking" ? warning
+                                : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : border
+                            Text {
+                                anchors.centerIn: parent
+                                text: appController.binanceConnectionStatus
+                                color: appController.binanceConnectionStatus === "Connected" ? accent
+                                    : appController.binanceConnectionStatus === "Checking" ? warning
+                                    : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : textSecondary
+                                font.pixelSize: 10
+                                font.bold: true
+                            }
+                        }
+                        Button {
+                            text: appController.checkingConnection ? "Checking..." : "Check read-only access"
+                            enabled: !appController.checkingConnection
+                            onClicked: appController.checkBinanceReadOnly()
+                        }
                     }
                 }
 

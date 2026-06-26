@@ -7,8 +7,9 @@ from PySide6.QtGui import QDesktopServices
 
 from .application import CoinductorApplication
 from .assistant import LocalHelpAssistant
+from .connection_check import ConnectionCheckService
 from .desktop_store import DesktopStore
-from .models import DesktopRunResult, RunOptions
+from .models import ConnectionCheckResult, DesktopRunResult, RunOptions
 from .setup_service import SetupService
 
 
@@ -36,6 +37,21 @@ class AnalysisWorker(QObject):
             self.finished.emit()
 
 
+class ConnectionCheckWorker(QObject):
+    completed = Signal(object)
+    failed = Signal(str)
+    finished = Signal()
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            self.completed.emit(ConnectionCheckService().check_binance_read_only())
+        except Exception as exc:
+            self.failed.emit(str(exc))
+        finally:
+            self.finished.emit()
+
+
 class AppController(QObject):
     busyChanged = Signal()
     stateChanged = Signal()
@@ -44,6 +60,7 @@ class AppController(QObject):
     pageChanged = Signal()
     assistantChanged = Signal()
     setupChanged = Signal()
+    connectionChanged = Signal()
 
     def __init__(self):
         super().__init__()
@@ -70,11 +87,16 @@ class AppController(QObject):
         ]
         self._current_page = 0
         self._onboarding_path = ""
+        self._checking_connection = False
+        self._connection_status = "Not checked"
+        self._connection_detail = "Run the read-only check from Settings before live analysis."
         self._snapshot = DesktopStore().load()
         self._setup_snapshot = SetupService().inspect()
         self._assistant = LocalHelpAssistant()
         self._thread: QThread | None = None
         self._worker: AnalysisWorker | None = None
+        self._connection_thread: QThread | None = None
+        self._connection_worker: ConnectionCheckWorker | None = None
         self._apply_snapshot()
 
     @Property(bool, notify=busyChanged)
@@ -155,6 +177,18 @@ class AppController(QObject):
     def onboardingPath(self) -> str:
         return self._onboarding_path
 
+    @Property(bool, notify=connectionChanged)
+    def checkingConnection(self) -> bool:
+        return self._checking_connection
+
+    @Property(str, notify=connectionChanged)
+    def binanceConnectionStatus(self) -> str:
+        return self._connection_status
+
+    @Property(str, notify=connectionChanged)
+    def binanceConnectionDetail(self) -> str:
+        return self._connection_detail
+
     @Property(bool, notify=stateChanged)
     def hasReport(self) -> bool:
         return bool(self._report_path)
@@ -178,6 +212,27 @@ class AppController(QObject):
             return
         self._onboarding_path = normalized
         self.setupChanged.emit()
+
+    @Slot()
+    def checkBinanceReadOnly(self) -> None:
+        if self._checking_connection:
+            return
+        self._checking_connection = True
+        self._connection_status = "Checking"
+        self._connection_detail = "Testing Binance read-only permissions..."
+        self.connectionChanged.emit()
+
+        self._connection_thread = QThread(self)
+        self._connection_worker = ConnectionCheckWorker()
+        self._connection_worker.moveToThread(self._connection_thread)
+        self._connection_thread.started.connect(self._connection_worker.run)
+        self._connection_worker.completed.connect(self._on_connection_completed)
+        self._connection_worker.failed.connect(self._on_connection_failed)
+        self._connection_worker.finished.connect(self._connection_thread.quit)
+        self._connection_worker.finished.connect(self._connection_worker.deleteLater)
+        self._connection_thread.finished.connect(self._connection_thread.deleteLater)
+        self._connection_thread.finished.connect(self._clear_connection_worker)
+        self._connection_thread.start()
 
     @Slot(str)
     def askAssistant(self, question: str) -> None:
@@ -265,11 +320,30 @@ class AppController(QObject):
         self._progress = 0
         self.stateChanged.emit()
 
+    @Slot(object)
+    def _on_connection_completed(self, result: ConnectionCheckResult) -> None:
+        self._connection_status = "Connected" if result.status == "PASS" else "Blocked"
+        self._connection_detail = result.detail
+        self.connectionChanged.emit()
+
+    @Slot(str)
+    def _on_connection_failed(self, message: str) -> None:
+        self._connection_status = "Blocked"
+        self._connection_detail = message
+        self.connectionChanged.emit()
+
     @Slot()
     def _clear_worker(self) -> None:
         self._worker = None
         self._thread = None
         self._set_busy(False)
+
+    @Slot()
+    def _clear_connection_worker(self) -> None:
+        self._connection_worker = None
+        self._connection_thread = None
+        self._checking_connection = False
+        self.connectionChanged.emit()
 
     def _set_busy(self, value: bool) -> None:
         if self._busy == value:

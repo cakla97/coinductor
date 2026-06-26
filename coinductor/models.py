@@ -50,3 +50,9 @@ class SetupSnapshot:
     passed: int
     warnings: int
     blocked: int
+
+
+@dataclass(frozen=True)
+class ConnectionCheckResult:
+    status: str
+    detail: str

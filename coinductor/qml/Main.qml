@@ -92,6 +92,40 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
+                    Layout.preferredHeight: 86
+                    radius: 6
+                    color: panel
+                    border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e"
+                        : appController.safetyAllowsLivePreview ? warning : border
+                    Column {
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        spacing: 6
+                        Text { text: "SAFETY"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Row {
+                            spacing: 8
+                            Rectangle {
+                                width: 8
+                                height: 8
+                                radius: 4
+                                color: appController.safetyAllowsLiveSubmit ? "#ee6b6e"
+                                    : appController.safetyAllowsLivePreview ? warning : accent
+                                anchors.verticalCenter: parent.verticalCenter
+                            }
+                            Text { text: appController.safetyStage; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                        }
+                        Text {
+                            width: parent.width
+                            text: appController.safetyAllowsLiveSubmit ? "Live guarded" : appController.safetyAllowsLivePreview ? "Preview only" : "No exchange changes"
+                            color: textSecondary
+                            font.pixelSize: 10
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
                     Layout.preferredHeight: 72
                     radius: 6
                     color: panel
@@ -1087,6 +1121,74 @@ ApplicationWindow {
                         Text { text: "Live execution retains separate preview, limits, and explicit confirmation gates."; color: textSecondary; font.pixelSize: 12 }
                     }
                 }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 190
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 10
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+                                Text { text: "Safety stage"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: appController.safetyDetail
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            Rectangle {
+                                Layout.preferredWidth: 130
+                                Layout.preferredHeight: 30
+                                radius: 5
+                                color: appController.safetyAllowsLiveSubmit ? "#3a2226"
+                                    : appController.safetyAllowsLivePreview ? "#3a3020" : "#17372d"
+                                border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e"
+                                    : appController.safetyAllowsLivePreview ? warning : accent
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: appController.safetyStage
+                                    color: appController.safetyAllowsLiveSubmit ? "#ee6b6e"
+                                        : appController.safetyAllowsLivePreview ? warning : accent
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                }
+                            }
+                        }
+                        ListView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            interactive: false
+                            spacing: 6
+                            model: appController.safetyChecks
+                            delegate: Rectangle {
+                                required property var modelData
+                                width: ListView.view.width
+                                height: 34
+                                radius: 5
+                                color: panelRaised
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 12
+                                    spacing: 12
+                                    Text { Layout.preferredWidth: 120; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                    Text { Layout.preferredWidth: 100; text: modelData.status; color: modelData.status === "LOCKED" ? warning : accent; font.pixelSize: 11; font.bold: true }
+                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -1110,7 +1212,12 @@ ApplicationWindow {
             }
             CheckBox { id: aiSummary; text: "Generate AI summary"; checked: true }
             CheckBox { id: aiProposals; text: "Allow AI market ranking"; checked: false }
-            CheckBox { id: livePreview; text: "Include mainnet execution preview"; checked: true }
+            CheckBox {
+                id: livePreview
+                text: appController.safetyAllowsLivePreview ? "Include mainnet execution preview" : "Mainnet preview locked by safety stage"
+                checked: appController.safetyAllowsLivePreview
+                enabled: appController.safetyAllowsLivePreview
+            }
             Label {
                 Layout.fillWidth: true
                 text: "This screen never submits orders. Confirmed execution remains a separate guarded workflow."

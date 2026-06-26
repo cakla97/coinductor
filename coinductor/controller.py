@@ -12,6 +12,7 @@ from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService
 from .desktop_store import DesktopStore
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
+from .safety_service import SafetyService
 from .setup_service import SetupService
 from .user_profile_service import UserProfileService
 
@@ -98,6 +99,7 @@ class AppController(QObject):
     connectionChanged = Signal()
     aiProviderChanged = Signal()
     userProfileChanged = Signal()
+    safetyChanged = Signal()
 
     def __init__(self):
         super().__init__()
@@ -138,6 +140,8 @@ class AppController(QObject):
         self._ai_provider_snapshot = AiProviderService().inspect()
         self._user_profile_service = UserProfileService()
         self._user_profile_snapshot = self._user_profile_service.inspect()
+        self._safety_service = SafetyService()
+        self._safety_snapshot = self._safety_service.inspect()
         self._asset_policy_store = AssetPolicyStore()
         self._asset_role_overrides = self._asset_policy_store.load()
         self._thread: QThread | None = None
@@ -268,6 +272,30 @@ class AppController(QObject):
     def exchangeOnboardingSteps(self) -> list[dict[str, str]]:
         return list(self._user_profile_snapshot.exchange_steps)
 
+    @Property(str, notify=safetyChanged)
+    def safetyStage(self) -> str:
+        return self._safety_snapshot.label
+
+    @Property(str, notify=safetyChanged)
+    def safetyStageCode(self) -> str:
+        return self._safety_snapshot.stage
+
+    @Property(str, notify=safetyChanged)
+    def safetyDetail(self) -> str:
+        return self._safety_snapshot.detail
+
+    @Property(bool, notify=safetyChanged)
+    def safetyAllowsLivePreview(self) -> bool:
+        return self._safety_snapshot.allows_live_preview
+
+    @Property(bool, notify=safetyChanged)
+    def safetyAllowsLiveSubmit(self) -> bool:
+        return self._safety_snapshot.allows_live_submit
+
+    @Property("QVariantList", notify=safetyChanged)
+    def safetyChecks(self) -> list[dict[str, str]]:
+        return list(self._safety_snapshot.checks)
+
     @Property(str, notify=setupChanged)
     def onboardingPath(self) -> str:
         return self._onboarding_path
@@ -312,9 +340,11 @@ class AppController(QObject):
         self._setup_snapshot = SetupService().inspect()
         self._ai_provider_snapshot = AiProviderService().inspect()
         self._user_profile_snapshot = self._user_profile_service.inspect()
+        self._safety_snapshot = self._safety_service.inspect()
         self.setupChanged.emit()
         self.aiProviderChanged.emit()
         self.userProfileChanged.emit()
+        self.safetyChanged.emit()
 
     @Slot(str)
     def selectOnboardingPath(self, path: str) -> None:
@@ -412,7 +442,7 @@ class AppController(QObject):
             data_mode=data_mode,
             ai_summary=ai_summary,
             ai_proposals=ai_proposals,
-            live_preview=live_preview,
+            live_preview=live_preview and self._safety_snapshot.allows_live_preview,
         )
         self._thread = QThread(self)
         self._worker = AnalysisWorker(options)

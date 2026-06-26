@@ -24,6 +24,9 @@ bypass those controls.
 - onboarding profile choices: Use safe defaults, Guide me, or Advanced setup
 - exchange-first onboarding with Binance supported first and extension points
   for future exchanges such as Coinbase
+- explicit safety stage model that keeps onboarding read-only/preview-locked
+  until the user deliberately progresses through setup, testing, preview, and
+  guarded live activation
 
 The onboarding questionnaire must stay optional and short. Users can skip it with
 a conservative safe default profile. Guided setup should ask only a small number
@@ -35,6 +38,12 @@ The first wizard step should ask where the portfolio will live. For Binance,
 first-portfolio users may need account creation, identity verification, deposit
 setup, and API-key creation before Coinductor can continue. Existing-portfolio
 users can skip account creation and go directly to read-only connection checks.
+
+Coinductor should always show the current safety stage. Default onboarding starts
+in SETUP, where no exchange-changing operation or mainnet preview is available.
+Progression toward READ_ONLY_CONNECTED, TESTNET_READY, PREVIEW_ONLY, ARMED, and
+LIVE_ENABLED must be deliberate and backed by deterministic backend checks, not
+only hidden UI buttons.
 
 ### A3. Existing portfolio onboarding
 

@@ -77,3 +77,13 @@ class UserProfileSnapshot:
     summary: str
     fields: tuple[dict[str, str], ...]
     exchange_steps: tuple[dict[str, str], ...] = ()
+
+
+@dataclass(frozen=True)
+class SafetySnapshot:
+    stage: str
+    label: str
+    detail: str
+    allows_live_preview: bool
+    allows_live_submit: bool
+    checks: tuple[dict[str, str], ...]

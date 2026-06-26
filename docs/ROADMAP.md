@@ -22,12 +22,19 @@ bypass those controls.
 - explicit network checks only after user action
 - local configuration editor with validation and safe defaults
 - onboarding profile choices: Use safe defaults, Guide me, or Advanced setup
+- exchange-first onboarding with Binance supported first and extension points
+  for future exchanges such as Coinbase
 
 The onboarding questionnaire must stay optional and short. Users can skip it with
 a conservative safe default profile. Guided setup should ask only a small number
 of plain-language questions first, then leave deeper tuning under Advanced setup.
 AI may explain questions and suggest choices, but deterministic defaults must be
 usable without any AI provider.
+
+The first wizard step should ask where the portfolio will live. For Binance,
+first-portfolio users may need account creation, identity verification, deposit
+setup, and API-key creation before Coinductor can continue. Existing-portfolio
+users can skip account creation and go directly to read-only connection checks.
 
 ### A3. Existing portfolio onboarding
 
@@ -63,6 +70,11 @@ portfolio onboarding. The safe default is beginner-friendly, recommend-only, and
 does not enable live spot trades or Grid deployment. The guided profile should
 produce a recommended deposit currency, minimum useful capital range, starting
 portfolio template, automation level, and suggested run cadence.
+
+For Binance first-portfolio setup, the wizard should guide the user through
+opening/verifying an exchange account, depositing fiat or stablecoins, and then
+connecting read-only API access. Coinductor should not assume the user already
+knows exchange terminology.
 
 ### A5. AI provider layer
 

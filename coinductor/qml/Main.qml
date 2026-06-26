@@ -852,7 +852,7 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 240
+                    Layout.preferredHeight: 360
                     radius: 7
                     color: panel
                     border.color: border
@@ -889,7 +889,7 @@ ApplicationWindow {
                         }
                         ListView {
                             Layout.fillWidth: true
-                            Layout.fillHeight: true
+                            Layout.preferredHeight: 150
                             interactive: false
                             spacing: 6
                             model: appController.userProfileFields
@@ -906,6 +906,31 @@ ApplicationWindow {
                                     spacing: 12
                                     Text { Layout.preferredWidth: 120; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                     Text { Layout.preferredWidth: 150; text: modelData.value; color: accent; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
+                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                }
+                            }
+                        }
+                        Text { text: "Exchange setup"; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                        ListView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            interactive: false
+                            spacing: 6
+                            model: appController.exchangeOnboardingSteps
+                            delegate: Rectangle {
+                                required property var modelData
+                                width: ListView.view.width
+                                height: 34
+                                radius: 5
+                                color: "#141a21"
+                                border.color: border
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 12
+                                    spacing: 12
+                                    Text { Layout.preferredWidth: 120; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                    Text { Layout.preferredWidth: 120; text: modelData.value; color: warning; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
                                     Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
                                 }
                             }

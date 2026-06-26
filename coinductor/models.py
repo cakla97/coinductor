@@ -76,3 +76,4 @@ class UserProfileSnapshot:
     configured: bool
     summary: str
     fields: tuple[dict[str, str], ...]
+    exchange_steps: tuple[dict[str, str], ...] = ()

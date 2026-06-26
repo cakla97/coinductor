@@ -13,12 +13,14 @@ EXPERIENCE_LEVELS = ("BEGINNER", "INTERMEDIATE", "ADVANCED")
 MANAGEMENT_STYLES = ("CONSERVATIVE", "BALANCED", "ACTIVE")
 AUTOMATION_LEVELS = ("RECOMMEND_ONLY", "GUARDED_AUTOMATION", "ACTIVE_AUTOMATION")
 RUN_CADENCES = ("WEEKLY", "TWICE_WEEKLY", "DAILY", "MANUAL")
+EXCHANGES = ("BINANCE",)
 
 
 @dataclass(frozen=True)
 class UserProfile:
     version: int
     onboarding_path: str
+    exchange: str
     setup_mode: str
     experience: str
     management_style: str
@@ -37,7 +39,7 @@ class UserProfile:
     @property
     def summary(self) -> str:
         return (
-            f"{self.setup_mode} {self.onboarding_path}: {self.management_style}, "
+            f"{self.setup_mode} {self.onboarding_path} on {self.exchange}: {self.management_style}, "
             f"{self.automation_level}, run {self.run_cadence.lower()}."
         )
 
@@ -69,6 +71,7 @@ class UserProfileStore:
         return UserProfile(
             version=int(values.get("version", PROFILE_VERSION)),
             onboarding_path=_choice(values.get("onboarding_path"), ONBOARDING_PATHS, "EXISTING_PORTFOLIO"),
+            exchange=_choice(values.get("exchange"), EXCHANGES, "BINANCE"),
             setup_mode=_choice(values.get("setup_mode"), SETUP_MODES, "SAFE_DEFAULTS"),
             experience=_choice(values.get("experience"), EXPERIENCE_LEVELS, "BEGINNER"),
             management_style=_choice(values.get("management_style"), MANAGEMENT_STYLES, "CONSERVATIVE"),
@@ -94,6 +97,7 @@ class UserProfileStore:
                 "[user_profile]",
                 f"version = {profile.version}",
                 f'onboarding_path = "{profile.onboarding_path}"',
+                f'exchange = "{profile.exchange}"',
                 f'setup_mode = "{profile.setup_mode}"',
                 f'experience = "{profile.experience}"',
                 f'management_style = "{profile.management_style}"',
@@ -118,6 +122,7 @@ def safe_default_profile(onboarding_path: str) -> UserProfile:
     return UserProfile(
         version=PROFILE_VERSION,
         onboarding_path=normalized,
+        exchange="BINANCE",
         setup_mode="SAFE_DEFAULTS",
         experience="BEGINNER",
         management_style="CONSERVATIVE",

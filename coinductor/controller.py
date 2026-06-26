@@ -264,6 +264,10 @@ class AppController(QObject):
     def userProfileFields(self) -> list[dict[str, str]]:
         return list(self._user_profile_snapshot.fields)
 
+    @Property("QVariantList", notify=userProfileChanged)
+    def exchangeOnboardingSteps(self) -> list[dict[str, str]]:
+        return list(self._user_profile_snapshot.exchange_steps)
+
     @Property(str, notify=setupChanged)
     def onboardingPath(self) -> str:
         return self._onboarding_path

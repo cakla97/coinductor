@@ -671,6 +671,122 @@ ApplicationWindow {
                     }
                 }
 
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 330
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 12
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 5
+                                Text { text: "AI provider"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: appController.aiProviderSummary
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            Rectangle {
+                                Layout.preferredWidth: 96
+                                Layout.preferredHeight: 30
+                                radius: 5
+                                color: appController.aiProviderHealthStatus === "Connected" ? "#17372d"
+                                    : appController.aiProviderHealthStatus === "Checking" ? "#3a3020"
+                                    : appController.aiProviderHealthStatus === "Blocked" ? "#3a2226" : panelRaised
+                                border.color: appController.aiProviderHealthStatus === "Connected" ? accent
+                                    : appController.aiProviderHealthStatus === "Checking" ? warning
+                                    : appController.aiProviderHealthStatus === "Blocked" ? "#ee6b6e" : border
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: appController.aiProviderHealthStatus
+                                    color: appController.aiProviderHealthStatus === "Connected" ? accent
+                                        : appController.aiProviderHealthStatus === "Checking" ? warning
+                                        : appController.aiProviderHealthStatus === "Blocked" ? "#ee6b6e" : textSecondary
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                }
+                            }
+                            Button {
+                                text: appController.checkingAiProvider ? "Checking..." : "Check AI provider"
+                                enabled: !appController.checkingAiProvider
+                                onClicked: appController.checkAiProvider()
+                            }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.aiProviderHealthDetail
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+                            ListView {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                interactive: false
+                                spacing: 6
+                                model: appController.aiProviderChecks
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    width: ListView.view.width
+                                    height: 38
+                                    radius: 5
+                                    color: panelRaised
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 12
+                                        anchors.rightMargin: 12
+                                        spacing: 10
+                                        Rectangle {
+                                            Layout.preferredWidth: 7
+                                            Layout.preferredHeight: 7
+                                            radius: 4
+                                            color: modelData.status === "PASS" ? accent
+                                                : modelData.status === "WARN" ? warning : "#ee6b6e"
+                                        }
+                                        Text { Layout.preferredWidth: 92; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                        Text { Layout.preferredWidth: 60; text: modelData.group; color: textSecondary; font.pixelSize: 10 }
+                                        Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                    }
+                                }
+                            }
+                            ListView {
+                                Layout.preferredWidth: 370
+                                Layout.fillHeight: true
+                                interactive: false
+                                spacing: 6
+                                model: appController.aiContextSections
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    width: ListView.view.width
+                                    height: 48
+                                    radius: 5
+                                    color: "#141a21"
+                                    border.color: border
+                                    Column {
+                                        anchors.fill: parent
+                                        anchors.margins: 10
+                                        spacing: 3
+                                        Text { text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                        Text { width: parent.width; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Text { text: "How are you starting?"; color: textPrimary; font.pixelSize: 16; font.bold: true }
                 RowLayout {
                     Layout.fillWidth: true

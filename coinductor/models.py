@@ -56,3 +56,16 @@ class SetupSnapshot:
 class ConnectionCheckResult:
     status: str
     detail: str
+
+
+@dataclass(frozen=True)
+class AiProviderSnapshot:
+    summary: str
+    checks: tuple[dict[str, str], ...]
+    context_sections: tuple[dict[str, str], ...]
+
+
+@dataclass(frozen=True)
+class AiProviderHealthResult:
+    status: str
+    detail: str

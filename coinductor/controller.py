@@ -5,12 +5,13 @@ from pathlib import Path
 from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices
 
+from .ai_provider import AiProviderService
 from .application import CoinductorApplication
 from .assistant import LocalHelpAssistant
 from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService
 from .desktop_store import DesktopStore
-from .models import ConnectionCheckResult, DesktopRunResult, RunOptions
+from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
 from .setup_service import SetupService
 
 
@@ -53,6 +54,21 @@ class ConnectionCheckWorker(QObject):
             self.finished.emit()
 
 
+class AiProviderHealthWorker(QObject):
+    completed = Signal(object)
+    failed = Signal(str)
+    finished = Signal()
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            self.completed.emit(AiProviderService().health_check())
+        except Exception as exc:
+            self.failed.emit(str(exc))
+        finally:
+            self.finished.emit()
+
+
 class AppController(QObject):
     busyChanged = Signal()
     stateChanged = Signal()
@@ -62,6 +78,7 @@ class AppController(QObject):
     assistantChanged = Signal()
     setupChanged = Signal()
     connectionChanged = Signal()
+    aiProviderChanged = Signal()
 
     def __init__(self):
         super().__init__()
@@ -93,8 +110,12 @@ class AppController(QObject):
         self._checking_connection = False
         self._connection_status = "Not checked"
         self._connection_detail = "Run the read-only check from Settings before live analysis."
+        self._checking_ai_provider = False
+        self._ai_provider_health_status = "Not checked"
+        self._ai_provider_health_detail = "Run an AI provider check after configuring LLM_BASE_URL and LLM_MODEL."
         self._snapshot = DesktopStore().load()
         self._setup_snapshot = SetupService().inspect()
+        self._ai_provider_snapshot = AiProviderService().inspect()
         self._assistant = LocalHelpAssistant()
         self._asset_policy_store = AssetPolicyStore()
         self._asset_role_overrides = self._asset_policy_store.load()
@@ -102,6 +123,8 @@ class AppController(QObject):
         self._worker: AnalysisWorker | None = None
         self._connection_thread: QThread | None = None
         self._connection_worker: ConnectionCheckWorker | None = None
+        self._ai_provider_thread: QThread | None = None
+        self._ai_provider_worker: AiProviderHealthWorker | None = None
         self._apply_snapshot()
 
     @Property(bool, notify=busyChanged)
@@ -178,6 +201,30 @@ class AppController(QObject):
             return f"{self._setup_snapshot.blocked} blocker(s) require attention"
         return f"{self._setup_snapshot.passed} ready, {self._setup_snapshot.warnings} optional item(s)"
 
+    @Property("QVariantList", notify=aiProviderChanged)
+    def aiProviderChecks(self) -> list[dict[str, str]]:
+        return list(self._ai_provider_snapshot.checks)
+
+    @Property("QVariantList", notify=aiProviderChanged)
+    def aiContextSections(self) -> list[dict[str, str]]:
+        return list(self._ai_provider_snapshot.context_sections)
+
+    @Property(str, notify=aiProviderChanged)
+    def aiProviderSummary(self) -> str:
+        return self._ai_provider_snapshot.summary
+
+    @Property(bool, notify=aiProviderChanged)
+    def checkingAiProvider(self) -> bool:
+        return self._checking_ai_provider
+
+    @Property(str, notify=aiProviderChanged)
+    def aiProviderHealthStatus(self) -> str:
+        return self._ai_provider_health_status
+
+    @Property(str, notify=aiProviderChanged)
+    def aiProviderHealthDetail(self) -> str:
+        return self._ai_provider_health_detail
+
     @Property(str, notify=setupChanged)
     def onboardingPath(self) -> str:
         return self._onboarding_path
@@ -220,7 +267,9 @@ class AppController(QObject):
     @Slot()
     def refreshSetup(self) -> None:
         self._setup_snapshot = SetupService().inspect()
+        self._ai_provider_snapshot = AiProviderService().inspect()
         self.setupChanged.emit()
+        self.aiProviderChanged.emit()
 
     @Slot(str)
     def selectOnboardingPath(self, path: str) -> None:
@@ -250,6 +299,27 @@ class AppController(QObject):
         self._connection_thread.finished.connect(self._connection_thread.deleteLater)
         self._connection_thread.finished.connect(self._clear_connection_worker)
         self._connection_thread.start()
+
+    @Slot()
+    def checkAiProvider(self) -> None:
+        if self._checking_ai_provider:
+            return
+        self._checking_ai_provider = True
+        self._ai_provider_health_status = "Checking"
+        self._ai_provider_health_detail = "Testing the configured AI /models endpoint..."
+        self.aiProviderChanged.emit()
+
+        self._ai_provider_thread = QThread(self)
+        self._ai_provider_worker = AiProviderHealthWorker()
+        self._ai_provider_worker.moveToThread(self._ai_provider_thread)
+        self._ai_provider_thread.started.connect(self._ai_provider_worker.run)
+        self._ai_provider_worker.completed.connect(self._on_ai_provider_completed)
+        self._ai_provider_worker.failed.connect(self._on_ai_provider_failed)
+        self._ai_provider_worker.finished.connect(self._ai_provider_thread.quit)
+        self._ai_provider_worker.finished.connect(self._ai_provider_worker.deleteLater)
+        self._ai_provider_thread.finished.connect(self._ai_provider_thread.deleteLater)
+        self._ai_provider_thread.finished.connect(self._clear_ai_provider_worker)
+        self._ai_provider_thread.start()
 
     @Slot(str)
     def askAssistant(self, question: str) -> None:
@@ -363,6 +433,19 @@ class AppController(QObject):
         self._connection_detail = message
         self.connectionChanged.emit()
 
+    @Slot(object)
+    def _on_ai_provider_completed(self, result: AiProviderHealthResult) -> None:
+        self._ai_provider_health_status = "Connected" if result.status == "PASS" else "Blocked"
+        self._ai_provider_health_detail = result.detail
+        self._ai_provider_snapshot = AiProviderService().inspect()
+        self.aiProviderChanged.emit()
+
+    @Slot(str)
+    def _on_ai_provider_failed(self, message: str) -> None:
+        self._ai_provider_health_status = "Blocked"
+        self._ai_provider_health_detail = message
+        self.aiProviderChanged.emit()
+
     @Slot()
     def _clear_worker(self) -> None:
         self._worker = None
@@ -375,6 +458,13 @@ class AppController(QObject):
         self._connection_thread = None
         self._checking_connection = False
         self.connectionChanged.emit()
+
+    @Slot()
+    def _clear_ai_provider_worker(self) -> None:
+        self._ai_provider_worker = None
+        self._ai_provider_thread = None
+        self._checking_ai_provider = False
+        self.aiProviderChanged.emit()
 
     def _set_busy(self, value: bool) -> None:
         if self._busy == value:

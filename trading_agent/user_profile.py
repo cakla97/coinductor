@@ -67,6 +67,30 @@ class UserProfileStore:
         self.save(profile)
         return profile
 
+    def save_guided(
+        self,
+        onboarding_path: str,
+        management_style: str,
+        automation_level: str,
+        run_cadence: str,
+        base_currency: str,
+        use_bots: bool,
+        allow_spot_trades: bool,
+        max_drawdown_comfort_pct: float,
+    ) -> UserProfile:
+        profile = guided_profile(
+            onboarding_path=onboarding_path,
+            management_style=management_style,
+            automation_level=automation_level,
+            run_cadence=run_cadence,
+            base_currency=base_currency,
+            use_bots=use_bots,
+            allow_spot_trades=allow_spot_trades,
+            max_drawdown_comfort_pct=max_drawdown_comfort_pct,
+        )
+        self.save(profile)
+        return profile
+
     def _from_mapping(self, values: dict) -> UserProfile:
         return UserProfile(
             version=int(values.get("version", PROFILE_VERSION)),
@@ -140,9 +164,89 @@ def safe_default_profile(onboarding_path: str) -> UserProfile:
     )
 
 
+def guided_profile(
+    onboarding_path: str,
+    management_style: str,
+    automation_level: str,
+    run_cadence: str,
+    base_currency: str,
+    use_bots: bool,
+    allow_spot_trades: bool,
+    max_drawdown_comfort_pct: float,
+) -> UserProfile:
+    normalized_path = _choice(onboarding_path, ONBOARDING_PATHS, "EXISTING_PORTFOLIO")
+    style = _choice(management_style, MANAGEMENT_STYLES, "BALANCED")
+    automation = _choice(automation_level, AUTOMATION_LEVELS, "RECOMMEND_ONLY")
+    if automation == "ACTIVE_AUTOMATION":
+        automation = "GUARDED_AUTOMATION"
+    cadence = _choice(run_cadence, RUN_CADENCES, _cadence_for_style(style))
+    drawdown = _bounded_float(max_drawdown_comfort_pct, minimum=5.0, maximum=25.0, default=_drawdown_for_style(style))
+    currency = str(base_currency or "USDC").strip().upper() or "USDC"
+    spot_allowed = bool(allow_spot_trades and automation == "GUARDED_AUTOMATION")
+    bots_enabled = bool(use_bots)
+
+    return UserProfile(
+        version=PROFILE_VERSION,
+        onboarding_path=normalized_path,
+        exchange="BINANCE",
+        setup_mode="GUIDED",
+        experience=_experience_for_style(style),
+        management_style=style,
+        automation_level=automation,
+        run_cadence=cadence,
+        base_currency=currency,
+        planned_deposit_amount=0.0,
+        reserve_pct=_reserve_for_style(style),
+        max_drawdown_comfort_pct=drawdown,
+        use_earn=True,
+        use_rebalancing=True,
+        use_grid=bots_enabled and style == "ACTIVE",
+        allow_spot_trades=spot_allowed,
+        wants_explanations=True,
+    )
+
+
 def _choice(value: object, allowed: tuple[str, ...], default: str) -> str:
     normalized = str(value or "").upper()
     return normalized if normalized in allowed else default
+
+
+def _bounded_float(value: object, minimum: float, maximum: float, default: float) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return default
+    return min(max(number, minimum), maximum)
+
+
+def _cadence_for_style(style: str) -> str:
+    if style == "ACTIVE":
+        return "DAILY"
+    if style == "BALANCED":
+        return "TWICE_WEEKLY"
+    return "WEEKLY"
+
+
+def _drawdown_for_style(style: str) -> float:
+    if style == "ACTIVE":
+        return 20.0
+    if style == "BALANCED":
+        return 15.0
+    return 10.0
+
+
+def _experience_for_style(style: str) -> str:
+    if style == "ACTIVE":
+        return "INTERMEDIATE"
+    return "BEGINNER"
+
+
+def _reserve_for_style(style: str) -> float:
+    if style == "ACTIVE":
+        return 12.0
+    if style == "BALANCED":
+        return 16.0
+    return 22.0
 
 
 def _toml_bool(value: bool) -> str:

@@ -886,7 +886,7 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 360
+                    Layout.preferredHeight: 430
                     radius: 7
                     color: panel
                     border.color: border
@@ -914,7 +914,7 @@ ApplicationWindow {
                             }
                             Button {
                                 text: "Guide me"
-                                enabled: false
+                                onClicked: guidedProfileDialog.open()
                             }
                             Button {
                                 text: "Advanced"
@@ -923,8 +923,9 @@ ApplicationWindow {
                         }
                         ListView {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 150
-                            interactive: false
+                            Layout.preferredHeight: 210
+                            interactive: true
+                            clip: true
                             spacing: 6
                             model: appController.userProfileFields
                             delegate: Rectangle {
@@ -1188,6 +1189,106 @@ ApplicationWindow {
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: guidedProfileDialog
+        title: "Guide me"
+        modal: true
+        anchors.centerIn: parent
+        width: 500
+        standardButtons: Dialog.Cancel
+
+        ColumnLayout {
+            width: parent.width
+            spacing: 14
+
+            Label {
+                Layout.fillWidth: true
+                text: "Create a practical profile for this portfolio. This only changes Coinductor settings; it does not trade or advance the safety stage."
+                wrapMode: Text.WordWrap
+            }
+
+            Label { text: "Management style" }
+            ComboBox {
+                id: guideStyle
+                Layout.fillWidth: true
+                model: ["CONSERVATIVE", "BALANCED", "ACTIVE"]
+                currentIndex: 1
+            }
+
+            Label { text: "Automation" }
+            ComboBox {
+                id: guideAutomation
+                Layout.fillWidth: true
+                model: ["RECOMMEND_ONLY", "GUARDED_AUTOMATION"]
+            }
+
+            Label { text: "Review rhythm" }
+            ComboBox {
+                id: guideCadence
+                Layout.fillWidth: true
+                model: ["WEEKLY", "TWICE_WEEKLY", "DAILY", "MANUAL"]
+                currentIndex: 1
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                CheckBox {
+                    id: guideUseBots
+                    Layout.fillWidth: true
+                    text: "Use Binance bot recommendations"
+                    checked: true
+                }
+                CheckBox {
+                    id: guideAllowSpot
+                    Layout.fillWidth: true
+                    text: "Allow guarded spot trades"
+                    checked: false
+                    enabled: guideAutomation.currentText === "GUARDED_AUTOMATION"
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Label { text: "Base currency" }
+                    ComboBox {
+                        id: guideCurrency
+                        Layout.fillWidth: true
+                        model: ["USDC", "EUR"]
+                    }
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Label { text: "Drawdown comfort" }
+                    ComboBox {
+                        id: guideDrawdown
+                        Layout.fillWidth: true
+                        model: ["Low (10%)", "Medium (15%)", "High (20%)"]
+                        currentIndex: 1
+                    }
+                }
+            }
+
+            Button {
+                Layout.fillWidth: true
+                text: "Save guided profile"
+                onClicked: {
+                    guidedProfileDialog.close()
+                    appController.saveGuidedProfile(
+                        guideStyle.currentText,
+                        guideAutomation.currentText,
+                        guideCadence.currentText,
+                        guideCurrency.currentText,
+                        guideUseBots.checked,
+                        guideAllowSpot.checked,
+                        guideDrawdown.currentIndex === 0 ? 10 : guideDrawdown.currentIndex === 1 ? 15 : 20
+                    )
                 }
             }
         }

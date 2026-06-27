@@ -29,3 +29,25 @@ def test_user_profile_service_existing_portfolio_skips_account_creation(tmp_path
 
     assert any(item["name"] == "Existing account" for item in snapshot.exchange_steps)
     assert not any(item["name"] == "Create account" for item in snapshot.exchange_steps)
+
+
+def test_user_profile_service_saves_guided_snapshot(tmp_path) -> None:
+    service = UserProfileService(tmp_path / "state" / "user_profile.toml")
+
+    snapshot = service.save_guided(
+        onboarding_path="EXISTING_PORTFOLIO",
+        management_style="ACTIVE",
+        automation_level="GUARDED_AUTOMATION",
+        run_cadence="DAILY",
+        base_currency="USDC",
+        use_bots=True,
+        allow_spot_trades=True,
+        max_drawdown_comfort_pct=20,
+    )
+
+    assert snapshot.configured is True
+    assert "GUIDED" in snapshot.summary
+    assert any(item["name"] == "Automation" and item["value"] == "GUARDED_AUTOMATION" for item in snapshot.fields)
+    assert any(item["name"] == "Spot trades" and item["value"] == "Allowed" for item in snapshot.fields)
+    assert any(item["name"] == "Grid" and item["value"] == "Enabled" for item in snapshot.fields)
+    assert any(item["name"] == "Drawdown comfort" and item["value"] == "20%" for item in snapshot.fields)

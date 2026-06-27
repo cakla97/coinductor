@@ -360,6 +360,30 @@ class AppController(QObject):
         self._user_profile_snapshot = self._user_profile_service.save_safe_default(path)
         self.userProfileChanged.emit()
 
+    @Slot(str, str, str, str, bool, bool, float)
+    def saveGuidedProfile(
+        self,
+        management_style: str,
+        automation_level: str,
+        run_cadence: str,
+        base_currency: str,
+        use_bots: bool,
+        allow_spot_trades: bool,
+        max_drawdown_comfort_pct: float,
+    ) -> None:
+        path = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
+        self._user_profile_snapshot = self._user_profile_service.save_guided(
+            onboarding_path=path,
+            management_style=management_style,
+            automation_level=automation_level,
+            run_cadence=run_cadence,
+            base_currency=base_currency,
+            use_bots=use_bots,
+            allow_spot_trades=allow_spot_trades,
+            max_drawdown_comfort_pct=max_drawdown_comfort_pct,
+        )
+        self.userProfileChanged.emit()
+
     @Slot()
     def checkBinanceReadOnly(self) -> None:
         if self._checking_connection:

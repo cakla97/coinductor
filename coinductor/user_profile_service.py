@@ -28,6 +28,30 @@ class UserProfileService:
     def save_safe_default(self, onboarding_path: str) -> UserProfileSnapshot:
         return self._snapshot(self.store.save_safe_default(onboarding_path))
 
+    def save_guided(
+        self,
+        onboarding_path: str,
+        management_style: str,
+        automation_level: str,
+        run_cadence: str,
+        base_currency: str,
+        use_bots: bool,
+        allow_spot_trades: bool,
+        max_drawdown_comfort_pct: float,
+    ) -> UserProfileSnapshot:
+        return self._snapshot(
+            self.store.save_guided(
+                onboarding_path=onboarding_path,
+                management_style=management_style,
+                automation_level=automation_level,
+                run_cadence=run_cadence,
+                base_currency=base_currency,
+                use_bots=use_bots,
+                allow_spot_trades=allow_spot_trades,
+                max_drawdown_comfort_pct=max_drawdown_comfort_pct,
+            )
+        )
+
     def _snapshot(self, profile: UserProfile) -> UserProfileSnapshot:
         fields = (
             {"name": "Exchange", "value": profile.exchange, "detail": "Where the portfolio will be managed."},
@@ -36,6 +60,9 @@ class UserProfileService:
             {"name": "Style", "value": profile.management_style, "detail": "Portfolio management intensity."},
             {"name": "Automation", "value": profile.automation_level, "detail": "How much the app may automate."},
             {"name": "Run cadence", "value": profile.run_cadence, "detail": "Suggested review rhythm."},
+            {"name": "Base currency", "value": profile.base_currency, "detail": "Main funding and reporting currency."},
+            {"name": "Reserve", "value": f"{profile.reserve_pct:.0f}%", "detail": "Capital kept outside active strategy use."},
+            {"name": "Drawdown comfort", "value": f"{profile.max_drawdown_comfort_pct:.0f}%", "detail": "Used for conservative strategy sizing."},
             {"name": "Spot trades", "value": "Allowed" if profile.allow_spot_trades else "Disabled", "detail": "Live execution still needs guard approval."},
             {"name": "Grid", "value": "Enabled" if profile.use_grid else "Disabled", "detail": "Manual Binance creation remains required."},
             {"name": "Rebalancing", "value": "Enabled" if profile.use_rebalancing else "Disabled", "detail": "Only when minimum capital and limits pass."},

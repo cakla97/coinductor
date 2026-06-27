@@ -215,7 +215,7 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 385
+                    Layout.preferredHeight: 430
                     radius: 7
                     color: panel
                     border.color: border
@@ -246,6 +246,13 @@ ApplicationWindow {
                                     valueRole: "value"
                                     currentIndex: 1
                                 }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "Controls how cautious capital, bot, and trade suggestions should be."
+                                    color: textSecondary
+                                    font.pixelSize: 10
+                                    wrapMode: Text.WordWrap
+                                }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
@@ -256,6 +263,13 @@ ApplicationWindow {
                                     model: window.automationOptions
                                     textRole: "label"
                                     valueRole: "value"
+                                }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "Keeps actions as recommendations or allows guarded workflows after checks."
+                                    color: textSecondary
+                                    font.pixelSize: 10
+                                    wrapMode: Text.WordWrap
                                 }
                             }
                             ColumnLayout {
@@ -269,6 +283,13 @@ ApplicationWindow {
                                     valueRole: "value"
                                     currentIndex: 1
                                 }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "Used for recommendations about how often to run Coinductor."
+                                    color: textSecondary
+                                    font.pixelSize: 10
+                                    wrapMode: Text.WordWrap
+                                }
                             }
                         }
 
@@ -279,11 +300,25 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 Text { text: "Language / region"; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                 ComboBox { id: wizardLocale; Layout.fillWidth: true; model: ["en-US", "es-ES", "cs-CZ", "pt-BR"] }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "Sets wording and future region-aware funding guidance."
+                                    color: textSecondary
+                                    font.pixelSize: 10
+                                    wrapMode: Text.WordWrap
+                                }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 Text { text: "Funding currency"; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                 ComboBox { id: wizardCurrency; Layout.fillWidth: true; model: ["USDC"] }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "USDC is the operating budget Coinductor plans around."
+                                    color: textSecondary
+                                    font.pixelSize: 10
+                                    wrapMode: Text.WordWrap
+                                }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
@@ -294,6 +329,13 @@ ApplicationWindow {
                                     model: window.budgetOptions
                                     textRole: "label"
                                     valueRole: "value"
+                                }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "Auto keeps the profile conservative until real balances are known."
+                                    color: textSecondary
+                                    font.pixelSize: 10
+                                    wrapMode: Text.WordWrap
                                 }
                             }
                         }
@@ -311,6 +353,13 @@ ApplicationWindow {
                                     textRole: "label"
                                     valueRole: "value"
                                     currentIndex: 1
+                                }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "A practical risk comfort signal, not a promise or a loss limit by itself."
+                                    color: textSecondary
+                                    font.pixelSize: 10
+                                    wrapMode: Text.WordWrap
                                 }
                             }
                             CheckBox {

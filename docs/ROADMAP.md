@@ -18,6 +18,7 @@ bypass those controls.
 
 - local setup checks that never reveal API secrets
 - separate paths for an existing portfolio and a first portfolio
+- first-run wizard before the main app shell, with a Settings action to run it again
 - guided Binance read-only, Testnet, live-key, and AI-provider setup
 - explicit network checks only after user action
 - local configuration editor with validation and safe defaults
@@ -44,6 +45,14 @@ in SETUP, where no exchange-changing operation or mainnet preview is available.
 Progression toward READ_ONLY_CONNECTED, TESTNET_READY, PREVIEW_ONLY, ARMED, and
 LIVE_ENABLED must be deliberate and backed by deterministic backend checks, not
 only hidden UI buttons.
+
+After the first successful entry into the main app, Coinductor should eventually
+offer a short product tour. The tour should highlight Overview, Portfolio,
+Strategies, Run History, AI Assistant, Settings/State, and the safety panel with
+Next, Back, Skip, and Done controls. It should run once per profile and remain
+available from Settings as "Run app tour again". This should be implemented after
+the main shell layout stabilizes, because the tour will depend on target UI
+positions.
 
 ### A3. Existing portfolio onboarding
 

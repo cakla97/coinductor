@@ -17,40 +17,55 @@ python -m coinductor.desktop
 If you prefer VS Code, open the folder and run the same commands in the integrated
 terminal.
 
-## 2. Smoke Test
+## 2. First-Run Wizard
+
+- With no onboarding profile, the app opens into the setup wizard instead of the
+  main dashboard.
+- Confirm `Enter app` is disabled before a profile exists.
+- Confirm the wizard says it does not place orders or change exchange settings.
+- Select `I already have a portfolio`.
+- Change management style, automation, review rhythm, language/region, drawdown,
+  bot preference, spot-trade preference, and starting budget.
+- Confirm labels are human readable, not internal constants such as
+  `GUARDED_AUTOMATION`.
+- Save the profile.
+- Confirm the wizard allows entering Coinductor.
+
+## 3. Main App Smoke Test
 
 - App opens as `Coinductor`.
 - Sidebar pages switch without freezing: Overview, Portfolio, Strategies, Run History,
   AI Assistant, Settings.
 - Overview loads the latest stored state or a clear empty/default state.
 - `Run analysis` dialog opens and does not offer live submit.
+- Open `Settings`.
+- Confirm `Setup wizard` opens the wizard again.
 
-## 3. Settings And Onboarding
+## 4. Existing Portfolio Flow
 
 - Open `Settings`.
-- Select `I already have a portfolio`.
-- Open `Guide me`.
-- Change language/region, management style, automation, review rhythm, drawdown, and
-  starting budget.
-- Save the guided profile.
 - Confirm `Onboarding profile` updates.
-- Confirm `Personal readiness` action updates.
+- Confirm readiness/system checks remain visible in Settings.
 - Use `Reset onboarding` and confirm the profile returns to not configured.
+- Confirm the wizard appears again after reset.
 
-## 4. First Portfolio Flow
+## 5. First Portfolio Flow
 
+- Reopen `Setup wizard`.
 - Select `Build my first portfolio`.
-- Confirm `First portfolio planner` appears.
+- Save the profile or use safe defaults.
+- Confirm `First portfolio plan` appears in the wizard.
 - Confirm it shows:
   - funding amount,
   - reserve,
   - initial deployment,
   - suggested basket,
   - manual setup steps.
-- Reopen `Guide me`, choose `cs-CZ`, and save.
+- Choose `cs-CZ`, save, and confirm the planner uses localized funding wording
+  where currently supported.
 - Confirm planner uses `CZK -> USDC` wording.
 
-## 5. Privacy And Local Data
+## 6. Privacy And Local Data
 
 - Read `Privacy & Data`.
 - Confirm wording is transparent but not alarmist.
@@ -62,7 +77,7 @@ terminal.
 - Type `DELETE`.
 - Confirm destructive deletion remains disabled in this build.
 
-## 6. Binance Read-Only Check
+## 7. Binance Read-Only Check
 
 - Confirm `.env` contains read-only Binance keys.
 - In Settings, run the Binance read-only check.
@@ -71,7 +86,7 @@ terminal.
   - `Blocked` if permissions or IP restrictions are wrong.
 - Confirm no write/trade action is performed by this check.
 
-## 7. Analysis Run
+## 8. Analysis Run
 
 - Open `Run analysis`.
 - Use `REAL` only when read-only check is ready.
@@ -88,7 +103,7 @@ terminal.
   - Strategies page shows Grid/Rebalancing recommendations,
   - Run History updates.
 
-## 8. AI Assistant
+## 9. AI Assistant
 
 - Open `AI Assistant`.
 - Ask: `What can this app do?`
@@ -96,7 +111,16 @@ terminal.
 - If no external AI provider is configured, confirm the offline fallback still answers
   using local project context.
 
-## 9. Safety Expectations
+## 10. Planned Product Tour
+
+- Product tour is not implemented yet.
+- Expected later behavior:
+  - first entry into the main app starts a short guided walkthrough,
+  - Overview, Portfolio, Strategies, Run History, AI Assistant, Settings/State,
+    and safety panel are highlighted one at a time,
+  - Settings includes `Run app tour again`.
+
+## 11. Safety Expectations
 
 - The desktop app must not submit live orders.
 - The desktop app must not redeem Earn.

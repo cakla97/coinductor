@@ -162,6 +162,7 @@ class AppController(QObject):
         self._local_data_reset_snapshot = LocalDataResetService().preview()
         self._asset_policy_store = AssetPolicyStore()
         self._asset_role_overrides = self._asset_policy_store.load()
+        self._portfolio_sort_mode = "VALUE_DESC"
         self._thread: QThread | None = None
         self._worker: AnalysisWorker | None = None
         self._connection_thread: QThread | None = None
@@ -219,6 +220,10 @@ class AppController(QObject):
     @Property("QVariantList", notify=dataChanged)
     def portfolioAssets(self) -> list[dict[str, str]]:
         return self._portfolio_assets
+
+    @Property(str, notify=dataChanged)
+    def portfolioSortMode(self) -> str:
+        return getattr(self, "_portfolio_sort_mode", "VALUE_DESC")
 
     @Property("QVariantList", notify=dataChanged)
     def strategies(self) -> list[dict[str, str]]:
@@ -410,6 +415,17 @@ class AppController(QObject):
     @Property("QVariantList", notify=dataChanged)
     def assetRoleOptions(self) -> list[str]:
         return self._asset_policy_store.role_options
+
+    @Property("QVariantList", notify=dataChanged)
+    def assetRoleOptionItems(self) -> list[dict[str, str]]:
+        return [
+            {
+                "value": role,
+                "label": _humanize_policy_label(role),
+                "detail": _role_help(role),
+            }
+            for role in self._asset_policy_store.role_options
+        ]
 
     @Property(bool, notify=connectionChanged)
     def checkingConnection(self) -> bool:
@@ -629,6 +645,17 @@ class AppController(QObject):
         self._refresh_onboarding_review()
         self.dataChanged.emit()
 
+    @Slot(str)
+    def setPortfolioSortMode(self, mode: str) -> None:
+        normalized = mode.strip().upper()
+        if normalized not in {"ASSET_ASC", "VALUE_DESC", "VALUE_ASC", "ROLE_ASC"}:
+            return
+        if normalized == self.portfolioSortMode:
+            return
+        self._portfolio_sort_mode = normalized
+        self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)
+        self.dataChanged.emit()
+
     @Slot()
     def openReport(self) -> None:
         if self._report_path:
@@ -842,5 +869,58 @@ class AppController(QObject):
             row["role"] = effective
             row["roleOverride"] = override or "SYSTEM_DEFAULT"
             row["policySource"] = "MANUAL" if override else "SYSTEM"
+            row["roleLabel"] = _humanize_policy_label(effective)
+            row["baseRoleLabel"] = _humanize_policy_label(base_role)
+            row["roleOverrideLabel"] = _humanize_policy_label(row["roleOverride"])
+            row["policySourceLabel"] = "Manual override" if override else "System default"
+            row["roleHelp"] = _role_help(effective)
             enriched.append(row)
-        return enriched
+        return self._sort_portfolio_assets(enriched)
+
+    def _sort_portfolio_assets(self, assets: list[dict[str, str]]) -> list[dict[str, str]]:
+        mode = self.portfolioSortMode
+        if mode == "ASSET_ASC":
+            return sorted(assets, key=lambda item: str(item.get("asset", "")))
+        if mode == "VALUE_ASC":
+            return sorted(assets, key=lambda item: _parse_money_value(str(item.get("value", ""))))
+        if mode == "ROLE_ASC":
+            return sorted(
+                assets,
+                key=lambda item: (
+                    str(item.get("roleLabel", "")),
+                    str(item.get("asset", "")),
+                ),
+            )
+        return sorted(assets, key=lambda item: _parse_money_value(str(item.get("value", ""))), reverse=True)
+
+
+def _humanize_policy_label(value: str) -> str:
+    normalized = (value or "").strip().upper()
+    if normalized == "SYSTEM_DEFAULT":
+        return "System default"
+    return normalized.replace("_", " ").title()
+
+
+def _role_help(value: str) -> str:
+    normalized = (value or "").strip().upper()
+    if normalized == "SYSTEM_DEFAULT":
+        return "Use the role from the latest portfolio classification."
+    if "PROTECTED" in normalized or "CORE" in normalized:
+        return "Long-term or utility holding. Coinductor should avoid using it as trading funding."
+    if "SOURCE" in normalized or "FUNDING" in normalized:
+        return "Funding source that may be used within configured limits."
+    if "TRADING" in normalized or "GRID" in normalized or "REBALANC" in normalized:
+        return "Asset can be considered by trading or bot recommendation logic."
+    if "DUST" in normalized or "AIRDROP" in normalized:
+        return "Small or opportunistic balance that can usually be converted to USDC when allowed."
+    if "QUOTE" in normalized or "STABLE" in normalized or normalized == "USDC":
+        return "Quote/funding currency used to deploy bot capital."
+    return "Custom portfolio policy role used by Coinductor risk rules."
+
+
+def _parse_money_value(value: str) -> float:
+    cleaned = value.replace(",", "").replace("USDC", "").replace("USDT", "").replace("$", "").strip()
+    try:
+        return float(cleaned.split()[0])
+    except (ValueError, IndexError):
+        return 0.0

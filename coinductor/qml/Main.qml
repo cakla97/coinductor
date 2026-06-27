@@ -17,6 +17,7 @@ ApplicationWindow {
     Material.accent: "#36c98f"
     Material.background: "#171d24"
     Material.foreground: "#f2f5f7"
+    font.pixelSize: 14
 
     property color panel: "#171d24"
     property color panelRaised: "#1d252e"
@@ -25,6 +26,13 @@ ApplicationWindow {
     property color textSecondary: "#9ba8b5"
     property color accent: "#36c98f"
     property color warning: "#f1b84b"
+    property string toastText: ""
+
+    function showToast(message) {
+        toastText = message
+        toastPopup.open()
+        toastTimer.restart()
+    }
 
     RowLayout {
         anchors.fill: parent
@@ -345,7 +353,33 @@ ApplicationWindow {
                 spacing: 18
 
                 Text { text: "Portfolio"; color: textPrimary; font.pixelSize: 26; font.bold: true }
-                Text { text: "Latest real-run valuation, asset roles, and liquidity location"; color: textSecondary; font.pixelSize: 13 }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Latest real-run valuation, asset roles, and liquidity location"
+                        color: textSecondary
+                        font.pixelSize: 14
+                    }
+                    ComboBox {
+                        Layout.preferredWidth: 190
+                        Layout.preferredHeight: 34
+                        model: [
+                            { label: "Value high to low", value: "VALUE_DESC" },
+                            { label: "Value low to high", value: "VALUE_ASC" },
+                            { label: "Asset A-Z", value: "ASSET_ASC" },
+                            { label: "Policy A-Z", value: "ROLE_ASC" }
+                        ]
+                        textRole: "label"
+                        valueRole: "value"
+                        currentIndex: appController.portfolioSortMode === "VALUE_ASC" ? 1
+                            : appController.portfolioSortMode === "ASSET_ASC" ? 2
+                            : appController.portfolioSortMode === "ROLE_ASC" ? 3 : 0
+                        onActivated: function(index) {
+                            appController.setPortfolioSortMode(model[index].value)
+                        }
+                    }
+                }
 
                 Rectangle {
                     Layout.fillWidth: true
@@ -359,11 +393,11 @@ ApplicationWindow {
                         anchors.rightMargin: 14
                         spacing: 12
                         Text { Layout.preferredWidth: 70; text: "ASSET"; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                        Text { Layout.preferredWidth: 190; text: "POLICY"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 210; text: "POLICY"; color: textSecondary; font.pixelSize: 11; font.bold: true }
                         Text { Layout.preferredWidth: 120; text: "VALUE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
                         Text { Layout.preferredWidth: 75; text: "SHARE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
                         Text { Layout.fillWidth: true; text: "LIQUIDITY"; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                        Text { Layout.preferredWidth: 78; text: "SOURCE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 120; text: "SOURCE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
                     }
                 }
 
@@ -386,42 +420,47 @@ ApplicationWindow {
                             spacing: 12
                             Text { Layout.preferredWidth: 70; text: modelData.asset; color: textPrimary; font.pixelSize: 14; font.bold: true }
                             ColumnLayout {
-                                Layout.preferredWidth: 190
+                                Layout.preferredWidth: 210
                                 spacing: 3
                                 Text {
                                     Layout.fillWidth: true
-                                    text: modelData.role
+                                    text: modelData.roleLabel
                                     color: modelData.policySource === "MANUAL" ? accent : textSecondary
-                                    font.pixelSize: 10
+                                    font.pixelSize: 12
                                     font.bold: modelData.policySource === "MANUAL"
                                     elide: Text.ElideRight
                                 }
                                 ComboBox {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 30
-                                    model: appController.assetRoleOptions
+                                    model: appController.assetRoleOptionItems
+                                    textRole: "label"
+                                    valueRole: "value"
                                     currentIndex: appController.assetRoleOptions.indexOf(modelData.roleOverride)
-                                    font.pixelSize: 10
+                                    font.pixelSize: 11
                                     onActivated: function(index) {
-                                        appController.saveAssetRoleOverride(modelData.asset, appController.assetRoleOptions[index])
+                                        appController.saveAssetRoleOverride(modelData.asset, currentValue)
+                                        window.showToast("Policy for " + modelData.asset + " changed to " + currentText)
                                     }
+                                    ToolTip.visible: hovered
+                                    ToolTip.text: modelData.roleHelp
                                 }
                             }
-                            Text { Layout.preferredWidth: 120; text: modelData.value; color: textPrimary; font.pixelSize: 12 }
-                            Text { Layout.preferredWidth: 75; text: modelData.allocation; color: textPrimary; font.pixelSize: 12 }
+                            Text { Layout.preferredWidth: 120; text: modelData.value; color: textPrimary; font.pixelSize: 13 }
+                            Text { Layout.preferredWidth: 75; text: modelData.allocation; color: textPrimary; font.pixelSize: 13 }
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 2
-                                Text { text: "Spot " + modelData.spot + "   Flexible " + modelData.flexible; color: textSecondary; font.pixelSize: 10 }
-                                Text { text: "Locked " + modelData.locked; color: textSecondary; font.pixelSize: 10 }
+                                Text { text: "Spot " + modelData.spot + "   Flexible " + modelData.flexible; color: textSecondary; font.pixelSize: 11 }
+                                Text { text: "Locked " + modelData.locked; color: textSecondary; font.pixelSize: 11 }
                             }
                             ColumnLayout {
-                                Layout.preferredWidth: 78
+                                Layout.preferredWidth: 120
                                 spacing: 3
                                 Text {
-                                    text: modelData.policySource
+                                    text: modelData.policySourceLabel
                                     color: modelData.policySource === "MANUAL" ? accent : textSecondary
-                                    font.pixelSize: 10
+                                    font.pixelSize: 11
                                     font.bold: true
                                 }
                                 Text {
@@ -569,7 +608,32 @@ ApplicationWindow {
                 spacing: 14
 
                 Text { text: "AI Assistant"; color: textPrimary; font.pixelSize: 26; font.bold: true }
-                Text { text: "Read-only help with offline fallback and optional configured AI provider"; color: textSecondary; font.pixelSize: 13 }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Read-only help with offline fallback and optional configured AI provider"
+                        color: textSecondary
+                        font.pixelSize: 14
+                    }
+                    Rectangle {
+                        Layout.preferredWidth: 360
+                        Layout.preferredHeight: 34
+                        radius: 6
+                        color: panel
+                        border.color: border
+                        Text {
+                            anchors.fill: parent
+                            anchors.leftMargin: 12
+                            anchors.rightMargin: 12
+                            verticalAlignment: Text.AlignVCenter
+                            text: "Active AI: " + appController.aiProviderSummary
+                            color: textSecondary
+                            font.pixelSize: 12
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
 
                 ListView {
                     id: assistantList
@@ -1135,7 +1199,7 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 450 : 0
+                    Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 520 : 0
                     visible: appController.onboardingPath === "FIRST_PORTFOLIO"
                     radius: 7
                     color: panel
@@ -1175,14 +1239,14 @@ ApplicationWindow {
                         }
                         RowLayout {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 115
+                            Layout.preferredHeight: 132
                             spacing: 10
                             Repeater {
                                 model: appController.firstPortfolioFunding
                                 delegate: Rectangle {
                                     required property var modelData
                                     Layout.fillWidth: true
-                                    Layout.fillHeight: true
+                                    Layout.preferredHeight: 132
                                     radius: 6
                                     color: panelRaised
                                     ColumnLayout {
@@ -1198,11 +1262,11 @@ ApplicationWindow {
                         }
                         RowLayout {
                             Layout.fillWidth: true
-                            Layout.fillHeight: true
+                            Layout.preferredHeight: 250
                             spacing: 10
                             Rectangle {
                                 Layout.fillWidth: true
-                                Layout.fillHeight: true
+                                Layout.preferredHeight: 250
                                 radius: 6
                                 color: panelRaised
                                 ColumnLayout {
@@ -1230,7 +1294,7 @@ ApplicationWindow {
                             }
                             Rectangle {
                                 Layout.fillWidth: true
-                                Layout.fillHeight: true
+                                Layout.preferredHeight: 250
                                 radius: 6
                                 color: panelRaised
                                 ColumnLayout {
@@ -1437,16 +1501,14 @@ ApplicationWindow {
                                 Layout.preferredWidth: 130
                                 Layout.preferredHeight: 30
                                 radius: 5
-                                color: appController.safetyAllowsLiveSubmit ? "#3a2226"
-                                    : appController.safetyAllowsLivePreview ? "#3a3020" : "#17372d"
-                                border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e"
-                                    : appController.safetyAllowsLivePreview ? warning : accent
+                                color: "transparent"
+                                border.color: "transparent"
                                 Text {
                                     anchors.centerIn: parent
-                                    text: appController.safetyStage
+                                    text: "Stage: " + appController.safetyStage
                                     color: appController.safetyAllowsLiveSubmit ? "#ee6b6e"
                                         : appController.safetyAllowsLivePreview ? warning : accent
-                                    font.pixelSize: 10
+                                    font.pixelSize: 11
                                     font.bold: true
                                 }
                             }
@@ -1476,8 +1538,40 @@ ApplicationWindow {
                         }
                     }
                 }
+                Item { Layout.fillWidth: true; Layout.preferredHeight: 44 }
             }
         }
+    }
+
+    Popup {
+        id: toastPopup
+        x: window.width - width - 28
+        y: 28
+        width: Math.min(420, Math.max(260, toastLabel.implicitWidth + 36))
+        height: toastLabel.implicitHeight + 24
+        modal: false
+        focus: false
+        closePolicy: Popup.NoAutoClose
+        background: Rectangle {
+            radius: 7
+            color: "#14352c"
+            border.color: accent
+        }
+        Text {
+            id: toastLabel
+            anchors.centerIn: parent
+            text: window.toastText
+            color: textPrimary
+            font.pixelSize: 13
+            font.bold: true
+            elide: Text.ElideRight
+        }
+    }
+
+    Timer {
+        id: toastTimer
+        interval: 2400
+        onTriggered: toastPopup.close()
     }
 
     Dialog {

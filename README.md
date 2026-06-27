@@ -70,6 +70,9 @@ full Markdown report. It also loads the latest real run at startup and provides 
 for portfolio roles and liquidity, Grid/Rebalancing recommendations, the latest 30
 runs, and an offline project-help assistant grounded in local SQLite data.
 
+For the first manual desktop pass, use the Stage A testing checklist:
+[docs/COINDUCTOR_STAGE_A_TESTING.md](docs/COINDUCTOR_STAGE_A_TESTING.md).
+
 Opening Coinductor does not call Binance, run Qwen, redeem Earn, or submit an order.
 Confirmed execution remains outside the desktop analysis dialog and cannot be enabled
 by it.

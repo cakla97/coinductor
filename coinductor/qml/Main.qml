@@ -27,6 +27,35 @@ ApplicationWindow {
     property color accent: "#36c98f"
     property color warning: "#f1b84b"
     property string toastText: ""
+    property var styleOptions: [
+        { label: "Conservative", value: "CONSERVATIVE" },
+        { label: "Balanced", value: "BALANCED" },
+        { label: "Active", value: "ACTIVE" }
+    ]
+    property var automationOptions: [
+        { label: "Recommendations only", value: "RECOMMEND_ONLY" },
+        { label: "Guarded automation", value: "GUARDED_AUTOMATION" }
+    ]
+    property var cadenceOptions: [
+        { label: "Weekly", value: "WEEKLY" },
+        { label: "Twice weekly", value: "TWICE_WEEKLY" },
+        { label: "Daily", value: "DAILY" },
+        { label: "Manual / irregular", value: "MANUAL" }
+    ]
+    property var drawdownOptions: [
+        { label: "Low - 10%", value: 10 },
+        { label: "Medium - 15%", value: 15 },
+        { label: "High - 20%", value: 20 }
+    ]
+    property var budgetOptions: [
+        { label: "Auto", value: 0 },
+        { label: "250", value: 250 },
+        { label: "500", value: 500 },
+        { label: "1,000", value: 1000 },
+        { label: "2,000", value: 2000 },
+        { label: "10,000", value: 10000 },
+        { label: "25,000", value: 25000 }
+    ]
 
     function showToast(message) {
         toastText = message
@@ -209,17 +238,37 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 Text { text: "Management style"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox { id: wizardStyle; Layout.fillWidth: true; model: ["CONSERVATIVE", "BALANCED", "ACTIVE"]; currentIndex: 1 }
+                                ComboBox {
+                                    id: wizardStyle
+                                    Layout.fillWidth: true
+                                    model: window.styleOptions
+                                    textRole: "label"
+                                    valueRole: "value"
+                                    currentIndex: 1
+                                }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 Text { text: "Automation"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox { id: wizardAutomation; Layout.fillWidth: true; model: ["RECOMMEND_ONLY", "GUARDED_AUTOMATION"] }
+                                ComboBox {
+                                    id: wizardAutomation
+                                    Layout.fillWidth: true
+                                    model: window.automationOptions
+                                    textRole: "label"
+                                    valueRole: "value"
+                                }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 Text { text: "Review rhythm"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox { id: wizardCadence; Layout.fillWidth: true; model: ["WEEKLY", "TWICE_WEEKLY", "DAILY", "MANUAL"]; currentIndex: 1 }
+                                ComboBox {
+                                    id: wizardCadence
+                                    Layout.fillWidth: true
+                                    model: window.cadenceOptions
+                                    textRole: "label"
+                                    valueRole: "value"
+                                    currentIndex: 1
+                                }
                             }
                         }
 
@@ -239,7 +288,13 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 Text { text: "Starting budget"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox { id: wizardBudget; Layout.fillWidth: true; model: ["Auto", "250", "500", "1000", "2000", "10000", "25000"] }
+                                ComboBox {
+                                    id: wizardBudget
+                                    Layout.fillWidth: true
+                                    model: window.budgetOptions
+                                    textRole: "label"
+                                    valueRole: "value"
+                                }
                             }
                         }
 
@@ -249,7 +304,14 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 Text { text: "Drawdown comfort"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox { id: wizardDrawdown; Layout.fillWidth: true; model: ["Low (10%)", "Medium (15%)", "High (20%)"]; currentIndex: 1 }
+                                ComboBox {
+                                    id: wizardDrawdown
+                                    Layout.fillWidth: true
+                                    model: window.drawdownOptions
+                                    textRole: "label"
+                                    valueRole: "value"
+                                    currentIndex: 1
+                                }
                             }
                             CheckBox {
                                 id: wizardUseBots
@@ -262,7 +324,7 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 text: "Allow guarded spot trades"
                                 checked: false
-                                enabled: wizardAutomation.currentText === "GUARDED_AUTOMATION"
+                                enabled: wizardAutomation.currentValue === "GUARDED_AUTOMATION"
                             }
                         }
 
@@ -277,15 +339,15 @@ ApplicationWindow {
                                 text: "Save profile"
                                 highlighted: true
                                 onClicked: appController.saveGuidedProfile(
-                                    wizardStyle.currentText,
-                                    wizardAutomation.currentText,
-                                    wizardCadence.currentText,
+                                    wizardStyle.currentValue,
+                                    wizardAutomation.currentValue,
+                                    wizardCadence.currentValue,
                                     wizardLocale.currentText,
                                     wizardCurrency.currentText,
                                     wizardUseBots.checked,
                                     wizardAllowSpot.checked,
-                                    wizardDrawdown.currentIndex === 0 ? 10 : wizardDrawdown.currentIndex === 1 ? 15 : 20,
-                                    wizardBudget.currentIndex === 0 ? 0 : Number(wizardBudget.currentText)
+                                    wizardDrawdown.currentValue,
+                                    wizardBudget.currentValue
                                 )
                             }
                         }
@@ -1621,130 +1683,6 @@ ApplicationWindow {
         id: toastTimer
         interval: 2400
         onTriggered: toastPopup.close()
-    }
-
-    Dialog {
-        id: guidedProfileDialog
-        title: "Guide me"
-        modal: true
-        anchors.centerIn: parent
-        width: 500
-        standardButtons: Dialog.Cancel
-
-        ColumnLayout {
-            width: parent.width
-            spacing: 14
-
-            Label {
-                Layout.fillWidth: true
-                text: "Create a practical profile for this portfolio. This only changes Coinductor settings; it does not trade or advance the safety stage."
-                wrapMode: Text.WordWrap
-            }
-
-            Label { text: "Management style" }
-            ComboBox {
-                id: guideStyle
-                Layout.fillWidth: true
-                model: ["CONSERVATIVE", "BALANCED", "ACTIVE"]
-                currentIndex: 1
-            }
-
-            Label { text: "Automation" }
-            ComboBox {
-                id: guideAutomation
-                Layout.fillWidth: true
-                model: ["RECOMMEND_ONLY", "GUARDED_AUTOMATION"]
-            }
-
-            Label { text: "Review rhythm" }
-            ComboBox {
-                id: guideCadence
-                Layout.fillWidth: true
-                model: ["WEEKLY", "TWICE_WEEKLY", "DAILY", "MANUAL"]
-                currentIndex: 1
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                CheckBox {
-                    id: guideUseBots
-                    Layout.fillWidth: true
-                    text: "Use Binance bot recommendations"
-                    checked: true
-                }
-                CheckBox {
-                    id: guideAllowSpot
-                    Layout.fillWidth: true
-                    text: "Allow guarded spot trades"
-                    checked: false
-                    enabled: guideAutomation.currentText === "GUARDED_AUTOMATION"
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Label { text: "Language / region" }
-                    ComboBox {
-                        id: guideLocale
-                        Layout.fillWidth: true
-                        model: ["en-US", "es-ES", "cs-CZ", "pt-BR"]
-                    }
-                }
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Label { text: "Funding currency" }
-                    ComboBox {
-                        id: guideCurrency
-                        Layout.fillWidth: true
-                        model: ["USDC"]
-                    }
-                }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Label { text: "Drawdown comfort" }
-                    ComboBox {
-                        id: guideDrawdown
-                        Layout.fillWidth: true
-                        model: ["Low (10%)", "Medium (15%)", "High (20%)"]
-                        currentIndex: 1
-                    }
-                }
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    Label { text: "Starting budget" }
-                    ComboBox {
-                        id: guideBudget
-                        Layout.fillWidth: true
-                        model: ["Auto", "250", "500", "1000", "2000", "10000", "25000"]
-                    }
-                }
-            }
-
-            Button {
-                Layout.fillWidth: true
-                text: "Save guided profile"
-                onClicked: {
-                    guidedProfileDialog.close()
-                    appController.saveGuidedProfile(
-                        guideStyle.currentText,
-                        guideAutomation.currentText,
-                        guideCadence.currentText,
-                        guideLocale.currentText,
-                        guideCurrency.currentText,
-                        guideUseBots.checked,
-                        guideAllowSpot.checked,
-                        guideDrawdown.currentIndex === 0 ? 10 : guideDrawdown.currentIndex === 1 ? 15 : 20,
-                        guideBudget.currentIndex === 0 ? 0 : Number(guideBudget.currentText)
-                    )
-                }
-            }
-        }
     }
 
     Dialog {

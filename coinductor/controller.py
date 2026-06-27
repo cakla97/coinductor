@@ -107,8 +107,8 @@ class AppController(QObject):
     firstPortfolioPlanChanged = Signal()
     onboardingWizardChanged = Signal()
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent: QObject | None = None):
+        super().__init__(parent)
         self._busy = False
         self._progress = 0
         self._status_text = "Ready for analysis"

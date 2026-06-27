@@ -16,7 +16,7 @@ def main() -> int:
     app.setOrganizationName("Coinductor")
 
     engine = QQmlApplicationEngine()
-    controller = AppController()
+    controller = AppController(engine)
     engine.rootContext().setContextProperty("appController", controller)
     qml_path = Path(__file__).parent / "qml" / "Main.qml"
     engine.load(QUrl.fromLocalFile(str(qml_path.resolve())))

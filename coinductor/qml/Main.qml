@@ -1068,7 +1068,7 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 305
+                    Layout.preferredHeight: 335
                     radius: 7
                     color: panel
                     border.color: border
@@ -1091,9 +1091,13 @@ ApplicationWindow {
                                 }
                             }
                             Button {
-                                text: "Delete profile"
+                                text: "Reset onboarding"
                                 enabled: appController.userProfileConfigured
                                 onClicked: deleteProfileDialog.open()
+                            }
+                            Button {
+                                text: "Delete local data"
+                                onClicked: localDataResetDialog.open()
                             }
                         }
                         ListView {
@@ -1121,7 +1125,7 @@ ApplicationWindow {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: "Deleting the profile only resets onboarding preferences. API keys, reports, database history, and safety state are left untouched."
+                            text: "Reset onboarding only changes preferences. Delete local data is a separate preview for a full local reset and is not executed yet."
                             color: textSecondary
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
@@ -1602,7 +1606,7 @@ ApplicationWindow {
 
     Dialog {
         id: deleteProfileDialog
-        title: "Delete user profile"
+        title: "Reset onboarding profile"
         modal: true
         anchors.centerIn: parent
         width: 460
@@ -1623,11 +1627,110 @@ ApplicationWindow {
             }
             Button {
                 Layout.fillWidth: true
-                text: "Delete onboarding profile"
+                text: "Reset onboarding profile"
                 onClicked: {
                     deleteProfileDialog.close()
                     appController.deleteUserProfile()
                 }
+            }
+        }
+    }
+
+    ListModel { id: localDataResetModel }
+
+    Dialog {
+        id: localDataResetDialog
+        title: "Delete local app data"
+        modal: true
+        anchors.centerIn: parent
+        width: 640
+        standardButtons: Dialog.Cancel
+        onOpened: {
+            localDataResetModel.clear()
+            for (let i = 0; i < appController.localDataResetItems.length; i++) {
+                let item = appController.localDataResetItems[i]
+                localDataResetModel.append({
+                    "code": item.code,
+                    "name": item.name,
+                    "detail": item.detail,
+                    "paths": item.paths,
+                    "status": item.status,
+                    "selected": item.default === "true"
+                })
+            }
+            deleteEverything.checked = false
+            deleteConfirm.text = ""
+        }
+
+        ColumnLayout {
+            width: parent.width
+            spacing: 14
+            Label {
+                Layout.fillWidth: true
+                text: appController.localDataResetSummary
+                wrapMode: Text.WordWrap
+            }
+            CheckBox {
+                id: deleteEverything
+                text: "Delete everything"
+                onToggled: {
+                    for (let i = 0; i < localDataResetModel.count; i++) {
+                        localDataResetModel.setProperty(i, "selected", checked)
+                    }
+                }
+            }
+            ListView {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 270
+                clip: true
+                spacing: 6
+                model: localDataResetModel
+                delegate: Rectangle {
+                    required property int index
+                    required property string name
+                    required property string detail
+                    required property string status
+                    required property bool selected
+                    width: ListView.view.width
+                    height: 64
+                    radius: 5
+                    color: panelRaised
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 10
+                        CheckBox {
+                            checked: selected
+                            onToggled: localDataResetModel.setProperty(index, "selected", checked)
+                        }
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 3
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Text { Layout.fillWidth: true; text: name; color: textPrimary; font.pixelSize: 12; font.bold: true; elide: Text.ElideRight }
+                                Text { text: status; color: textSecondary; font.pixelSize: 10 }
+                            }
+                            Text { Layout.fillWidth: true; text: detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                        }
+                    }
+                }
+            }
+            Label {
+                Layout.fillWidth: true
+                text: "Type DELETE to confirm. This dialog is preview-only in this build; actual deletion will be enabled in a separate guarded implementation step."
+                wrapMode: Text.WordWrap
+            }
+            TextField {
+                id: deleteConfirm
+                Layout.fillWidth: true
+                placeholderText: "DELETE"
+            }
+            Button {
+                Layout.fillWidth: true
+                text: deleteConfirm.text === "DELETE" ? "Preview only - deletion not enabled yet" : "Type DELETE to continue"
+                enabled: false
             }
         }
     }

@@ -107,3 +107,9 @@ class FirstPortfolioPlanSnapshot:
     allocation: tuple[dict[str, str], ...]
     steps: tuple[dict[str, str], ...]
     notes: tuple[dict[str, str], ...]
+
+
+@dataclass(frozen=True)
+class LocalDataResetSnapshot:
+    summary: str
+    items: tuple[dict[str, str], ...]

@@ -87,3 +87,10 @@ class SafetySnapshot:
     allows_live_preview: bool
     allows_live_submit: bool
     checks: tuple[dict[str, str], ...]
+
+
+@dataclass(frozen=True)
+class ReadinessSnapshot:
+    summary: str
+    next_step: str
+    steps: tuple[dict[str, str], ...]

@@ -12,6 +12,7 @@ from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService
 from .desktop_store import DesktopStore
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
+from .readiness_service import ReadinessService
 from .safety_service import SafetyService
 from .setup_service import SetupService
 from .user_profile_service import UserProfileService
@@ -100,6 +101,7 @@ class AppController(QObject):
     aiProviderChanged = Signal()
     userProfileChanged = Signal()
     safetyChanged = Signal()
+    readinessChanged = Signal()
 
     def __init__(self):
         super().__init__()
@@ -142,6 +144,14 @@ class AppController(QObject):
         self._user_profile_snapshot = self._user_profile_service.inspect()
         self._safety_service = SafetyService()
         self._safety_snapshot = self._safety_service.inspect()
+        self._readiness_service = ReadinessService()
+        self._readiness_snapshot = self._readiness_service.inspect(
+            self._setup_snapshot,
+            self._user_profile_snapshot,
+            self._safety_snapshot,
+            self._snapshot,
+            self._connection_status,
+        )
         self._asset_policy_store = AssetPolicyStore()
         self._asset_role_overrides = self._asset_policy_store.load()
         self._thread: QThread | None = None
@@ -296,6 +306,18 @@ class AppController(QObject):
     def safetyChecks(self) -> list[dict[str, str]]:
         return list(self._safety_snapshot.checks)
 
+    @Property(str, notify=readinessChanged)
+    def readinessSummary(self) -> str:
+        return self._readiness_snapshot.summary
+
+    @Property(str, notify=readinessChanged)
+    def readinessNextStep(self) -> str:
+        return self._readiness_snapshot.next_step
+
+    @Property("QVariantList", notify=readinessChanged)
+    def readinessSteps(self) -> list[dict[str, str]]:
+        return list(self._readiness_snapshot.steps)
+
     @Property(str, notify=setupChanged)
     def onboardingPath(self) -> str:
         return self._onboarding_path
@@ -341,10 +363,12 @@ class AppController(QObject):
         self._ai_provider_snapshot = AiProviderService().inspect()
         self._user_profile_snapshot = self._user_profile_service.inspect()
         self._safety_snapshot = self._safety_service.inspect()
+        self._refresh_readiness()
         self.setupChanged.emit()
         self.aiProviderChanged.emit()
         self.userProfileChanged.emit()
         self.safetyChanged.emit()
+        self.readinessChanged.emit()
 
     @Slot(str)
     def selectOnboardingPath(self, path: str) -> None:
@@ -358,7 +382,9 @@ class AppController(QObject):
     def useSafeDefaultProfile(self) -> None:
         path = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
         self._user_profile_snapshot = self._user_profile_service.save_safe_default(path)
+        self._refresh_readiness()
         self.userProfileChanged.emit()
+        self.readinessChanged.emit()
 
     @Slot(str, str, str, str, bool, bool, float)
     def saveGuidedProfile(
@@ -382,7 +408,9 @@ class AppController(QObject):
             allow_spot_trades=allow_spot_trades,
             max_drawdown_comfort_pct=max_drawdown_comfort_pct,
         )
+        self._refresh_readiness()
         self.userProfileChanged.emit()
+        self.readinessChanged.emit()
 
     @Slot()
     def checkBinanceReadOnly(self) -> None:
@@ -526,9 +554,11 @@ class AppController(QObject):
         self._strategies = list(self._snapshot.strategies)
         self._run_history = list(self._snapshot.run_history)
         self._refresh_onboarding_review()
+        self._refresh_readiness()
         self.actionsChanged.emit()
         self.dataChanged.emit()
         self.stateChanged.emit()
+        self.readinessChanged.emit()
 
     @Slot(str)
     def _on_failed(self, message: str) -> None:
@@ -540,13 +570,17 @@ class AppController(QObject):
     def _on_connection_completed(self, result: ConnectionCheckResult) -> None:
         self._connection_status = "Connected" if result.status == "PASS" else "Blocked"
         self._connection_detail = result.detail
+        self._refresh_readiness()
         self.connectionChanged.emit()
+        self.readinessChanged.emit()
 
     @Slot(str)
     def _on_connection_failed(self, message: str) -> None:
         self._connection_status = "Blocked"
         self._connection_detail = message
+        self._refresh_readiness()
         self.connectionChanged.emit()
+        self.readinessChanged.emit()
 
     @Slot(object)
     def _on_ai_provider_completed(self, result: AiProviderHealthResult) -> None:
@@ -671,6 +705,15 @@ class AppController(QObject):
                 "detail": "Small assets that can be considered for USDC funding when allowed.",
             },
         ]
+
+    def _refresh_readiness(self) -> None:
+        self._readiness_snapshot = self._readiness_service.inspect(
+            self._setup_snapshot,
+            self._user_profile_snapshot,
+            self._safety_snapshot,
+            self._snapshot,
+            self._connection_status,
+        )
 
     def _apply_asset_role_overrides(self, assets: tuple[dict[str, str], ...]) -> list[dict[str, str]]:
         enriched: list[dict[str, str]] = []

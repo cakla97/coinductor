@@ -886,6 +886,87 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
+                    Layout.preferredHeight: 285
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 12
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+                                Text { text: "Personal readiness"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: appController.readinessNextStep
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            Rectangle {
+                                Layout.preferredWidth: 150
+                                Layout.preferredHeight: 30
+                                radius: 5
+                                color: "#17372d"
+                                border.color: accent
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: appController.readinessSummary
+                                    color: accent
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                }
+                            }
+                        }
+                        ListView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            interactive: false
+                            spacing: 6
+                            model: appController.readinessSteps
+                            delegate: Rectangle {
+                                required property var modelData
+                                width: ListView.view.width
+                                height: 38
+                                radius: 5
+                                color: panelRaised
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 12
+                                    spacing: 12
+                                    Rectangle {
+                                        Layout.preferredWidth: 8
+                                        Layout.preferredHeight: 8
+                                        radius: 4
+                                        color: modelData.status === "READY" ? accent
+                                            : modelData.status === "NEXT" ? warning
+                                            : modelData.status === "LOCKED" ? "#6f7b86" : "#ee6b6e"
+                                    }
+                                    Text { Layout.preferredWidth: 145; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                    Text {
+                                        Layout.preferredWidth: 70
+                                        text: modelData.status
+                                        color: modelData.status === "READY" ? accent
+                                            : modelData.status === "NEXT" ? warning
+                                            : modelData.status === "LOCKED" ? textSecondary : "#ee6b6e"
+                                        font.pixelSize: 10
+                                        font.bold: true
+                                    }
+                                    Text { Layout.fillWidth: true; text: modelData.action; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
                     Layout.preferredHeight: 430
                     radius: 7
                     color: panel

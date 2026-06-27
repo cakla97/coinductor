@@ -51,3 +51,13 @@ def test_user_profile_service_saves_guided_snapshot(tmp_path) -> None:
     assert any(item["name"] == "Spot trades" and item["value"] == "Allowed" for item in snapshot.fields)
     assert any(item["name"] == "Grid" and item["value"] == "Enabled" for item in snapshot.fields)
     assert any(item["name"] == "Drawdown comfort" and item["value"] == "20%" for item in snapshot.fields)
+
+
+def test_user_profile_service_current_profile_uses_in_memory_fallback(tmp_path) -> None:
+    path = tmp_path / "state" / "user_profile.toml"
+    service = UserProfileService(path)
+
+    profile = service.current_profile("FIRST_PORTFOLIO")
+
+    assert profile.onboarding_path == "FIRST_PORTFOLIO"
+    assert not path.exists()

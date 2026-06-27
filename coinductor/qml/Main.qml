@@ -1068,6 +1068,132 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
+                    Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 450 : 0
+                    visible: appController.onboardingPath === "FIRST_PORTFOLIO"
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 12
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+                                Text { text: "First portfolio planner"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: appController.firstPortfolioPlanSummary
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            Rectangle {
+                                Layout.preferredWidth: 120
+                                Layout.preferredHeight: 30
+                                radius: 5
+                                color: appController.firstPortfolioPlanAvailable ? "#17372d" : "#2a2520"
+                                border.color: appController.firstPortfolioPlanAvailable ? accent : warning
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: appController.firstPortfolioPlanAvailable ? "READY" : "PROFILE NEEDED"
+                                    color: appController.firstPortfolioPlanAvailable ? accent : warning
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                }
+                            }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 115
+                            spacing: 10
+                            Repeater {
+                                model: appController.firstPortfolioFunding
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    radius: 6
+                                    color: panelRaised
+                                    ColumnLayout {
+                                        anchors.fill: parent
+                                        anchors.margins: 12
+                                        spacing: 5
+                                        Text { text: modelData.name; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                        Text { text: modelData.value; color: textPrimary; font.pixelSize: 17; font.bold: true; elide: Text.ElideRight }
+                                        Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                    }
+                                }
+                            }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            spacing: 10
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                radius: 6
+                                color: panelRaised
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 12
+                                    spacing: 8
+                                    Text { text: "Suggested basket"; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                                    ListView {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        interactive: false
+                                        spacing: 5
+                                        model: appController.firstPortfolioAllocation
+                                        delegate: RowLayout {
+                                            required property var modelData
+                                            width: ListView.view.width
+                                            height: 24
+                                            Text { Layout.preferredWidth: 52; text: modelData.asset; color: accent; font.pixelSize: 11; font.bold: true }
+                                            Text { Layout.preferredWidth: 52; text: modelData.target; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                            Text { Layout.preferredWidth: 90; text: modelData.amount; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                            Text { Layout.fillWidth: true; text: modelData.role; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                        }
+                                    }
+                                }
+                            }
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                radius: 6
+                                color: panelRaised
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 12
+                                    spacing: 8
+                                    Text { text: "Manual setup steps"; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                                    ListView {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        interactive: false
+                                        spacing: 5
+                                        model: appController.firstPortfolioSteps
+                                        delegate: RowLayout {
+                                            required property var modelData
+                                            width: ListView.view.width
+                                            height: 28
+                                            Text { Layout.preferredWidth: 95; text: modelData.name; color: textPrimary; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
+                                            Text { Layout.preferredWidth: 70; text: modelData.value; color: warning; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
+                                            Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
                     Layout.preferredHeight: appController.onboardingPath === "" ? 0 : 96
                     visible: appController.onboardingPath !== ""
                     radius: 7
@@ -1366,6 +1492,15 @@ ApplicationWindow {
                         currentIndex: 1
                     }
                 }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Label { text: "Starting budget" }
+                    ComboBox {
+                        id: guideBudget
+                        Layout.fillWidth: true
+                        model: ["Auto", "250", "500", "1000", "2000"]
+                    }
+                }
             }
 
             Button {
@@ -1380,7 +1515,8 @@ ApplicationWindow {
                         guideCurrency.currentText,
                         guideUseBots.checked,
                         guideAllowSpot.checked,
-                        guideDrawdown.currentIndex === 0 ? 10 : guideDrawdown.currentIndex === 1 ? 15 : 20
+                        guideDrawdown.currentIndex === 0 ? 10 : guideDrawdown.currentIndex === 1 ? 15 : 20,
+                        guideBudget.currentIndex === 0 ? 0 : Number(guideBudget.currentText)
                     )
                 }
             }

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from trading_agent.user_profile import UserProfile, UserProfileStore
+from trading_agent.user_profile import UserProfile, UserProfileStore, safe_default_profile
 
 from .models import UserProfileSnapshot
 
@@ -38,6 +38,7 @@ class UserProfileService:
         use_bots: bool,
         allow_spot_trades: bool,
         max_drawdown_comfort_pct: float,
+        planned_deposit_amount: float = 0.0,
     ) -> UserProfileSnapshot:
         return self._snapshot(
             self.store.save_guided(
@@ -49,8 +50,15 @@ class UserProfileService:
                 use_bots=use_bots,
                 allow_spot_trades=allow_spot_trades,
                 max_drawdown_comfort_pct=max_drawdown_comfort_pct,
+                planned_deposit_amount=planned_deposit_amount,
             )
         )
+
+    def current_profile(self, fallback_onboarding_path: str = "EXISTING_PORTFOLIO") -> UserProfile:
+        profile = self.store.load()
+        if profile is not None and profile.onboarding_path == fallback_onboarding_path:
+            return profile
+        return safe_default_profile(fallback_onboarding_path)
 
     def _snapshot(self, profile: UserProfile) -> UserProfileSnapshot:
         fields = (
@@ -61,6 +69,7 @@ class UserProfileService:
             {"name": "Automation", "value": profile.automation_level, "detail": "How much the app may automate."},
             {"name": "Run cadence", "value": profile.run_cadence, "detail": "Suggested review rhythm."},
             {"name": "Base currency", "value": profile.base_currency, "detail": "Main funding and reporting currency."},
+            {"name": "Starting budget", "value": f"{profile.planned_deposit_amount:.0f} {profile.base_currency}" if profile.planned_deposit_amount else "Not set", "detail": "Used by first portfolio planner."},
             {"name": "Reserve", "value": f"{profile.reserve_pct:.0f}%", "detail": "Capital kept outside active strategy use."},
             {"name": "Drawdown comfort", "value": f"{profile.max_drawdown_comfort_pct:.0f}%", "detail": "Used for conservative strategy sizing."},
             {"name": "Spot trades", "value": "Allowed" if profile.allow_spot_trades else "Disabled", "detail": "Live execution still needs guard approval."},

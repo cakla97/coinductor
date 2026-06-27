@@ -39,12 +39,14 @@ def test_guided_profile_balanced_is_guarded_but_not_active_automation() -> None:
         use_bots=True,
         allow_spot_trades=True,
         max_drawdown_comfort_pct=15,
+        planned_deposit_amount=500,
     )
 
     assert profile.setup_mode == "GUIDED"
     assert profile.management_style == "BALANCED"
     assert profile.automation_level == "GUARDED_AUTOMATION"
     assert profile.base_currency == "USDC"
+    assert profile.planned_deposit_amount == 500.0
     assert profile.use_rebalancing is True
     assert profile.use_grid is False
     assert profile.allow_spot_trades is True

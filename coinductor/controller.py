@@ -11,6 +11,7 @@ from .assistant import ProviderBackedAssistant
 from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService
 from .desktop_store import DesktopStore
+from .first_portfolio_planner import FirstPortfolioPlanner
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
 from .readiness_service import ReadinessService
 from .safety_service import SafetyService
@@ -102,6 +103,7 @@ class AppController(QObject):
     userProfileChanged = Signal()
     safetyChanged = Signal()
     readinessChanged = Signal()
+    firstPortfolioPlanChanged = Signal()
 
     def __init__(self):
         super().__init__()
@@ -151,6 +153,10 @@ class AppController(QObject):
             self._safety_snapshot,
             self._snapshot,
             self._connection_status,
+        )
+        self._first_portfolio_planner = FirstPortfolioPlanner()
+        self._first_portfolio_plan = self._first_portfolio_planner.plan(
+            self._user_profile_service.current_profile("EXISTING_PORTFOLIO")
         )
         self._asset_policy_store = AssetPolicyStore()
         self._asset_role_overrides = self._asset_policy_store.load()
@@ -330,6 +336,30 @@ class AppController(QObject):
     def readinessSteps(self) -> list[dict[str, str]]:
         return list(self._readiness_snapshot.steps)
 
+    @Property(bool, notify=firstPortfolioPlanChanged)
+    def firstPortfolioPlanAvailable(self) -> bool:
+        return self._first_portfolio_plan.available
+
+    @Property(str, notify=firstPortfolioPlanChanged)
+    def firstPortfolioPlanSummary(self) -> str:
+        return self._first_portfolio_plan.summary
+
+    @Property("QVariantList", notify=firstPortfolioPlanChanged)
+    def firstPortfolioFunding(self) -> list[dict[str, str]]:
+        return list(self._first_portfolio_plan.funding)
+
+    @Property("QVariantList", notify=firstPortfolioPlanChanged)
+    def firstPortfolioAllocation(self) -> list[dict[str, str]]:
+        return list(self._first_portfolio_plan.allocation)
+
+    @Property("QVariantList", notify=firstPortfolioPlanChanged)
+    def firstPortfolioSteps(self) -> list[dict[str, str]]:
+        return list(self._first_portfolio_plan.steps)
+
+    @Property("QVariantList", notify=firstPortfolioPlanChanged)
+    def firstPortfolioNotes(self) -> list[dict[str, str]]:
+        return list(self._first_portfolio_plan.notes)
+
     @Property(str, notify=setupChanged)
     def onboardingPath(self) -> str:
         return self._onboarding_path
@@ -376,11 +406,13 @@ class AppController(QObject):
         self._user_profile_snapshot = self._user_profile_service.inspect()
         self._safety_snapshot = self._safety_service.inspect()
         self._refresh_readiness()
+        self._refresh_first_portfolio_plan()
         self.setupChanged.emit()
         self.aiProviderChanged.emit()
         self.userProfileChanged.emit()
         self.safetyChanged.emit()
         self.readinessChanged.emit()
+        self.firstPortfolioPlanChanged.emit()
 
     @Slot(str)
     def selectOnboardingPath(self, path: str) -> None:
@@ -388,17 +420,21 @@ class AppController(QObject):
         if normalized not in {"EXISTING", "FIRST_PORTFOLIO"}:
             return
         self._onboarding_path = normalized
+        self._refresh_first_portfolio_plan()
         self.setupChanged.emit()
+        self.firstPortfolioPlanChanged.emit()
 
     @Slot()
     def useSafeDefaultProfile(self) -> None:
         path = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
         self._user_profile_snapshot = self._user_profile_service.save_safe_default(path)
         self._refresh_readiness()
+        self._refresh_first_portfolio_plan()
         self.userProfileChanged.emit()
         self.readinessChanged.emit()
+        self.firstPortfolioPlanChanged.emit()
 
-    @Slot(str, str, str, str, bool, bool, float)
+    @Slot(str, str, str, str, bool, bool, float, float)
     def saveGuidedProfile(
         self,
         management_style: str,
@@ -408,6 +444,7 @@ class AppController(QObject):
         use_bots: bool,
         allow_spot_trades: bool,
         max_drawdown_comfort_pct: float,
+        planned_deposit_amount: float,
     ) -> None:
         path = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
         self._user_profile_snapshot = self._user_profile_service.save_guided(
@@ -419,10 +456,13 @@ class AppController(QObject):
             use_bots=use_bots,
             allow_spot_trades=allow_spot_trades,
             max_drawdown_comfort_pct=max_drawdown_comfort_pct,
+            planned_deposit_amount=planned_deposit_amount,
         )
         self._refresh_readiness()
+        self._refresh_first_portfolio_plan()
         self.userProfileChanged.emit()
         self.readinessChanged.emit()
+        self.firstPortfolioPlanChanged.emit()
 
     @Slot()
     def checkBinanceReadOnly(self) -> None:
@@ -736,6 +776,12 @@ class AppController(QObject):
             self._safety_snapshot,
             self._snapshot,
             self._connection_status,
+        )
+
+    def _refresh_first_portfolio_plan(self) -> None:
+        fallback = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
+        self._first_portfolio_plan = self._first_portfolio_planner.plan(
+            self._user_profile_service.current_profile(fallback)
         )
 
     def _apply_asset_role_overrides(self, assets: tuple[dict[str, str], ...]) -> list[dict[str, str]]:

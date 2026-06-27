@@ -97,3 +97,13 @@ class ReadinessSnapshot:
     action_label: str
     action_enabled: bool
     steps: tuple[dict[str, str], ...]
+
+
+@dataclass(frozen=True)
+class FirstPortfolioPlanSnapshot:
+    available: bool
+    summary: str
+    funding: tuple[dict[str, str], ...]
+    allocation: tuple[dict[str, str], ...]
+    steps: tuple[dict[str, str], ...]
+    notes: tuple[dict[str, str], ...]

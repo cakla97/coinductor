@@ -77,6 +77,7 @@ class UserProfileStore:
         use_bots: bool,
         allow_spot_trades: bool,
         max_drawdown_comfort_pct: float,
+        planned_deposit_amount: float = 0.0,
     ) -> UserProfile:
         profile = guided_profile(
             onboarding_path=onboarding_path,
@@ -87,6 +88,7 @@ class UserProfileStore:
             use_bots=use_bots,
             allow_spot_trades=allow_spot_trades,
             max_drawdown_comfort_pct=max_drawdown_comfort_pct,
+            planned_deposit_amount=planned_deposit_amount,
         )
         self.save(profile)
         return profile
@@ -173,6 +175,7 @@ def guided_profile(
     use_bots: bool,
     allow_spot_trades: bool,
     max_drawdown_comfort_pct: float,
+    planned_deposit_amount: float = 0.0,
 ) -> UserProfile:
     normalized_path = _choice(onboarding_path, ONBOARDING_PATHS, "EXISTING_PORTFOLIO")
     style = _choice(management_style, MANAGEMENT_STYLES, "BALANCED")
@@ -182,6 +185,7 @@ def guided_profile(
     cadence = _choice(run_cadence, RUN_CADENCES, _cadence_for_style(style))
     drawdown = _bounded_float(max_drawdown_comfort_pct, minimum=5.0, maximum=25.0, default=_drawdown_for_style(style))
     currency = str(base_currency or "USDC").strip().upper() or "USDC"
+    deposit = _bounded_float(planned_deposit_amount, minimum=0.0, maximum=1_000_000.0, default=0.0)
     spot_allowed = bool(allow_spot_trades and automation == "GUARDED_AUTOMATION")
     bots_enabled = bool(use_bots)
 
@@ -195,7 +199,7 @@ def guided_profile(
         automation_level=automation,
         run_cadence=cadence,
         base_currency=currency,
-        planned_deposit_amount=0.0,
+        planned_deposit_amount=deposit,
         reserve_pct=_reserve_for_style(style),
         max_drawdown_comfort_pct=drawdown,
         use_earn=True,

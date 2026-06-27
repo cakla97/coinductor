@@ -21,9 +21,17 @@ class ReadinessService:
         ]
         open_steps = [step for step in steps if step["status"] != "READY"]
         next_step = open_steps[0]["detail"] if open_steps else "All personal-stage readiness gates are satisfied."
+        action_code, action_label, action_enabled = self._next_action(steps, user_profile, desktop, connection_status)
         ready_count = len(steps) - len(open_steps)
         summary = f"{ready_count}/{len(steps)} readiness step(s) ready"
-        return ReadinessSnapshot(summary=summary, next_step=next_step, steps=tuple(steps))
+        return ReadinessSnapshot(
+            summary=summary,
+            next_step=next_step,
+            action_code=action_code,
+            action_label=action_label,
+            action_enabled=action_enabled,
+            steps=tuple(steps),
+        )
 
     def _profile_step(self, user_profile: UserProfileSnapshot) -> dict[str, str]:
         if user_profile.configured:
@@ -108,3 +116,29 @@ class ReadinessService:
             "detail": "Live submit stays locked until explicit safety stage promotion.",
             "action": "Do not unlock before repeated preview/testnet confidence.",
         }
+
+    def _next_action(
+        self,
+        steps: list[dict[str, str]],
+        user_profile: UserProfileSnapshot,
+        desktop: DesktopSnapshot,
+        connection_status: str,
+    ) -> tuple[str, str, bool]:
+        profile = self._step(steps, "Profile")
+        binance = self._step(steps, "Binance read-only")
+        classification = self._step(steps, "Portfolio classification")
+
+        if profile["status"] != "READY":
+            return ("GUIDE_PROFILE", "Guide me", True)
+        if binance["status"] == "NEXT":
+            return ("CHECK_BINANCE", "Run read-only check", connection_status != "Checking")
+        if binance["status"] == "BLOCKED":
+            return ("OPEN_SETTINGS", "Add API keys first", False)
+        if classification["status"] != "READY":
+            return ("RUN_CLASSIFICATION", "Run classification", True)
+        if user_profile.configured and desktop.portfolio_assets:
+            return ("OPEN_PORTFOLIO", "Review portfolio roles", True)
+        return ("NONE", "No action needed", False)
+
+    def _step(self, steps: list[dict[str, str]], name: str) -> dict[str, str]:
+        return next(item for item in steps if item["name"] == name)

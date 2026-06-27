@@ -922,6 +922,18 @@ ApplicationWindow {
                                     font.bold: true
                                 }
                             }
+                            Button {
+                                Layout.preferredWidth: 170
+                                text: appController.readinessActionLabel
+                                enabled: appController.readinessActionEnabled
+                                onClicked: {
+                                    if (appController.readinessActionCode === "GUIDE_PROFILE") {
+                                        guidedProfileDialog.open()
+                                    } else {
+                                        appController.executeReadinessAction()
+                                    }
+                                }
+                            }
                         }
                         ListView {
                             Layout.fillWidth: true

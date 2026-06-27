@@ -93,4 +93,7 @@ class SafetySnapshot:
 class ReadinessSnapshot:
     summary: str
     next_step: str
+    action_code: str
+    action_label: str
+    action_enabled: bool
     steps: tuple[dict[str, str], ...]

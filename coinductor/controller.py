@@ -314,6 +314,18 @@ class AppController(QObject):
     def readinessNextStep(self) -> str:
         return self._readiness_snapshot.next_step
 
+    @Property(str, notify=readinessChanged)
+    def readinessActionCode(self) -> str:
+        return self._readiness_snapshot.action_code
+
+    @Property(str, notify=readinessChanged)
+    def readinessActionLabel(self) -> str:
+        return self._readiness_snapshot.action_label
+
+    @Property(bool, notify=readinessChanged)
+    def readinessActionEnabled(self) -> bool:
+        return self._readiness_snapshot.action_enabled and not self._busy
+
     @Property("QVariantList", notify=readinessChanged)
     def readinessSteps(self) -> list[dict[str, str]]:
         return list(self._readiness_snapshot.steps)
@@ -513,6 +525,16 @@ class AppController(QObject):
     def runInitialClassification(self) -> None:
         self.runAnalysis("REAL", True, False, True)
 
+    @Slot()
+    def executeReadinessAction(self) -> None:
+        code = self._readiness_snapshot.action_code
+        if code == "CHECK_BINANCE":
+            self.checkBinanceReadOnly()
+        elif code == "RUN_CLASSIFICATION":
+            self.runInitialClassification()
+        elif code == "OPEN_PORTFOLIO":
+            self.setCurrentPage(1)
+
     @Slot(str, str)
     def saveAssetRoleOverride(self, asset: str, role: str) -> None:
         self._asset_policy_store.save_role(asset, role)
@@ -635,6 +657,7 @@ class AppController(QObject):
             return
         self._busy = value
         self.busyChanged.emit()
+        self.readinessChanged.emit()
 
     def _apply_snapshot(self) -> None:
         self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)

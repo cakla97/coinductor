@@ -22,6 +22,9 @@ def test_readiness_blocks_without_profile_and_read_only_keys() -> None:
 
     assert snapshot.summary == "0/5 readiness step(s) ready"
     assert "Choose safe defaults" in snapshot.next_step
+    assert snapshot.action_code == "GUIDE_PROFILE"
+    assert snapshot.action_label == "Guide me"
+    assert snapshot.action_enabled is True
     assert _step(snapshot, "Profile")["status"] == "NEXT"
     assert _step(snapshot, "Binance read-only")["status"] == "BLOCKED"
     assert _step(snapshot, "Guarded live execution")["status"] == "LOCKED"
@@ -38,10 +41,41 @@ def test_readiness_marks_profile_connection_and_classification_ready() -> None:
 
     assert snapshot.summary == "4/5 readiness step(s) ready"
     assert "Live submit stays locked" in snapshot.next_step
+    assert snapshot.action_code == "OPEN_PORTFOLIO"
+    assert snapshot.action_label == "Review portfolio roles"
+    assert snapshot.action_enabled is True
     assert _step(snapshot, "Profile")["status"] == "READY"
     assert _step(snapshot, "Binance read-only")["status"] == "READY"
     assert _step(snapshot, "Portfolio classification")["status"] == "READY"
     assert _step(snapshot, "Mainnet preview")["status"] == "READY"
+
+
+def test_readiness_suggests_connection_check_when_keys_exist() -> None:
+    snapshot = _readiness(
+        setup=_setup(read_only_status="PASS"),
+        profile=_profile(configured=True),
+        safety=_safety(),
+        desktop=_desktop(has_assets=False),
+        connection_status="Not checked",
+    )
+
+    assert snapshot.action_code == "CHECK_BINANCE"
+    assert snapshot.action_label == "Run read-only check"
+    assert snapshot.action_enabled is True
+
+
+def test_readiness_suggests_classification_after_connection() -> None:
+    snapshot = _readiness(
+        setup=_setup(read_only_status="PASS"),
+        profile=_profile(configured=True),
+        safety=_safety(),
+        desktop=_desktop(has_assets=False),
+        connection_status="Connected",
+    )
+
+    assert snapshot.action_code == "RUN_CLASSIFICATION"
+    assert snapshot.action_label == "Run classification"
+    assert snapshot.action_enabled is True
 
 
 def _readiness(

@@ -29,6 +29,10 @@ class UserProfileService:
     def save_safe_default(self, onboarding_path: str) -> UserProfileSnapshot:
         return self._snapshot(self.store.save_safe_default(onboarding_path))
 
+    def delete_profile(self) -> UserProfileSnapshot:
+        self.store.delete()
+        return self.inspect()
+
     def save_guided(
         self,
         onboarding_path: str,

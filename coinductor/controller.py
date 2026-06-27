@@ -242,6 +242,31 @@ class AppController(QObject):
     def setupChecks(self) -> list[dict[str, str]]:
         return list(self._setup_snapshot.checks)
 
+    @Property("QVariantList", constant=True)
+    def privacyDataItems(self) -> list[dict[str, str]]:
+        return [
+            {
+                "name": "Binance account data",
+                "value": "Read when you run checks",
+                "detail": "Balances, Earn/Spot positions, order history, and strategy status are used to build local reports.",
+            },
+            {
+                "name": "Local files",
+                "value": "Stored on this PC",
+                "detail": ".env secrets, SQLite state, reports, research notes, safety state, and your onboarding profile stay in the project folder.",
+            },
+            {
+                "name": "Cloud AI",
+                "value": "Optional",
+                "detail": "Data stays local unless you configure a cloud AI provider; then only the selected prompt/report context is sent to that provider.",
+            },
+            {
+                "name": "Execution",
+                "value": "Guarded",
+                "detail": "Coinductor does not withdraw funds and does not submit live orders from the desktop UI without explicit guarded workflows.",
+            },
+        ]
+
     @Property(str, notify=setupChanged)
     def setupSummary(self) -> str:
         if self._setup_snapshot.blocked:
@@ -428,6 +453,15 @@ class AppController(QObject):
     def useSafeDefaultProfile(self) -> None:
         path = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
         self._user_profile_snapshot = self._user_profile_service.save_safe_default(path)
+        self._refresh_readiness()
+        self._refresh_first_portfolio_plan()
+        self.userProfileChanged.emit()
+        self.readinessChanged.emit()
+        self.firstPortfolioPlanChanged.emit()
+
+    @Slot()
+    def deleteUserProfile(self) -> None:
+        self._user_profile_snapshot = self._user_profile_service.delete_profile()
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
         self.userProfileChanged.emit()

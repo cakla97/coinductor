@@ -1068,6 +1068,69 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
+                    Layout.preferredHeight: 305
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 12
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 4
+                                Text { text: "Privacy & Data"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "Coinductor is local-first: it reads only what is needed for portfolio management and keeps project data on this computer unless you opt into an external AI provider."
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            Button {
+                                text: "Delete profile"
+                                enabled: appController.userProfileConfigured
+                                onClicked: deleteProfileDialog.open()
+                            }
+                        }
+                        ListView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            interactive: false
+                            spacing: 6
+                            model: appController.privacyDataItems
+                            delegate: Rectangle {
+                                required property var modelData
+                                width: ListView.view.width
+                                height: 44
+                                radius: 5
+                                color: panelRaised
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 12
+                                    spacing: 12
+                                    Text { Layout.preferredWidth: 150; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                    Text { Layout.preferredWidth: 125; text: modelData.value; color: accent; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
+                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                }
+                            }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Deleting the profile only resets onboarding preferences. API keys, reports, database history, and safety state are left untouched."
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
                     Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 450 : 0
                     visible: appController.onboardingPath === "FIRST_PORTFOLIO"
                     radius: 7
@@ -1532,6 +1595,38 @@ ApplicationWindow {
                         guideDrawdown.currentIndex === 0 ? 10 : guideDrawdown.currentIndex === 1 ? 15 : 20,
                         guideBudget.currentIndex === 0 ? 0 : Number(guideBudget.currentText)
                     )
+                }
+            }
+        }
+    }
+
+    Dialog {
+        id: deleteProfileDialog
+        title: "Delete user profile"
+        modal: true
+        anchors.centerIn: parent
+        width: 460
+        standardButtons: Dialog.Cancel
+
+        ColumnLayout {
+            width: parent.width
+            spacing: 14
+            Label {
+                Layout.fillWidth: true
+                text: "This resets only your onboarding profile: region, risk preference, automation preference, budget, and planner settings."
+                wrapMode: Text.WordWrap
+            }
+            Label {
+                Layout.fillWidth: true
+                text: "API keys, reports, database history, role overrides, and safety state are not deleted."
+                wrapMode: Text.WordWrap
+            }
+            Button {
+                Layout.fillWidth: true
+                text: "Delete onboarding profile"
+                onClicked: {
+                    deleteProfileDialog.close()
+                    appController.deleteUserProfile()
                 }
             }
         }

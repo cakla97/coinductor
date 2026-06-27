@@ -31,6 +31,17 @@ def test_user_profile_store_roundtrip(tmp_path) -> None:
     assert "allow_spot_trades = false" in rendered
 
 
+def test_user_profile_store_delete_removes_profile_file(tmp_path) -> None:
+    path = tmp_path / "state" / "user_profile.toml"
+    store = UserProfileStore(path)
+    store.save_safe_default("EXISTING_PORTFOLIO")
+
+    assert path.exists()
+    assert store.delete() is True
+    assert not path.exists()
+    assert store.delete() is False
+
+
 def test_guided_profile_balanced_is_guarded_but_not_active_automation() -> None:
     profile = guided_profile(
         onboarding_path="FIRST_PORTFOLIO",

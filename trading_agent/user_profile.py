@@ -65,6 +65,12 @@ class UserProfileStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(self._render(profile), encoding="utf-8")
 
+    def delete(self) -> bool:
+        if not self.path.exists():
+            return False
+        self.path.unlink()
+        return True
+
     def save_safe_default(self, onboarding_path: str) -> UserProfile:
         profile = safe_default_profile(onboarding_path)
         self.save(profile)

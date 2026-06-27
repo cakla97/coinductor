@@ -61,3 +61,14 @@ def test_user_profile_service_current_profile_uses_in_memory_fallback(tmp_path) 
 
     assert profile.onboarding_path == "FIRST_PORTFOLIO"
     assert not path.exists()
+
+
+def test_user_profile_service_deletes_profile_only(tmp_path) -> None:
+    path = tmp_path / "state" / "user_profile.toml"
+    service = UserProfileService(path)
+    service.save_safe_default("FIRST_PORTFOLIO")
+
+    snapshot = service.delete_profile()
+
+    assert snapshot.configured is False
+    assert not path.exists()

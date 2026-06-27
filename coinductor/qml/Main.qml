@@ -34,7 +34,448 @@ ApplicationWindow {
         toastTimer.restart()
     }
 
+    Item {
+        anchors.fill: parent
+        visible: appController.onboardingWizardVisible
+
+        Rectangle {
+            anchors.fill: parent
+            color: "#0f1318"
+        }
+
+        ScrollView {
+            anchors.fill: parent
+            clip: true
+
+            ColumnLayout {
+                x: Math.max(32, (window.width - 980) / 2)
+                y: 34
+                width: Math.min(980, window.width - 64)
+                spacing: 18
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 14
+                    Rectangle {
+                        Layout.preferredWidth: 46
+                        Layout.preferredHeight: 46
+                        radius: 9
+                        color: accent
+                        Text {
+                            anchors.centerIn: parent
+                            text: "C"
+                            color: "#09110e"
+                            font.pixelSize: 26
+                            font.bold: true
+                        }
+                    }
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 3
+                        Text { text: "Welcome to Coinductor"; color: textPrimary; font.pixelSize: 28; font.bold: true }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "A short setup wizard prepares your local profile before the main portfolio manager opens."
+                            color: textSecondary
+                            font.pixelSize: 14
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                    Button {
+                        text: "Enter app"
+                        enabled: appController.userProfileConfigured
+                        onClicked: appController.closeOnboardingWizard()
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 68
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 12
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Nothing in this wizard places orders or changes exchange settings. It only creates a local preference profile and shows what still needs to be verified."
+                            color: textSecondary
+                            font.pixelSize: 13
+                            wrapMode: Text.WordWrap
+                        }
+                        Rectangle {
+                            Layout.preferredWidth: 150
+                            Layout.preferredHeight: 30
+                            radius: 5
+                            color: "#17372d"
+                            border.color: accent
+                            Text {
+                                anchors.centerIn: parent
+                                text: "Local-first"
+                                color: accent
+                                font.pixelSize: 11
+                                font.bold: true
+                            }
+                        }
+                    }
+                }
+
+                Text { text: "1. Starting point"; color: textPrimary; font.pixelSize: 18; font.bold: true }
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 12
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 132
+                        radius: 7
+                        color: appController.onboardingPath === "EXISTING" ? "#1d332d" : panel
+                        border.color: appController.onboardingPath === "EXISTING" ? accent : border
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 18
+                            spacing: 7
+                            Text { text: "I already have a portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Coinductor will classify current assets, preserve protected holdings, and suggest guarded actions."
+                                color: textSecondary
+                                font.pixelSize: 13
+                                wrapMode: Text.WordWrap
+                            }
+                            Item { Layout.fillHeight: true }
+                            Text { text: "Use existing allocation"; color: accent; font.pixelSize: 12; font.bold: true }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: appController.selectOnboardingPath("EXISTING")
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 132
+                        radius: 7
+                        color: appController.onboardingPath === "FIRST_PORTFOLIO" ? "#1d332d" : panel
+                        border.color: appController.onboardingPath === "FIRST_PORTFOLIO" ? accent : border
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 18
+                            spacing: 7
+                            Text { text: "Build my first portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Start from a funding budget, keep a reserve, and create a staged basket before automation."
+                                color: textSecondary
+                                font.pixelSize: 13
+                                wrapMode: Text.WordWrap
+                            }
+                            Item { Layout.fillHeight: true }
+                            Text { text: "Create first plan"; color: accent; font.pixelSize: 12; font.bold: true }
+                        }
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: appController.selectOnboardingPath("FIRST_PORTFOLIO")
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 385
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 12
+                        Text { text: "2. Decision profile"; color: textPrimary; font.pixelSize: 18; font.bold: true }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "These answers shape risk limits, funding suggestions, bot recommendations, and how often Coinductor expects you to review the portfolio."
+                            color: textSecondary
+                            font.pixelSize: 13
+                            wrapMode: Text.WordWrap
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Text { text: "Management style"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                ComboBox { id: wizardStyle; Layout.fillWidth: true; model: ["CONSERVATIVE", "BALANCED", "ACTIVE"]; currentIndex: 1 }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Text { text: "Automation"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                ComboBox { id: wizardAutomation; Layout.fillWidth: true; model: ["RECOMMEND_ONLY", "GUARDED_AUTOMATION"] }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Text { text: "Review rhythm"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                ComboBox { id: wizardCadence; Layout.fillWidth: true; model: ["WEEKLY", "TWICE_WEEKLY", "DAILY", "MANUAL"]; currentIndex: 1 }
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Text { text: "Language / region"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                ComboBox { id: wizardLocale; Layout.fillWidth: true; model: ["en-US", "es-ES", "cs-CZ", "pt-BR"] }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Text { text: "Funding currency"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                ComboBox { id: wizardCurrency; Layout.fillWidth: true; model: ["USDC"] }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Text { text: "Starting budget"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                ComboBox { id: wizardBudget; Layout.fillWidth: true; model: ["Auto", "250", "500", "1000", "2000", "10000", "25000"] }
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Text { text: "Drawdown comfort"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                ComboBox { id: wizardDrawdown; Layout.fillWidth: true; model: ["Low (10%)", "Medium (15%)", "High (20%)"]; currentIndex: 1 }
+                            }
+                            CheckBox {
+                                id: wizardUseBots
+                                Layout.fillWidth: true
+                                text: "Use Binance bot recommendations"
+                                checked: true
+                            }
+                            CheckBox {
+                                id: wizardAllowSpot
+                                Layout.fillWidth: true
+                                text: "Allow guarded spot trades"
+                                checked: false
+                                enabled: wizardAutomation.currentText === "GUARDED_AUTOMATION"
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Item { Layout.fillWidth: true }
+                            Button {
+                                text: "Use safe defaults"
+                                onClicked: appController.useSafeDefaultProfile()
+                            }
+                            Button {
+                                text: "Save profile"
+                                highlighted: true
+                                onClicked: appController.saveGuidedProfile(
+                                    wizardStyle.currentText,
+                                    wizardAutomation.currentText,
+                                    wizardCadence.currentText,
+                                    wizardLocale.currentText,
+                                    wizardCurrency.currentText,
+                                    wizardUseBots.checked,
+                                    wizardAllowSpot.checked,
+                                    wizardDrawdown.currentIndex === 0 ? 10 : wizardDrawdown.currentIndex === 1 ? 15 : 20,
+                                    wizardBudget.currentIndex === 0 ? 0 : Number(wizardBudget.currentText)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 12
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 430 : 0
+                        visible: appController.onboardingPath === "FIRST_PORTFOLIO"
+                        radius: 7
+                        color: panel
+                        border.color: border
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 18
+                            spacing: 12
+                            RowLayout {
+                                Layout.fillWidth: true
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Text { text: "3. First portfolio plan"; color: textPrimary; font.pixelSize: 18; font.bold: true }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: appController.firstPortfolioPlanSummary
+                                        color: textSecondary
+                                        font.pixelSize: 13
+                                        wrapMode: Text.WordWrap
+                                    }
+                                }
+                                Text {
+                                    text: appController.firstPortfolioPlanAvailable ? "READY" : "SAVE PROFILE FIRST"
+                                    color: appController.firstPortfolioPlanAvailable ? accent : warning
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                }
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 104
+                                spacing: 10
+                                Repeater {
+                                    model: appController.firstPortfolioFunding
+                                    delegate: Rectangle {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 104
+                                        radius: 6
+                                        color: panelRaised
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 12
+                                            Text { text: modelData.name; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                            Text { text: modelData.value; color: textPrimary; font.pixelSize: 17; font.bold: true; elide: Text.ElideRight }
+                                            Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                        }
+                                    }
+                                }
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                spacing: 10
+                                ListView {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    interactive: false
+                                    spacing: 5
+                                    model: appController.firstPortfolioAllocation
+                                    header: Text { text: "Suggested basket"; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                                    delegate: RowLayout {
+                                        required property var modelData
+                                        width: ListView.view.width
+                                        height: 26
+                                        Text { Layout.preferredWidth: 52; text: modelData.asset; color: accent; font.pixelSize: 11; font.bold: true }
+                                        Text { Layout.preferredWidth: 52; text: modelData.target; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                        Text { Layout.preferredWidth: 90; text: modelData.amount; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                        Text { Layout.fillWidth: true; text: modelData.role; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                    }
+                                }
+                                ListView {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    interactive: false
+                                    spacing: 5
+                                    model: appController.firstPortfolioSteps
+                                    header: Text { text: "Manual setup steps"; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                                    delegate: RowLayout {
+                                        required property var modelData
+                                        width: ListView.view.width
+                                        height: 28
+                                        Text { Layout.preferredWidth: 95; text: modelData.name; color: textPrimary; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
+                                        Text { Layout.preferredWidth: 70; text: modelData.value; color: warning; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
+                                        Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 430 : 320
+                        radius: 7
+                        color: panel
+                        border.color: border
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 18
+                            spacing: 12
+                            RowLayout {
+                                Layout.fillWidth: true
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    Text { text: appController.onboardingPath === "FIRST_PORTFOLIO" ? "4. Readiness" : "3. Readiness"; color: textPrimary; font.pixelSize: 18; font.bold: true }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: appController.readinessNextStep
+                                        color: textSecondary
+                                        font.pixelSize: 13
+                                        wrapMode: Text.WordWrap
+                                    }
+                                }
+                                Text { text: appController.readinessSummary; color: accent; font.pixelSize: 11; font.bold: true }
+                            }
+                            ListView {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                interactive: false
+                                spacing: 6
+                                model: appController.readinessSteps
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    width: ListView.view.width
+                                    height: 38
+                                    radius: 5
+                                    color: panelRaised
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 12
+                                        anchors.rightMargin: 12
+                                        spacing: 10
+                                        Text { Layout.preferredWidth: 130; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                        Text {
+                                            Layout.preferredWidth: 70
+                                            text: modelData.status
+                                            color: modelData.status === "READY" ? accent
+                                                : modelData.status === "NEXT" ? warning
+                                                : modelData.status === "LOCKED" ? textSecondary : "#ee6b6e"
+                                            font.pixelSize: 10
+                                            font.bold: true
+                                        }
+                                        Text { Layout.fillWidth: true; text: modelData.action; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                    }
+                                }
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Button {
+                                    text: appController.checkingConnection ? "Checking..." : "Check Binance"
+                                    enabled: !appController.checkingConnection
+                                    onClicked: appController.checkBinanceReadOnly()
+                                }
+                                Button {
+                                    text: appController.checkingAiProvider ? "Checking AI..." : "Check AI"
+                                    enabled: !appController.checkingAiProvider
+                                    onClicked: appController.checkAiProvider()
+                                }
+                                Item { Layout.fillWidth: true }
+                                Button {
+                                    text: "Enter Coinductor"
+                                    highlighted: true
+                                    enabled: appController.userProfileConfigured
+                                    onClicked: appController.closeOnboardingWizard()
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Item { Layout.fillWidth: true; Layout.preferredHeight: 34 }
+            }
+        }
+    }
+
     RowLayout {
+        visible: !appController.onboardingWizardVisible
         anchors.fill: parent
         spacing: 0
 
@@ -710,9 +1151,13 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Text {
                         Layout.fillWidth: true
-                        text: "Choose a starting path and verify this computer before connecting services."
+                        text: "Manage local configuration, privacy controls, and readiness checks."
                         color: textSecondary
                         font.pixelSize: 13
+                    }
+                    Button {
+                        text: "Setup wizard"
+                        onClicked: appController.openOnboardingWizard()
                     }
                     Button {
                         text: "Refresh checks"
@@ -886,164 +1331,9 @@ ApplicationWindow {
                     }
                 }
 
-                Text { text: "How are you starting?"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 12
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 150
-                        radius: 7
-                        color: appController.onboardingPath === "EXISTING" ? "#1d332d" : panel
-                        border.color: appController.onboardingPath === "EXISTING" ? accent : border
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 18
-                            spacing: 8
-                            Text { text: "I already have a portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                            Text {
-                                Layout.fillWidth: true
-                                text: "Connect Binance read-only access, classify current assets, then test guarded automation."
-                                color: textSecondary
-                                font.pixelSize: 12
-                                wrapMode: Text.WordWrap
-                            }
-                            Item { Layout.fillHeight: true }
-                            Text { text: "Analyze existing allocation"; color: accent; font.pixelSize: 11; font.bold: true }
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: appController.selectOnboardingPath("EXISTING")
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 150
-                        radius: 7
-                        color: appController.onboardingPath === "FIRST_PORTFOLIO" ? "#1d332d" : panel
-                        border.color: appController.onboardingPath === "FIRST_PORTFOLIO" ? accent : border
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 18
-                            spacing: 8
-                            Text { text: "Build my first portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                            Text {
-                                Layout.fillWidth: true
-                                text: "Start from USDC, choose a risk profile, simulate a staged entry, and activate automation gradually."
-                                color: textSecondary
-                                font.pixelSize: 12
-                                wrapMode: Text.WordWrap
-                            }
-                            Item { Layout.fillHeight: true }
-                            Text { text: "Create a controlled starting plan"; color: accent; font.pixelSize: 11; font.bold: true }
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: appController.selectOnboardingPath("FIRST_PORTFOLIO")
-                        }
-                    }
-                }
-
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 285
-                    radius: 7
-                    color: panel
-                    border.color: border
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 12
-                        RowLayout {
-                            Layout.fillWidth: true
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 4
-                                Text { text: "Personal readiness"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: appController.readinessNextStep
-                                    color: textSecondary
-                                    font.pixelSize: 12
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                            Rectangle {
-                                Layout.preferredWidth: 150
-                                Layout.preferredHeight: 30
-                                radius: 5
-                                color: "#17372d"
-                                border.color: accent
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: appController.readinessSummary
-                                    color: accent
-                                    font.pixelSize: 10
-                                    font.bold: true
-                                }
-                            }
-                            Button {
-                                Layout.preferredWidth: 170
-                                text: appController.readinessActionLabel
-                                enabled: appController.readinessActionEnabled
-                                onClicked: {
-                                    if (appController.readinessActionCode === "GUIDE_PROFILE") {
-                                        guidedProfileDialog.open()
-                                    } else {
-                                        appController.executeReadinessAction()
-                                    }
-                                }
-                            }
-                        }
-                        ListView {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            interactive: false
-                            spacing: 6
-                            model: appController.readinessSteps
-                            delegate: Rectangle {
-                                required property var modelData
-                                width: ListView.view.width
-                                height: 38
-                                radius: 5
-                                color: panelRaised
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 12
-                                    anchors.rightMargin: 12
-                                    spacing: 12
-                                    Rectangle {
-                                        Layout.preferredWidth: 8
-                                        Layout.preferredHeight: 8
-                                        radius: 4
-                                        color: modelData.status === "READY" ? accent
-                                            : modelData.status === "NEXT" ? warning
-                                            : modelData.status === "LOCKED" ? "#6f7b86" : "#ee6b6e"
-                                    }
-                                    Text { Layout.preferredWidth: 145; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
-                                    Text {
-                                        Layout.preferredWidth: 70
-                                        text: modelData.status
-                                        color: modelData.status === "READY" ? accent
-                                            : modelData.status === "NEXT" ? warning
-                                            : modelData.status === "LOCKED" ? textSecondary : "#ee6b6e"
-                                        font.pixelSize: 10
-                                        font.bold: true
-                                    }
-                                    Text { Layout.fillWidth: true; text: modelData.action; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 430
                     radius: 7
                     color: panel
                     border.color: border
@@ -1066,21 +1356,17 @@ ApplicationWindow {
                                 }
                             }
                             Button {
+                                text: "Open wizard"
+                                onClicked: appController.openOnboardingWizard()
+                            }
+                            Button {
                                 text: "Use safe defaults"
                                 onClicked: appController.useSafeDefaultProfile()
-                            }
-                            Button {
-                                text: "Guide me"
-                                onClicked: guidedProfileDialog.open()
-                            }
-                            Button {
-                                text: "Advanced"
-                                enabled: false
                             }
                         }
                         ListView {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 210
+                            Layout.fillHeight: true
                             interactive: true
                             clip: true
                             spacing: 6
@@ -1098,31 +1384,6 @@ ApplicationWindow {
                                     spacing: 12
                                     Text { Layout.preferredWidth: 120; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                     Text { Layout.preferredWidth: 150; text: modelData.value; color: accent; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
-                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
-                                }
-                            }
-                        }
-                        Text { text: "Exchange setup"; color: textPrimary; font.pixelSize: 13; font.bold: true }
-                        ListView {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            interactive: false
-                            spacing: 6
-                            model: appController.exchangeOnboardingSteps
-                            delegate: Rectangle {
-                                required property var modelData
-                                width: ListView.view.width
-                                height: 34
-                                radius: 5
-                                color: "#141a21"
-                                border.color: border
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 12
-                                    anchors.rightMargin: 12
-                                    spacing: 12
-                                    Text { Layout.preferredWidth: 120; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
-                                    Text { Layout.preferredWidth: 120; text: modelData.value; color: warning; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
                                     Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
                                 }
                             }
@@ -1193,218 +1454,6 @@ ApplicationWindow {
                             color: textSecondary
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 520 : 0
-                    visible: appController.onboardingPath === "FIRST_PORTFOLIO"
-                    radius: 7
-                    color: panel
-                    border.color: border
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 12
-                        RowLayout {
-                            Layout.fillWidth: true
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 4
-                                Text { text: "First portfolio planner"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: appController.firstPortfolioPlanSummary
-                                    color: textSecondary
-                                    font.pixelSize: 12
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                            Rectangle {
-                                Layout.preferredWidth: 120
-                                Layout.preferredHeight: 30
-                                radius: 5
-                                color: appController.firstPortfolioPlanAvailable ? "#17372d" : "#2a2520"
-                                border.color: appController.firstPortfolioPlanAvailable ? accent : warning
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: appController.firstPortfolioPlanAvailable ? "READY" : "PROFILE NEEDED"
-                                    color: appController.firstPortfolioPlanAvailable ? accent : warning
-                                    font.pixelSize: 10
-                                    font.bold: true
-                                }
-                            }
-                        }
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 132
-                            spacing: 10
-                            Repeater {
-                                model: appController.firstPortfolioFunding
-                                delegate: Rectangle {
-                                    required property var modelData
-                                    Layout.fillWidth: true
-                                    Layout.preferredHeight: 132
-                                    radius: 6
-                                    color: panelRaised
-                                    ColumnLayout {
-                                        anchors.fill: parent
-                                        anchors.margins: 12
-                                        spacing: 5
-                                        Text { text: modelData.name; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                                        Text { text: modelData.value; color: textPrimary; font.pixelSize: 17; font.bold: true; elide: Text.ElideRight }
-                                        Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
-                                    }
-                                }
-                            }
-                        }
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 250
-                            spacing: 10
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 250
-                                radius: 6
-                                color: panelRaised
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 12
-                                    spacing: 8
-                                    Text { text: "Suggested basket"; color: textPrimary; font.pixelSize: 13; font.bold: true }
-                                    ListView {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-                                        interactive: false
-                                        spacing: 5
-                                        model: appController.firstPortfolioAllocation
-                                        delegate: RowLayout {
-                                            required property var modelData
-                                            width: ListView.view.width
-                                            height: 24
-                                            Text { Layout.preferredWidth: 52; text: modelData.asset; color: accent; font.pixelSize: 11; font.bold: true }
-                                            Text { Layout.preferredWidth: 52; text: modelData.target; color: textPrimary; font.pixelSize: 11; font.bold: true }
-                                            Text { Layout.preferredWidth: 90; text: modelData.amount; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
-                                            Text { Layout.fillWidth: true; text: modelData.role; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
-                                        }
-                                    }
-                                }
-                            }
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 250
-                                radius: 6
-                                color: panelRaised
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 12
-                                    spacing: 8
-                                    Text { text: "Manual setup steps"; color: textPrimary; font.pixelSize: 13; font.bold: true }
-                                    ListView {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-                                        interactive: false
-                                        spacing: 5
-                                        model: appController.firstPortfolioSteps
-                                        delegate: RowLayout {
-                                            required property var modelData
-                                            width: ListView.view.width
-                                            height: 28
-                                            Text { Layout.preferredWidth: 95; text: modelData.name; color: textPrimary; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
-                                            Text { Layout.preferredWidth: 70; text: modelData.value; color: warning; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
-                                            Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: appController.onboardingPath === "" ? 0 : 96
-                    visible: appController.onboardingPath !== ""
-                    radius: 7
-                    color: panelRaised
-                    border.color: border
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 16
-                        Text {
-                            Layout.fillWidth: true
-                            text: appController.onboardingPath === "EXISTING"
-                                ? "Next: validate read-only Binance access and run an initial portfolio classification."
-                                : "Next: define budget, risk profile, reserve, and a testnet-first staged USDC deployment plan."
-                            color: textPrimary
-                            font.pixelSize: 12
-                            wrapMode: Text.WordWrap
-                        }
-                        Button {
-                            text: appController.onboardingPath === "EXISTING"
-                                ? (appController.busy ? "Running..." : "Run classification")
-                                : "Planned"
-                            enabled: appController.onboardingPath === "EXISTING" && !appController.busy
-                            onClicked: appController.runInitialClassification()
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: appController.onboardingPath === "EXISTING" ? 260 : 0
-                    visible: appController.onboardingPath === "EXISTING"
-                    radius: 7
-                    color: panel
-                    border.color: border
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 12
-                        RowLayout {
-                            Layout.fillWidth: true
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 4
-                                Text { text: "Portfolio classification review"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: appController.onboardingReviewSummary
-                                    color: textSecondary
-                                    font.pixelSize: 12
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                            Button {
-                                text: "Open report"
-                                enabled: appController.hasReport
-                                onClicked: appController.openReport()
-                            }
-                        }
-                        ListView {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            interactive: false
-                            spacing: 6
-                            model: appController.onboardingReview
-                            delegate: Rectangle {
-                                required property var modelData
-                                width: ListView.view.width
-                                height: 38
-                                radius: 5
-                                color: panelRaised
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 12
-                                    anchors.rightMargin: 12
-                                    spacing: 12
-                                    Text { Layout.preferredWidth: 150; text: modelData.label; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                    Text { Layout.preferredWidth: 130; text: modelData.value; color: accent; font.pixelSize: 12; font.bold: true; elide: Text.ElideRight }
-                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 11; elide: Text.ElideRight }
-                                }
-                            }
                         }
                     }
                 }

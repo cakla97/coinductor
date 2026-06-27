@@ -105,6 +105,7 @@ class AppController(QObject):
     safetyChanged = Signal()
     readinessChanged = Signal()
     firstPortfolioPlanChanged = Signal()
+    onboardingWizardChanged = Signal()
 
     def __init__(self):
         super().__init__()
@@ -145,6 +146,7 @@ class AppController(QObject):
         self._ai_provider_snapshot = AiProviderService().inspect()
         self._user_profile_service = UserProfileService()
         self._user_profile_snapshot = self._user_profile_service.inspect()
+        self._onboarding_wizard_visible = not self._user_profile_snapshot.configured
         self._safety_service = SafetyService()
         self._safety_snapshot = self._safety_service.inspect()
         self._readiness_service = ReadinessService()
@@ -244,6 +246,10 @@ class AppController(QObject):
     @Property(int, notify=pageChanged)
     def currentPage(self) -> int:
         return self._current_page
+
+    @Property(bool, notify=onboardingWizardChanged)
+    def onboardingWizardVisible(self) -> bool:
+        return self._onboarding_wizard_visible
 
     @Property("QVariantList", notify=setupChanged)
     def setupChecks(self) -> list[dict[str, str]]:
@@ -451,10 +457,28 @@ class AppController(QObject):
         self.pageChanged.emit()
 
     @Slot()
+    def openOnboardingWizard(self) -> None:
+        if self._onboarding_wizard_visible:
+            return
+        self._onboarding_wizard_visible = True
+        self.onboardingWizardChanged.emit()
+
+    @Slot()
+    def closeOnboardingWizard(self) -> None:
+        if not self._user_profile_snapshot.configured:
+            return
+        if not self._onboarding_wizard_visible:
+            return
+        self._onboarding_wizard_visible = False
+        self.onboardingWizardChanged.emit()
+
+    @Slot()
     def refreshSetup(self) -> None:
         self._setup_snapshot = SetupService().inspect()
         self._ai_provider_snapshot = AiProviderService().inspect()
         self._user_profile_snapshot = self._user_profile_service.inspect()
+        if not self._user_profile_snapshot.configured:
+            self._onboarding_wizard_visible = True
         self._safety_snapshot = self._safety_service.inspect()
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
@@ -464,6 +488,7 @@ class AppController(QObject):
         self.safetyChanged.emit()
         self.readinessChanged.emit()
         self.firstPortfolioPlanChanged.emit()
+        self.onboardingWizardChanged.emit()
 
     @Slot(str)
     def selectOnboardingPath(self, path: str) -> None:
@@ -479,20 +504,24 @@ class AppController(QObject):
     def useSafeDefaultProfile(self) -> None:
         path = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
         self._user_profile_snapshot = self._user_profile_service.save_safe_default(path)
+        self._onboarding_wizard_visible = False
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
         self.userProfileChanged.emit()
         self.readinessChanged.emit()
         self.firstPortfolioPlanChanged.emit()
+        self.onboardingWizardChanged.emit()
 
     @Slot()
     def deleteUserProfile(self) -> None:
         self._user_profile_snapshot = self._user_profile_service.delete_profile()
+        self._onboarding_wizard_visible = True
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
         self.userProfileChanged.emit()
         self.readinessChanged.emit()
         self.firstPortfolioPlanChanged.emit()
+        self.onboardingWizardChanged.emit()
 
     @Slot(str, str, str, str, str, bool, bool, float, float)
     def saveGuidedProfile(
@@ -520,11 +549,13 @@ class AppController(QObject):
             max_drawdown_comfort_pct=max_drawdown_comfort_pct,
             planned_deposit_amount=planned_deposit_amount,
         )
+        self._onboarding_wizard_visible = False
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
         self.userProfileChanged.emit()
         self.readinessChanged.emit()
         self.firstPortfolioPlanChanged.emit()
+        self.onboardingWizardChanged.emit()
 
     @Slot()
     def checkBinanceReadOnly(self) -> None:

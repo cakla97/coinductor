@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from trading_agent.locale_profile import locale_profile, translated
 from trading_agent.user_profile import UserProfile
 
 from .models import FirstPortfolioPlanSnapshot
@@ -7,23 +8,29 @@ from .models import FirstPortfolioPlanSnapshot
 
 class FirstPortfolioPlanner:
     def plan(self, profile: UserProfile) -> FirstPortfolioPlanSnapshot:
+        locale = locale_profile(profile.locale)
         if profile.onboarding_path != "FIRST_PORTFOLIO":
             return FirstPortfolioPlanSnapshot(
                 available=False,
-                summary="First portfolio planning is available after selecting Build my first portfolio.",
+                summary=translated(locale, "planner.unavailable"),
                 funding=(),
                 allocation=(),
                 steps=(),
                 notes=(),
             )
 
-        investment = profile.planned_deposit_amount or self._default_investment(profile.management_style)
+        investment = profile.planned_deposit_amount or locale.default_starting_budget
         reserve_amount = investment * profile.reserve_pct / 100
         deployable = investment - reserve_amount
-        allocation = self._allocation(profile.management_style, deployable, profile.base_currency)
-        summary = (
-            f"Start with {investment:.0f} {profile.base_currency}: keep {reserve_amount:.0f} "
-            f"{profile.base_currency} as reserve and deploy about {deployable:.0f} {profile.base_currency} gradually."
+        allocation = self._allocation(profile.management_style, locale.funding_currency)
+        summary = translated(
+            locale,
+            "planner.summary",
+            investment=investment,
+            reserve=reserve_amount,
+            deployable=deployable,
+            fiat=locale.fiat_currency,
+            funding=locale.funding_currency,
         )
         return FirstPortfolioPlanSnapshot(
             available=True,
@@ -34,14 +41,7 @@ class FirstPortfolioPlanner:
             notes=self._notes(profile, deployable),
         )
 
-    def _default_investment(self, style: str) -> float:
-        if style == "ACTIVE":
-            return 600.0
-        if style == "BALANCED":
-            return 400.0
-        return 250.0
-
-    def _allocation(self, style: str, deployable: float, currency: str) -> tuple[dict[str, str], ...]:
+    def _allocation(self, style: str, funding_currency: str) -> tuple[dict[str, str], ...]:
         if style == "ACTIVE":
             weights = (("BTC", 35), ("ETH", 25), ("SOL", 20), ("BNB", 10), ("WLD", 10))
         elif style == "BALANCED":
@@ -52,43 +52,45 @@ class FirstPortfolioPlanner:
             {
                 "asset": asset,
                 "target": f"{weight}%",
-                "amount": f"{deployable * weight / 100:.0f} {currency}",
+                "amount": f"{weight}% of converted {funding_currency}",
                 "role": self._role(asset),
             }
             for asset, weight in weights
         )
 
     def _funding(self, profile: UserProfile, investment: float, reserve_amount: float, deployable: float) -> tuple[dict[str, str], ...]:
+        locale = locale_profile(profile.locale)
         return (
             {
                 "name": "Deposit",
-                "value": f"{investment:.0f} {profile.base_currency}",
-                "detail": "Suggested first funding amount before any automation.",
+                "value": f"{investment:.0f} {locale.fiat_currency}",
+                "detail": translated(locale, "funding.deposit.detail"),
             },
             {
                 "name": "Reserve",
-                "value": f"{reserve_amount:.0f} {profile.base_currency}",
-                "detail": "Keep this liquid; do not allocate it to bots or trades.",
+                "value": f"{reserve_amount:.0f} {locale.fiat_currency}",
+                "detail": translated(locale, "funding.reserve.detail"),
             },
             {
                 "name": "Initial deployment",
-                "value": f"{deployable:.0f} {profile.base_currency}",
-                "detail": "Split into the proposed basket over one or more manual buys.",
+                "value": f"{deployable:.0f} {locale.fiat_currency} -> {locale.funding_currency}",
+                "detail": translated(locale, "funding.deployment.detail", funding=locale.funding_currency),
             },
         )
 
     def _steps(self, profile: UserProfile) -> tuple[dict[str, str], ...]:
+        locale = locale_profile(profile.locale)
         cadence = profile.run_cadence.replace("_", " ").lower()
         return (
             {
                 "name": "Fund Binance",
                 "value": "Manual",
-                "detail": f"Deposit {profile.base_currency} or EUR, then convert funding to {profile.base_currency}.",
+                "detail": translated(locale, "steps.fund.detail", fiat=locale.fiat_currency, funding=locale.funding_currency),
             },
             {
                 "name": "Buy basket",
                 "value": "Manual",
-                "detail": "Buy the suggested assets manually first; Coinductor can analyze after read-only API is connected.",
+                "detail": translated(locale, "steps.buy.detail"),
             },
             {
                 "name": "Enable Earn",
@@ -103,6 +105,7 @@ class FirstPortfolioPlanner:
         )
 
     def _notes(self, profile: UserProfile, deployable: float) -> tuple[dict[str, str], ...]:
+        locale = locale_profile(profile.locale)
         bot_note = "Rebalancing bot can be considered after at least 200 USDC is available for its basket."
         if deployable < 200:
             bot_note = "Rebalancing bot is below the usual 200 USDC minimum; start with manual basket review."
@@ -123,7 +126,7 @@ class FirstPortfolioPlanner:
             {
                 "name": "Execution",
                 "value": "Manual first",
-                "detail": "This planner never places orders; it prepares a human-readable starting plan.",
+                "detail": translated(locale, "notes.execution.detail"),
             },
         )
 

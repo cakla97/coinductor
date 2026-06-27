@@ -6,6 +6,7 @@ def test_safe_default_profile_is_conservative() -> None:
 
     assert profile.onboarding_path == "FIRST_PORTFOLIO"
     assert profile.exchange == "BINANCE"
+    assert profile.locale == "en-US"
     assert profile.setup_mode == "SAFE_DEFAULTS"
     assert profile.experience == "BEGINNER"
     assert profile.management_style == "CONSERVATIVE"
@@ -26,6 +27,7 @@ def test_user_profile_store_roundtrip(tmp_path) -> None:
     rendered = (tmp_path / "state" / "user_profile.toml").read_text(encoding="utf-8")
     assert 'setup_mode = "SAFE_DEFAULTS"' in rendered
     assert 'exchange = "BINANCE"' in rendered
+    assert 'locale = "en-US"' in rendered
     assert "allow_spot_trades = false" in rendered
 
 
@@ -36,6 +38,7 @@ def test_guided_profile_balanced_is_guarded_but_not_active_automation() -> None:
         automation_level="ACTIVE_AUTOMATION",
         run_cadence="TWICE_WEEKLY",
         base_currency="usdc",
+        locale="cs-CZ",
         use_bots=True,
         allow_spot_trades=True,
         max_drawdown_comfort_pct=15,
@@ -46,6 +49,7 @@ def test_guided_profile_balanced_is_guarded_but_not_active_automation() -> None:
     assert profile.management_style == "BALANCED"
     assert profile.automation_level == "GUARDED_AUTOMATION"
     assert profile.base_currency == "USDC"
+    assert profile.locale == "cs-CZ"
     assert profile.planned_deposit_amount == 500.0
     assert profile.use_rebalancing is True
     assert profile.use_grid is False

@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 import tomllib
 
+from .locale_profile import normalize_locale
+
 
 PROFILE_VERSION = 1
 
@@ -21,6 +23,7 @@ class UserProfile:
     version: int
     onboarding_path: str
     exchange: str
+    locale: str
     setup_mode: str
     experience: str
     management_style: str
@@ -39,7 +42,7 @@ class UserProfile:
     @property
     def summary(self) -> str:
         return (
-            f"{self.setup_mode} {self.onboarding_path} on {self.exchange}: {self.management_style}, "
+            f"{self.setup_mode} {self.onboarding_path} on {self.exchange} ({self.locale}): {self.management_style}, "
             f"{self.automation_level}, run {self.run_cadence.lower()}."
         )
 
@@ -77,6 +80,7 @@ class UserProfileStore:
         use_bots: bool,
         allow_spot_trades: bool,
         max_drawdown_comfort_pct: float,
+        locale: str = "en-US",
         planned_deposit_amount: float = 0.0,
     ) -> UserProfile:
         profile = guided_profile(
@@ -85,6 +89,7 @@ class UserProfileStore:
             automation_level=automation_level,
             run_cadence=run_cadence,
             base_currency=base_currency,
+            locale=locale,
             use_bots=use_bots,
             allow_spot_trades=allow_spot_trades,
             max_drawdown_comfort_pct=max_drawdown_comfort_pct,
@@ -98,6 +103,7 @@ class UserProfileStore:
             version=int(values.get("version", PROFILE_VERSION)),
             onboarding_path=_choice(values.get("onboarding_path"), ONBOARDING_PATHS, "EXISTING_PORTFOLIO"),
             exchange=_choice(values.get("exchange"), EXCHANGES, "BINANCE"),
+            locale=normalize_locale(values.get("locale")),
             setup_mode=_choice(values.get("setup_mode"), SETUP_MODES, "SAFE_DEFAULTS"),
             experience=_choice(values.get("experience"), EXPERIENCE_LEVELS, "BEGINNER"),
             management_style=_choice(values.get("management_style"), MANAGEMENT_STYLES, "CONSERVATIVE"),
@@ -124,6 +130,7 @@ class UserProfileStore:
                 f"version = {profile.version}",
                 f'onboarding_path = "{profile.onboarding_path}"',
                 f'exchange = "{profile.exchange}"',
+                f'locale = "{profile.locale}"',
                 f'setup_mode = "{profile.setup_mode}"',
                 f'experience = "{profile.experience}"',
                 f'management_style = "{profile.management_style}"',
@@ -149,6 +156,7 @@ def safe_default_profile(onboarding_path: str) -> UserProfile:
         version=PROFILE_VERSION,
         onboarding_path=normalized,
         exchange="BINANCE",
+        locale="en-US",
         setup_mode="SAFE_DEFAULTS",
         experience="BEGINNER",
         management_style="CONSERVATIVE",
@@ -175,6 +183,7 @@ def guided_profile(
     use_bots: bool,
     allow_spot_trades: bool,
     max_drawdown_comfort_pct: float,
+    locale: str = "en-US",
     planned_deposit_amount: float = 0.0,
 ) -> UserProfile:
     normalized_path = _choice(onboarding_path, ONBOARDING_PATHS, "EXISTING_PORTFOLIO")
@@ -185,6 +194,7 @@ def guided_profile(
     cadence = _choice(run_cadence, RUN_CADENCES, _cadence_for_style(style))
     drawdown = _bounded_float(max_drawdown_comfort_pct, minimum=5.0, maximum=25.0, default=_drawdown_for_style(style))
     currency = str(base_currency or "USDC").strip().upper() or "USDC"
+    normalized_locale = normalize_locale(locale)
     deposit = _bounded_float(planned_deposit_amount, minimum=0.0, maximum=1_000_000.0, default=0.0)
     spot_allowed = bool(allow_spot_trades and automation == "GUARDED_AUTOMATION")
     bots_enabled = bool(use_bots)
@@ -193,6 +203,7 @@ def guided_profile(
         version=PROFILE_VERSION,
         onboarding_path=normalized_path,
         exchange="BINANCE",
+        locale=normalized_locale,
         setup_mode="GUIDED",
         experience=_experience_for_style(style),
         management_style=style,

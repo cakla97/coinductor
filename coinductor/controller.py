@@ -434,12 +434,13 @@ class AppController(QObject):
         self.readinessChanged.emit()
         self.firstPortfolioPlanChanged.emit()
 
-    @Slot(str, str, str, str, bool, bool, float, float)
+    @Slot(str, str, str, str, str, bool, bool, float, float)
     def saveGuidedProfile(
         self,
         management_style: str,
         automation_level: str,
         run_cadence: str,
+        locale: str,
         base_currency: str,
         use_bots: bool,
         allow_spot_trades: bool,
@@ -452,6 +453,7 @@ class AppController(QObject):
             management_style=management_style,
             automation_level=automation_level,
             run_cadence=run_cadence,
+            locale=locale,
             base_currency=base_currency,
             use_bots=use_bots,
             allow_spot_trades=allow_spot_trades,

@@ -1475,13 +1475,26 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 ColumnLayout {
                     Layout.fillWidth: true
-                    Label { text: "Base currency" }
+                    Label { text: "Language / region" }
+                    ComboBox {
+                        id: guideLocale
+                        Layout.fillWidth: true
+                        model: ["en-US", "es-ES", "cs-CZ", "pt-BR"]
+                    }
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Label { text: "Funding currency" }
                     ComboBox {
                         id: guideCurrency
                         Layout.fillWidth: true
-                        model: ["USDC", "EUR"]
+                        model: ["USDC"]
                     }
                 }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
                 ColumnLayout {
                     Layout.fillWidth: true
                     Label { text: "Drawdown comfort" }
@@ -1498,7 +1511,7 @@ ApplicationWindow {
                     ComboBox {
                         id: guideBudget
                         Layout.fillWidth: true
-                        model: ["Auto", "250", "500", "1000", "2000"]
+                        model: ["Auto", "250", "500", "1000", "2000", "10000", "25000"]
                     }
                 }
             }
@@ -1512,6 +1525,7 @@ ApplicationWindow {
                         guideStyle.currentText,
                         guideAutomation.currentText,
                         guideCadence.currentText,
+                        guideLocale.currentText,
                         guideCurrency.currentText,
                         guideUseBots.checked,
                         guideAllowSpot.checked,

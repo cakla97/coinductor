@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from trading_agent.locale_profile import locale_profile
 from trading_agent.user_profile import UserProfile, UserProfileStore, safe_default_profile
 
 from .models import UserProfileSnapshot
@@ -38,6 +39,7 @@ class UserProfileService:
         use_bots: bool,
         allow_spot_trades: bool,
         max_drawdown_comfort_pct: float,
+        locale: str = "en-US",
         planned_deposit_amount: float = 0.0,
     ) -> UserProfileSnapshot:
         return self._snapshot(
@@ -50,6 +52,7 @@ class UserProfileService:
                 use_bots=use_bots,
                 allow_spot_trades=allow_spot_trades,
                 max_drawdown_comfort_pct=max_drawdown_comfort_pct,
+                locale=locale,
                 planned_deposit_amount=planned_deposit_amount,
             )
         )
@@ -61,15 +64,18 @@ class UserProfileService:
         return safe_default_profile(fallback_onboarding_path)
 
     def _snapshot(self, profile: UserProfile) -> UserProfileSnapshot:
+        locale = locale_profile(profile.locale)
         fields = (
             {"name": "Exchange", "value": profile.exchange, "detail": "Where the portfolio will be managed."},
+            {"name": "Locale", "value": profile.locale, "detail": f"{locale.language_name}, {locale.region_name}."},
             {"name": "Path", "value": profile.onboarding_path, "detail": "Existing portfolio or first portfolio."},
             {"name": "Setup", "value": profile.setup_mode, "detail": "Safe defaults, guided, or advanced."},
             {"name": "Style", "value": profile.management_style, "detail": "Portfolio management intensity."},
             {"name": "Automation", "value": profile.automation_level, "detail": "How much the app may automate."},
             {"name": "Run cadence", "value": profile.run_cadence, "detail": "Suggested review rhythm."},
-            {"name": "Base currency", "value": profile.base_currency, "detail": "Main funding and reporting currency."},
-            {"name": "Starting budget", "value": f"{profile.planned_deposit_amount:.0f} {profile.base_currency}" if profile.planned_deposit_amount else "Not set", "detail": "Used by first portfolio planner."},
+            {"name": "Fiat funding", "value": locale.fiat_currency, "detail": locale.fiat_to_funding_hint},
+            {"name": "Funding currency", "value": profile.base_currency, "detail": "Internal strategy funding and reporting currency."},
+            {"name": "Starting budget", "value": f"{profile.planned_deposit_amount:.0f} {locale.fiat_currency}" if profile.planned_deposit_amount else "Auto", "detail": "Used by first portfolio planner."},
             {"name": "Reserve", "value": f"{profile.reserve_pct:.0f}%", "detail": "Capital kept outside active strategy use."},
             {"name": "Drawdown comfort", "value": f"{profile.max_drawdown_comfort_pct:.0f}%", "detail": "Used for conservative strategy sizing."},
             {"name": "Spot trades", "value": "Allowed" if profile.allow_spot_trades else "Disabled", "detail": "Live execution still needs guard approval."},

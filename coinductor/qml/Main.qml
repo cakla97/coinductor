@@ -27,6 +27,12 @@ ApplicationWindow {
     property color accent: "#36c98f"
     property color warning: "#f1b84b"
     property string toastText: ""
+    property int wizardStep: 0
+    property var wizardSteps: ["Exchange", "Portfolio", "Profile", "AI", "Binance API", "Review"]
+    property var exchangeOptions: [
+        { label: "Binance", value: "BINANCE" },
+        { label: "Coinbase", value: "COINBASE" }
+    ]
     property var styleOptions: [
         { label: "Conservative", value: "CONSERVATIVE" },
         { label: "Balanced", value: "BALANCED" },
@@ -63,6 +69,58 @@ ApplicationWindow {
         toastTimer.restart()
     }
 
+    function selectedValue(comboBox, fallback) {
+        return comboBox.currentValue === undefined ? fallback : comboBox.currentValue
+    }
+
+    function styleHelp(value) {
+        if (value === "CONSERVATIVE")
+            return "Coinductor protects more capital, prefers smaller suggestions, keeps more reserve, and is less likely to recommend active trades."
+        if (value === "ACTIVE")
+            return "Coinductor can surface more frequent opportunities, but deterministic risk limits, protected assets, and confirmations still apply."
+        return "Balanced keeps the default middle ground: useful recommendations without pushing the portfolio into aggressive automation."
+    }
+
+    function automationHelp(value) {
+        if (value === "GUARDED_AUTOMATION")
+            return "Coinductor may prepare guarded workflows after checks pass. It still cannot bypass limits, confirmations, stop-loss rules, or safety stages."
+        return "Coinductor will explain and recommend actions, but you decide what to do. This is the safest starting mode."
+    }
+
+    function cadenceHelp(value) {
+        if (value === "DAILY")
+            return "Best when you want closer monitoring and are willing to open Coinductor often."
+        if (value === "WEEKLY")
+            return "Best for passive portfolio management with fewer interventions."
+        if (value === "MANUAL")
+            return "Coinductor assumes irregular runs and will avoid workflows that require frequent check-ins."
+        return "A practical middle ground for active but not daily portfolio review."
+    }
+
+    function drawdownHelp(value) {
+        if (value <= 10)
+            return "Low comfort means Coinductor should keep suggestions conservative and preserve more dry powder."
+        if (value >= 20)
+            return "High comfort allows more growth-oriented recommendations, but this is not a guarantee or a hard stop-loss."
+        return "Medium comfort is the default: risk-aware without making the portfolio completely passive."
+    }
+
+    function canContinueWizard() {
+        if (wizardStep === 0)
+            return wizardExchange.currentValue === "BINANCE"
+        if (wizardStep === 1)
+            return appController.onboardingPath !== ""
+        if (wizardStep === 2)
+            return appController.userProfileConfigured
+        return true
+    }
+
+    function goNextWizardStep() {
+        if (!canContinueWizard())
+            return
+        wizardStep = Math.min(wizardStep + 1, wizardSteps.length - 1)
+    }
+
     Item {
         anchors.fill: parent
         visible: appController.onboardingWizardVisible
@@ -77,10 +135,10 @@ ApplicationWindow {
             clip: true
 
             ColumnLayout {
-                x: Math.max(32, (window.width - 980) / 2)
+                x: Math.max(32, (window.width - 1120) / 2)
                 y: 34
-                width: Math.min(980, window.width - 64)
-                spacing: 18
+                width: Math.min(1120, window.width - 64)
+                spacing: 16
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -113,7 +171,7 @@ ApplicationWindow {
                     Button {
                         text: "Enter app"
                         enabled: appController.userProfileConfigured
-                        onClicked: appController.closeOnboardingWizard()
+                        onClicked: appController.finishOnboardingWizard()
                     }
                 }
 
@@ -151,436 +209,542 @@ ApplicationWindow {
                     }
                 }
 
-                Text { text: "1. Starting point"; color: textPrimary; font.pixelSize: 18; font.bold: true }
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 12
+                    Layout.preferredHeight: 560
+                    spacing: 16
 
                     Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 132
+                        Layout.preferredWidth: 210
+                        Layout.fillHeight: true
                         radius: 7
-                        color: appController.onboardingPath === "EXISTING" ? "#1d332d" : panel
-                        border.color: appController.onboardingPath === "EXISTING" ? accent : border
+                        color: panel
+                        border.color: border
                         ColumnLayout {
                             anchors.fill: parent
-                            anchors.margins: 18
-                            spacing: 7
-                            Text { text: "I already have a portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            anchors.margins: 14
+                            spacing: 8
                             Text {
                                 Layout.fillWidth: true
-                                text: "Coinductor will classify current assets, preserve protected holdings, and suggest guarded actions."
-                                color: textSecondary
-                                font.pixelSize: 13
-                                wrapMode: Text.WordWrap
+                                text: "Setup steps"
+                                color: textPrimary
+                                font.pixelSize: 15
+                                font.bold: true
+                            }
+                            Repeater {
+                                model: window.wizardSteps
+                                delegate: Rectangle {
+                                    required property string modelData
+                                    required property int index
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 42
+                                    radius: 6
+                                    color: window.wizardStep === index ? panelRaised : "transparent"
+                                    border.color: window.wizardStep === index ? border : "transparent"
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 10
+                                        anchors.rightMargin: 10
+                                        spacing: 8
+                                        Rectangle {
+                                            Layout.preferredWidth: 20
+                                            Layout.preferredHeight: 20
+                                            radius: 10
+                                            color: window.wizardStep === index ? accent : "#27323d"
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: String(index + 1)
+                                                color: window.wizardStep === index ? "#09110e" : textSecondary
+                                                font.pixelSize: 10
+                                                font.bold: true
+                                            }
+                                        }
+                                        Text {
+                                            Layout.fillWidth: true
+                                            text: modelData
+                                            color: window.wizardStep === index ? textPrimary : textSecondary
+                                            font.pixelSize: 12
+                                            font.bold: window.wizardStep === index
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+                                }
                             }
                             Item { Layout.fillHeight: true }
-                            Text { text: "Use existing allocation"; color: accent; font.pixelSize: 12; font.bold: true }
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: appController.selectOnboardingPath("EXISTING")
+                            Text {
+                                Layout.fillWidth: true
+                                text: "The wizard changes only local Coinductor settings until you explicitly run checks or analysis."
+                                color: textSecondary
+                                font.pixelSize: 10
+                                wrapMode: Text.WordWrap
+                            }
                         }
                     }
 
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 132
-                        radius: 7
-                        color: appController.onboardingPath === "FIRST_PORTFOLIO" ? "#1d332d" : panel
-                        border.color: appController.onboardingPath === "FIRST_PORTFOLIO" ? accent : border
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 18
-                            spacing: 7
-                            Text { text: "Build my first portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                            Text {
-                                Layout.fillWidth: true
-                                text: "Start from a funding budget, keep a reserve, and create a staged basket before automation."
-                                color: textSecondary
-                                font.pixelSize: 13
-                                wrapMode: Text.WordWrap
-                            }
-                            Item { Layout.fillHeight: true }
-                            Text { text: "Create first plan"; color: accent; font.pixelSize: 12; font.bold: true }
-                        }
-                        MouseArea {
-                            anchors.fill: parent
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: appController.selectOnboardingPath("FIRST_PORTFOLIO")
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 430
-                    radius: 7
-                    color: panel
-                    border.color: border
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 12
-                        Text { text: "2. Decision profile"; color: textPrimary; font.pixelSize: 18; font.bold: true }
-                        Text {
-                            Layout.fillWidth: true
-                            text: "These answers shape risk limits, funding suggestions, bot recommendations, and how often Coinductor expects you to review the portfolio."
-                            color: textSecondary
-                            font.pixelSize: 13
-                            wrapMode: Text.WordWrap
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 12
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                Text { text: "Management style"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox {
-                                    id: wizardStyle
-                                    Layout.fillWidth: true
-                                    model: window.styleOptions
-                                    textRole: "label"
-                                    valueRole: "value"
-                                    currentIndex: 1
-                                }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: "Controls how cautious capital, bot, and trade suggestions should be."
-                                    color: textSecondary
-                                    font.pixelSize: 10
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                Text { text: "Automation"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox {
-                                    id: wizardAutomation
-                                    Layout.fillWidth: true
-                                    model: window.automationOptions
-                                    textRole: "label"
-                                    valueRole: "value"
-                                }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: "Keeps actions as recommendations or allows guarded workflows after checks."
-                                    color: textSecondary
-                                    font.pixelSize: 10
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                Text { text: "Review rhythm"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox {
-                                    id: wizardCadence
-                                    Layout.fillWidth: true
-                                    model: window.cadenceOptions
-                                    textRole: "label"
-                                    valueRole: "value"
-                                    currentIndex: 1
-                                }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: "Used for recommendations about how often to run Coinductor."
-                                    color: textSecondary
-                                    font.pixelSize: 10
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 12
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                Text { text: "Language / region"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox { id: wizardLocale; Layout.fillWidth: true; model: ["en-US", "es-ES", "cs-CZ", "pt-BR"] }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: "Sets wording and future region-aware funding guidance."
-                                    color: textSecondary
-                                    font.pixelSize: 10
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                Text { text: "Funding currency"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox { id: wizardCurrency; Layout.fillWidth: true; model: ["USDC"] }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: "USDC is the operating budget Coinductor plans around."
-                                    color: textSecondary
-                                    font.pixelSize: 10
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                Text { text: "Starting budget"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox {
-                                    id: wizardBudget
-                                    Layout.fillWidth: true
-                                    model: window.budgetOptions
-                                    textRole: "label"
-                                    valueRole: "value"
-                                }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: "Auto keeps the profile conservative until real balances are known."
-                                    color: textSecondary
-                                    font.pixelSize: 10
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 12
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                Text { text: "Drawdown comfort"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                ComboBox {
-                                    id: wizardDrawdown
-                                    Layout.fillWidth: true
-                                    model: window.drawdownOptions
-                                    textRole: "label"
-                                    valueRole: "value"
-                                    currentIndex: 1
-                                }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: "A practical risk comfort signal, not a promise or a loss limit by itself."
-                                    color: textSecondary
-                                    font.pixelSize: 10
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                            CheckBox {
-                                id: wizardUseBots
-                                Layout.fillWidth: true
-                                text: "Use Binance bot recommendations"
-                                checked: true
-                            }
-                            CheckBox {
-                                id: wizardAllowSpot
-                                Layout.fillWidth: true
-                                text: "Allow guarded spot trades"
-                                checked: false
-                                enabled: wizardAutomation.currentValue === "GUARDED_AUTOMATION"
-                            }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Item { Layout.fillWidth: true }
-                            Button {
-                                text: "Use safe defaults"
-                                onClicked: appController.useSafeDefaultProfile()
-                            }
-                            Button {
-                                text: "Save profile"
-                                highlighted: true
-                                onClicked: appController.saveGuidedProfile(
-                                    wizardStyle.currentValue,
-                                    wizardAutomation.currentValue,
-                                    wizardCadence.currentValue,
-                                    wizardLocale.currentText,
-                                    wizardCurrency.currentText,
-                                    wizardUseBots.checked,
-                                    wizardAllowSpot.checked,
-                                    wizardDrawdown.currentValue,
-                                    wizardBudget.currentValue
-                                )
-                            }
-                        }
-                    }
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 12
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 430 : 0
-                        visible: appController.onboardingPath === "FIRST_PORTFOLIO"
+                        Layout.fillHeight: true
                         radius: 7
                         color: panel
                         border.color: border
                         ColumnLayout {
                             anchors.fill: parent
                             anchors.margins: 18
-                            spacing: 12
-                            RowLayout {
+                            spacing: 14
+
+                            StackLayout {
                                 Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                currentIndex: window.wizardStep
+
                                 ColumnLayout {
                                     Layout.fillWidth: true
-                                    Text { text: "3. First portfolio plan"; color: textPrimary; font.pixelSize: 18; font.bold: true }
+                                    spacing: 14
+                                    Text { text: "1. Choose exchange"; color: textPrimary; font.pixelSize: 22; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: appController.firstPortfolioPlanSummary
+                                        text: "Coinductor needs to know where the portfolio lives before it can explain API permissions, funding, and safety checks."
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
                                     }
-                                }
-                                Text {
-                                    text: appController.firstPortfolioPlanAvailable ? "READY" : "SAVE PROFILE FIRST"
-                                    color: appController.firstPortfolioPlanAvailable ? accent : warning
-                                    font.pixelSize: 11
-                                    font.bold: true
-                                }
-                            }
-                            RowLayout {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: 104
-                                spacing: 10
-                                Repeater {
-                                    model: appController.firstPortfolioFunding
-                                    delegate: Rectangle {
-                                        required property var modelData
+                                    ComboBox {
+                                        id: wizardExchange
+                                        Layout.preferredWidth: 320
+                                        model: window.exchangeOptions
+                                        textRole: "label"
+                                        valueRole: "value"
+                                    }
+                                    Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 104
+                                        Layout.preferredHeight: 170
+                                        radius: 7
+                                        color: panelRaised
+                                        border.color: border
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 16
+                                            spacing: 8
+                                            Text {
+                                                text: wizardExchange.currentValue === "BINANCE" ? "Binance is supported in this build" : "Coinbase is planned, not available yet"
+                                                color: wizardExchange.currentValue === "BINANCE" ? accent : warning
+                                                font.pixelSize: 15
+                                                font.bold: true
+                                            }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: wizardExchange.currentValue === "BINANCE"
+                                                    ? "The wizard will guide you through Binance read-only API setup, optional AI configuration, and a safe local profile. Trading permissions remain outside the desktop UI until explicit guarded workflows are ready."
+                                                    : "The app is being designed so future exchanges can be added behind the same safety contract. Continue with Binance for now."
+                                                color: textSecondary
+                                                font.pixelSize: 12
+                                                wrapMode: Text.WordWrap
+                                            }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: "Manual setup covered later: account access, API key permissions, IP restrictions, read-only checks, and local privacy boundaries."
+                                                color: textSecondary
+                                                font.pixelSize: 12
+                                                wrapMode: Text.WordWrap
+                                            }
+                                        }
+                                    }
+                                    Item { Layout.fillHeight: true }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 14
+                                    Text { text: "2. Starting point"; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: "This choice changes what Coinductor explains next: existing portfolio classification, or a first funding and basket plan."
+                                        color: textSecondary
+                                        font.pixelSize: 13
+                                        wrapMode: Text.WordWrap
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 12
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 170
+                                            radius: 7
+                                            color: appController.onboardingPath === "EXISTING" ? "#1d332d" : panelRaised
+                                            border.color: appController.onboardingPath === "EXISTING" ? accent : border
+                                            ColumnLayout {
+                                                anchors.fill: parent
+                                                anchors.margins: 16
+                                                spacing: 8
+                                                Text { text: "I already have a portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: "Best if you already hold assets on Binance. Coinductor will inventory balances, classify assets, and explain which ones can or cannot be used."
+                                                    color: textSecondary
+                                                    font.pixelSize: 12
+                                                    wrapMode: Text.WordWrap
+                                                }
+                                                Item { Layout.fillHeight: true }
+                                                Text { text: "Next: profile and read-only API"; color: accent; font.pixelSize: 12; font.bold: true }
+                                            }
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: appController.selectOnboardingPath("EXISTING")
+                                            }
+                                        }
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 170
+                                            radius: 7
+                                            color: appController.onboardingPath === "FIRST_PORTFOLIO" ? "#1d332d" : panelRaised
+                                            border.color: appController.onboardingPath === "FIRST_PORTFOLIO" ? accent : border
+                                            ColumnLayout {
+                                                anchors.fill: parent
+                                                anchors.margins: 16
+                                                spacing: 8
+                                                Text { text: "Build my first portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: "Best if you start from fiat or USDC. Coinductor will suggest a reserve, initial deployment, and manual setup steps before automation."
+                                                    color: textSecondary
+                                                    font.pixelSize: 12
+                                                    wrapMode: Text.WordWrap
+                                                }
+                                                Item { Layout.fillHeight: true }
+                                                Text { text: "Next: profile and first plan"; color: accent; font.pixelSize: 12; font.bold: true }
+                                            }
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: appController.selectOnboardingPath("FIRST_PORTFOLIO")
+                                            }
+                                        }
+                                    }
+                                    Item { Layout.fillHeight: true }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 12
+                                    Text { text: "3. Decision profile"; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: "This short profile tells Coinductor how cautious, active, and hands-on recommendations should be. It does not place orders."
+                                        color: textSecondary
+                                        font.pixelSize: 13
+                                        wrapMode: Text.WordWrap
+                                    }
+
+                                    GridLayout {
+                                        Layout.fillWidth: true
+                                        columns: 3
+                                        columnSpacing: 12
+                                        rowSpacing: 12
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            Text { text: "Management style"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            ComboBox { id: wizardStyle; Layout.fillWidth: true; model: window.styleOptions; textRole: "label"; valueRole: "value"; currentIndex: 1 }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            Text { text: "Automation"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            ComboBox { id: wizardAutomation; Layout.fillWidth: true; model: window.automationOptions; textRole: "label"; valueRole: "value" }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            Text { text: "Review rhythm"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            ComboBox { id: wizardCadence; Layout.fillWidth: true; model: window.cadenceOptions; textRole: "label"; valueRole: "value"; currentIndex: 1 }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            Text { text: "Language / region"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            ComboBox { id: wizardLocale; Layout.fillWidth: true; model: ["en-US", "es-ES", "cs-CZ", "pt-BR"] }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            Text { text: "Funding currency"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            ComboBox { id: wizardCurrency; Layout.fillWidth: true; model: ["USDC"] }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            Text { text: "Starting budget"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            ComboBox { id: wizardBudget; Layout.fillWidth: true; model: window.budgetOptions; textRole: "label"; valueRole: "value" }
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 12
+                                        ColumnLayout {
+                                            Layout.preferredWidth: 300
+                                            Text { text: "Drawdown comfort"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            ComboBox { id: wizardDrawdown; Layout.fillWidth: true; model: window.drawdownOptions; textRole: "label"; valueRole: "value"; currentIndex: 1 }
+                                        }
+                                        CheckBox { id: wizardUseBots; Layout.fillWidth: true; text: "Use Binance bot recommendations"; checked: true }
+                                        CheckBox {
+                                            id: wizardAllowSpot
+                                            Layout.fillWidth: true
+                                            text: "Allow guarded spot trades"
+                                            checked: false
+                                            enabled: wizardAutomation.currentValue === "GUARDED_AUTOMATION"
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        Layout.fillWidth: true
                                         radius: 6
                                         color: panelRaised
+                                        Layout.preferredHeight: 112
                                         ColumnLayout {
                                             anchors.fill: parent
                                             anchors.margins: 12
-                                            Text { text: modelData.name; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                                            Text { text: modelData.value; color: textPrimary; font.pixelSize: 17; font.bold: true; elide: Text.ElideRight }
-                                            Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                            spacing: 5
+                                            Text { text: "Current selection"; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                                            Text { Layout.fillWidth: true; text: window.styleHelp(wizardStyle.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: window.automationHelp(wizardAutomation.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: window.cadenceHelp(wizardCadence.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                         }
                                     }
-                                }
-                            }
-                            RowLayout {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                spacing: 10
-                                ListView {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    interactive: false
-                                    spacing: 5
-                                    model: appController.firstPortfolioAllocation
-                                    header: Text { text: "Suggested basket"; color: textPrimary; font.pixelSize: 13; font.bold: true }
-                                    delegate: RowLayout {
-                                        required property var modelData
-                                        width: ListView.view.width
-                                        height: 26
-                                        Text { Layout.preferredWidth: 52; text: modelData.asset; color: accent; font.pixelSize: 11; font.bold: true }
-                                        Text { Layout.preferredWidth: 52; text: modelData.target; color: textPrimary; font.pixelSize: 11; font.bold: true }
-                                        Text { Layout.preferredWidth: 90; text: modelData.amount; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
-                                        Text { Layout.fillWidth: true; text: modelData.role; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Item { Layout.fillWidth: true }
+                                        Button { text: "Use safe defaults"; onClicked: appController.useSafeDefaultProfile() }
+                                        Button {
+                                            text: appController.userProfileConfigured ? "Profile saved" : "Save profile"
+                                            highlighted: true
+                                            onClicked: appController.saveGuidedProfile(
+                                                wizardStyle.currentValue,
+                                                wizardAutomation.currentValue,
+                                                wizardCadence.currentValue,
+                                                wizardLocale.currentText,
+                                                wizardCurrency.currentText,
+                                                wizardUseBots.checked,
+                                                wizardAllowSpot.checked,
+                                                wizardDrawdown.currentValue,
+                                                wizardBudget.currentValue
+                                            )
+                                        }
                                     }
-                                }
-                                ListView {
-                                    Layout.fillWidth: true
-                                    Layout.fillHeight: true
-                                    interactive: false
-                                    spacing: 5
-                                    model: appController.firstPortfolioSteps
-                                    header: Text { text: "Manual setup steps"; color: textPrimary; font.pixelSize: 13; font.bold: true }
-                                    delegate: RowLayout {
-                                        required property var modelData
-                                        width: ListView.view.width
-                                        height: 28
-                                        Text { Layout.preferredWidth: 95; text: modelData.name; color: textPrimary; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
-                                        Text { Layout.preferredWidth: 70; text: modelData.value; color: warning; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
-                                        Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 430 : 320
-                        radius: 7
-                        color: panel
-                        border.color: border
-                        ColumnLayout {
-                            anchors.fill: parent
-                            anchors.margins: 18
-                            spacing: 12
-                            RowLayout {
-                                Layout.fillWidth: true
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    Text { text: appController.onboardingPath === "FIRST_PORTFOLIO" ? "4. Readiness" : "3. Readiness"; color: textPrimary; font.pixelSize: 18; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: appController.readinessNextStep
+                                        text: appController.userProfileConfigured ? "Profile is saved. Continue to AI setup." : "Save a profile or use safe defaults before continuing."
+                                        color: appController.userProfileConfigured ? accent : warning
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                    }
+                                    Item { Layout.fillHeight: true }
+                                }
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 14
+                                    Text { text: "4. AI assistant setup"; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: "AI is optional. Coinductor works without it, but a local or cloud provider can summarize reports and answer app questions."
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
                                     }
-                                }
-                                Text { text: appController.readinessSummary; color: accent; font.pixelSize: 11; font.bold: true }
-                            }
-                            ListView {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                interactive: false
-                                spacing: 6
-                                model: appController.readinessSteps
-                                delegate: Rectangle {
-                                    required property var modelData
-                                    width: ListView.view.width
-                                    height: 38
-                                    radius: 5
-                                    color: panelRaised
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: 12
-                                        anchors.rightMargin: 12
-                                        spacing: 10
-                                        Text { Layout.preferredWidth: 130; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
-                                        Text {
-                                            Layout.preferredWidth: 70
-                                            text: modelData.status
-                                            color: modelData.status === "READY" ? accent
-                                                : modelData.status === "NEXT" ? warning
-                                                : modelData.status === "LOCKED" ? textSecondary : "#ee6b6e"
-                                            font.pixelSize: 10
-                                            font.bold: true
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 200
+                                        radius: 7
+                                        color: panelRaised
+                                        border.color: border
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 16
+                                            spacing: 8
+                                            Text { text: "Current AI provider"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                            Text { Layout.fillWidth: true; text: appController.aiProviderSummary; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: appController.aiProviderHealthDetail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: "Manual setup: configure LLM_BASE_URL and LLM_MODEL in .env for a local OpenAI-compatible model. Cloud providers are optional and may receive selected report context."
+                                                color: textSecondary
+                                                font.pixelSize: 11
+                                                wrapMode: Text.WordWrap
+                                            }
                                         }
-                                        Text { Layout.fillWidth: true; text: modelData.action; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
                                     }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Button {
+                                            text: appController.checkingAiProvider ? "Checking AI..." : "Check AI provider"
+                                            enabled: !appController.checkingAiProvider
+                                            onClicked: appController.checkAiProvider()
+                                        }
+                                        Text { Layout.fillWidth: true; text: "You can skip this and add AI later in Settings."; color: textSecondary; font.pixelSize: 11 }
+                                    }
+                                    Item { Layout.fillHeight: true }
                                 }
-                            }
-                            RowLayout {
-                                Layout.fillWidth: true
-                                Button {
-                                    text: appController.checkingConnection ? "Checking..." : "Check Binance"
-                                    enabled: !appController.checkingConnection
-                                    onClicked: appController.checkBinanceReadOnly()
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 14
+                                    Text { text: "5. Binance API and safety checks"; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: "Coinductor needs read-only Binance API access for portfolio analysis. Trading permissions are separate and should only be added later when guarded workflows are ready."
+                                        color: textSecondary
+                                        font.pixelSize: 13
+                                        wrapMode: Text.WordWrap
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 210
+                                        radius: 7
+                                        color: panelRaised
+                                        border.color: border
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 16
+                                            spacing: 8
+                                            Text { text: "Manual Binance steps"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                            Text { Layout.fillWidth: true; text: "1. In Binance, create an API key for Coinductor."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: "2. For this stage, enable reading/user data only. Do not enable withdrawals."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: "3. If Binance requires trading permission for later test actions, restrict the key to trusted IPs first."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: "4. Put the API key and secret into .env, then run the read-only check here."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                        }
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Button {
+                                            text: appController.checkingConnection ? "Checking..." : "Check read-only access"
+                                            enabled: !appController.checkingConnection
+                                            onClicked: appController.checkBinanceReadOnly()
+                                        }
+                                        Rectangle {
+                                            Layout.preferredWidth: 120
+                                            Layout.preferredHeight: 32
+                                            radius: 5
+                                            color: appController.binanceConnectionStatus === "Connected" ? "#17372d"
+                                                : appController.binanceConnectionStatus === "Blocked" ? "#3a2226" : panelRaised
+                                            border.color: appController.binanceConnectionStatus === "Connected" ? accent
+                                                : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : border
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: appController.binanceConnectionStatus
+                                                color: appController.binanceConnectionStatus === "Connected" ? accent
+                                                    : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : textSecondary
+                                                font.pixelSize: 11
+                                                font.bold: true
+                                            }
+                                        }
+                                    }
+                                    Text { Layout.fillWidth: true; text: appController.binanceConnectionDetail; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                    Item { Layout.fillHeight: true }
                                 }
-                                Button {
-                                    text: appController.checkingAiProvider ? "Checking AI..." : "Check AI"
-                                    enabled: !appController.checkingAiProvider
-                                    onClicked: appController.checkAiProvider()
-                                }
-                                Item { Layout.fillWidth: true }
-                                Button {
-                                    text: "Enter Coinductor"
-                                    highlighted: true
-                                    enabled: appController.userProfileConfigured
-                                    onClicked: appController.closeOnboardingWizard()
+
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 14
+                                    Text { text: "6. Review and enter Coinductor"; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: "The setup profile is saved locally. The main app will show your dashboard, portfolio roles, strategy recommendations, assistant, settings, and safety state."
+                                        color: textSecondary
+                                        font.pixelSize: 13
+                                        wrapMode: Text.WordWrap
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 300 : 190
+                                        radius: 7
+                                        color: panelRaised
+                                        border.color: border
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 16
+                                            spacing: 8
+                                            Text { text: appController.onboardingPath === "FIRST_PORTFOLIO" ? "First portfolio plan" : "Existing portfolio next step"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: appController.onboardingPath === "FIRST_PORTFOLIO" ? appController.firstPortfolioPlanSummary : appController.readinessNextStep
+                                                color: textSecondary
+                                                font.pixelSize: 12
+                                                wrapMode: Text.WordWrap
+                                            }
+                                            ListView {
+                                                Layout.fillWidth: true
+                                                Layout.fillHeight: true
+                                                visible: appController.onboardingPath === "FIRST_PORTFOLIO"
+                                                interactive: false
+                                                spacing: 5
+                                                model: appController.firstPortfolioFunding
+                                                delegate: RowLayout {
+                                                    required property var modelData
+                                                    width: ListView.view.width
+                                                    height: 26
+                                                    Text { Layout.preferredWidth: 120; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                                    Text { Layout.preferredWidth: 110; text: modelData.value; color: accent; font.pixelSize: 11; font.bold: true }
+                                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    ListView {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 160
+                                        interactive: false
+                                        spacing: 6
+                                        model: appController.readinessSteps
+                                        delegate: Rectangle {
+                                            required property var modelData
+                                            width: ListView.view.width
+                                            height: 34
+                                            radius: 5
+                                            color: panelRaised
+                                            RowLayout {
+                                                anchors.fill: parent
+                                                anchors.leftMargin: 12
+                                                anchors.rightMargin: 12
+                                                spacing: 10
+                                                Text { Layout.preferredWidth: 140; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                                Text { Layout.preferredWidth: 75; text: modelData.status; color: modelData.status === "READY" ? accent : modelData.status === "NEXT" ? warning : textSecondary; font.pixelSize: 10; font.bold: true }
+                                                Text { Layout.fillWidth: true; text: modelData.action; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
 
-                Item { Layout.fillWidth: true; Layout.preferredHeight: 34 }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Button {
+                        text: "Back"
+                        enabled: window.wizardStep > 0
+                        onClicked: window.wizardStep = Math.max(0, window.wizardStep - 1)
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        text: !window.canContinueWizard()
+                            ? (window.wizardStep === 0 ? "Choose Binance to continue." : window.wizardStep === 1 ? "Choose how you are starting." : "Save a profile before continuing.")
+                            : ""
+                        color: warning
+                        font.pixelSize: 12
+                    }
+                    Button {
+                        text: window.wizardStep === window.wizardSteps.length - 1 ? "Enter Coinductor" : "Next"
+                        highlighted: true
+                        enabled: window.wizardStep === window.wizardSteps.length - 1 ? appController.userProfileConfigured : window.canContinueWizard()
+                        onClicked: {
+                            if (window.wizardStep === window.wizardSteps.length - 1) {
+                                appController.finishOnboardingWizard()
+                            } else {
+                                window.goNextWizardStep()
+                            }
+                        }
+                    }
+                }
+
+                Item { Layout.fillWidth: true; Layout.preferredHeight: 24 }
             }
         }
     }

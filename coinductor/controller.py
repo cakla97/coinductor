@@ -473,6 +473,10 @@ class AppController(QObject):
         self.onboardingWizardChanged.emit()
 
     @Slot()
+    def finishOnboardingWizard(self) -> None:
+        self.closeOnboardingWizard()
+
+    @Slot()
     def refreshSetup(self) -> None:
         self._setup_snapshot = SetupService().inspect()
         self._ai_provider_snapshot = AiProviderService().inspect()
@@ -504,7 +508,6 @@ class AppController(QObject):
     def useSafeDefaultProfile(self) -> None:
         path = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
         self._user_profile_snapshot = self._user_profile_service.save_safe_default(path)
-        self._onboarding_wizard_visible = False
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
         self.userProfileChanged.emit()
@@ -549,7 +552,6 @@ class AppController(QObject):
             max_drawdown_comfort_pct=max_drawdown_comfort_pct,
             planned_deposit_amount=planned_deposit_amount,
         )
-        self._onboarding_wizard_visible = False
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
         self.userProfileChanged.emit()

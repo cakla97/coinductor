@@ -479,7 +479,7 @@ class Storage:
         ).fetchone()["epoch"]
         current_date = str(current_started)[:10]
         week_start = self.connection.execute(
-            "select date(?, 'weekday 0', '-6 days') as week_start",
+            "select date(?, '-6 days') as week_start",
             (current_started,),
         ).fetchone()["week_start"]
         daily_pnl = sum(

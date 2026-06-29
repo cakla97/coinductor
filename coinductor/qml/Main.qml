@@ -29,6 +29,7 @@ ApplicationWindow {
     property string toastText: ""
     property int wizardStep: 0
     property bool profileChoicesEdited: false
+    property string fundingCurrency: "USDC"
     property var wizardSteps: ["Exchange", "Portfolio", "Profile", "AI", "Binance API", "Review"]
     property var exchangeOptions: [
         { label: "Binance", value: "BINANCE" },
@@ -136,6 +137,16 @@ ApplicationWindow {
         if (wizardStep === 2)
             return appController.userProfileConfigured
         return true
+    }
+
+    function canJumpToWizardStep(targetStep) {
+        if (targetStep <= wizardStep)
+            return true
+        if (targetStep === 1)
+            return wizardExchange.currentValue === "BINANCE"
+        if (targetStep === 2)
+            return wizardExchange.currentValue === "BINANCE" && appController.onboardingPath !== ""
+        return wizardExchange.currentValue === "BINANCE" && appController.onboardingPath !== "" && appController.userProfileConfigured
     }
 
     function goNextWizardStep() {
@@ -264,6 +275,7 @@ ApplicationWindow {
                                     radius: 6
                                     color: window.wizardStep === index ? panelRaised : "transparent"
                                     border.color: window.wizardStep === index ? border : "transparent"
+                                    opacity: window.canJumpToWizardStep(index) ? 1.0 : 0.45
                                     RowLayout {
                                         anchors.fill: parent
                                         anchors.leftMargin: 10
@@ -290,6 +302,12 @@ ApplicationWindow {
                                             font.bold: window.wizardStep === index
                                             elide: Text.ElideRight
                                         }
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        enabled: window.canJumpToWizardStep(index)
+                                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                        onClicked: window.wizardStep = index
                                     }
                                 }
                             }
@@ -366,6 +384,34 @@ ApplicationWindow {
                                             Text {
                                                 Layout.fillWidth: true
                                                 text: "Manual setup covered later: account access, API key permissions, IP restrictions, read-only checks, and local privacy boundaries."
+                                                color: textSecondary
+                                                font.pixelSize: 12
+                                                wrapMode: Text.WordWrap
+                                            }
+                                        }
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 118
+                                        radius: 7
+                                        color: panelRaised
+                                        border.color: border
+                                        visible: appController.onboardingPath !== ""
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 14
+                                            spacing: 6
+                                            Text {
+                                                text: appController.onboardingPath === "FIRST_PORTFOLIO" ? "First portfolio path selected" : "Existing portfolio path selected"
+                                                color: accent
+                                                font.pixelSize: 14
+                                                font.bold: true
+                                            }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: appController.onboardingPath === "FIRST_PORTFOLIO"
+                                                    ? "The rest of the wizard will focus on a starting budget, reserve, initial basket, deposit guidance, and safe manual setup before any automation."
+                                                    : "The rest of the wizard will focus on read-only Binance access, portfolio inventory, asset classification, and guarded recommendations for assets you already hold."
                                                 color: textSecondary
                                                 font.pixelSize: 12
                                                 wrapMode: Text.WordWrap
@@ -487,8 +533,24 @@ ApplicationWindow {
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
-                                            Text { text: "Funding currency"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                            ComboBox { id: wizardCurrency; Layout.fillWidth: true; model: ["USDC"]; onActivated: window.markProfileEdited() }
+                                            Text { text: "Operating currency"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            Rectangle {
+                                                Layout.fillWidth: true
+                                                Layout.preferredHeight: 56
+                                                radius: 5
+                                                color: panelRaised
+                                                border.color: border
+                                                Text {
+                                                    anchors.verticalCenter: parent.verticalCenter
+                                                    anchors.left: parent.left
+                                                    anchors.leftMargin: 14
+                                                    text: window.fundingCurrency
+                                                    color: textPrimary
+                                                    font.pixelSize: 14
+                                                    font.bold: true
+                                                }
+                                            }
+                                            Text { Layout.fillWidth: true; text: "Coinductor currently plans bot funding and trading budgets around USDC. Regional fiat funding comes later."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
@@ -505,7 +567,6 @@ ApplicationWindow {
                                             Layout.preferredWidth: 300
                                             Text { text: "Drawdown comfort"; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardDrawdown; Layout.fillWidth: true; model: window.drawdownOptions; textRole: "label"; valueRole: "value"; currentIndex: 1; onActivated: window.markProfileEdited() }
-                                            Text { Layout.fillWidth: true; text: window.drawdownHelp(wizardDrawdown.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
@@ -529,7 +590,7 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         radius: 6
                                         color: panelRaised
-                                        Layout.preferredHeight: 178
+                                        Layout.preferredHeight: 128
                                         ColumnLayout {
                                             anchors.fill: parent
                                             anchors.margins: 12
@@ -546,8 +607,6 @@ ApplicationWindow {
                                             Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardStyle.currentText + " management style - " + window.styleHelp(wizardStyle.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                             Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardAutomation.currentText + " - " + window.automationHelp(wizardAutomation.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                             Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardCadence.currentText + " review rhythm - " + window.cadenceHelp(wizardCadence.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
-                                            Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardBudget.currentText + " starting budget - " + window.budgetHelp(wizardBudget.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
-                                            Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardDrawdown.currentText + " drawdown comfort - " + window.drawdownHelp(wizardDrawdown.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                         }
                                     }
                                     RowLayout {
@@ -574,7 +633,7 @@ ApplicationWindow {
                                                     wizardAutomation.currentValue,
                                                     wizardCadence.currentValue,
                                                     wizardLocale.currentText,
-                                                    wizardCurrency.currentText,
+                                                    window.fundingCurrency,
                                                     wizardUseBots.checked,
                                                     wizardAllowSpot.checked,
                                                     wizardDrawdown.currentValue,
@@ -601,7 +660,7 @@ ApplicationWindow {
                                     Text { text: "4. AI assistant setup"; color: textPrimary; font.pixelSize: 22; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: "AI is optional, but if you connect it here it can help explain later wizard steps, summarize reports, and answer app questions."
+                                        text: "AI is optional. After a provider is connected, Coinductor can offer step-by-step wizard help, report summaries, and app Q&A without giving AI direct execution control."
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
@@ -626,7 +685,7 @@ ApplicationWindow {
                                         spacing: 12
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: 250
+                                            Layout.preferredHeight: 282
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
@@ -637,12 +696,12 @@ ApplicationWindow {
                                                 Text { text: "Local AI with Ollama"; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                                 Text {
                                                     Layout.fillWidth: true
-                                                    text: "Best for privacy. Install Ollama, choose a model that fits your hardware, then run it locally. For your RTX 4080 class hardware, qwen3:14b is a practical starting point."
+                                                    text: "Best for privacy. Install Ollama, choose a model that fits your hardware, then run it locally. Smaller PCs should use smaller models; stronger GPUs can try 14B-class models."
                                                     color: textSecondary
                                                     font.pixelSize: 11
                                                     wrapMode: Text.WordWrap
                                                 }
-                                                Text { Layout.fillWidth: true; text: "1. Install Ollama.  2. Pull a model, e.g. qwen3:14b.  3. Keep Ollama running.  4. Save these settings."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                                Text { Layout.fillWidth: true; text: "1. Install Ollama.  2. Pull a model, e.g. qwen3:8b or qwen3:14b.  3. Keep Ollama running.  4. Save these settings."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                                 RowLayout {
                                                     Layout.fillWidth: true
                                                     TextField { id: localAiBaseUrl; Layout.fillWidth: true; placeholderText: "http://127.0.0.1:11434/v1"; text: "http://127.0.0.1:11434/v1" }
@@ -657,13 +716,13 @@ ApplicationWindow {
                                                             window.showToast("Local AI settings saved")
                                                         }
                                                     }
-                                                    Text { Layout.fillWidth: true; text: "Model discovery button planned: detect installed Ollama models automatically."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                                    Text { Layout.fillWidth: true; text: "Planned helper: detect installed Ollama models and suggest one from your hardware tier."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                                 }
                                             }
                                         }
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: 250
+                                            Layout.preferredHeight: 282
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
@@ -679,7 +738,7 @@ ApplicationWindow {
                                                     font.pixelSize: 11
                                                     wrapMode: Text.WordWrap
                                                 }
-                                                Text { Layout.fillWidth: true; text: "Use an OpenAI-compatible endpoint for now. Later the wizard can offer provider presets for OpenAI, Claude, Gemini, and others."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                                Text { Layout.fillWidth: true; text: "OpenAI example: create an API key in OpenAI Platform > API keys, then use https://api.openai.com/v1 and your chosen model. A ChatGPT subscription is separate from API usage."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                                 RowLayout {
                                                     Layout.fillWidth: true
                                                     TextField { id: cloudAiBaseUrl; Layout.fillWidth: true; placeholderText: "https://api.openai.com/v1" }
@@ -699,12 +758,13 @@ ApplicationWindow {
                                     }
                                     RowLayout {
                                         Layout.fillWidth: true
+                                        Layout.topMargin: 8
                                         Button {
                                             text: appController.checkingAiProvider ? "Checking AI..." : "Check AI provider"
                                             enabled: !appController.checkingAiProvider
                                             onClicked: appController.checkAiProvider()
                                         }
-                                        Text { Layout.fillWidth: true; text: "You can skip this and add AI later in Settings. Once connected, the assistant can explain wizard choices and app reports."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                        Text { Layout.fillWidth: true; text: "You can skip this and add AI later. Inline wizard Q&A is planned next: it will explain the current step using connected AI or the offline project helper."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                     }
                                     Item { Layout.fillHeight: true }
                                 }
@@ -740,13 +800,13 @@ ApplicationWindow {
                                     }
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 118
+                                        Layout.preferredHeight: 136
                                         radius: 7
                                         color: panelRaised
                                         border.color: border
                                         ColumnLayout {
                                             anchors.fill: parent
-                                            anchors.margins: 14
+                                            anchors.margins: 16
                                             spacing: 8
                                             Text { text: "Connect read-only key to Coinductor"; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                             RowLayout {
@@ -763,7 +823,7 @@ ApplicationWindow {
                                                     }
                                                 }
                                             }
-                                            Text { Layout.fillWidth: true; text: "The key is stored in the local .env file in this project folder. It is not sent anywhere by the wizard."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; Layout.topMargin: 2; text: "The key is stored in the local .env file in this project folder. It is not sent anywhere by the wizard."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                         }
                                     }
                                     RowLayout {

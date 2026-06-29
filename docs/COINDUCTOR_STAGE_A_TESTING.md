@@ -23,13 +23,18 @@ terminal.
   main dashboard.
 - Confirm the wizard is step-by-step: Exchange, Portfolio, Profile, AI, Binance API,
   Review.
+- Confirm setup steps in the left rail are clickable when previous required steps
+  are complete, and disabled/faded when they are not.
 - Confirm `Next` is disabled when the current required step is incomplete.
 - Confirm the wizard says it does not place orders or change exchange settings.
 - Confirm the exchange step starts with Binance and clearly marks other exchanges as
   planned.
 - Select `I already have a portfolio`.
+- Confirm the selected starting path shows a clear explanation of what changes next.
 - Change management style, automation, review rhythm, language/region, drawdown,
   bot preference, spot-trade preference, and starting budget.
+- Confirm `Operating currency` is shown as a fixed USDC operating budget note, not
+  as a misleading one-item dropdown.
 - Confirm the profile step explains the currently selected option before saving.
 - Confirm `Apply safe defaults` immediately saves a conservative local profile and
   shows a confirmation toast.

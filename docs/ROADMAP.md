@@ -21,6 +21,8 @@ bypass those controls.
 - first-run wizard before the main app shell, with a Settings action to run it again
 - guided Binance read-only, Testnet, live-key, and AI-provider setup
 - explicit network checks only after user action
+- wizard-managed local secret/config entry so non-technical users do not edit
+  `.env` by hand
 - local configuration editor with validation and safe defaults
 - onboarding profile choices: Use safe defaults, Guide me, or Advanced setup
 - exchange-first onboarding with Binance supported first and extension points
@@ -101,6 +103,11 @@ knows exchange terminology.
 - optional user-supplied API keys for supported cloud providers
 - clear disclosure of which data leaves the computer
 - provider health checks, timeouts, and deterministic fallback
+- Ollama helper flow: install link, model recommendation by hardware tier, and
+  optional local model discovery
+- provider presets for common OpenAI-compatible cloud endpoints
+- inline "ask AI about this step" help inside onboarding once a provider is
+  connected, with offline fallback when no provider is configured
 - project context pack that explains app concepts, reports, roles, risk gates,
   Binance workflows, and current feature limits to any connected assistant
 

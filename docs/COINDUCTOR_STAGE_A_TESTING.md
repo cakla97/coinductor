@@ -21,14 +21,27 @@ terminal.
 
 - With no onboarding profile, the app opens into the setup wizard instead of the
   main dashboard.
-- Confirm `Enter app` is disabled before a profile exists.
+- Confirm the wizard is step-by-step: Exchange, Portfolio, Profile, AI, Binance API,
+  Review.
+- Confirm `Next` is disabled when the current required step is incomplete.
 - Confirm the wizard says it does not place orders or change exchange settings.
+- Confirm the exchange step starts with Binance and clearly marks other exchanges as
+  planned.
 - Select `I already have a portfolio`.
 - Change management style, automation, review rhythm, language/region, drawdown,
   bot preference, spot-trade preference, and starting budget.
+- Confirm the profile step explains the currently selected option before saving.
+- Confirm `Apply safe defaults` immediately saves a conservative local profile and
+  shows a confirmation toast.
+- Confirm `Save profile` shows a confirmation toast and enables the next step.
 - Confirm labels are human readable, not internal constants such as
   `GUARDED_AUTOMATION`.
-- Save the profile.
+- In AI setup, save a local AI endpoint/model or skip it. If you save one, run
+  `Check AI provider`.
+- In Binance API setup, follow the shown Binance API steps and paste the read-only
+  key/secret into the wizard fields. Do not edit `.env` manually during this test.
+- Confirm `Save key` shows a confirmation toast and clears the secret field.
+- Run `Check read-only access`.
 - Confirm the wizard allows entering Coinductor.
 
 ## 3. Main App Smoke Test
@@ -79,7 +92,7 @@ terminal.
 
 ## 7. Binance Read-Only Check
 
-- Confirm `.env` contains read-only Binance keys.
+- Confirm the wizard or Settings API form saved read-only Binance keys locally.
 - In Settings, run the Binance read-only check.
 - Expected result:
   - `Connected` if the key has safe read-only permissions.

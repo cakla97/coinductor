@@ -11,6 +11,7 @@ from .assistant import ProviderBackedAssistant
 from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService
 from .desktop_store import DesktopStore
+from .env_writer import EnvWriter
 from .first_portfolio_planner import FirstPortfolioPlanner
 from .local_data_reset import LocalDataResetService
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
@@ -600,6 +601,46 @@ class AppController(QObject):
         self._ai_provider_thread.finished.connect(self._ai_provider_thread.deleteLater)
         self._ai_provider_thread.finished.connect(self._clear_ai_provider_worker)
         self._ai_provider_thread.start()
+
+    @Slot(str, str)
+    def saveBinanceReadOnlyCredentials(self, api_key: str, api_secret: str) -> None:
+        EnvWriter().update(
+            {
+                "BINANCE_API_KEY": api_key,
+                "BINANCE_API_SECRET": api_secret,
+            }
+        )
+        self._connection_status = "Not checked"
+        self._connection_detail = "Read-only credentials were saved locally. Run the read-only check to verify them."
+        self.refreshSetup()
+        self.connectionChanged.emit()
+
+    @Slot(str, str)
+    def saveLocalAiProvider(self, base_url: str, model: str) -> None:
+        EnvWriter().update(
+            {
+                "LLM_BASE_URL": base_url,
+                "LLM_MODEL": model,
+            }
+        )
+        self._ai_provider_health_status = "Not checked"
+        self._ai_provider_health_detail = "Local AI settings were saved. Run the AI provider check to verify the endpoint."
+        self.refreshSetup()
+        self.aiProviderChanged.emit()
+
+    @Slot(str, str, str)
+    def saveCloudAiProvider(self, base_url: str, model: str, api_key: str) -> None:
+        EnvWriter().update(
+            {
+                "LLM_BASE_URL": base_url,
+                "LLM_MODEL": model,
+                "LLM_API_KEY": api_key,
+            }
+        )
+        self._ai_provider_health_status = "Not checked"
+        self._ai_provider_health_detail = "Cloud AI settings were saved locally. Run the AI provider check before using it."
+        self.refreshSetup()
+        self.aiProviderChanged.emit()
 
     @Slot(str)
     def askAssistant(self, question: str) -> None:

@@ -28,6 +28,7 @@ ApplicationWindow {
     property color warning: "#f1b84b"
     property string toastText: ""
     property int wizardStep: 0
+    property bool profileChoicesEdited: false
     property var wizardSteps: ["Exchange", "Portfolio", "Profile", "AI", "Binance API", "Review"]
     property var exchangeOptions: [
         { label: "Binance", value: "BINANCE" },
@@ -103,6 +104,28 @@ ApplicationWindow {
         if (value >= 20)
             return "High comfort allows more growth-oriented recommendations, but this is not a guarantee or a hard stop-loss."
         return "Medium comfort is the default: risk-aware without making the portfolio completely passive."
+    }
+
+    function budgetHelp(value) {
+        if (value === 0)
+            return "Auto means Coinductor will not assume fresh capital. It will use discovered balances and conservative defaults until real funding is known."
+        return "Starting budget is the approximate operating capital Coinductor uses for first-portfolio planning and funding recommendations."
+    }
+
+    function botHelp(enabled) {
+        return enabled
+            ? "Binance bot recommendations lets Coinductor prepare Grid/Rebalancing parameters for manual setup where Binance has no public creation API."
+            : "Bot recommendations stay hidden unless you later enable them in your profile."
+    }
+
+    function spotTradeHelp(enabled) {
+        return enabled
+            ? "Guarded spot trades means Coinductor may prepare live trade workflows only after deterministic checks and confirmations."
+            : "Spot trades remain recommendations only. This is safer for the first setup pass."
+    }
+
+    function markProfileEdited() {
+        profileChoicesEdited = true
     }
 
     function canContinueWizard() {
@@ -445,32 +468,33 @@ ApplicationWindow {
                                         ColumnLayout {
                                             Layout.fillWidth: true
                                             Text { text: "Management style"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                            ComboBox { id: wizardStyle; Layout.fillWidth: true; model: window.styleOptions; textRole: "label"; valueRole: "value"; currentIndex: 1 }
+                                            ComboBox { id: wizardStyle; Layout.fillWidth: true; model: window.styleOptions; textRole: "label"; valueRole: "value"; currentIndex: 1; onActivated: window.markProfileEdited() }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
                                             Text { text: "Automation"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                            ComboBox { id: wizardAutomation; Layout.fillWidth: true; model: window.automationOptions; textRole: "label"; valueRole: "value" }
+                                            ComboBox { id: wizardAutomation; Layout.fillWidth: true; model: window.automationOptions; textRole: "label"; valueRole: "value"; onActivated: window.markProfileEdited() }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
                                             Text { text: "Review rhythm"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                            ComboBox { id: wizardCadence; Layout.fillWidth: true; model: window.cadenceOptions; textRole: "label"; valueRole: "value"; currentIndex: 1 }
+                                            ComboBox { id: wizardCadence; Layout.fillWidth: true; model: window.cadenceOptions; textRole: "label"; valueRole: "value"; currentIndex: 1; onActivated: window.markProfileEdited() }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
                                             Text { text: "Language / region"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                            ComboBox { id: wizardLocale; Layout.fillWidth: true; model: ["en-US", "es-ES", "cs-CZ", "pt-BR"] }
+                                            ComboBox { id: wizardLocale; Layout.fillWidth: true; model: ["en-US", "es-ES", "cs-CZ", "pt-BR"]; onActivated: window.markProfileEdited() }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
                                             Text { text: "Funding currency"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                            ComboBox { id: wizardCurrency; Layout.fillWidth: true; model: ["USDC"] }
+                                            ComboBox { id: wizardCurrency; Layout.fillWidth: true; model: ["USDC"]; onActivated: window.markProfileEdited() }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
                                             Text { text: "Starting budget"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                            ComboBox { id: wizardBudget; Layout.fillWidth: true; model: window.budgetOptions; textRole: "label"; valueRole: "value" }
+                                            ComboBox { id: wizardBudget; Layout.fillWidth: true; model: window.budgetOptions; textRole: "label"; valueRole: "value"; onActivated: window.markProfileEdited() }
+                                            Text { Layout.fillWidth: true; text: window.budgetHelp(wizardBudget.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                         }
                                     }
 
@@ -480,15 +504,24 @@ ApplicationWindow {
                                         ColumnLayout {
                                             Layout.preferredWidth: 300
                                             Text { text: "Drawdown comfort"; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                            ComboBox { id: wizardDrawdown; Layout.fillWidth: true; model: window.drawdownOptions; textRole: "label"; valueRole: "value"; currentIndex: 1 }
+                                            ComboBox { id: wizardDrawdown; Layout.fillWidth: true; model: window.drawdownOptions; textRole: "label"; valueRole: "value"; currentIndex: 1; onActivated: window.markProfileEdited() }
+                                            Text { Layout.fillWidth: true; text: window.drawdownHelp(wizardDrawdown.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                         }
-                                        CheckBox { id: wizardUseBots; Layout.fillWidth: true; text: "Use Binance bot recommendations"; checked: true }
-                                        CheckBox {
-                                            id: wizardAllowSpot
+                                        ColumnLayout {
                                             Layout.fillWidth: true
-                                            text: "Allow guarded spot trades"
-                                            checked: false
-                                            enabled: wizardAutomation.currentValue === "GUARDED_AUTOMATION"
+                                            CheckBox { id: wizardUseBots; text: "Use Binance bot recommendations"; checked: true; onClicked: window.markProfileEdited() }
+                                            Text { Layout.fillWidth: true; text: window.botHelp(wizardUseBots.checked); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                        }
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            CheckBox {
+                                                id: wizardAllowSpot
+                                                text: "Allow guarded spot trades"
+                                                checked: false
+                                                enabled: wizardAutomation.currentValue === "GUARDED_AUTOMATION"
+                                                onClicked: window.markProfileEdited()
+                                            }
+                                            Text { Layout.fillWidth: true; text: window.spotTradeHelp(wizardAllowSpot.checked); color: wizardAllowSpot.enabled ? textSecondary : "#66717c"; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                         }
                                     }
 
@@ -496,35 +529,60 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         radius: 6
                                         color: panelRaised
-                                        Layout.preferredHeight: 112
+                                        Layout.preferredHeight: 178
                                         ColumnLayout {
                                             anchors.fill: parent
                                             anchors.margins: 12
                                             spacing: 5
                                             Text { text: "Current selection"; color: textPrimary; font.pixelSize: 13; font.bold: true }
-                                            Text { Layout.fillWidth: true; text: window.styleHelp(wizardStyle.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
-                                            Text { Layout.fillWidth: true; text: window.automationHelp(wizardAutomation.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
-                                            Text { Layout.fillWidth: true; text: window.cadenceHelp(wizardCadence.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                visible: !window.profileChoicesEdited && !appController.userProfileConfigured
+                                                text: "Choose a profile option above to see what it changes. Nothing is saved until you press Save profile or Apply safe defaults."
+                                                color: textSecondary
+                                                font.pixelSize: 12
+                                                wrapMode: Text.WordWrap
+                                            }
+                                            Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardStyle.currentText + " management style - " + window.styleHelp(wizardStyle.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardAutomation.currentText + " - " + window.automationHelp(wizardAutomation.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardCadence.currentText + " review rhythm - " + window.cadenceHelp(wizardCadence.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardBudget.currentText + " starting budget - " + window.budgetHelp(wizardBudget.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardDrawdown.currentText + " drawdown comfort - " + window.drawdownHelp(wizardDrawdown.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                         }
                                     }
                                     RowLayout {
                                         Layout.fillWidth: true
                                         Item { Layout.fillWidth: true }
-                                        Button { text: "Use safe defaults"; onClicked: appController.useSafeDefaultProfile() }
                                         Button {
-                                            text: appController.userProfileConfigured ? "Profile saved" : "Save profile"
+                                            text: "Apply safe defaults"
+                                            ToolTip.visible: hovered
+                                            ToolTip.text: "Immediately saves a conservative local profile: recommendations only, no guarded spot trades, and beginner-friendly risk settings."
+                                            onClicked: {
+                                                appController.useSafeDefaultProfile()
+                                                window.profileChoicesEdited = true
+                                                window.showToast("Safe default profile saved")
+                                            }
+                                        }
+                                        Button {
+                                            text: "Save profile"
+                                            ToolTip.visible: hovered
+                                            ToolTip.text: "Saves these profile choices locally. It does not connect to Binance or place orders."
                                             highlighted: true
-                                            onClicked: appController.saveGuidedProfile(
-                                                wizardStyle.currentValue,
-                                                wizardAutomation.currentValue,
-                                                wizardCadence.currentValue,
-                                                wizardLocale.currentText,
-                                                wizardCurrency.currentText,
-                                                wizardUseBots.checked,
-                                                wizardAllowSpot.checked,
-                                                wizardDrawdown.currentValue,
-                                                wizardBudget.currentValue
-                                            )
+                                            onClicked: {
+                                                appController.saveGuidedProfile(
+                                                    wizardStyle.currentValue,
+                                                    wizardAutomation.currentValue,
+                                                    wizardCadence.currentValue,
+                                                    wizardLocale.currentText,
+                                                    wizardCurrency.currentText,
+                                                    wizardUseBots.checked,
+                                                    wizardAllowSpot.checked,
+                                                    wizardDrawdown.currentValue,
+                                                    wizardBudget.currentValue
+                                                )
+                                                window.profileChoicesEdited = true
+                                                window.showToast("Profile saved locally")
+                                            }
                                         }
                                     }
                                     Text {
@@ -539,34 +597,103 @@ ApplicationWindow {
 
                                 ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: 14
+                                    spacing: 10
                                     Text { text: "4. AI assistant setup"; color: textPrimary; font.pixelSize: 22; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: "AI is optional. Coinductor works without it, but a local or cloud provider can summarize reports and answer app questions."
+                                        text: "AI is optional, but if you connect it here it can help explain later wizard steps, summarize reports, and answer app questions."
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
                                     }
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 200
+                                        Layout.preferredHeight: 86
                                         radius: 7
                                         color: panelRaised
                                         border.color: border
                                         ColumnLayout {
                                             anchors.fill: parent
                                             anchors.margins: 16
-                                            spacing: 8
+                                            spacing: 5
                                             Text { text: "Current AI provider"; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                             Text { Layout.fillWidth: true; text: appController.aiProviderSummary; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                                             Text { Layout.fillWidth: true; text: appController.aiProviderHealthDetail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
-                                            Text {
-                                                Layout.fillWidth: true
-                                                text: "Manual setup: configure LLM_BASE_URL and LLM_MODEL in .env for a local OpenAI-compatible model. Cloud providers are optional and may receive selected report context."
-                                                color: textSecondary
-                                                font.pixelSize: 11
-                                                wrapMode: Text.WordWrap
+                                        }
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        spacing: 12
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 250
+                                            radius: 7
+                                            color: panelRaised
+                                            border.color: border
+                                            ColumnLayout {
+                                                anchors.fill: parent
+                                                anchors.margins: 14
+                                                spacing: 8
+                                                Text { text: "Local AI with Ollama"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: "Best for privacy. Install Ollama, choose a model that fits your hardware, then run it locally. For your RTX 4080 class hardware, qwen3:14b is a practical starting point."
+                                                    color: textSecondary
+                                                    font.pixelSize: 11
+                                                    wrapMode: Text.WordWrap
+                                                }
+                                                Text { Layout.fillWidth: true; text: "1. Install Ollama.  2. Pull a model, e.g. qwen3:14b.  3. Keep Ollama running.  4. Save these settings."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    TextField { id: localAiBaseUrl; Layout.fillWidth: true; placeholderText: "http://127.0.0.1:11434/v1"; text: "http://127.0.0.1:11434/v1" }
+                                                    TextField { id: localAiModel; Layout.preferredWidth: 170; placeholderText: "qwen3:14b"; text: "qwen3:14b" }
+                                                }
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    Button {
+                                                        text: "Save local AI"
+                                                        onClicked: {
+                                                            appController.saveLocalAiProvider(localAiBaseUrl.text, localAiModel.text)
+                                                            window.showToast("Local AI settings saved")
+                                                        }
+                                                    }
+                                                    Text { Layout.fillWidth: true; text: "Model discovery button planned: detect installed Ollama models automatically."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                                }
+                                            }
+                                        }
+                                        Rectangle {
+                                            Layout.fillWidth: true
+                                            Layout.preferredHeight: 250
+                                            radius: 7
+                                            color: panelRaised
+                                            border.color: border
+                                            ColumnLayout {
+                                                anchors.fill: parent
+                                                anchors.margins: 14
+                                                spacing: 8
+                                                Text { text: "Cloud AI provider"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: "Best quality, but selected report/profile context can leave your computer. Use your own provider API key; subscriptions are optional and provider-specific."
+                                                    color: textSecondary
+                                                    font.pixelSize: 11
+                                                    wrapMode: Text.WordWrap
+                                                }
+                                                Text { Layout.fillWidth: true; text: "Use an OpenAI-compatible endpoint for now. Later the wizard can offer provider presets for OpenAI, Claude, Gemini, and others."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    TextField { id: cloudAiBaseUrl; Layout.fillWidth: true; placeholderText: "https://api.openai.com/v1" }
+                                                    TextField { id: cloudAiModel; Layout.preferredWidth: 170; placeholderText: "model name" }
+                                                }
+                                                TextField { id: cloudAiKey; Layout.fillWidth: true; placeholderText: "API key"; echoMode: TextInput.Password }
+                                                Button {
+                                                    text: "Save cloud AI"
+                                                    enabled: cloudAiBaseUrl.text.trim().length > 0 && cloudAiModel.text.trim().length > 0 && cloudAiKey.text.trim().length > 0
+                                                    onClicked: {
+                                                        appController.saveCloudAiProvider(cloudAiBaseUrl.text, cloudAiModel.text, cloudAiKey.text)
+                                                        window.showToast("Cloud AI settings saved")
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -577,14 +704,14 @@ ApplicationWindow {
                                             enabled: !appController.checkingAiProvider
                                             onClicked: appController.checkAiProvider()
                                         }
-                                        Text { Layout.fillWidth: true; text: "You can skip this and add AI later in Settings."; color: textSecondary; font.pixelSize: 11 }
+                                        Text { Layout.fillWidth: true; text: "You can skip this and add AI later in Settings. Once connected, the assistant can explain wizard choices and app reports."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                     }
                                     Item { Layout.fillHeight: true }
                                 }
 
                                 ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: 14
+                                    spacing: 10
                                     Text { text: "5. Binance API and safety checks"; color: textPrimary; font.pixelSize: 22; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
@@ -595,19 +722,48 @@ ApplicationWindow {
                                     }
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 210
+                                        Layout.preferredHeight: 205
                                         radius: 7
                                         color: panelRaised
                                         border.color: border
                                         ColumnLayout {
                                             anchors.fill: parent
                                             anchors.margins: 16
-                                            spacing: 8
+                                            spacing: 6
                                             Text { text: "Manual Binance steps"; color: textPrimary; font.pixelSize: 15; font.bold: true }
-                                            Text { Layout.fillWidth: true; text: "1. In Binance, create an API key for Coinductor."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
-                                            Text { Layout.fillWidth: true; text: "2. For this stage, enable reading/user data only. Do not enable withdrawals."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
-                                            Text { Layout.fillWidth: true; text: "3. If Binance requires trading permission for later test actions, restrict the key to trusted IPs first."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
-                                            Text { Layout.fillWidth: true; text: "4. Put the API key and secret into .env, then run the read-only check here."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: "1. Binance: User profile > Account > API Management > Create API > System generated."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: "2. Label suggestion: coinductor-readonly. Finish two-factor verification and copy both API Key and Secret Key immediately."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: "3. Edit restrictions: keep Enable Reading on. For read-only setup, do not enable withdrawals, futures, margin transfer, or universal transfer."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: "4. If Binance forces IP restriction for future trading keys, choose Restrict access to trusted IPs only and use your current public/static IP. Dynamic IP users should stay read-only or use a trusted always-on host later."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: "5. Trading/write access belongs to a separate later key, after testnet/preview confidence. Never enable withdrawals."; color: warning; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                        }
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 118
+                                        radius: 7
+                                        color: panelRaised
+                                        border.color: border
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 14
+                                            spacing: 8
+                                            Text { text: "Connect read-only key to Coinductor"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                TextField { id: binanceReadKey; Layout.fillWidth: true; placeholderText: "API Key" }
+                                                TextField { id: binanceReadSecret; Layout.fillWidth: true; placeholderText: "Secret Key"; echoMode: TextInput.Password }
+                                                Button {
+                                                    text: "Save key"
+                                                    enabled: binanceReadKey.text.trim().length > 0 && binanceReadSecret.text.trim().length > 0
+                                                    onClicked: {
+                                                        appController.saveBinanceReadOnlyCredentials(binanceReadKey.text, binanceReadSecret.text)
+                                                        binanceReadSecret.text = ""
+                                                        window.showToast("Read-only Binance key saved")
+                                                    }
+                                                }
+                                            }
+                                            Text { Layout.fillWidth: true; text: "The key is stored in the local .env file in this project folder. It is not sent anywhere by the wizard."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                         }
                                     }
                                     RowLayout {

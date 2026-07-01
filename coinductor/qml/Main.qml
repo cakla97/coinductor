@@ -736,8 +736,8 @@ ApplicationWindow {
                                         rowSpacing: 12
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 560 : 500) : 390
-                                            Layout.minimumHeight: appController.localAiModelRecommendations.length > 0 ? 460 : 360
+                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 590 : 530) : 390
+                                            Layout.minimumHeight: appController.localAiModelRecommendations.length > 0 ? 500 : 360
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
@@ -788,9 +788,9 @@ ApplicationWindow {
                                                 Rectangle {
                                                     visible: appController.localAiModelRecommendations.length > 0
                                                     Layout.fillWidth: true
-                                                    Layout.fillHeight: true
-                                                    Layout.minimumHeight: 170
-                                                    Layout.preferredHeight: 190
+                                                    Layout.bottomMargin: 16
+                                                    Layout.minimumHeight: 180
+                                                    Layout.preferredHeight: 205
                                                     radius: 6
                                                     color: "#10161d"
                                                     border.color: border
@@ -838,7 +838,7 @@ ApplicationWindow {
                                         }
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 350 : 500) : 390
+                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 350 : 530) : 390
                                             Layout.minimumHeight: 340
                                             radius: 7
                                             color: panelRaised

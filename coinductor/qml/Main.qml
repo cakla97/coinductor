@@ -6,9 +6,9 @@ import QtQuick.Layouts
 ApplicationWindow {
     id: window
     width: 1240
-    height: 780
-    minimumWidth: 980
-    minimumHeight: 680
+    height: 860
+    minimumWidth: 1180
+    minimumHeight: 820
     visible: true
     title: "Coinductor"
     color: "#0f1318"
@@ -270,7 +270,7 @@ ApplicationWindow {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.preferredHeight: Math.max(420, window.height - 220)
+                    Layout.preferredHeight: Math.max(520, window.height - 240)
                     Layout.minimumHeight: 420
                     spacing: 16
 
@@ -705,17 +705,27 @@ ApplicationWindow {
                                     }
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 86
+                                        Layout.preferredHeight: 104
                                         radius: 7
                                         color: panelRaised
                                         border.color: border
-                                        ColumnLayout {
+                                        RowLayout {
                                             anchors.fill: parent
                                             anchors.margins: 16
-                                            spacing: 5
-                                            Text { text: "Current AI provider"; color: textPrimary; font.pixelSize: 15; font.bold: true }
-                                            Text { Layout.fillWidth: true; text: appController.aiProviderSummary; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
-                                            Text { Layout.fillWidth: true; text: appController.aiProviderHealthDetail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                            spacing: 12
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 5
+                                                Text { text: "Current AI provider"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                                Text { Layout.fillWidth: true; text: appController.aiProviderSummary; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                                Text { Layout.fillWidth: true; text: appController.aiProviderHealthDetail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                                Text { Layout.fillWidth: true; text: "You can skip AI setup and add it later. Inline wizard Q&A is planned next."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                            }
+                                            Button {
+                                                text: appController.checkingAiProvider ? "Checking..." : "Check AI provider"
+                                                enabled: !appController.checkingAiProvider
+                                                onClicked: appController.checkAiProvider()
+                                            }
                                         }
                                     }
                                     RowLayout {
@@ -727,6 +737,7 @@ ApplicationWindow {
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
+                                            clip: true
                                             ColumnLayout {
                                                 anchors.fill: parent
                                                 anchors.margins: 14
@@ -802,6 +813,7 @@ ApplicationWindow {
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
+                                            clip: true
                                             ColumnLayout {
                                                 anchors.fill: parent
                                                 anchors.margins: 14
@@ -831,16 +843,6 @@ ApplicationWindow {
                                                 }
                                             }
                                         }
-                                    }
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        Layout.topMargin: 8
-                                        Button {
-                                            text: appController.checkingAiProvider ? "Checking AI..." : "Check AI provider"
-                                            enabled: !appController.checkingAiProvider
-                                            onClicked: appController.checkAiProvider()
-                                        }
-                                        Text { Layout.fillWidth: true; text: "You can skip this and add AI later. Inline wizard Q&A is planned next: it will explain the current step using connected AI or the offline project helper."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                     }
                                     Item { Layout.fillHeight: true }
                                 }
@@ -1029,6 +1031,8 @@ ApplicationWindow {
 
                 RowLayout {
                     Layout.fillWidth: true
+                    Layout.preferredHeight: 58
+                    Layout.bottomMargin: 18
                     Button {
                         text: "Back"
                         enabled: window.wizardStep > 0

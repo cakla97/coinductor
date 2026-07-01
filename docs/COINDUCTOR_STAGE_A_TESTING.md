@@ -43,6 +43,8 @@ terminal.
   `GUARDED_AUTOMATION`.
 - In AI setup, save a local AI endpoint/model or skip it. If you save one, run
   `Check AI provider`.
+- In AI setup, click `Scan hardware` and confirm Coinductor shows a local hardware
+  summary and ranked Ollama model suggestions.
 - Open `Local AI guide` and `Cloud AI guide` from the wizard. Confirm the guides
   open in a modal and return to the same wizard step when closed.
 - In Binance API setup, follow the shown Binance API steps and paste the read-only

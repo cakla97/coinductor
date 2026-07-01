@@ -167,6 +167,18 @@ ApplicationWindow {
         wizardStep = Math.min(wizardStep + 1, wizardSteps.length - 1)
     }
 
+    function wizardPanelHeight() {
+        if (wizardStep === 2)
+            return 720
+        if (wizardStep === 3)
+            return 840
+        if (wizardStep === 4)
+            return 660
+        if (wizardStep === 5)
+            return 660
+        return 560
+    }
+
     Item {
         anchors.fill: parent
         visible: appController.onboardingWizardVisible
@@ -336,7 +348,7 @@ ApplicationWindow {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.fillHeight: true
+                        Layout.preferredHeight: window.wizardPanelHeight()
                         radius: 7
                         color: panel
                         border.color: border
@@ -709,7 +721,7 @@ ApplicationWindow {
                                         spacing: 12
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: 282
+                                            Layout.preferredHeight: 360
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
@@ -740,13 +752,42 @@ ApplicationWindow {
                                                             window.showToast("Local AI settings saved")
                                                         }
                                                     }
-                                                    Text { Layout.fillWidth: true; text: "Planned helper: detect installed Ollama models and suggest one from your hardware tier."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                                    Button {
+                                                        text: "Scan hardware"
+                                                        onClicked: appController.scanLocalAiHardware()
+                                                    }
+                                                }
+                                                Text { Layout.fillWidth: true; text: appController.localAiHardwareSummary; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                                ListView {
+                                                    Layout.fillWidth: true
+                                                    Layout.fillHeight: true
+                                                    clip: true
+                                                    interactive: false
+                                                    spacing: 4
+                                                    model: appController.localAiModelRecommendations
+                                                    delegate: Rectangle {
+                                                        required property var modelData
+                                                        width: ListView.view.width
+                                                        height: 42
+                                                        radius: 5
+                                                        color: "#141a21"
+                                                        border.color: border
+                                                        RowLayout {
+                                                            anchors.fill: parent
+                                                            anchors.leftMargin: 10
+                                                            anchors.rightMargin: 10
+                                                            spacing: 8
+                                                            Text { Layout.preferredWidth: 90; text: modelData.model; color: accent; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
+                                                            Text { Layout.preferredWidth: 78; text: modelData.fit; color: textPrimary; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
+                                                            Text { Layout.fillWidth: true; text: modelData.reason; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: 282
+                                            Layout.preferredHeight: 360
                                             radius: 7
                                             color: panelRaised
                                             border.color: border

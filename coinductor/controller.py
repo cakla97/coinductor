@@ -15,6 +15,7 @@ from .env_writer import EnvWriter
 from .first_portfolio_planner import FirstPortfolioPlanner
 from .guide_service import GuideService
 from .local_data_reset import LocalDataResetService
+from .local_ai_recommender import LocalAiRecommender
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
 from .readiness_service import ReadinessService
 from .safety_service import SafetyService
@@ -108,6 +109,7 @@ class AppController(QObject):
     readinessChanged = Signal()
     firstPortfolioPlanChanged = Signal()
     onboardingWizardChanged = Signal()
+    localAiRecommendationChanged = Signal()
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
@@ -143,6 +145,8 @@ class AppController(QObject):
         self._assistant_busy = False
         self._ai_provider_health_status = "Not checked"
         self._ai_provider_health_detail = "Run an AI provider check after configuring LLM_BASE_URL and LLM_MODEL."
+        self._local_ai_hardware_summary = "Hardware has not been scanned yet."
+        self._local_ai_model_recommendations: list[dict[str, str]] = []
         self._snapshot = DesktopStore().load()
         self._setup_snapshot = SetupService().inspect()
         self._ai_provider_snapshot = AiProviderService().inspect()
@@ -324,6 +328,14 @@ class AppController(QObject):
     @Property(str, notify=aiProviderChanged)
     def aiProviderHealthDetail(self) -> str:
         return self._ai_provider_health_detail
+
+    @Property(str, notify=localAiRecommendationChanged)
+    def localAiHardwareSummary(self) -> str:
+        return self._local_ai_hardware_summary
+
+    @Property("QVariantList", notify=localAiRecommendationChanged)
+    def localAiModelRecommendations(self) -> list[dict[str, str]]:
+        return list(self._local_ai_model_recommendations)
 
     @Property(str, notify=userProfileChanged)
     def userProfileSummary(self) -> str:
@@ -607,6 +619,16 @@ class AppController(QObject):
         self._ai_provider_thread.finished.connect(self._ai_provider_thread.deleteLater)
         self._ai_provider_thread.finished.connect(self._clear_ai_provider_worker)
         self._ai_provider_thread.start()
+
+    @Slot()
+    def scanLocalAiHardware(self) -> None:
+        snapshot = LocalAiRecommender().inspect()
+        self._local_ai_hardware_summary = snapshot.summary
+        self._local_ai_model_recommendations = [
+            {"model": item.model, "fit": item.fit, "reason": item.reason}
+            for item in snapshot.recommendations
+        ]
+        self.localAiRecommendationChanged.emit()
 
     @Slot(str, str)
     def saveBinanceReadOnlyCredentials(self, api_key: str, api_secret: str) -> None:

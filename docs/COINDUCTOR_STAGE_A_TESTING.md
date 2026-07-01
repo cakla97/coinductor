@@ -43,8 +43,11 @@ terminal.
   `GUARDED_AUTOMATION`.
 - In AI setup, save a local AI endpoint/model or skip it. If you save one, run
   `Check AI provider`.
+- Open `Local AI guide` and `Cloud AI guide` from the wizard. Confirm the guides
+  open in a modal and return to the same wizard step when closed.
 - In Binance API setup, follow the shown Binance API steps and paste the read-only
   key/secret into the wizard fields. Do not edit `.env` manually during this test.
+- Open the Binance API and safety guides from this step.
 - Confirm `Save key` shows a confirmation toast and clears the secret field.
 - Run `Check read-only access`.
 - Confirm the wizard allows entering Coinductor.
@@ -53,7 +56,7 @@ terminal.
 
 - App opens as `Coinductor`.
 - Sidebar pages switch without freezing: Overview, Portfolio, Strategies, Run History,
-  AI Assistant, Settings.
+  AI Assistant, Help & Guides, Settings.
 - Overview loads the latest stored state or a clear empty/default state.
 - `Run analysis` dialog opens and does not offer live submit.
 - Open `Settings`.
@@ -129,7 +132,15 @@ terminal.
 - If no external AI provider is configured, confirm the offline fallback still answers
   using local project context.
 
-## 10. Planned Product Tour
+## 10. Help & Guides
+
+- Open `Help & Guides`.
+- Confirm the page lists Local AI, Cloud AI, Binance API, Safety model, and
+  Portfolio roles.
+- Open each guide and confirm the modal is readable and can be closed.
+- Note where screenshots or more detailed instructions should be added.
+
+## 11. Planned Product Tour
 
 - Product tour is not implemented yet.
 - Expected later behavior:
@@ -138,7 +149,7 @@ terminal.
     and safety panel are highlighted one at a time,
   - Settings includes `Run app tour again`.
 
-## 11. Safety Expectations
+## 12. Safety Expectations
 
 - The desktop app must not submit live orders.
 - The desktop app must not redeem Earn.

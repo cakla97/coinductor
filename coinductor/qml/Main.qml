@@ -30,6 +30,7 @@ ApplicationWindow {
     property int wizardStep: 0
     property bool profileChoicesEdited: false
     property string fundingCurrency: "USDC"
+    property var activeGuide: ({})
     property var wizardSteps: ["Exchange", "Portfolio", "Profile", "AI", "Binance API", "Review"]
     property var exchangeOptions: [
         { label: "Binance", value: "BINANCE" },
@@ -127,6 +128,17 @@ ApplicationWindow {
 
     function markProfileEdited() {
         profileChoicesEdited = true
+    }
+
+    function openGuide(guideId) {
+        for (let i = 0; i < appController.guides.length; i++) {
+            let guide = appController.guides[i]
+            if (guide.id === guideId) {
+                activeGuide = guide
+                guideDialog.open()
+                return
+            }
+        }
     }
 
     function canContinueWizard() {
@@ -665,6 +677,18 @@ ApplicationWindow {
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
                                     }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Button {
+                                            text: "Open local AI guide"
+                                            onClicked: window.openGuide("local-ai")
+                                        }
+                                        Button {
+                                            text: "Open cloud AI guide"
+                                            onClicked: window.openGuide("cloud-ai")
+                                        }
+                                        Item { Layout.fillWidth: true }
+                                    }
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 86
@@ -779,6 +803,18 @@ ApplicationWindow {
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Button {
+                                            text: "Open Binance API guide"
+                                            onClicked: window.openGuide("binance-api")
+                                        }
+                                        Button {
+                                            text: "Open safety guide"
+                                            onClicked: window.openGuide("safety-model")
+                                        }
+                                        Item { Layout.fillWidth: true }
                                     }
                                     Rectangle {
                                         Layout.fillWidth: true
@@ -1003,7 +1039,7 @@ ApplicationWindow {
                 }
 
                 Repeater {
-                    model: ["Overview", "Portfolio", "Strategies", "Run History", "AI Assistant", "Settings"]
+                    model: ["Overview", "Portfolio", "Strategies", "Run History", "AI Assistant", "Help & Guides", "Settings"]
                     delegate: Rectangle {
                         required property string modelData
                         required property int index
@@ -1637,6 +1673,77 @@ ApplicationWindow {
                 y: 28
                 width: Math.max(window.width - 288, 692)
                 spacing: 18
+
+                Text { text: "Help & Guides"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text {
+                    Layout.fillWidth: true
+                    text: "Step-by-step local guides for setup, safety, AI providers, Binance API access, and portfolio roles."
+                    color: textSecondary
+                    font.pixelSize: 13
+                    wrapMode: Text.WordWrap
+                }
+
+                GridLayout {
+                    Layout.fillWidth: true
+                    columns: 2
+                    columnSpacing: 12
+                    rowSpacing: 12
+                    Repeater {
+                        model: appController.guides
+                        delegate: Rectangle {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 152
+                            radius: 7
+                            color: panel
+                            border.color: border
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 16
+                                spacing: 8
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    Text { Layout.fillWidth: true; text: modelData.title; color: textPrimary; font.pixelSize: 16; font.bold: true; elide: Text.ElideRight }
+                                    Rectangle {
+                                        Layout.preferredWidth: 92
+                                        Layout.preferredHeight: 24
+                                        radius: 5
+                                        color: panelRaised
+                                        border.color: border
+                                        Text { anchors.centerIn: parent; text: modelData.section; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                    }
+                                }
+                                Text {
+                                    Layout.fillWidth: true
+                                    Layout.fillHeight: true
+                                    text: modelData.summary
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                                Button {
+                                    text: "Open guide"
+                                    onClicked: window.openGuide(modelData.id)
+                                }
+                            }
+                        }
+                    }
+                }
+                Item { Layout.fillWidth: true; Layout.preferredHeight: 44 }
+            }
+        }
+
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            visible: appController.currentPage === 6
+
+            ColumnLayout {
+                x: 28
+                y: 28
+                width: Math.max(window.width - 288, 692)
+                spacing: 18
                 Text { text: "Settings"; color: textPrimary; font.pixelSize: 26; font.bold: true }
                 RowLayout {
                     Layout.fillWidth: true
@@ -2079,6 +2186,67 @@ ApplicationWindow {
                     }
                 }
                 Item { Layout.fillWidth: true; Layout.preferredHeight: 44 }
+            }
+        }
+    }
+
+    Dialog {
+        id: guideDialog
+        title: activeGuide.title || "Help & Guides"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(820, window.width - 80)
+        height: Math.min(640, window.height - 80)
+        standardButtons: Dialog.Close
+
+        ScrollView {
+            anchors.fill: parent
+            clip: true
+            ColumnLayout {
+                width: guideDialog.width - 48
+                spacing: 14
+                Rectangle {
+                    Layout.preferredWidth: Math.max(90, guideSectionText.implicitWidth + 26)
+                    Layout.preferredHeight: 28
+                    radius: 5
+                    color: "#17372d"
+                    border.color: accent
+                    Text {
+                        id: guideSectionText
+                        anchors.centerIn: parent
+                        text: activeGuide.section || "Guide"
+                        color: accent
+                        font.pixelSize: 11
+                        font.bold: true
+                    }
+                }
+                Text {
+                    Layout.fillWidth: true
+                    text: activeGuide.summary || ""
+                    color: textSecondary
+                    font.pixelSize: 13
+                    wrapMode: Text.WordWrap
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    color: border
+                }
+                Text {
+                    Layout.fillWidth: true
+                    text: activeGuide.body || ""
+                    color: textPrimary
+                    font.pixelSize: 13
+                    lineHeight: 1.18
+                    wrapMode: Text.WordWrap
+                }
+                Text {
+                    Layout.fillWidth: true
+                    text: "Screenshots and more detailed provider-specific steps can be added to this guide later."
+                    color: textSecondary
+                    font.pixelSize: 11
+                    wrapMode: Text.WordWrap
+                }
             }
         }
     }

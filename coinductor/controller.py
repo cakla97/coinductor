@@ -13,6 +13,7 @@ from .connection_check import ConnectionCheckService
 from .desktop_store import DesktopStore
 from .env_writer import EnvWriter
 from .first_portfolio_planner import FirstPortfolioPlanner
+from .guide_service import GuideService
 from .local_data_reset import LocalDataResetService
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
 from .readiness_service import ReadinessService
@@ -162,6 +163,7 @@ class AppController(QObject):
         self._first_portfolio_plan = self._first_portfolio_planner.plan(
             self._user_profile_service.current_profile("EXISTING_PORTFOLIO")
         )
+        self._guides = GuideService().list_guides()
         self._local_data_reset_snapshot = LocalDataResetService().preview()
         self._asset_policy_store = AssetPolicyStore()
         self._asset_role_overrides = self._asset_policy_store.load()
@@ -280,6 +282,10 @@ class AppController(QObject):
                 "detail": "Coinductor does not withdraw funds and does not submit live orders from the desktop UI without explicit guarded workflows.",
             },
         ]
+
+    @Property("QVariantList", constant=True)
+    def guides(self) -> list[dict[str, str]]:
+        return list(self._guides)
 
     @Property(str, constant=True)
     def localDataResetSummary(self) -> str:

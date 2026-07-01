@@ -23,6 +23,8 @@ bypass those controls.
 - explicit network checks only after user action
 - wizard-managed local secret/config entry so non-technical users do not edit
   `.env` by hand
+- Help & Guides content available both during onboarding and from the main app,
+  with room for screenshots and provider-specific walkthroughs
 - local configuration editor with validation and safe defaults
 - onboarding profile choices: Use safe defaults, Guide me, or Advanced setup
 - exchange-first onboarding with Binance supported first and extension points
@@ -41,6 +43,10 @@ The first wizard step should ask where the portfolio will live. For Binance,
 first-portfolio users may need account creation, identity verification, deposit
 setup, and API-key creation before Coinductor can continue. Existing-portfolio
 users can skip account creation and go directly to read-only connection checks.
+
+Onboarding help should not require entering the main app shell. Wizard steps may
+open local guide content in a modal, then return the user to the same step. After
+onboarding, the same content should remain available from the Help & Guides page.
 
 Coinductor should always show the current safety stage. Default onboarding starts
 in SETUP, where no exchange-changing operation or mainnet preview is available.

@@ -736,8 +736,8 @@ ApplicationWindow {
                                         rowSpacing: 12
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 590 : 530) : 390
-                                            Layout.minimumHeight: appController.localAiModelRecommendations.length > 0 ? 500 : 360
+                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 680 : 640) : 390
+                                            Layout.minimumHeight: appController.localAiModelRecommendations.length > 0 ? 610 : 360
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
@@ -789,8 +789,8 @@ ApplicationWindow {
                                                     visible: appController.localAiModelRecommendations.length > 0
                                                     Layout.fillWidth: true
                                                     Layout.bottomMargin: 16
-                                                    Layout.minimumHeight: 180
-                                                    Layout.preferredHeight: 205
+                                                    Layout.minimumHeight: 230
+                                                    Layout.preferredHeight: 70 + Math.min(appController.localAiModelRecommendations.length, 4) * 58
                                                     radius: 6
                                                     color: "#10161d"
                                                     border.color: border
@@ -803,7 +803,7 @@ ApplicationWindow {
                                                             Layout.fillWidth: true
                                                             Text { text: "Recommended local models"; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                                             Item { Layout.fillWidth: true }
-                                                            Text { text: "Scroll for all"; color: textSecondary; font.pixelSize: 10 }
+                                                            Text { text: appController.localAiModelRecommendations.length > 4 ? "Scroll for all" : "All recommendations"; color: textSecondary; font.pixelSize: 10 }
                                                         }
                                                         ListView {
                                                             Layout.fillWidth: true
@@ -813,11 +813,11 @@ ApplicationWindow {
                                                             boundsBehavior: Flickable.StopAtBounds
                                                             spacing: 6
                                                             model: appController.localAiModelRecommendations
-                                                            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AlwaysOn }
+                                                            ScrollBar.vertical: ScrollBar { policy: appController.localAiModelRecommendations.length > 4 ? ScrollBar.AlwaysOn : ScrollBar.AsNeeded }
                                                             delegate: Rectangle {
                                                                 required property var modelData
                                                                 width: ListView.view.width - 12
-                                                                height: 48
+                                                                height: 52
                                                                 radius: 5
                                                                 color: "#141a21"
                                                                 border.color: border
@@ -838,7 +838,7 @@ ApplicationWindow {
                                         }
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 350 : 530) : 390
+                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 350 : 640) : 390
                                             Layout.minimumHeight: 340
                                             radius: 7
                                             color: panelRaised

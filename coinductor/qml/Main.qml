@@ -270,7 +270,7 @@ ApplicationWindow {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.preferredHeight: Math.max(520, window.height - 240)
+                    Layout.preferredHeight: Math.max(640, window.height - 240)
                     Layout.minimumHeight: 420
                     spacing: 16
 
@@ -728,20 +728,24 @@ ApplicationWindow {
                                             }
                                         }
                                     }
-                                    RowLayout {
+                                    GridLayout {
+                                        id: aiProviderGrid
                                         Layout.fillWidth: true
-                                        spacing: 12
+                                        columns: width < 760 ? 1 : 2
+                                        columnSpacing: 12
+                                        rowSpacing: 12
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: 390
+                                            Layout.preferredHeight: aiProviderGrid.columns === 1 ? 560 : 500
+                                            Layout.minimumHeight: 460
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
                                             clip: true
                                             ColumnLayout {
                                                 anchors.fill: parent
-                                                anchors.margins: 14
-                                                spacing: 8
+                                                anchors.margins: 16
+                                                spacing: 10
                                                 Text { text: "Local AI with Ollama"; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                                 Text {
                                                     Layout.fillWidth: true
@@ -753,11 +757,13 @@ ApplicationWindow {
                                                 Text { Layout.fillWidth: true; text: "1. Install Ollama.  2. Pull a model, e.g. qwen3:8b or qwen3:14b.  3. Keep Ollama running.  4. Save these settings."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                                 RowLayout {
                                                     Layout.fillWidth: true
+                                                    spacing: 8
                                                     TextField { id: localAiBaseUrl; Layout.fillWidth: true; placeholderText: "http://127.0.0.1:11434/v1"; text: "http://127.0.0.1:11434/v1" }
                                                     TextField { id: localAiModel; Layout.preferredWidth: 170; placeholderText: "qwen3:14b"; text: "qwen3:14b" }
                                                 }
                                                 RowLayout {
                                                     Layout.fillWidth: true
+                                                    spacing: 8
                                                     Button {
                                                         text: "Save local AI"
                                                         onClicked: {
@@ -769,6 +775,7 @@ ApplicationWindow {
                                                         text: "Scan hardware"
                                                         onClicked: appController.scanLocalAiHardware()
                                                     }
+                                                    Item { Layout.fillWidth: true }
                                                 }
                                                 Text {
                                                     Layout.fillWidth: true
@@ -778,30 +785,51 @@ ApplicationWindow {
                                                     wrapMode: Text.WordWrap
                                                 }
                                                 Text { Layout.fillWidth: true; text: appController.localAiHardwareSummary; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
-                                                ListView {
+                                                Rectangle {
                                                     Layout.fillWidth: true
-                                                    Layout.preferredHeight: 122
+                                                    Layout.fillHeight: true
+                                                    Layout.minimumHeight: 170
+                                                    Layout.preferredHeight: 190
+                                                    radius: 6
+                                                    color: "#10161d"
+                                                    border.color: border
                                                     clip: true
-                                                    interactive: true
-                                                    boundsBehavior: Flickable.StopAtBounds
-                                                    spacing: 4
-                                                    model: appController.localAiModelRecommendations
-                                                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
-                                                    delegate: Rectangle {
-                                                        required property var modelData
-                                                        width: ListView.view.width
-                                                        height: 42
-                                                        radius: 5
-                                                        color: "#141a21"
-                                                        border.color: border
+                                                    ColumnLayout {
+                                                        anchors.fill: parent
+                                                        anchors.margins: 10
+                                                        spacing: 8
                                                         RowLayout {
-                                                            anchors.fill: parent
-                                                            anchors.leftMargin: 10
-                                                            anchors.rightMargin: 10
-                                                            spacing: 8
-                                                            Text { Layout.preferredWidth: 90; text: modelData.model; color: accent; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
-                                                            Text { Layout.preferredWidth: 78; text: modelData.fit; color: textPrimary; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
-                                                            Text { Layout.fillWidth: true; text: modelData.reason; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                                            Layout.fillWidth: true
+                                                            Text { text: "Recommended local models"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                                            Item { Layout.fillWidth: true }
+                                                            Text { text: "Scroll for all"; color: textSecondary; font.pixelSize: 10 }
+                                                        }
+                                                        ListView {
+                                                            Layout.fillWidth: true
+                                                            Layout.fillHeight: true
+                                                            clip: true
+                                                            interactive: true
+                                                            boundsBehavior: Flickable.StopAtBounds
+                                                            spacing: 6
+                                                            model: appController.localAiModelRecommendations
+                                                            ScrollBar.vertical: ScrollBar { policy: ScrollBar.AlwaysOn }
+                                                            delegate: Rectangle {
+                                                                required property var modelData
+                                                                width: ListView.view.width - 12
+                                                                height: 48
+                                                                radius: 5
+                                                                color: "#141a21"
+                                                                border.color: border
+                                                                RowLayout {
+                                                                    anchors.fill: parent
+                                                                    anchors.leftMargin: 10
+                                                                    anchors.rightMargin: 10
+                                                                    spacing: 8
+                                                                    Text { Layout.preferredWidth: 90; text: modelData.model; color: accent; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
+                                                                    Text { Layout.preferredWidth: 86; text: modelData.fit; color: textPrimary; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
+                                                                    Text { Layout.fillWidth: true; text: modelData.reason; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight }
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 }
@@ -809,15 +837,16 @@ ApplicationWindow {
                                         }
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: 390
+                                            Layout.preferredHeight: aiProviderGrid.columns === 1 ? 350 : 500
+                                            Layout.minimumHeight: 340
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
                                             clip: true
                                             ColumnLayout {
                                                 anchors.fill: parent
-                                                anchors.margins: 14
-                                                spacing: 8
+                                                anchors.margins: 16
+                                                spacing: 10
                                                 Text { text: "Cloud AI provider"; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                                 Text {
                                                     Layout.fillWidth: true
@@ -829,6 +858,7 @@ ApplicationWindow {
                                                 Text { Layout.fillWidth: true; text: "OpenAI example: create an API key in OpenAI Platform > API keys, then use https://api.openai.com/v1 and your chosen model. A ChatGPT subscription is separate from API usage."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                                 RowLayout {
                                                     Layout.fillWidth: true
+                                                    spacing: 8
                                                     TextField { id: cloudAiBaseUrl; Layout.fillWidth: true; placeholderText: "https://api.openai.com/v1" }
                                                     TextField { id: cloudAiModel; Layout.preferredWidth: 170; placeholderText: "model name" }
                                                 }
@@ -841,6 +871,7 @@ ApplicationWindow {
                                                         window.showToast("Cloud AI settings saved")
                                                     }
                                                 }
+                                                Item { Layout.fillHeight: true }
                                             }
                                         }
                                     }

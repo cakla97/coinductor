@@ -47,9 +47,10 @@ terminal.
   open in a modal and return to the same wizard step when closed.
 - In Binance API setup, follow the shown Binance API steps and paste the read-only
   key/secret into the wizard fields. Do not edit `.env` manually during this test.
-- Open the Binance API and safety guides from this step.
+- Open the Binance API guide from this step.
 - Confirm `Save key` shows a confirmation toast and clears the secret field.
 - Run `Check read-only access`.
+- In Review, open the safety and portfolio roles guides.
 - Confirm the wizard allows entering Coinductor.
 
 ## 3. Main App Smoke Test

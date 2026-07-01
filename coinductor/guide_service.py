@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+
+ASSET_DIR = Path(__file__).resolve().parent / "assets" / "guides"
+
+
+def _image(name: str, caption: str) -> dict[str, str]:
+    return {"source": (ASSET_DIR / name).as_uri(), "caption": caption}
+
 
 class GuideService:
     def list_guides(self) -> list[dict[str, str]]:
@@ -13,16 +22,20 @@ class GuideService:
                     [
                         "Use this path when you want Coinductor to stay local-first.",
                         "",
-                        "1. Install Ollama from the official Ollama website.",
-                        "2. Pick a model that fits your hardware. Smaller PCs should start with smaller models; stronger GPUs can try 14B-class models.",
-                        "3. Pull the model in Ollama, for example qwen3:8b or qwen3:14b.",
-                        "4. Keep Ollama running while Coinductor uses AI features.",
+                        "1. Open https://ollama.com/ and use the Download button to install Ollama for your operating system.",
+                        "2. Pick a model that fits your hardware. There is no trusted generic online PC scanner in this guide yet; do not run random hardware scanners just to choose a model. Coinductor should later add a local hardware helper for this.",
+                        "3. On https://ollama.com/search, search for the model you chose from step 2. Pull that exact model, for example qwen3:8b on smaller systems or qwen3:14b on stronger GPUs.",
+                        "4. Keep Ollama running while Coinductor uses AI features. On Windows this usually means the Ollama icon remains visible in the system tray.",
                         "5. In Coinductor, set the local endpoint to http://127.0.0.1:11434/v1 and the model name to the model you pulled.",
                         "6. Run Check AI provider before relying on report summaries or assistant answers.",
                         "",
                         "Local AI can explain Coinductor, summarize reports, and help with onboarding. It cannot bypass deterministic safety gates or submit trades by itself.",
                     ]
                 ),
+                "images": [
+                    _image("ollama_download_and_models.png", "Ollama homepage with Download and model search highlighted."),
+                    _image("ollama_tray_running.png", "Ollama running in the Windows system tray."),
+                ],
             },
             {
                 "id": "cloud-ai",
@@ -33,10 +46,10 @@ class GuideService:
                     [
                         "Cloud AI is optional and should be treated as an advanced alternative.",
                         "",
-                        "Important: Chat subscriptions and API usage are usually separate products. ChatGPT Plus/Pro, Claude plans, or Gemini subscriptions do not automatically mean API calls from Coinductor are included.",
+                        "Pricing warning: Chat subscriptions and API usage are usually separate products with separate pricing. ChatGPT Plus/Pro, Claude plans, or Gemini subscriptions do not automatically mean API calls from Coinductor are included.",
                         "",
                         "OpenAI example:",
-                        "1. Open OpenAI Platform and create an API key.",
+                        "1. Open https://platform.openai.com/ and go to API Keys.",
                         "2. Add billing/limits in the provider dashboard if required.",
                         "3. In Coinductor, use https://api.openai.com/v1 as the endpoint.",
                         "4. Enter the model name you want to use.",
@@ -45,6 +58,10 @@ class GuideService:
                         "Privacy note: selected report, profile, and question context may be sent to the configured provider. Do not use cloud AI if you want all portfolio context to remain on your computer.",
                     ]
                 ),
+                "warning": "Cloud AI API calls may cost money separately from a normal chat subscription. Set provider-side limits before using it.",
+                "images": [
+                    _image("openai_api_keys.png", "OpenAI Platform API Keys page with the create-key action highlighted."),
+                ],
             },
             {
                 "id": "binance-api",
@@ -67,6 +84,10 @@ class GuideService:
                         "Trading/write access should use a separate later key after testnet and preview checks. Withdrawals should remain disabled.",
                     ]
                 ),
+                "images": [
+                    _image("binance_api_management_sanitized.png", "Sanitized Binance dashboard screenshot with API Management highlighted."),
+                    _image("binance_read_only_restrictions_sanitized.png", "Sanitized Binance API restrictions screen for a read-only key."),
+                ],
             },
             {
                 "id": "safety-model",
@@ -97,10 +118,17 @@ class GuideService:
                     [
                         "Portfolio roles tell Coinductor what an asset is allowed to do.",
                         "",
-                        "Protected assets are treated as long-term holdings and should not be used as routine funding.",
-                        "Trading assets can be considered for guarded spot-trade recommendations.",
-                        "Funding sources can provide capital within configured limits.",
-                        "Dust or airdrop assets are small holdings that may be converted into operating capital when rules allow it.",
+                        "System default: remove the manual override and let the latest portfolio classification/config decide.",
+                        "Protected core: long-term core holding. Coinductor should avoid using it for routine funding or trading.",
+                        "Protected utility: asset kept for another purpose, such as fee discounts or exchange benefits. It is protected like core holdings.",
+                        "Trading allowed: asset may be considered for guarded spot-trade recommendations.",
+                        "Grid candidate: asset may be considered for Binance Spot Grid parameter recommendations.",
+                        "Rebalancing candidate: asset may be included in rebalancing basket recommendations.",
+                        "Funding source: asset may provide capital within configured funding limits.",
+                        "Dust/airdrop funding: small or unwanted assets may be converted into operating capital when rules allow it.",
+                        "Active strategy: asset can be eligible for trading, Grid, and Rebalancing recommendation paths.",
+                        "Stable: stablecoin-like holding, usually operating capital or reserve; it is not treated as a protected volatile asset.",
+                        "Unclassified: keep visible but do not intentionally assign it to an active role yet.",
                         "",
                         "Manual overrides are available because different users care about different assets. Overrides can change eligibility, but they must not disable global risk limits, loss stops, or confirmation gates.",
                     ]

@@ -810,10 +810,6 @@ ApplicationWindow {
                                             text: "Open Binance API guide"
                                             onClicked: window.openGuide("binance-api")
                                         }
-                                        Button {
-                                            text: "Open safety guide"
-                                            onClicked: window.openGuide("safety-model")
-                                        }
                                         Item { Layout.fillWidth: true }
                                     }
                                     Rectangle {
@@ -901,6 +897,18 @@ ApplicationWindow {
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Button {
+                                            text: "Open safety guide"
+                                            onClicked: window.openGuide("safety-model")
+                                        }
+                                        Button {
+                                            text: "Open portfolio roles guide"
+                                            onClicked: window.openGuide("portfolio-roles")
+                                        }
+                                        Item { Layout.fillWidth: true }
                                     }
                                     Rectangle {
                                         Layout.fillWidth: true
@@ -2229,6 +2237,24 @@ ApplicationWindow {
                 }
                 Rectangle {
                     Layout.fillWidth: true
+                    Layout.preferredHeight: guideWarningText.implicitHeight + 24
+                    visible: Boolean(activeGuide.warning)
+                    radius: 7
+                    color: "#3a3020"
+                    border.color: warning
+                    Text {
+                        id: guideWarningText
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        text: activeGuide.warning || ""
+                        color: warning
+                        font.pixelSize: 13
+                        font.bold: true
+                        wrapMode: Text.WordWrap
+                    }
+                }
+                Rectangle {
+                    Layout.fillWidth: true
                     Layout.preferredHeight: 1
                     color: border
                 }
@@ -2239,6 +2265,37 @@ ApplicationWindow {
                     font.pixelSize: 13
                     lineHeight: 1.18
                     wrapMode: Text.WordWrap
+                }
+                Repeater {
+                    model: activeGuide.images || []
+                    delegate: ColumnLayout {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        spacing: 6
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 260
+                            radius: 7
+                            color: panelRaised
+                            border.color: border
+                            clip: true
+                            Image {
+                                anchors.fill: parent
+                                anchors.margins: 8
+                                source: modelData.source
+                                fillMode: Image.PreserveAspectFit
+                                smooth: true
+                                asynchronous: true
+                            }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: modelData.caption
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                    }
                 }
                 Text {
                     Layout.fillWidth: true

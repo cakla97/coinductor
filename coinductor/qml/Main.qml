@@ -269,7 +269,9 @@ ApplicationWindow {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 560
+                    Layout.fillHeight: true
+                    Layout.preferredHeight: Math.max(420, window.height - 220)
+                    Layout.minimumHeight: 420
                     spacing: 16
 
                     Rectangle {
@@ -348,7 +350,7 @@ ApplicationWindow {
 
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: window.wizardPanelHeight()
+                        Layout.fillHeight: true
                         radius: 7
                         color: panel
                         border.color: border
@@ -721,7 +723,7 @@ ApplicationWindow {
                                         spacing: 12
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: 360
+                                            Layout.preferredHeight: 390
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
@@ -732,7 +734,7 @@ ApplicationWindow {
                                                 Text { text: "Local AI with Ollama"; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                                 Text {
                                                     Layout.fillWidth: true
-                                                    text: "Best for privacy. Install Ollama, choose a model that fits your hardware, then run it locally. Smaller PCs should use smaller models; stronger GPUs can try 14B-class models."
+                                                    text: "Best for privacy. For portfolio analysis, 14B-class models are the preferred minimum when hardware allows it; smaller models are mainly for basic app help and may be less reliable."
                                                     color: textSecondary
                                                     font.pixelSize: 11
                                                     wrapMode: Text.WordWrap
@@ -757,14 +759,23 @@ ApplicationWindow {
                                                         onClicked: appController.scanLocalAiHardware()
                                                     }
                                                 }
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: "Local scan only: reads RAM and GPU/VRAM from OS tools. 14B-class models are preferred for portfolio commentary when hardware supports them; smaller models are mainly for basic help."
+                                                    color: textSecondary
+                                                    font.pixelSize: 10
+                                                    wrapMode: Text.WordWrap
+                                                }
                                                 Text { Layout.fillWidth: true; text: appController.localAiHardwareSummary; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                                 ListView {
                                                     Layout.fillWidth: true
-                                                    Layout.fillHeight: true
+                                                    Layout.preferredHeight: 122
                                                     clip: true
-                                                    interactive: false
+                                                    interactive: true
+                                                    boundsBehavior: Flickable.StopAtBounds
                                                     spacing: 4
                                                     model: appController.localAiModelRecommendations
+                                                    ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                                                     delegate: Rectangle {
                                                         required property var modelData
                                                         width: ListView.view.width
@@ -787,7 +798,7 @@ ApplicationWindow {
                                         }
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: 360
+                                            Layout.preferredHeight: 390
                                             radius: 7
                                             color: panelRaised
                                             border.color: border

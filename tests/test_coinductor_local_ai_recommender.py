@@ -12,6 +12,7 @@ def test_local_ai_recommender_prefers_smaller_models_without_gpu() -> None:
     recommendations = LocalAiRecommender()._recommend(ram_gb=8, gpu_vram_gb=0)
 
     assert recommendations[0].model == "llama3.2:3b"
+    assert recommendations[0].fit == "Basic help only"
     assert any(item.model == "qwen3:1.7b" for item in recommendations)
 
 
@@ -20,3 +21,10 @@ def test_local_ai_recommender_snapshot_has_summary_and_recommendations() -> None
 
     assert "RAM" in snapshot.summary
     assert snapshot.recommendations
+
+
+def test_local_ai_recommender_marks_8b_as_fallback_to_14b() -> None:
+    recommendations = LocalAiRecommender()._recommend(ram_gb=24, gpu_vram_gb=12)
+
+    assert recommendations[0].model == "qwen3:8b"
+    assert "if 14B does not fit" in recommendations[0].reason

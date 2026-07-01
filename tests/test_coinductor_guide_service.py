@@ -23,6 +23,8 @@ def test_guides_include_local_image_assets() -> None:
     guides = {guide["id"]: guide for guide in GuideService().list_guides()}
 
     assert len(guides["local-ai"]["images"]) == 2
+    assert "14B-class models are the preferred minimum" in guides["local-ai"]["body"]
+    assert "does not upload hardware details" in guides["local-ai"]["body"]
     assert len(guides["binance-api"]["images"]) == 2
     assert all(image["source"].startswith("file:///") for image in guides["binance-api"]["images"])
 

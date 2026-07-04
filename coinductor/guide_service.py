@@ -92,6 +92,35 @@ class GuideService:
                 ],
             },
             {
+                "id": "binance-live-api",
+                "section": "Binance",
+                "title": "Binance live trading API",
+                "summary": "Create a separate Binance API key for guarded Spot trading workflows after read-only setup is trusted.",
+                "body": "\n".join(
+                    [
+                        "Use this only after read-only access, reports, and preview workflows make sense to you. This key is for guarded Spot trading workflows; it should never allow withdrawals.",
+                        "",
+                        "1. In Binance, open User profile > Account > API Management.",
+                        "2. Choose Create API > System generated.",
+                        "3. Use a clear label such as coinductor-live-trading.",
+                        "4. Complete two-factor verification and copy both the API Key and Secret Key immediately.",
+                        "5. Open Edit restrictions for this new key.",
+                        "6. Enable Reading and Enable Spot & Margin & Stock Trading. Do not enable Futures, Margin Loan/Repay/Transfer, Universal Transfer, Prediction Trading, or Withdrawals.",
+                        "7. In IP access restrictions, choose Restrict access to trusted IPs only.",
+                        "8. Add the public IP address of the machine or server that will run Coinductor. You can check it with a browser page such as https://ifconfig.me/ or https://whatismyipaddress.com/.",
+                        "9. If your IP changes after router restart or from day to day, treat it as dynamic. Dynamic-IP users should keep live execution locked, update the whitelist manually when needed, or later use a trusted always-on host/VPS with a stable public IP.",
+                        "10. Paste the live trading key into Coinductor Settings > Live actions. Live submit remains locked until a separate safety stage allows it.",
+                        "",
+                        "Important: use a separate key from the read-only key. Keep withdrawals disabled forever. Coinductor can store this key locally, but it should not make live submit available until deterministic safety gates and explicit confirmations are enabled.",
+                    ]
+                ),
+                "warning": "A live trading key can place/cancel Spot orders if Binance permissions allow it. Keep withdrawals disabled and restrict the key to trusted IPs only.",
+                "images": [
+                    _image("binance_api_management_sanitized.png", "Sanitized Binance API Management page."),
+                    _image("binance_read_only_restrictions_sanitized.png", "Use the restrictions screen as a reference, but add Spot trading only for the separate live key."),
+                ],
+            },
+            {
                 "id": "safety-model",
                 "section": "Safety",
                 "title": "Safety model",

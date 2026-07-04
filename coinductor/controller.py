@@ -305,6 +305,14 @@ class AppController(QObject):
             return f"{self._setup_snapshot.blocked} blocker(s) require attention"
         return f"{self._setup_snapshot.passed} ready, {self._setup_snapshot.warnings} optional item(s)"
 
+    @Property(str, notify=setupChanged)
+    def liveTradingKeyStatus(self) -> str:
+        return self._setup_check("Binance live trading").get("status", "WARN")
+
+    @Property(str, notify=setupChanged)
+    def liveTradingKeyDetail(self) -> str:
+        return self._setup_check("Binance live trading").get("detail", "Optional; guarded execution only")
+
     @Property("QVariantList", notify=aiProviderChanged)
     def aiProviderChecks(self) -> list[dict[str, str]]:
         return list(self._ai_provider_snapshot.checks)
@@ -644,6 +652,16 @@ class AppController(QObject):
         self.connectionChanged.emit()
 
     @Slot(str, str)
+    def saveBinanceLiveTradingCredentials(self, api_key: str, api_secret: str) -> None:
+        EnvWriter().update(
+            {
+                "BINANCE_LIVE_TRADE_API_KEY": api_key,
+                "BINANCE_LIVE_TRADE_API_SECRET": api_secret,
+            }
+        )
+        self.refreshSetup()
+
+    @Slot(str, str)
     def saveLocalAiProvider(self, base_url: str, model: str) -> None:
         EnvWriter().update(
             {
@@ -943,6 +961,12 @@ class AppController(QObject):
                 "detail": "Small assets that can be considered for USDC funding when allowed.",
             },
         ]
+
+    def _setup_check(self, name: str) -> dict[str, str]:
+        for item in self._setup_snapshot.checks:
+            if item.get("name") == name:
+                return dict(item)
+        return {"name": name, "status": "WARN", "detail": "Not configured", "group": "Setup"}
 
     def _refresh_readiness(self) -> None:
         self._readiness_snapshot = self._readiness_service.inspect(

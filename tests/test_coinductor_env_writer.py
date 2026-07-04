@@ -36,3 +36,22 @@ def test_env_writer_quotes_values_with_spaces_or_hash(tmp_path):
     rendered = env_path.read_text(encoding="utf-8")
     assert 'LLM_MODEL="model with space"' in rendered
     assert 'LLM_API_KEY="key#part"' in rendered
+
+
+def test_env_writer_can_store_separate_live_trading_key(tmp_path, monkeypatch):
+    monkeypatch.delenv("BINANCE_LIVE_TRADE_API_KEY", raising=False)
+    env_path = tmp_path / ".env"
+    env_path.write_text("BINANCE_API_KEY=readonly\n", encoding="utf-8")
+
+    EnvWriter(env_path).update(
+        {
+            "BINANCE_LIVE_TRADE_API_KEY": "live-key",
+            "BINANCE_LIVE_TRADE_API_SECRET": "live-secret",
+        }
+    )
+
+    rendered = env_path.read_text(encoding="utf-8")
+    assert "BINANCE_API_KEY=readonly" in rendered
+    assert "BINANCE_LIVE_TRADE_API_KEY=live-key" in rendered
+    assert "BINANCE_LIVE_TRADE_API_SECRET=live-secret" in rendered
+    assert os.environ["BINANCE_LIVE_TRADE_API_KEY"] == "live-key"

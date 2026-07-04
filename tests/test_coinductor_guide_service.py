@@ -5,7 +5,7 @@ def test_guide_service_exposes_core_setup_guides() -> None:
     guides = GuideService().list_guides()
     ids = {guide["id"] for guide in guides}
 
-    assert {"local-ai", "cloud-ai", "binance-api", "safety-model", "portfolio-roles"} <= ids
+    assert {"local-ai", "cloud-ai", "binance-api", "binance-live-api", "safety-model", "portfolio-roles"} <= ids
     assert all(guide["title"] for guide in guides)
     assert all(guide["summary"] for guide in guides)
     assert all("1." in guide["body"] or guide["id"] == "portfolio-roles" for guide in guides)
@@ -46,3 +46,14 @@ def test_portfolio_roles_guide_covers_all_ui_roles() -> None:
         "Unclassified",
     ):
         assert label in guide["body"]
+
+
+def test_live_api_guide_covers_ip_restriction_and_permissions() -> None:
+    guide = next(guide for guide in GuideService().list_guides() if guide["id"] == "binance-live-api")
+
+    assert "coinductor-live-trading" in guide["body"]
+    assert "Restrict access to trusted IPs only" in guide["body"]
+    assert "https://ifconfig.me/" in guide["body"]
+    assert "withdrawals disabled" in guide["body"].lower()
+    assert "separate key" in guide["body"].lower()
+    assert "can place/cancel Spot orders" in guide["warning"]

@@ -105,11 +105,11 @@ class GuideService:
                         "3. Use a clear label such as coinductor-live-trading.",
                         "4. Complete two-factor verification and copy both the API Key and Secret Key immediately.",
                         "5. Open Edit restrictions for this new key.",
-                        "6. Enable Reading and Enable Spot & Margin & Stock Trading. Do not enable Futures, Margin Loan/Repay/Transfer, Universal Transfer, Prediction Trading, or Withdrawals.",
-                        "7. In IP access restrictions, choose Restrict access to trusted IPs only.",
-                        "8. Add the public IP address of the machine or server that will run Coinductor. You can check it with a browser page such as https://ifconfig.me/ or https://whatismyipaddress.com/.",
-                        "9. If your IP changes after router restart or from day to day, treat it as dynamic. Dynamic-IP users should keep live execution locked, update the whitelist manually when needed, or later use a trusted always-on host/VPS with a stable public IP.",
-                        "10. Paste the live trading key into Coinductor Settings > Live actions. Live submit remains locked until a separate safety stage allows it.",
+                        "6. In IP access restrictions, choose Restrict access to trusted IPs only first. Binance may keep trading permissions unavailable until trusted-IP restriction is configured.",
+                        "7. Add the public IP address of the machine or server that will run Coinductor. You can check it with a browser page such as https://ifconfig.me/ or https://whatismyipaddress.com/.",
+                        "8. If your IP changes after router restart or from day to day, treat it as dynamic. Dynamic-IP users should keep live execution locked, update the whitelist manually when needed, or later use a trusted always-on host/VPS with a stable public IP.",
+                        "9. After trusted IP access is configured, enable Reading and Enable Spot & Margin & Stock Trading. Do not enable Futures, Margin Loan/Repay/Transfer, Universal Transfer, Prediction Trading, or Withdrawals.",
+                        "10. Paste the live trading key into Coinductor Live Actions. Live submit remains locked until a separate safety stage allows it.",
                         "",
                         "Important: use a separate key from the read-only key. Keep withdrawals disabled forever. Coinductor can store this key locally, but it should not make live submit available until deterministic safety gates and explicit confirmations are enabled.",
                     ]
@@ -117,7 +117,7 @@ class GuideService:
                 "warning": "A live trading key can place/cancel Spot orders if Binance permissions allow it. Keep withdrawals disabled and restrict the key to trusted IPs only.",
                 "images": [
                     _image("binance_api_management_sanitized.png", "Sanitized Binance API Management page."),
-                    _image("binance_read_only_restrictions_sanitized.png", "Use the restrictions screen as a reference, but add Spot trading only for the separate live key."),
+                    _image("binance_live_trading_restrictions_sanitized.png", "Sanitized live trading restrictions screen: restrict trusted IP first, then enable Reading and Spot trading; withdrawals stay disabled."),
                 ],
             },
             {

@@ -26,6 +26,11 @@ def test_guides_include_local_image_assets() -> None:
     assert "14B-class models are the preferred minimum" in guides["local-ai"]["body"]
     assert "does not upload hardware details" in guides["local-ai"]["body"]
     assert len(guides["binance-api"]["images"]) == 2
+    assert len(guides["binance-live-api"]["images"]) == 2
+    assert any(
+        "binance_live_trading_restrictions_sanitized.png" in image["source"]
+        for image in guides["binance-live-api"]["images"]
+    )
     assert all(image["source"].startswith("file:///") for image in guides["binance-api"]["images"])
 
 
@@ -54,6 +59,8 @@ def test_live_api_guide_covers_ip_restriction_and_permissions() -> None:
     assert "coinductor-live-trading" in guide["body"]
     assert "Restrict access to trusted IPs only" in guide["body"]
     assert "https://ifconfig.me/" in guide["body"]
+    assert guide["body"].index("trusted-IP restriction is configured") < guide["body"].index("Enable Spot")
+    assert "Coinductor Live Actions" in guide["body"]
     assert "withdrawals disabled" in guide["body"].lower()
     assert "separate key" in guide["body"].lower()
     assert "can place/cancel Spot orders" in guide["warning"]

@@ -1135,7 +1135,7 @@ ApplicationWindow {
                 }
 
                 Repeater {
-                    model: ["Overview", "Portfolio", "Strategies", "Run History", "AI Assistant", "Help & Guides", "Settings"]
+                    model: ["Overview", "Portfolio", "Strategies", "Run History", "AI Assistant", "Help & Guides", "Live Actions", "Settings"]
                     delegate: Rectangle {
                         required property string modelData
                         required property int index
@@ -1840,72 +1840,23 @@ ApplicationWindow {
                 y: 28
                 width: Math.max(window.width - 288, 692)
                 spacing: 18
-                Text { text: "Settings"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { text: "Live Actions"; color: textPrimary; font.pixelSize: 26; font.bold: true }
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
                         Layout.fillWidth: true
-                        text: "Manage local configuration, privacy controls, and readiness checks."
+                        text: "Configure guarded live trading access separately from regular settings. This page stores credentials and explains safety gates; it does not submit orders."
                         color: textSecondary
                         font.pixelSize: 13
+                        wrapMode: Text.WordWrap
                     }
                     Button {
-                        text: "Setup wizard"
-                        onClicked: appController.openOnboardingWizard()
+                        text: "Open live API guide"
+                        onClicked: window.openGuide("binance-live-api")
                     }
                     Button {
                         text: "Refresh checks"
                         onClicked: appController.refreshSetup()
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 104
-                    radius: 7
-                    color: panel
-                    border.color: border
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 16
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 6
-                            Text { text: "Binance read-only connection"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                            Text {
-                                Layout.fillWidth: true
-                                text: appController.binanceConnectionDetail
-                                color: textSecondary
-                                font.pixelSize: 12
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-                        Rectangle {
-                            Layout.preferredWidth: 96
-                            Layout.preferredHeight: 30
-                            radius: 5
-                            color: appController.binanceConnectionStatus === "Connected" ? "#17372d"
-                                : appController.binanceConnectionStatus === "Checking" ? "#3a3020"
-                                : appController.binanceConnectionStatus === "Blocked" ? "#3a2226" : panelRaised
-                            border.color: appController.binanceConnectionStatus === "Connected" ? accent
-                                : appController.binanceConnectionStatus === "Checking" ? warning
-                                : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : border
-                            Text {
-                                anchors.centerIn: parent
-                                text: appController.binanceConnectionStatus
-                                color: appController.binanceConnectionStatus === "Connected" ? accent
-                                    : appController.binanceConnectionStatus === "Checking" ? warning
-                                    : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : textSecondary
-                                font.pixelSize: 10
-                                font.bold: true
-                            }
-                        }
-                        Button {
-                            text: appController.checkingConnection ? "Checking..." : "Check read-only access"
-                            enabled: !appController.checkingConnection
-                            onClicked: appController.checkBinanceReadOnly()
-                        }
                     }
                 }
 
@@ -2020,6 +1971,106 @@ ApplicationWindow {
                         }
                     }
                 }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 190
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 10
+                        Text { text: "Execution remains locked"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                        Text { Layout.fillWidth: true; text: "Saving a live trading key only prepares credentials. Coinductor still requires the Safety stage, deterministic limits, and explicit guarded confirmations before any order can be submitted."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                        Text { Layout.fillWidth: true; text: "Never enable withdrawals. If your public IP is dynamic, keep live execution locked unless you can reliably maintain the Binance trusted-IP whitelist."; color: warning; font.pixelSize: 12; font.bold: true; wrapMode: Text.WordWrap }
+                    }
+                }
+                Item { Layout.fillWidth: true; Layout.preferredHeight: 44 }
+            }
+        }
+
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            visible: appController.currentPage === 7
+
+            ColumnLayout {
+                x: 28
+                y: 28
+                width: Math.max(window.width - 288, 692)
+                spacing: 18
+                Text { text: "Settings"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Manage local configuration, privacy controls, and readiness checks."
+                        color: textSecondary
+                        font.pixelSize: 13
+                    }
+                    Button {
+                        text: "Setup wizard"
+                        onClicked: appController.openOnboardingWizard()
+                    }
+                    Button {
+                        text: "Refresh checks"
+                        onClicked: appController.refreshSetup()
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 104
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 16
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 6
+                            Text { text: "Binance read-only connection"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.binanceConnectionDetail
+                                color: textSecondary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                        Rectangle {
+                            Layout.preferredWidth: 96
+                            Layout.preferredHeight: 30
+                            radius: 5
+                            color: appController.binanceConnectionStatus === "Connected" ? "#17372d"
+                                : appController.binanceConnectionStatus === "Checking" ? "#3a3020"
+                                : appController.binanceConnectionStatus === "Blocked" ? "#3a2226" : panelRaised
+                            border.color: appController.binanceConnectionStatus === "Connected" ? accent
+                                : appController.binanceConnectionStatus === "Checking" ? warning
+                                : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : border
+                            Text {
+                                anchors.centerIn: parent
+                                text: appController.binanceConnectionStatus
+                                color: appController.binanceConnectionStatus === "Connected" ? accent
+                                    : appController.binanceConnectionStatus === "Checking" ? warning
+                                    : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : textSecondary
+                                font.pixelSize: 10
+                                font.bold: true
+                            }
+                        }
+                        Button {
+                            text: appController.checkingConnection ? "Checking..." : "Check read-only access"
+                            enabled: !appController.checkingConnection
+                            onClicked: appController.checkBinanceReadOnly()
+                        }
+                    }
+                }
+
 
                 Rectangle {
                     Layout.fillWidth: true

@@ -756,6 +756,8 @@ class AppController(QObject):
             self.runInitialClassification()
         elif code == "OPEN_PORTFOLIO":
             self.setCurrentPage(1)
+        elif code == "OPEN_SETTINGS":
+            self.setCurrentPage(7)
 
     @Slot(str, str)
     def saveAssetRoleOverride(self, asset: str, role: str) -> None:

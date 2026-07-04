@@ -1852,7 +1852,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Text {
                         Layout.fillWidth: true
-                        text: "Configure guarded live trading access separately from regular settings. This page stores credentials and explains safety gates; it does not submit orders."
+                        text: "Review the latest run, prepare guarded actions, and manage live trading safety gates from one place. Nothing here submits orders without a later explicit confirmation flow."
                         color: textSecondary
                         font.pixelSize: 13
                         wrapMode: Text.WordWrap
@@ -1864,6 +1864,106 @@ ApplicationWindow {
                     Button {
                         text: "Refresh checks"
                         onClicked: appController.refreshSetup()
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 350
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 12
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 5
+                                Text { text: "Run Result Summary"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "A single review point for the latest trade decision, Binance bot plan, and execution safety state."
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            Button {
+                                text: "Open detailed report"
+                                enabled: appController.hasReport
+                                onClicked: appController.openReport()
+                            }
+                        }
+                        ListView {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            orientation: ListView.Horizontal
+                            spacing: 12
+                            clip: true
+                            model: appController.liveActionSummaries
+                            delegate: Rectangle {
+                                required property var modelData
+                                width: Math.max(280, (ListView.view.width - 24) / 3)
+                                height: ListView.view.height
+                                radius: 7
+                                color: panelRaised
+                                border.color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : border
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 14
+                                    spacing: 8
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Text {
+                                            Layout.fillWidth: true
+                                            text: modelData.title
+                                            color: textPrimary
+                                            font.pixelSize: 15
+                                            font.bold: true
+                                            elide: Text.ElideRight
+                                        }
+                                        Rectangle {
+                                            Layout.preferredWidth: Math.max(82, statusLabel.implicitWidth + 18)
+                                            Layout.preferredHeight: 26
+                                            radius: 5
+                                            color: modelData.tone === "ready" ? "#17372d" : modelData.tone === "watch" ? "#3a3020" : "#26313b"
+                                            border.color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : border
+                                            Text {
+                                                id: statusLabel
+                                                anchors.centerIn: parent
+                                                text: modelData.status
+                                                color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : textSecondary
+                                                font.pixelSize: 10
+                                                font.bold: true
+                                            }
+                                        }
+                                    }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        text: modelData.detail
+                                        color: textSecondary
+                                        font.pixelSize: 12
+                                        wrapMode: Text.WordWrap
+                                        maximumLineCount: 6
+                                        elide: Text.ElideRight
+                                    }
+                                    Button {
+                                        text: modelData.primaryLabel
+                                        enabled: modelData.actionCode !== "NONE"
+                                        onClicked: {
+                                            if (modelData.actionCode === "OPEN_REPORT")
+                                                appController.openReport()
+                                            else if (modelData.actionCode === "OPEN_LIVE_GUIDE")
+                                                window.openGuide("binance-live-api")
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -1885,7 +1985,7 @@ ApplicationWindow {
                                 Text { text: "Guarded Action Center"; color: textPrimary; font.pixelSize: 16; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
-                                    text: "Choose what kind of output you want. Coinductor runs the required analysis, then opens the page where the result is easiest to review."
+                                    text: "Choose what kind of output you want. Coinductor runs the required analysis, then returns here with an updated summary."
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
@@ -1918,7 +2018,7 @@ ApplicationWindow {
                                 Text {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 54
-                                    text: "Prepare a guarded trade recommendation and open Overview with the latest decision and action list."
+                                    text: "Prepare a guarded trade recommendation and update the Run Result Summary above."
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
@@ -1936,7 +2036,7 @@ ApplicationWindow {
                                 Text {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 54
-                                    text: "Refresh Grid and Rebalancing recommendations, then open Strategies with manual setup details."
+                                    text: "Refresh Grid and Rebalancing recommendations and update the Run Result Summary above."
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap

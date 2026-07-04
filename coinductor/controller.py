@@ -126,6 +126,7 @@ class AppController(QObject):
         self._ai_summary = "No summary available."
         self._report_path = ""
         self._actions: list[dict[str, str]] = []
+        self._live_action_summaries: list[dict[str, str]] = []
         self._portfolio_assets: list[dict[str, str]] = []
         self._strategies: list[dict[str, str]] = []
         self._run_history: list[dict[str, str]] = []
@@ -138,8 +139,8 @@ class AppController(QObject):
             }
         ]
         self._current_page = 0
-        self._pending_result_page = 0
-        self._pending_completion_message = "Analysis complete. Review the updated Overview."
+        self._pending_result_page = 1
+        self._pending_completion_message = "Analysis complete. Review the Live Actions summary."
         self._onboarding_path = ""
         self._checking_connection = False
         self._connection_status = "Not checked"
@@ -228,6 +229,10 @@ class AppController(QObject):
     @Property("QVariantList", notify=actionsChanged)
     def actions(self) -> list[dict[str, str]]:
         return self._actions
+
+    @Property("QVariantList", notify=actionsChanged)
+    def liveActionSummaries(self) -> list[dict[str, str]]:
+        return self._live_action_summaries
 
     @Property("QVariantList", notify=dataChanged)
     def portfolioAssets(self) -> list[dict[str, str]]:
@@ -725,8 +730,8 @@ class AppController(QObject):
             ai_summary,
             ai_proposals,
             live_preview,
-            result_page=0,
-            completion_message="Analysis complete. Review the updated Overview.",
+            result_page=1,
+            completion_message="Analysis complete. Review the Live Actions summary.",
         )
 
     @Slot()
@@ -736,8 +741,8 @@ class AppController(QObject):
             True,
             True,
             True,
-            result_page=0,
-            completion_message="Trade preview ready. Review Latest decision and Recommended actions.",
+            result_page=1,
+            completion_message="Trade preview ready. Review the Live Actions summary.",
         )
 
     @Slot()
@@ -747,8 +752,8 @@ class AppController(QObject):
             True,
             True,
             False,
-            result_page=3,
-            completion_message="Bot plan ready. Review Strategies for Grid and Rebalancing setup.",
+            result_page=1,
+            completion_message="Bot plan ready. Review the Live Actions summary.",
         )
 
     def _start_analysis(
@@ -856,6 +861,7 @@ class AppController(QObject):
         self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)
         self._strategies = list(self._snapshot.strategies)
         self._run_history = list(self._snapshot.run_history)
+        self._live_action_summaries = self._build_live_action_summaries()
         self._refresh_onboarding_review()
         self._refresh_readiness()
         self.actionsChanged.emit()
@@ -946,6 +952,7 @@ class AppController(QObject):
         self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)
         self._strategies = list(self._snapshot.strategies)
         self._run_history = list(self._snapshot.run_history)
+        self._live_action_summaries = self._build_live_action_summaries()
         self._refresh_onboarding_review()
         if self._snapshot.latest_run is not None:
             self._on_completed(self._snapshot.latest_run)
@@ -1009,6 +1016,78 @@ class AppController(QObject):
                 "label": "Dust/Airdrop",
                 "value": str(dust),
                 "detail": "Small assets that can be considered for USDC funding when allowed.",
+            },
+        ]
+
+    def _build_live_action_summaries(self) -> list[dict[str, str]]:
+        trade_status = self._decision or "NOT RUN"
+        trade_tone = "ready" if trade_status in {"BUY", "SELL"} else "watch" if trade_status == "HOLD" else "blocked"
+        top_action = self._actions[0]["action"] if self._actions else "No follow-up action recorded yet."
+        trade_detail = self._decision_summary or "Run a trade preview to load the latest decision."
+        if top_action and top_action not in trade_detail:
+            trade_detail = f"{trade_detail} Next: {top_action}"
+
+        ready_strategies = [
+            item for item in self._strategies
+            if str(item.get("allowed", "")).lower() == "ready"
+            or str(item.get("status", "")).upper() == "READY"
+        ]
+        blocked_strategies = [
+            item for item in self._strategies
+            if "block" in str(item.get("allowed", "")).lower()
+            or "block" in str(item.get("status", "")).lower()
+        ]
+        if ready_strategies:
+            bot_status = "READY"
+            bot_tone = "ready"
+            bot_detail = " | ".join(
+                f"{item.get('type', 'Bot')}: {item.get('name', '')} {item.get('capital', '')}".strip()
+                for item in ready_strategies
+            )
+        elif self._strategies:
+            bot_status = "BLOCKED" if blocked_strategies else "WATCHED"
+            bot_tone = "blocked" if blocked_strategies else "watch"
+            bot_detail = " | ".join(
+                f"{item.get('type', 'Bot')}: {item.get('status', 'UNKNOWN')} - {item.get('detail', '')}".strip()
+                for item in self._strategies
+            )
+        else:
+            bot_status = "NOT RUN"
+            bot_tone = "blocked"
+            bot_detail = "Run a bot plan to prepare Grid and Rebalancing recommendations."
+
+        live_configured = self.liveTradingKeyStatus == "PASS"
+        safety_status = "LIVE KEY CONFIGURED" if live_configured else "LOCKED"
+        safety_tone = "watch" if live_configured else "blocked"
+        safety_detail = (
+            f"{self._safety_snapshot.label}. {self.liveTradingKeyDetail} "
+            "Live submit remains unavailable until explicit guarded confirmations are implemented."
+        )
+
+        return [
+            {
+                "title": "Trade decision",
+                "status": trade_status,
+                "tone": trade_tone,
+                "detail": trade_detail,
+                "primaryLabel": "Open report" if self._report_path else "Run trade preview",
+                "actionCode": "OPEN_REPORT" if self._report_path else "NONE",
+            },
+            {
+                "title": "Grid / Rebalancing",
+                "status": bot_status,
+                "tone": bot_tone,
+                "detail": bot_detail,
+                "primaryLabel": "Open report" if self._report_path else "Run bot plan",
+                "actionCode": "OPEN_REPORT" if self._report_path else "NONE",
+            },
+            {
+                "title": "Execution safety",
+                "status": safety_status,
+                "tone": safety_tone,
+                "detail": safety_detail,
+                "primaryLabel": "Open live API guide",
+                "actionCode": "OPEN_LIVE_GUIDE",
             },
         ]
 

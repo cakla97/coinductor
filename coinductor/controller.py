@@ -139,8 +139,8 @@ class AppController(QObject):
             }
         ]
         self._current_page = 0
-        self._pending_result_page = 1
-        self._pending_completion_message = "Analysis complete. Review the Live Actions summary."
+        self._pending_result_page = 3
+        self._pending_completion_message = "Analysis complete. Review the Action Plan."
         self._onboarding_path = ""
         self._checking_connection = False
         self._connection_status = "Not checked"
@@ -730,8 +730,8 @@ class AppController(QObject):
             ai_summary,
             ai_proposals,
             live_preview,
-            result_page=1,
-            completion_message="Analysis complete. Review the Live Actions summary.",
+            result_page=3,
+            completion_message="Analysis complete. Review the Action Plan.",
         )
 
     @Slot()
@@ -741,8 +741,8 @@ class AppController(QObject):
             True,
             True,
             True,
-            result_page=1,
-            completion_message="Trade preview ready. Review the Live Actions summary.",
+            result_page=3,
+            completion_message="Trade preview ready. Review the Action Plan.",
         )
 
     @Slot()
@@ -752,8 +752,8 @@ class AppController(QObject):
             True,
             True,
             False,
-            result_page=1,
-            completion_message="Bot plan ready. Review the Live Actions summary.",
+            result_page=3,
+            completion_message="Bot plan ready. Review the Action Plan.",
         )
 
     def _start_analysis(
@@ -1027,69 +1027,52 @@ class AppController(QObject):
         if top_action and top_action not in trade_detail:
             trade_detail = f"{trade_detail} Next: {top_action}"
 
-        ready_strategies = [
-            item for item in self._strategies
-            if str(item.get("allowed", "")).lower() == "ready"
-            or str(item.get("status", "")).upper() == "READY"
-        ]
-        blocked_strategies = [
-            item for item in self._strategies
-            if "block" in str(item.get("allowed", "")).lower()
-            or "block" in str(item.get("status", "")).lower()
-        ]
-        if ready_strategies:
-            bot_status = "READY"
-            bot_tone = "ready"
-            bot_detail = " | ".join(
-                f"{item.get('type', 'Bot')}: {item.get('name', '')} {item.get('capital', '')}".strip()
-                for item in ready_strategies
-            )
-        elif self._strategies:
-            bot_status = "BLOCKED" if blocked_strategies else "WATCHED"
-            bot_tone = "blocked" if blocked_strategies else "watch"
-            bot_detail = " | ".join(
-                f"{item.get('type', 'Bot')}: {item.get('status', 'UNKNOWN')} - {item.get('detail', '')}".strip()
-                for item in self._strategies
-            )
-        else:
-            bot_status = "NOT RUN"
-            bot_tone = "blocked"
-            bot_detail = "Run a bot plan to prepare Grid and Rebalancing recommendations."
-
-        live_configured = self.liveTradingKeyStatus == "PASS"
-        safety_status = "LIVE KEY CONFIGURED" if live_configured else "LOCKED"
-        safety_tone = "watch" if live_configured else "blocked"
-        safety_detail = (
-            f"{self._safety_snapshot.label}. {self.liveTradingKeyDetail} "
-            "Live submit remains unavailable until explicit guarded confirmations are implemented."
-        )
-
-        return [
+        cards = [
             {
-                "title": "Trade decision",
+                "title": "Trade",
                 "status": trade_status,
                 "tone": trade_tone,
                 "detail": trade_detail,
                 "primaryLabel": "Open report" if self._report_path else "Run trade preview",
                 "actionCode": "OPEN_REPORT" if self._report_path else "NONE",
-            },
-            {
-                "title": "Grid / Rebalancing",
-                "status": bot_status,
-                "tone": bot_tone,
-                "detail": bot_detail,
-                "primaryLabel": "Open report" if self._report_path else "Run bot plan",
-                "actionCode": "OPEN_REPORT" if self._report_path else "NONE",
-            },
-            {
-                "title": "Execution safety",
-                "status": safety_status,
-                "tone": safety_tone,
-                "detail": safety_detail,
-                "primaryLabel": "Open live API guide",
-                "actionCode": "OPEN_LIVE_GUIDE",
-            },
+            }
         ]
+
+        if self._strategies:
+            for item in self._strategies:
+                status = str(item.get("allowed") or item.get("status") or "UNKNOWN")
+                status_upper = status.upper()
+                tone = "ready" if status_upper == "READY" else "blocked" if "BLOCK" in status_upper else "watch"
+                detail_parts = [
+                    str(item.get("name", "")).strip(),
+                    f"Capital {item.get('capital', '')}".strip(),
+                    str(item.get("allowed", "")).strip(),
+                    str(item.get("detail", "")).strip(),
+                ]
+                detail = " | ".join(part for part in detail_parts if part)
+                cards.append(
+                    {
+                        "title": str(item.get("type", "Strategy")),
+                        "status": status,
+                        "tone": tone,
+                        "detail": detail or "No strategy detail was recorded for the latest run.",
+                        "primaryLabel": "Open report" if self._report_path else "Run bot plan",
+                        "actionCode": "OPEN_REPORT" if self._report_path else "NONE",
+                    }
+                )
+        else:
+            cards.append(
+                {
+                    "title": "Grid / Rebalancing",
+                    "status": "NOT RUN",
+                    "tone": "blocked",
+                    "detail": "Run a bot plan to prepare Grid and Rebalancing recommendations.",
+                    "primaryLabel": "Run bot plan",
+                    "actionCode": "NONE",
+                }
+            )
+
+        return cards
 
     def _setup_check(self, name: str) -> dict[str, str]:
         for item in self._setup_snapshot.checks:

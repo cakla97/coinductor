@@ -1135,7 +1135,7 @@ ApplicationWindow {
                 }
 
                 Repeater {
-                    model: ["Overview", "Portfolio", "Strategies", "Run History", "AI Assistant", "Help & Guides", "Live Actions", "Settings"]
+                    model: ["Overview", "Live Actions", "Portfolio", "Strategies", "Run History", "AI Assistant", "Help & Guides", "Settings"]
                     delegate: Rectangle {
                         required property string modelData
                         required property int index
@@ -1408,7 +1408,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            visible: appController.currentPage === 1
+            visible: appController.currentPage === 2
 
             ColumnLayout {
                 x: 28
@@ -1544,7 +1544,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            visible: appController.currentPage === 2
+            visible: appController.currentPage === 3
 
             ColumnLayout {
                 x: 28
@@ -1607,7 +1607,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            visible: appController.currentPage === 3
+            visible: appController.currentPage === 4
 
             ColumnLayout {
                 x: 28
@@ -1664,7 +1664,7 @@ ApplicationWindow {
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: appController.currentPage === 4
+            visible: appController.currentPage === 5
 
             ColumnLayout {
                 anchors.fill: parent
@@ -1762,7 +1762,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            visible: appController.currentPage === 5
+            visible: appController.currentPage === 6
 
             ColumnLayout {
                 x: 28
@@ -1833,7 +1833,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            visible: appController.currentPage === 6
+            visible: appController.currentPage === 1
 
             ColumnLayout {
                 x: 28
@@ -1862,6 +1862,116 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
+                    Layout.preferredHeight: 330
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 14
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 5
+                                Text { text: "Guarded Action Center"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "Prepare analysis, bot plans, and mainnet previews from one place. These actions do not submit orders."
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            Rectangle {
+                                Layout.preferredWidth: 118
+                                Layout.preferredHeight: 30
+                                radius: 5
+                                color: "#3a3020"
+                                border.color: warning
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "PREVIEW ONLY"
+                                    color: warning
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                }
+                            }
+                        }
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: 3
+                            columnSpacing: 22
+                            rowSpacing: 14
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                Text { text: "Trade preview"; color: textPrimary; font.pixelSize: 14; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 54
+                                    text: "Run real-data analysis with AI ranking and mainnet preview gates where allowed."
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                                Button {
+                                    text: appController.busy ? "Running..." : "Prepare trade preview"
+                                    enabled: !appController.busy
+                                    onClicked: appController.runAnalysis("REAL", true, true, true)
+                                }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                Text { text: "Bot plan"; color: textPrimary; font.pixelSize: 14; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 54
+                                    text: "Refresh Grid and Rebalancing recommendations for manual setup in Binance."
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                                Button {
+                                    text: appController.busy ? "Running..." : "Prepare bot plan"
+                                    enabled: !appController.busy
+                                    onClicked: appController.runAnalysis("REAL", true, false, true)
+                                }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 8
+                                Text { text: "Advanced run"; color: textPrimary; font.pixelSize: 14; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    Layout.preferredHeight: 54
+                                    text: "Choose data source, AI summary/proposals, and preview options before running."
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                                Button {
+                                    text: "Open run dialog"
+                                    enabled: !appController.busy
+                                    onClicked: runDialog.open()
+                                }
+                            }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Live order submission remains unavailable until a later guarded implementation with explicit confirmations."
+                            color: warning
+                            font.pixelSize: 12
+                            font.bold: true
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
                     Layout.preferredHeight: 430
                     radius: 7
                     color: panel
@@ -1875,7 +1985,7 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 5
-                                Text { text: "Live actions"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text { text: "Credentials & Safety"; color: textPrimary; font.pixelSize: 16; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
                                     text: "Add a separate Binance Spot trading key only after read-only reports and preview workflows are trusted. Saving this key does not unlock live submit."
@@ -1897,10 +2007,6 @@ ApplicationWindow {
                                     font.pixelSize: 10
                                     font.bold: true
                                 }
-                            }
-                            Button {
-                                text: "Open live API guide"
-                                onClicked: window.openGuide("binance-live-api")
                             }
                         }
                         Rectangle {

@@ -755,7 +755,7 @@ class AppController(QObject):
         elif code == "RUN_CLASSIFICATION":
             self.runInitialClassification()
         elif code == "OPEN_PORTFOLIO":
-            self.setCurrentPage(1)
+            self.setCurrentPage(2)
         elif code == "OPEN_SETTINGS":
             self.setCurrentPage(7)
 

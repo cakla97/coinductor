@@ -107,6 +107,7 @@ class AppController(QObject):
     userProfileChanged = Signal()
     safetyChanged = Signal()
     readinessChanged = Signal()
+    notificationRequested = Signal(str)
     firstPortfolioPlanChanged = Signal()
     onboardingWizardChanged = Signal()
     localAiRecommendationChanged = Signal()
@@ -137,6 +138,8 @@ class AppController(QObject):
             }
         ]
         self._current_page = 0
+        self._pending_result_page = 0
+        self._pending_completion_message = "Analysis complete. Review the updated Overview."
         self._onboarding_path = ""
         self._checking_connection = False
         self._connection_status = "Not checked"
@@ -717,8 +720,51 @@ class AppController(QObject):
         ai_proposals: bool,
         live_preview: bool,
     ) -> None:
+        self._start_analysis(
+            data_mode,
+            ai_summary,
+            ai_proposals,
+            live_preview,
+            result_page=0,
+            completion_message="Analysis complete. Review the updated Overview.",
+        )
+
+    @Slot()
+    def prepareTradePreview(self) -> None:
+        self._start_analysis(
+            "REAL",
+            True,
+            True,
+            True,
+            result_page=0,
+            completion_message="Trade preview ready. Review Latest decision and Recommended actions.",
+        )
+
+    @Slot()
+    def prepareBotPlan(self) -> None:
+        self._start_analysis(
+            "REAL",
+            True,
+            True,
+            False,
+            result_page=3,
+            completion_message="Bot plan ready. Review Strategies for Grid and Rebalancing setup.",
+        )
+
+    def _start_analysis(
+        self,
+        data_mode: str,
+        ai_summary: bool,
+        ai_proposals: bool,
+        live_preview: bool,
+        *,
+        result_page: int,
+        completion_message: str,
+    ) -> None:
         if self._busy:
             return
+        self._pending_result_page = result_page
+        self._pending_completion_message = completion_message
         self._set_busy(True)
         self._progress = 0
         self._status_text = "Starting analysis"
@@ -803,7 +849,7 @@ class AppController(QObject):
             {"priority": item.priority, "action": item.action, "reason": item.reason}
             for item in result.actions
         ]
-        self._status_text = f"Run {result.run_id} completed"
+        self._status_text = f"Run {result.run_id} completed - {self._pending_completion_message}"
         self._progress = 100
         self._snapshot = DesktopStore().load()
         self._asset_role_overrides = self._asset_policy_store.load()
@@ -816,6 +862,8 @@ class AppController(QObject):
         self.dataChanged.emit()
         self.stateChanged.emit()
         self.readinessChanged.emit()
+        self.setCurrentPage(self._pending_result_page)
+        self.notificationRequested.emit(self._pending_completion_message)
 
     @Slot(str)
     def _on_failed(self, message: str) -> None:

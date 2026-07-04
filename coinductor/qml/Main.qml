@@ -76,6 +76,13 @@ ApplicationWindow {
         return comboBox.currentValue === undefined ? fallback : comboBox.currentValue
     }
 
+    Connections {
+        target: appController
+        function onNotificationRequested(message) {
+            window.showToast(message)
+        }
+    }
+
     function styleHelp(value) {
         if (value === "CONSERVATIVE")
             return "Coinductor protects more capital, prefers smaller suggestions, keeps more reserve, and is less likely to recommend active trades."
@@ -1878,7 +1885,7 @@ ApplicationWindow {
                                 Text { text: "Guarded Action Center"; color: textPrimary; font.pixelSize: 16; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
-                                    text: "Prepare analysis, bot plans, and mainnet previews from one place. These actions do not submit orders."
+                                    text: "Choose what kind of output you want. Coinductor runs the required analysis, then opens the page where the result is easiest to review."
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
@@ -1911,7 +1918,7 @@ ApplicationWindow {
                                 Text {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 54
-                                    text: "Run real-data analysis with AI ranking and mainnet preview gates where allowed."
+                                    text: "Prepare a guarded trade recommendation and open Overview with the latest decision and action list."
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
@@ -1919,7 +1926,7 @@ ApplicationWindow {
                                 Button {
                                     text: appController.busy ? "Running..." : "Prepare trade preview"
                                     enabled: !appController.busy
-                                    onClicked: appController.runAnalysis("REAL", true, true, true)
+                                    onClicked: appController.prepareTradePreview()
                                 }
                             }
                             ColumnLayout {
@@ -1929,7 +1936,7 @@ ApplicationWindow {
                                 Text {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 54
-                                    text: "Refresh Grid and Rebalancing recommendations for manual setup in Binance."
+                                    text: "Refresh Grid and Rebalancing recommendations, then open Strategies with manual setup details."
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
@@ -1937,17 +1944,17 @@ ApplicationWindow {
                                 Button {
                                     text: appController.busy ? "Running..." : "Prepare bot plan"
                                     enabled: !appController.busy
-                                    onClicked: appController.runAnalysis("REAL", true, false, true)
+                                    onClicked: appController.prepareBotPlan()
                                 }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 8
-                                Text { text: "Advanced run"; color: textPrimary; font.pixelSize: 14; font.bold: true }
+                                Text { text: "Custom analysis"; color: textPrimary; font.pixelSize: 14; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 54
-                                    text: "Choose data source, AI summary/proposals, and preview options before running."
+                                    text: "Open the same configurable run dialog used by Overview when you want custom parameters."
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap

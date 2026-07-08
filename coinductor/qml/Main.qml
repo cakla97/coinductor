@@ -1579,20 +1579,21 @@ ApplicationWindow {
 
                 ListView {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: Math.max(460, contentHeight)
+                    Layout.preferredHeight: Math.max(620, contentHeight)
                     spacing: 10
                     model: appController.actionPlanItems
                     delegate: Rectangle {
                         required property var modelData
                         width: ListView.view.width
-                        height: 172
+                        height: Math.max(216, actionPlanCardContent.implicitHeight + 40)
                         radius: 7
                         color: panel
-                        border.color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : border
+                        border.color: modelData.tone === "ready" ? accent : warning
                         ColumnLayout {
+                            id: actionPlanCardContent
                             anchors.fill: parent
                             anchors.margins: 18
-                            spacing: 8
+                            spacing: 10
                             RowLayout {
                                 Layout.fillWidth: true
                                 Text { text: modelData.title; color: textPrimary; font.pixelSize: 17; font.bold: true }
@@ -1602,7 +1603,7 @@ ApplicationWindow {
                                     Layout.preferredHeight: 28
                                     radius: 5
                                     color: modelData.tone === "ready" ? "#17372d" : modelData.tone === "watch" ? "#3a3020" : "#26313b"
-                                    border.color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : border
+                                    border.color: modelData.tone === "ready" ? accent : warning
                                     Text {
                                         id: actionStatus
                                         anchors.centerIn: parent
@@ -1616,8 +1617,8 @@ ApplicationWindow {
                             GridLayout {
                                 Layout.fillWidth: true
                                 columns: 4
-                                columnSpacing: 14
-                                rowSpacing: 5
+                                columnSpacing: 20
+                                rowSpacing: 8
                                 Repeater {
                                     model: modelData.parameters || []
                                     delegate: ColumnLayout {
@@ -1644,10 +1645,11 @@ ApplicationWindow {
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
-                                    maximumLineCount: 2
+                                    maximumLineCount: 3
                                     elide: Text.ElideRight
                                 }
                                 Button {
+                                    Layout.alignment: Qt.AlignVCenter
                                     Layout.preferredWidth: 170
                                     text: modelData.primaryLabel || "Review"
                                     enabled: modelData.actionCode !== "NONE"
@@ -2620,16 +2622,17 @@ ApplicationWindow {
         title: activeActionPlanItem.title || "Action detail"
         modal: true
         anchors.centerIn: parent
-        width: Math.min(720, window.width - 80)
-        height: Math.min(560, window.height - 80)
+        width: Math.min(920, window.width - 96)
+        height: Math.min(700, window.height - 96)
         standardButtons: Dialog.Close
 
         ScrollView {
             anchors.fill: parent
+            anchors.margins: 12
             clip: true
             ColumnLayout {
-                width: actionPlanDetailDialog.width - 48
-                spacing: 14
+                width: actionPlanDetailDialog.width - 96
+                spacing: 16
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
@@ -2644,7 +2647,7 @@ ApplicationWindow {
                         Layout.preferredHeight: 30
                         radius: 5
                         color: activeActionPlanItem.tone === "ready" ? "#17372d" : activeActionPlanItem.tone === "watch" ? "#3a3020" : "#26313b"
-                        border.color: activeActionPlanItem.tone === "ready" ? accent : activeActionPlanItem.tone === "watch" ? warning : border
+                        border.color: activeActionPlanItem.tone === "ready" ? accent : warning
                         Text {
                             id: actionDetailStatus
                             anchors.centerIn: parent
@@ -2673,7 +2676,7 @@ ApplicationWindow {
                         delegate: Rectangle {
                             required property var modelData
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 58
+                            Layout.preferredHeight: 68
                             radius: 6
                             color: panelRaised
                             border.color: border
@@ -2695,7 +2698,7 @@ ApplicationWindow {
                 }
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: actionDetailNote.implicitHeight + 24
+                    Layout.preferredHeight: actionDetailNote.implicitHeight + 28
                     radius: 7
                     color: "#3a3020"
                     border.color: warning
@@ -2710,6 +2713,7 @@ ApplicationWindow {
                         wrapMode: Text.WordWrap
                     }
                 }
+                Item { Layout.fillWidth: true; Layout.preferredHeight: 14 }
             }
         }
     }

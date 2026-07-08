@@ -1044,6 +1044,8 @@ class AppController(QObject):
                 "tone": trade_tone,
                 "detail": trade_detail,
                 "parameters": trade_parameters,
+                "primaryLabel": "Review trade" if trade_tone == "ready" else "Why watched?" if trade_tone == "watch" else "Show blockers",
+                "actionCode": "REVIEW_TRADE",
             }
         ]
 
@@ -1060,6 +1062,8 @@ class AppController(QObject):
                         "tone": tone,
                         "detail": detail or "No strategy detail was recorded for the latest run.",
                         "parameters": list(item.get("parameters", ())),
+                        "primaryLabel": "Show manual setup" if tone == "ready" else "Why watched?" if tone == "watch" else "Show blockers",
+                        "actionCode": "REVIEW_ACTION",
                     }
                 )
         else:
@@ -1070,6 +1074,8 @@ class AppController(QObject):
                     "tone": "blocked",
                     "detail": "Run a bot plan to prepare Grid and Rebalancing recommendations.",
                     "parameters": [],
+                    "primaryLabel": "Run bot plan",
+                    "actionCode": "NONE",
                 }
             )
 

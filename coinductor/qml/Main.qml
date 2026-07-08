@@ -31,6 +31,7 @@ ApplicationWindow {
     property bool profileChoicesEdited: false
     property string fundingCurrency: "USDC"
     property var activeGuide: ({})
+    property var activeActionPlanItem: ({})
     property var wizardSteps: ["Exchange", "Portfolio", "Profile", "AI", "Binance API", "Review"]
     property var exchangeOptions: [
         { label: "Binance", value: "BINANCE" },
@@ -1634,14 +1635,27 @@ ApplicationWindow {
                                     }
                                 }
                             }
-                            Text {
+                            RowLayout {
                                 Layout.fillWidth: true
-                                text: modelData.detail
-                                color: textSecondary
-                                font.pixelSize: 12
-                                wrapMode: Text.WordWrap
-                                maximumLineCount: 2
-                                elide: Text.ElideRight
+                                spacing: 12
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: modelData.detail
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                    maximumLineCount: 2
+                                    elide: Text.ElideRight
+                                }
+                                Button {
+                                    Layout.preferredWidth: 170
+                                    text: modelData.primaryLabel || "Review"
+                                    enabled: modelData.actionCode !== "NONE"
+                                    onClicked: {
+                                        window.activeActionPlanItem = modelData
+                                        actionPlanDetailDialog.open()
+                                    }
+                                }
                             }
                         }
                     }
@@ -2597,6 +2611,105 @@ ApplicationWindow {
                     }
                 }
                 Item { Layout.fillWidth: true; Layout.preferredHeight: 44 }
+            }
+        }
+    }
+
+    Dialog {
+        id: actionPlanDetailDialog
+        title: activeActionPlanItem.title || "Action detail"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(720, window.width - 80)
+        height: Math.min(560, window.height - 80)
+        standardButtons: Dialog.Close
+
+        ScrollView {
+            anchors.fill: parent
+            clip: true
+            ColumnLayout {
+                width: actionPlanDetailDialog.width - 48
+                spacing: 14
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        Layout.fillWidth: true
+                        text: activeActionPlanItem.title || ""
+                        color: textPrimary
+                        font.pixelSize: 22
+                        font.bold: true
+                    }
+                    Rectangle {
+                        Layout.preferredWidth: Math.max(96, actionDetailStatus.implicitWidth + 22)
+                        Layout.preferredHeight: 30
+                        radius: 5
+                        color: activeActionPlanItem.tone === "ready" ? "#17372d" : activeActionPlanItem.tone === "watch" ? "#3a3020" : "#26313b"
+                        border.color: activeActionPlanItem.tone === "ready" ? accent : activeActionPlanItem.tone === "watch" ? warning : border
+                        Text {
+                            id: actionDetailStatus
+                            anchors.centerIn: parent
+                            text: activeActionPlanItem.status || "UNKNOWN"
+                            color: activeActionPlanItem.tone === "ready" ? accent : activeActionPlanItem.tone === "watch" ? warning : textSecondary
+                            font.pixelSize: 11
+                            font.bold: true
+                        }
+                    }
+                }
+                Text {
+                    Layout.fillWidth: true
+                    text: activeActionPlanItem.detail || ""
+                    color: textSecondary
+                    font.pixelSize: 13
+                    wrapMode: Text.WordWrap
+                }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: border }
+                GridLayout {
+                    Layout.fillWidth: true
+                    columns: 2
+                    columnSpacing: 14
+                    rowSpacing: 10
+                    Repeater {
+                        model: activeActionPlanItem.parameters || []
+                        delegate: Rectangle {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 58
+                            radius: 6
+                            color: panelRaised
+                            border.color: border
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 3
+                                Text { text: modelData.label; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: modelData.value || "-"
+                                    color: textPrimary
+                                    font.pixelSize: 13
+                                    elide: Text.ElideRight
+                                }
+                            }
+                        }
+                    }
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: actionDetailNote.implicitHeight + 24
+                    radius: 7
+                    color: "#3a3020"
+                    border.color: warning
+                    Text {
+                        id: actionDetailNote
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        text: "This dialog is review-only. Trade confirmation and live submission will be added as a separate guarded workflow."
+                        color: warning
+                        font.pixelSize: 12
+                        font.bold: true
+                        wrapMode: Text.WordWrap
+                    }
+                }
             }
         }
     }

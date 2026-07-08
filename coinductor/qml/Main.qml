@@ -1560,13 +1560,15 @@ ApplicationWindow {
                 spacing: 18
 
                 RowLayout {
+                    width: parent.width
                     Layout.fillWidth: true
+                    spacing: 16
                     ColumnLayout {
-                        Layout.fillWidth: true
                         spacing: 4
                         Text { text: "Action Plan"; color: textPrimary; font.pixelSize: 26; font.bold: true }
                         Text { text: "Latest trade, Grid, and Rebalancing decisions in one review list."; color: textSecondary; font.pixelSize: 13 }
                     }
+                    Item { Layout.fillWidth: true }
                     Button {
                         text: "Open detailed report"
                         enabled: appController.hasReport

@@ -1559,8 +1559,20 @@ ApplicationWindow {
                 width: Math.max(window.width - 288, 692)
                 spacing: 18
 
-                Text { text: "Action Plan"; color: textPrimary; font.pixelSize: 26; font.bold: true }
-                Text { text: "Latest trade, Grid, and Rebalancing decisions in one review list."; color: textSecondary; font.pixelSize: 13 }
+                RowLayout {
+                    Layout.fillWidth: true
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 4
+                        Text { text: "Action Plan"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                        Text { text: "Latest trade, Grid, and Rebalancing decisions in one review list."; color: textSecondary; font.pixelSize: 13 }
+                    }
+                    Button {
+                        text: "Open detailed report"
+                        enabled: appController.hasReport
+                        onClicked: appController.openReport()
+                    }
+                }
 
                 ListView {
                     Layout.fillWidth: true

@@ -2627,11 +2627,14 @@ ApplicationWindow {
         standardButtons: Dialog.Close
 
         ScrollView {
+            id: actionPlanDetailScroll
             anchors.fill: parent
             anchors.margins: 12
             clip: true
+            contentWidth: availableWidth
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ColumnLayout {
-                width: actionPlanDetailDialog.width - 96
+                width: actionPlanDetailScroll.availableWidth
                 spacing: 16
                 RowLayout {
                     Layout.fillWidth: true

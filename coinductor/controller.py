@@ -126,7 +126,7 @@ class AppController(QObject):
         self._ai_summary = "No summary available."
         self._report_path = ""
         self._actions: list[dict[str, str]] = []
-        self._live_action_summaries: list[dict[str, str]] = []
+        self._action_plan_items: list[dict[str, str]] = []
         self._portfolio_assets: list[dict[str, str]] = []
         self._strategies: list[dict[str, str]] = []
         self._run_history: list[dict[str, str]] = []
@@ -231,8 +231,8 @@ class AppController(QObject):
         return self._actions
 
     @Property("QVariantList", notify=actionsChanged)
-    def liveActionSummaries(self) -> list[dict[str, str]]:
-        return self._live_action_summaries
+    def actionPlanItems(self) -> list[dict[str, str]]:
+        return self._action_plan_items
 
     @Property("QVariantList", notify=dataChanged)
     def portfolioAssets(self) -> list[dict[str, str]]:
@@ -861,7 +861,7 @@ class AppController(QObject):
         self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)
         self._strategies = list(self._snapshot.strategies)
         self._run_history = list(self._snapshot.run_history)
-        self._live_action_summaries = self._build_live_action_summaries()
+        self._action_plan_items = self._build_action_plan_items()
         self._refresh_onboarding_review()
         self._refresh_readiness()
         self.actionsChanged.emit()
@@ -952,7 +952,7 @@ class AppController(QObject):
         self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)
         self._strategies = list(self._snapshot.strategies)
         self._run_history = list(self._snapshot.run_history)
-        self._live_action_summaries = self._build_live_action_summaries()
+        self._action_plan_items = self._build_action_plan_items()
         self._refresh_onboarding_review()
         if self._snapshot.latest_run is not None:
             self._on_completed(self._snapshot.latest_run)
@@ -1019,7 +1019,7 @@ class AppController(QObject):
             },
         ]
 
-    def _build_live_action_summaries(self) -> list[dict[str, str]]:
+    def _build_action_plan_items(self) -> list[dict[str, str]]:
         trade_status = self._decision or "NOT RUN"
         trade_tone = "ready" if trade_status in {"BUY", "SELL"} else "watch" if trade_status == "HOLD" else "blocked"
         top_action = self._actions[0]["action"] if self._actions else "No follow-up action recorded yet."
@@ -1033,8 +1033,6 @@ class AppController(QObject):
                 "status": trade_status,
                 "tone": trade_tone,
                 "detail": trade_detail,
-                "primaryLabel": "Open report" if self._report_path else "Run trade preview",
-                "actionCode": "OPEN_REPORT" if self._report_path else "NONE",
             }
         ]
 
@@ -1056,8 +1054,6 @@ class AppController(QObject):
                         "status": status,
                         "tone": tone,
                         "detail": detail or "No strategy detail was recorded for the latest run.",
-                        "primaryLabel": "Open report" if self._report_path else "Run bot plan",
-                        "actionCode": "OPEN_REPORT" if self._report_path else "NONE",
                     }
                 )
         else:
@@ -1067,8 +1063,6 @@ class AppController(QObject):
                     "status": "NOT RUN",
                     "tone": "blocked",
                     "detail": "Run a bot plan to prepare Grid and Rebalancing recommendations.",
-                    "primaryLabel": "Run bot plan",
-                    "actionCode": "NONE",
                 }
             )
 

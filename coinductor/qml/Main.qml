@@ -1560,141 +1560,43 @@ ApplicationWindow {
                 spacing: 18
 
                 Text { text: "Action Plan"; color: textPrimary; font.pixelSize: 26; font.bold: true }
-                Text { text: "Latest post-run decisions and the manual or guarded actions Coinductor can help you review."; color: textSecondary; font.pixelSize: 13 }
+                Text { text: "Latest trade, Grid, and Rebalancing decisions in one review list."; color: textSecondary; font.pixelSize: 13 }
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 350
-                    radius: 7
-                    color: panel
-                    border.color: border
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 12
-                        RowLayout {
-                            Layout.fillWidth: true
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 5
-                                Text { text: "Run Result Summary"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: "A single review point for the latest trade decision, Grid setup, Rebalancing setup, and manual next steps."
-                                    color: textSecondary
-                                    font.pixelSize: 12
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                            Button {
-                                text: "Open detailed report"
-                                enabled: appController.hasReport
-                                onClicked: appController.openReport()
-                            }
-                        }
-                        ListView {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            orientation: ListView.Horizontal
-                            spacing: 12
-                            clip: true
-                            model: appController.liveActionSummaries
-                            delegate: Rectangle {
-                                required property var modelData
-                                width: Math.max(280, (ListView.view.width - 24) / 3)
-                                height: ListView.view.height
-                                radius: 7
-                                color: panelRaised
-                                border.color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : border
-                                ColumnLayout {
-                                    anchors.fill: parent
-                                    anchors.margins: 14
-                                    spacing: 8
-                                    RowLayout {
-                                        Layout.fillWidth: true
-                                        Text {
-                                            Layout.fillWidth: true
-                                            text: modelData.title
-                                            color: textPrimary
-                                            font.pixelSize: 15
-                                            font.bold: true
-                                            elide: Text.ElideRight
-                                        }
-                                        Rectangle {
-                                            Layout.preferredWidth: Math.max(82, statusLabel.implicitWidth + 18)
-                                            Layout.preferredHeight: 26
-                                            radius: 5
-                                            color: modelData.tone === "ready" ? "#17372d" : modelData.tone === "watch" ? "#3a3020" : "#26313b"
-                                            border.color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : border
-                                            Text {
-                                                id: statusLabel
-                                                anchors.centerIn: parent
-                                                text: modelData.status
-                                                color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : textSecondary
-                                                font.pixelSize: 10
-                                                font.bold: true
-                                            }
-                                        }
-                                    }
-                                    Text {
-                                        Layout.fillWidth: true
-                                        Layout.fillHeight: true
-                                        text: modelData.detail
-                                        color: textSecondary
-                                        font.pixelSize: 12
-                                        wrapMode: Text.WordWrap
-                                        maximumLineCount: 6
-                                        elide: Text.ElideRight
-                                    }
-                                    Button {
-                                        text: modelData.primaryLabel
-                                        enabled: modelData.actionCode !== "NONE"
-                                        onClicked: {
-                                            if (modelData.actionCode === "OPEN_REPORT")
-                                                appController.openReport()
-                                            else if (modelData.actionCode === "OPEN_LIVE_GUIDE")
-                                                window.openGuide("binance-live-api")
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Text { text: "Strategy Details"; color: textPrimary; font.pixelSize: 18; font.bold: true }
                 ListView {
                     Layout.fillWidth: true
                     Layout.preferredHeight: Math.max(460, contentHeight)
                     spacing: 10
-                    model: appController.strategies
+                    model: appController.actionPlanItems
                     delegate: Rectangle {
                         required property var modelData
                         width: ListView.view.width
                         height: 142
                         radius: 7
                         color: panel
-                        border.color: border
+                        border.color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : border
                         ColumnLayout {
                             anchors.fill: parent
                             anchors.margins: 18
                             spacing: 8
                             RowLayout {
                                 Layout.fillWidth: true
-                                Text { text: modelData.type; color: textPrimary; font.pixelSize: 17; font.bold: true }
-                                Text { text: modelData.name; color: accent; font.pixelSize: 14; font.bold: true }
+                                Text { text: modelData.title; color: textPrimary; font.pixelSize: 17; font.bold: true }
                                 Item { Layout.fillWidth: true }
-                                Text {
-                                    text: modelData.status
-                                    color: modelData.status === "READY" ? accent : warning
-                                    font.pixelSize: 11
-                                    font.bold: true
+                                Rectangle {
+                                    Layout.preferredWidth: Math.max(92, actionStatus.implicitWidth + 20)
+                                    Layout.preferredHeight: 28
+                                    radius: 5
+                                    color: modelData.tone === "ready" ? "#17372d" : modelData.tone === "watch" ? "#3a3020" : "#26313b"
+                                    border.color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : border
+                                    Text {
+                                        id: actionStatus
+                                        anchors.centerIn: parent
+                                        text: modelData.status
+                                        color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : textSecondary
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                    }
                                 }
-                            }
-                            RowLayout {
-                                spacing: 24
-                                Text { text: "Capital  " + modelData.capital; color: textSecondary; font.pixelSize: 12 }
-                                Text { text: modelData.allowed; color: textSecondary; font.pixelSize: 12 }
                             }
                             Text {
                                 Layout.fillWidth: true
@@ -1702,7 +1604,7 @@ ApplicationWindow {
                                 color: textSecondary
                                 font.pixelSize: 12
                                 wrapMode: Text.WordWrap
-                                maximumLineCount: 3
+                                maximumLineCount: 4
                                 elide: Text.ElideRight
                             }
                         }

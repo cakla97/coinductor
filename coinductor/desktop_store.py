@@ -36,6 +36,8 @@ class DesktopStore:
                         str(latest["status"]),
                         str(report_path),
                     )
+                    trade_proposal = self._trade_proposal(connection, int(latest["id"]))
+                    latest_result = latest_result.__class__(**{**latest_result.__dict__, "trade_proposal": trade_proposal})
                 portfolio = self._portfolio(connection, int(latest["id"]))
                 strategies = self._strategies(connection, int(latest["id"]))
             history = self._history(connection)
@@ -80,45 +82,105 @@ class DesktopStore:
             for row in rows
         )
 
-    def _strategies(self, connection: sqlite3.Connection, run_id: int) -> tuple[dict[str, str], ...]:
-        strategies: list[dict[str, str]] = []
-        grid = connection.execute(
+    def _trade_proposal(self, connection: sqlite3.Connection, run_id: int) -> dict[str, str] | None:
+        if not self._table_exists(connection, "ai_proposals"):
+            return None
+        row = connection.execute(
             """
-            select symbol, market_status, deployment_allowed, score, investment_usdt, reason
-            from grid_recommendations where run_id = ?
+            select symbol, action, confidence, quote_amount_usdt, reason
+            from ai_proposals where run_id = ?
             """,
             (run_id,),
         ).fetchone()
-        if grid is not None:
-            strategies.append(
-                {
-                    "type": "Spot Grid",
-                    "name": str(grid["symbol"] or "No candidate"),
-                    "status": str(grid["market_status"] or "UNKNOWN"),
-                    "capital": self._money(grid["investment_usdt"]),
-                    "allowed": "Ready" if grid["deployment_allowed"] else "Blocked",
-                    "detail": str(grid["reason"] or ""),
-                }
-            )
-        rebalance = connection.execute(
-            """
-            select deployment_allowed, mode, threshold_pct, investment_usdt, summary
-            from rebalancing_bot_recommendations where run_id = ?
-            """,
-            (run_id,),
-        ).fetchone()
-        if rebalance is not None:
-            strategies.append(
-                {
-                    "type": "Rebalancing",
-                    "name": str(rebalance["mode"] or "THRESHOLD"),
-                    "status": "READY" if rebalance["deployment_allowed"] else "BLOCKED",
-                    "capital": self._money(rebalance["investment_usdt"]),
-                    "allowed": f"Ratio {rebalance['threshold_pct']}%",
-                    "detail": str(rebalance["summary"] or ""),
-                }
-            )
+        if row is None:
+            return None
+        return {
+            "symbol": str(row["symbol"] or ""),
+            "action": str(row["action"] or ""),
+            "confidence": str(row["confidence"] or ""),
+            "quoteAmount": self._money(row["quote_amount_usdt"]),
+            "reason": str(row["reason"] or ""),
+        }
+
+    def _strategies(self, connection: sqlite3.Connection, run_id: int) -> tuple[dict[str, object], ...]:
+        strategies: list[dict[str, object]] = []
+        if self._table_exists(connection, "grid_recommendations"):
+            grid_columns = self._columns(connection, "grid_recommendations")
+            grid = connection.execute(
+                f"""
+                select symbol, market_status, deployment_allowed, score, investment_usdt, reason,
+                       {self._column_expr(grid_columns, "range_low")}, {self._column_expr(grid_columns, "range_high")},
+                       {self._column_expr(grid_columns, "grid_count")}, {self._column_expr(grid_columns, "stop_loss_price")},
+                       {self._column_expr(grid_columns, "take_profit_price")}, {self._column_expr(grid_columns, "estimated_grid_spacing_pct")},
+                       {self._column_expr(grid_columns, "blockers")}
+                from grid_recommendations where run_id = ?
+                """,
+                (run_id,),
+            ).fetchone()
+            if grid is not None:
+                strategies.append(
+                    {
+                        "type": "Spot Grid",
+                        "name": str(grid["symbol"] or "No candidate"),
+                        "status": str(grid["market_status"] or "UNKNOWN"),
+                        "capital": self._money(grid["investment_usdt"]),
+                        "allowed": "Ready" if grid["deployment_allowed"] else "Blocked",
+                        "detail": str(grid["reason"] or ""),
+                        "parameters": (
+                            {"label": "Symbol", "value": str(grid["symbol"] or "")},
+                            {"label": "Range", "value": self._range(grid["range_low"], grid["range_high"])},
+                            {"label": "Grids", "value": str(grid["grid_count"] or "")},
+                            {"label": "Investment", "value": self._money(grid["investment_usdt"])},
+                            {"label": "Spacing", "value": self._percent(grid["estimated_grid_spacing_pct"])},
+                            {"label": "TP / SL", "value": self._range(grid["take_profit_price"], grid["stop_loss_price"])},
+                            {"label": "Blockers", "value": str(grid["blockers"] or "")},
+                        ),
+                    }
+                )
+        if self._table_exists(connection, "rebalancing_bot_recommendations"):
+            rebalance_columns = self._columns(connection, "rebalancing_bot_recommendations")
+            rebalance = connection.execute(
+                f"""
+                select deployment_allowed, mode, threshold_pct, investment_usdt, summary,
+                       {self._column_expr(rebalance_columns, "blockers")}
+                from rebalancing_bot_recommendations where run_id = ?
+                """,
+                (run_id,),
+            ).fetchone()
+            if rebalance is not None:
+                basket = self._rebalancing_basket(connection, run_id)
+                strategies.append(
+                    {
+                        "type": "Rebalancing",
+                        "name": str(rebalance["mode"] or "THRESHOLD"),
+                        "status": "READY" if rebalance["deployment_allowed"] else "BLOCKED",
+                        "capital": self._money(rebalance["investment_usdt"]),
+                        "allowed": f"Ratio {rebalance['threshold_pct']}%",
+                        "detail": str(rebalance["summary"] or ""),
+                        "parameters": (
+                            {"label": "Mode", "value": str(rebalance["mode"] or "THRESHOLD")},
+                            {"label": "Investment", "value": self._money(rebalance["investment_usdt"])},
+                            {"label": "Threshold", "value": self._percent(rebalance["threshold_pct"])},
+                            {"label": "Basket", "value": basket},
+                            {"label": "Blockers", "value": str(rebalance["blockers"] or "")},
+                        ),
+                    }
+                )
         return tuple(strategies)
+
+    def _rebalancing_basket(self, connection: sqlite3.Connection, run_id: int) -> str:
+        if not self._table_exists(connection, "rebalancing_bot_assets"):
+            return ""
+        rows = connection.execute(
+            """
+            select asset, target_weight_pct from rebalancing_bot_assets
+            where run_id = ? and status != 'EXCLUDED'
+            order by cast(target_weight_pct as real) desc
+            """,
+            (run_id,),
+        ).fetchall()
+        return ", ".join(f"{row['asset']} {self._percent(row['target_weight_pct'])}" for row in rows)
+
 
     def _history(self, connection: sqlite3.Connection) -> tuple[dict[str, str], ...]:
         rows = connection.execute(
@@ -153,6 +215,25 @@ class DesktopStore:
                 return path
         candidates = sorted(self.reports_dir.glob(f"*_run-{row['id']}.md"))
         return candidates[-1] if candidates else None
+
+    def _range(self, low: object, high: object) -> str:
+        left = "" if low in (None, "") else str(low)
+        right = "" if high in (None, "") else str(high)
+        return " - ".join(part for part in (left, right) if part)
+
+    def _table_exists(self, connection: sqlite3.Connection, table: str) -> bool:
+        row = connection.execute(
+            "select name from sqlite_master where type = 'table' and name = ?",
+            (table,),
+        ).fetchone()
+        return row is not None
+
+    def _columns(self, connection: sqlite3.Connection, table: str) -> set[str]:
+        rows = connection.execute(f"pragma table_info({table})").fetchall()
+        return {str(row["name"]) for row in rows}
+
+    def _column_expr(self, columns: set[str], column: str) -> str:
+        return column if column in columns else f"null as {column}"
 
     def _money(self, value: object) -> str:
         try:

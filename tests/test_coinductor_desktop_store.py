@@ -48,11 +48,19 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
         );
         create table grid_recommendations (
             run_id integer, symbol text, market_status text, deployment_allowed integer,
-            score text, investment_usdt text, reason text
+            score text, investment_usdt text, reason text, range_low text, range_high text,
+            grid_count integer, stop_loss_price text, take_profit_price text,
+            estimated_grid_spacing_pct text, blockers text
         );
         create table rebalancing_bot_recommendations (
             run_id integer, deployment_allowed integer, mode text, threshold_pct text,
-            investment_usdt text, summary text
+            investment_usdt text, summary text, blockers text
+        );
+        create table rebalancing_bot_assets (
+            run_id integer, asset text, target_weight_pct text, status text
+        );
+        create table ai_proposals (
+            run_id integer, symbol text, action text, confidence text, quote_amount_usdt text, reason text
         );
         create table strategy_decisions (
             run_id integer, decision_type text, summary text
@@ -74,14 +82,21 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
         "insert into portfolio_valuations values (1, 'BTC', 'PROTECTED', '500', '100', '0', '500', '0', 'HOLD')"
     )
     connection.execute(
-        "insert into grid_recommendations values (1, 'BTCUSDC', 'WATCH', 0, '40', '25', 'Wait for range conditions.')"
+        "insert into grid_recommendations values (1, 'BTCUSDC', 'WATCH', 0, '40', '25', 'Wait for range conditions.', '90000', '110000', 40, '85000', '115000', '0.5', 'Market status is WATCH.')"
     )
     connection.execute(
-        "insert into rebalancing_bot_recommendations values (1, 0, 'BY_RATIO', '10', '200', 'Funding gap remains.')"
+        "insert into rebalancing_bot_recommendations values (1, 0, 'BY_RATIO', '10', '200', 'Funding gap remains.', 'Funding gap.')"
     )
     connection.executemany(
         "insert into strategy_decisions values (?, ?, ?)",
         [(1, "HOLD", "Real run selected."), (2, "BUY", "Mock only.")],
+    )
+    connection.executemany(
+        "insert into rebalancing_bot_assets values (?, ?, ?, ?)",
+        [(1, "BTC", "60", "INCLUDED"), (1, "ETH", "40", "INCLUDED")],
+    )
+    connection.execute(
+        "insert into ai_proposals values (1, 'BTCUSDC', 'HOLD', '0.7', '15', 'Wait.')"
     )
     connection.commit()
     connection.close()
@@ -91,6 +106,9 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
     assert snapshot.latest_run is not None
     assert snapshot.latest_run.run_id == 1
     assert snapshot.portfolio_assets[0]["asset"] == "BTC"
+    assert snapshot.latest_run.trade_proposal["symbol"] == "BTCUSDC"
     assert snapshot.strategies[0]["type"] == "Spot Grid"
+    assert snapshot.strategies[0]["parameters"][1]["value"] == "90000 - 110000"
+    assert "BTC 60.00%" in snapshot.strategies[1]["parameters"][3]["value"]
     assert snapshot.run_history[0]["dataMode"] == "MOCK"
     assert snapshot.run_history[1]["dataMode"] == "REAL"

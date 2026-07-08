@@ -1584,7 +1584,7 @@ ApplicationWindow {
                     delegate: Rectangle {
                         required property var modelData
                         width: ListView.view.width
-                        height: 142
+                        height: 172
                         radius: 7
                         color: panel
                         border.color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : border
@@ -1612,13 +1612,35 @@ ApplicationWindow {
                                     }
                                 }
                             }
+                            GridLayout {
+                                Layout.fillWidth: true
+                                columns: 4
+                                columnSpacing: 14
+                                rowSpacing: 5
+                                Repeater {
+                                    model: modelData.parameters || []
+                                    delegate: ColumnLayout {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        spacing: 2
+                                        Text { text: modelData.label; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                        Text {
+                                            Layout.fillWidth: true
+                                            text: modelData.value || "-"
+                                            color: textPrimary
+                                            font.pixelSize: 12
+                                            elide: Text.ElideRight
+                                        }
+                                    }
+                                }
+                            }
                             Text {
                                 Layout.fillWidth: true
                                 text: modelData.detail
                                 color: textSecondary
                                 font.pixelSize: 12
                                 wrapMode: Text.WordWrap
-                                maximumLineCount: 4
+                                maximumLineCount: 2
                                 elide: Text.ElideRight
                             }
                         }

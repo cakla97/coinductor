@@ -126,9 +126,9 @@ class AppController(QObject):
         self._ai_summary = "No summary available."
         self._report_path = ""
         self._actions: list[dict[str, str]] = []
-        self._action_plan_items: list[dict[str, str]] = []
+        self._action_plan_items: list[dict[str, object]] = []
         self._portfolio_assets: list[dict[str, str]] = []
-        self._strategies: list[dict[str, str]] = []
+        self._strategies: list[dict[str, object]] = []
         self._run_history: list[dict[str, str]] = []
         self._onboarding_review: list[dict[str, str]] = []
         self._onboarding_review_summary = "Run a real analysis to prepare portfolio classification."
@@ -231,7 +231,7 @@ class AppController(QObject):
         return self._actions
 
     @Property("QVariantList", notify=actionsChanged)
-    def actionPlanItems(self) -> list[dict[str, str]]:
+    def actionPlanItems(self) -> list[dict[str, object]]:
         return self._action_plan_items
 
     @Property("QVariantList", notify=dataChanged)
@@ -243,7 +243,7 @@ class AppController(QObject):
         return getattr(self, "_portfolio_sort_mode", "VALUE_DESC")
 
     @Property("QVariantList", notify=dataChanged)
-    def strategies(self) -> list[dict[str, str]]:
+    def strategies(self) -> list[dict[str, object]]:
         return self._strategies
 
     @Property("QVariantList", notify=dataChanged)
@@ -1019,7 +1019,7 @@ class AppController(QObject):
             },
         ]
 
-    def _build_action_plan_items(self) -> list[dict[str, str]]:
+    def _build_action_plan_items(self) -> list[dict[str, object]]:
         trade_status = self._decision or "NOT RUN"
         trade_tone = "ready" if trade_status in {"BUY", "SELL"} else "watch" if trade_status == "HOLD" else "blocked"
         top_action = self._actions[0]["action"] if self._actions else "No follow-up action recorded yet."
@@ -1027,12 +1027,23 @@ class AppController(QObject):
         if top_action and top_action not in trade_detail:
             trade_detail = f"{trade_detail} Next: {top_action}"
 
+        latest_trade = self._snapshot.latest_run.trade_proposal if self._snapshot.latest_run is not None else None
+        trade_parameters = [
+            {"label": "Action", "value": str(latest_trade.get("action", trade_status) if latest_trade else trade_status)},
+            {"label": "Symbol", "value": str(latest_trade.get("symbol", "") if latest_trade else "")},
+            {"label": "Confidence", "value": str(latest_trade.get("confidence", "") if latest_trade else "")},
+            {"label": "Quote amount", "value": str(latest_trade.get("quoteAmount", "") if latest_trade else "")},
+        ]
+        if latest_trade and latest_trade.get("reason"):
+            trade_detail = str(latest_trade["reason"])
+
         cards = [
             {
                 "title": "Trade",
                 "status": trade_status,
                 "tone": trade_tone,
                 "detail": trade_detail,
+                "parameters": trade_parameters,
             }
         ]
 
@@ -1041,19 +1052,14 @@ class AppController(QObject):
                 status = str(item.get("allowed") or item.get("status") or "UNKNOWN")
                 status_upper = status.upper()
                 tone = "ready" if status_upper == "READY" else "blocked" if "BLOCK" in status_upper else "watch"
-                detail_parts = [
-                    str(item.get("name", "")).strip(),
-                    f"Capital {item.get('capital', '')}".strip(),
-                    str(item.get("allowed", "")).strip(),
-                    str(item.get("detail", "")).strip(),
-                ]
-                detail = " | ".join(part for part in detail_parts if part)
+                detail = str(item.get("detail", "")).strip()
                 cards.append(
                     {
                         "title": str(item.get("type", "Strategy")),
                         "status": status,
                         "tone": tone,
                         "detail": detail or "No strategy detail was recorded for the latest run.",
+                        "parameters": list(item.get("parameters", ())),
                     }
                 )
         else:
@@ -1063,6 +1069,7 @@ class AppController(QObject):
                     "status": "NOT RUN",
                     "tone": "blocked",
                     "detail": "Run a bot plan to prepare Grid and Rebalancing recommendations.",
+                    "parameters": [],
                 }
             )
 

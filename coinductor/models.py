@@ -34,6 +34,7 @@ class DesktopRunResult:
     locked_value: Decimal
     ai_summary: str
     actions: tuple[ActionSummary, ...]
+    trade_proposal: dict[str, str] | None = None
 
 
 @dataclass(frozen=True)

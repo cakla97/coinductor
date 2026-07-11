@@ -2724,7 +2724,7 @@ ApplicationWindow {
                     visible: activeActionPlanItem.actionCode === "REVIEW_TRADE"
                     radius: 7
                     color: panelRaised
-                    border.color: activeActionPlanItem.submitEnabled ? accent : border
+                    border.color: activeActionPlanItem.submitEnabled === true ? accent : border
                     ColumnLayout {
                         id: liveTradeGuardContent
                         anchors.fill: parent
@@ -2733,10 +2733,10 @@ ApplicationWindow {
                         Text { text: "Guarded live trade"; color: textPrimary; font.pixelSize: 15; font.bold: true }
                         Text {
                             Layout.fillWidth: true
-                            text: activeActionPlanItem.submitEnabled
+                            text: activeActionPlanItem.submitEnabled === true
                                 ? "This will run a fresh validation pass and submit only if the new mainnet preview is still ready."
                                 : (activeActionPlanItem.submitBlockedReason || "Live submit is locked.")
-                            color: activeActionPlanItem.submitEnabled ? textSecondary : warning
+                            color: activeActionPlanItem.submitEnabled === true ? textSecondary : warning
                             font.pixelSize: 12
                             wrapMode: Text.WordWrap
                         }
@@ -2744,8 +2744,8 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Item { Layout.fillWidth: true }
                             Button {
-                                text: activeActionPlanItem.submitEnabled ? activeActionPlanItem.submitLabel : "Locked"
-                                enabled: activeActionPlanItem.submitEnabled && !appController.busy
+                                text: activeActionPlanItem.submitEnabled === true ? activeActionPlanItem.submitLabel : "Locked"
+                                enabled: activeActionPlanItem.submitEnabled === true && !appController.busy
                                 onClicked: {
                                     liveTradeConfirmInput.text = ""
                                     liveTradeConfirmDialog.open()
@@ -2808,7 +2808,7 @@ ApplicationWindow {
                 }
                 Button {
                     text: "Run guarded submit"
-                    enabled: liveTradeConfirmInput.text === "CONFIRM_MAINNET_ORDER" && activeActionPlanItem.submitEnabled && !appController.busy
+                    enabled: liveTradeConfirmInput.text === "CONFIRM_MAINNET_ORDER" && activeActionPlanItem.submitEnabled === true && !appController.busy
                     onClicked: {
                         appController.submitGuardedTrade(liveTradeConfirmInput.text)
                         liveTradeConfirmDialog.close()

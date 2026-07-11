@@ -13,6 +13,8 @@ class RunOptions:
     live_preview: bool = True
     live_submit: bool = False
     live_confirm: str = ""
+    oco_submit: bool = False
+    oco_confirm: str = ""
 
 
 @dataclass(frozen=True)
@@ -45,6 +47,7 @@ class DesktopSnapshot:
     portfolio_assets: tuple[dict[str, str], ...]
     strategies: tuple[dict[str, str], ...]
     run_history: tuple[dict[str, str], ...]
+    position_protection: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)

@@ -767,6 +767,8 @@ class AppController(QObject):
         completion_message: str,
         live_submit: bool = False,
         live_confirm: str = "",
+        oco_submit: bool = False,
+        oco_confirm: str = "",
     ) -> None:
         if self._busy:
             return
@@ -784,6 +786,8 @@ class AppController(QObject):
             live_preview=(live_preview or live_submit) and self._safety_snapshot.allows_live_preview,
             live_submit=live_submit and self._safety_snapshot.allows_live_submit,
             live_confirm=live_confirm.strip(),
+            oco_submit=oco_submit and self._safety_snapshot.allows_live_submit,
+            oco_confirm=oco_confirm.strip(),
         )
         self._thread = QThread(self)
         self._worker = AnalysisWorker(options)
@@ -822,6 +826,33 @@ class AppController(QObject):
             completion_message="Guarded trade submit run complete. Review the Action Plan.",
             live_submit=True,
             live_confirm=confirmation,
+        )
+
+    @Slot(str)
+    def submitGuardedOco(self, confirmation: str) -> None:
+        if self._busy:
+            return
+        if not self._safety_snapshot.allows_live_submit:
+            self.notificationRequested.emit(
+                "OCO submit is locked by the Safety stage. Promote it to LIVE_ENABLED only after preview review."
+            )
+            return
+        protection = self._snapshot.position_protection or {}
+        if not protection.get("canSubmitOco"):
+            self.notificationRequested.emit("No READY OCO protection preview is available for submission.")
+            return
+        if confirmation.strip() != "CONFIRM_MAINNET_OCO":
+            self.notificationRequested.emit("Confirmation text did not match CONFIRM_MAINNET_OCO.")
+            return
+        self._start_analysis(
+            "REAL",
+            True,
+            True,
+            True,
+            result_page=3,
+            completion_message="Guarded OCO protection run complete. Review the Action Plan.",
+            oco_submit=True,
+            oco_confirm=confirmation,
         )
 
     @Slot()
@@ -1123,6 +1154,31 @@ class AppController(QObject):
                     "actionCode": "NONE",
                 }
             )
+
+        protection = self._snapshot.position_protection
+        if protection is not None:
+            card = dict(protection)
+            can_submit = bool(card.get("canSubmitOco"))
+            if not can_submit:
+                blocked_reason = "Protection is already active or the latest OCO preview did not pass validation."
+            elif not self._safety_snapshot.allows_live_submit:
+                blocked_reason = "OCO submit is locked until the Safety stage is promoted to LIVE_ENABLED."
+            elif self.liveTradingKeyStatus != "PASS":
+                blocked_reason = "Live trading key is not configured or has not passed setup checks."
+            else:
+                blocked_reason = ""
+            card.update(
+                {
+                    "primaryLabel": "Review protection" if can_submit else "Show protection status",
+                    "actionCode": "REVIEW_OCO",
+                    "submitEnabled": can_submit
+                    and self._safety_snapshot.allows_live_submit
+                    and self.liveTradingKeyStatus == "PASS",
+                    "submitLabel": "Confirm OCO protection",
+                    "submitBlockedReason": blocked_reason,
+                }
+            )
+            cards.append(card)
 
         return cards
 

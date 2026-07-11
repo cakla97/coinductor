@@ -2711,7 +2711,9 @@ ApplicationWindow {
                         anchors.margins: 12
                         text: activeActionPlanItem.actionCode === "REVIEW_TRADE"
                             ? "Live trade submission is separate from review. It stays locked unless the latest BUY preview, live key, safety stage, and confirmation text all pass."
-                            : "This dialog is review-only. Manual bot setup remains outside automatic desktop submission."
+                            : activeActionPlanItem.actionCode === "REVIEW_OCO"
+                                ? "OCO protection is a separate SELL order pair. Submission requires a READY preview and its own explicit confirmation."
+                                : "This dialog is review-only. Manual bot setup remains outside automatic desktop submission."
                         color: warning
                         font.pixelSize: 12
                         font.bold: true
@@ -2721,7 +2723,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: liveTradeGuardContent.implicitHeight + 28
-                    visible: activeActionPlanItem.actionCode === "REVIEW_TRADE"
+                    visible: activeActionPlanItem.actionCode === "REVIEW_TRADE" || activeActionPlanItem.actionCode === "REVIEW_OCO"
                     radius: 7
                     color: panelRaised
                     border.color: activeActionPlanItem.submitEnabled === true ? accent : border
@@ -2730,11 +2732,18 @@ ApplicationWindow {
                         anchors.fill: parent
                         anchors.margins: 14
                         spacing: 8
-                        Text { text: "Guarded live trade"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                        Text {
+                            text: activeActionPlanItem.actionCode === "REVIEW_OCO" ? "Guarded position protection" : "Guarded live trade"
+                            color: textPrimary
+                            font.pixelSize: 15
+                            font.bold: true
+                        }
                         Text {
                             Layout.fillWidth: true
                             text: activeActionPlanItem.submitEnabled === true
-                                ? "This will run a fresh validation pass and submit only if the new mainnet preview is still ready."
+                                ? activeActionPlanItem.actionCode === "REVIEW_OCO"
+                                    ? "This will run a fresh validation pass and submit the OCO pair only if the position protection preview is still ready."
+                                    : "This will run a fresh validation pass and submit only if the new mainnet preview is still ready."
                                 : (activeActionPlanItem.submitBlockedReason || "Live submit is locked.")
                             color: activeActionPlanItem.submitEnabled === true ? textSecondary : warning
                             font.pixelSize: 12
@@ -2747,8 +2756,13 @@ ApplicationWindow {
                                 text: activeActionPlanItem.submitEnabled === true ? activeActionPlanItem.submitLabel : "Locked"
                                 enabled: activeActionPlanItem.submitEnabled === true && !appController.busy
                                 onClicked: {
-                                    liveTradeConfirmInput.text = ""
-                                    liveTradeConfirmDialog.open()
+                                    if (activeActionPlanItem.actionCode === "REVIEW_OCO") {
+                                        ocoConfirmInput.text = ""
+                                        ocoConfirmDialog.open()
+                                    } else {
+                                        liveTradeConfirmInput.text = ""
+                                        liveTradeConfirmDialog.open()
+                                    }
                                 }
                             }
                         }
@@ -2812,6 +2826,65 @@ ApplicationWindow {
                     onClicked: {
                         appController.submitGuardedTrade(liveTradeConfirmInput.text)
                         liveTradeConfirmDialog.close()
+                        actionPlanDetailDialog.close()
+                    }
+                }
+            }
+        }
+    }
+    Dialog {
+        id: ocoConfirmDialog
+        title: "Confirm OCO position protection"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(680, window.width - 120)
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            width: ocoConfirmDialog.width - 48
+            spacing: 14
+            Text {
+                Layout.fillWidth: true
+                text: "Coinductor will run a fresh mainnet validation and may submit a linked take-profit and stop-loss SELL pair for the open position. Binance keeps this protection active while Coinductor is closed."
+                color: textSecondary
+                font.pixelSize: 13
+                wrapMode: Text.WordWrap
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: ocoConfirmWarning.implicitHeight + 24
+                radius: 7
+                color: "#3a3020"
+                border.color: warning
+                Text {
+                    id: ocoConfirmWarning
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    text: "Type CONFIRM_MAINNET_OCO exactly. Recheck the quantity, take-profit, stop-loss, trusted IP, and live-key permissions before continuing."
+                    color: warning
+                    font.pixelSize: 12
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                }
+            }
+            TextField {
+                id: ocoConfirmInput
+                Layout.fillWidth: true
+                placeholderText: "CONFIRM_MAINNET_OCO"
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                Button {
+                    text: "Cancel"
+                    onClicked: ocoConfirmDialog.close()
+                }
+                Button {
+                    text: "Submit OCO protection"
+                    enabled: ocoConfirmInput.text === "CONFIRM_MAINNET_OCO" && activeActionPlanItem.submitEnabled === true && !appController.busy
+                    onClicked: {
+                        appController.submitGuardedOco(ocoConfirmInput.text)
+                        ocoConfirmDialog.close()
                         actionPlanDetailDialog.close()
                     }
                 }

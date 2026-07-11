@@ -28,6 +28,7 @@ class DesktopStore:
             latest_result = None
             portfolio: tuple[dict[str, str], ...] = ()
             strategies: tuple[dict[str, str], ...] = ()
+            position_protection: dict[str, object] | None = None
             if latest is not None:
                 report_path = self._report_path(latest)
                 if report_path is not None and report_path.exists():
@@ -40,8 +41,9 @@ class DesktopStore:
                     latest_result = latest_result.__class__(**{**latest_result.__dict__, "trade_proposal": trade_proposal})
                 portfolio = self._portfolio(connection, int(latest["id"]))
                 strategies = self._strategies(connection, int(latest["id"]))
+                position_protection = self._position_protection(connection, int(latest["id"]))
             history = self._history(connection)
-            return DesktopSnapshot(latest_result, portfolio, strategies, history)
+            return DesktopSnapshot(latest_result, portfolio, strategies, history, position_protection)
         finally:
             connection.close()
 
@@ -167,6 +169,53 @@ class DesktopStore:
                     }
                 )
         return tuple(strategies)
+
+    def _position_protection(self, connection: sqlite3.Connection, run_id: int) -> dict[str, object] | None:
+        if not self._table_exists(connection, "oco_protection_orders"):
+            return None
+        row = connection.execute(
+            """
+            select intent_id, symbol, status, adjusted_quantity, take_profit_price,
+                   stop_loss_stop_price, estimated_take_profit_quote, estimated_stop_quote,
+                   submitted, order_list_id, confirmation_required, reason, message
+            from oco_protection_orders
+            where run_id = ?
+            order by rowid desc
+            limit 1
+            """,
+            (run_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        status = str(row["status"] or "UNKNOWN").upper()
+        submitted = bool(row["submitted"])
+        if submitted or status == "PROTECTED":
+            tone = "ready"
+            display_status = "Protected"
+        elif status == "READY":
+            tone = "ready"
+            display_status = "Ready"
+        else:
+            tone = "blocked"
+            display_status = "Blocked"
+        return {
+            "title": "Position protection",
+            "status": display_status,
+            "tone": tone,
+            "detail": str(row["message"] or row["reason"] or "No protection detail was recorded."),
+            "parameters": (
+                {"label": "Symbol", "value": str(row["symbol"] or "")},
+                {"label": "Quantity", "value": str(row["adjusted_quantity"] or "")},
+                {"label": "Take profit", "value": str(row["take_profit_price"] or "")},
+                {"label": "Stop loss", "value": str(row["stop_loss_stop_price"] or "")},
+                {"label": "TP estimate", "value": self._money(row["estimated_take_profit_quote"])},
+                {"label": "SL estimate", "value": self._money(row["estimated_stop_quote"])},
+            ),
+            "canSubmitOco": status == "READY" and not submitted,
+            "confirmationRequired": str(row["confirmation_required"] or "CONFIRM_MAINNET_OCO"),
+            "intentId": str(row["intent_id"] or ""),
+            "orderListId": str(row["order_list_id"] or ""),
+        }
 
     def _rebalancing_basket(self, connection: sqlite3.Connection, run_id: int) -> str:
         if not self._table_exists(connection, "rebalancing_bot_assets"):

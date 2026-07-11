@@ -35,3 +35,13 @@ def test_main_qml_loads(monkeypatch) -> None:
         qInstallMessageHandler(previous_handler)
 
     assert not any("appController" in message and "null" in message for message in messages)
+
+
+def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> None:
+    qml_path = Path(__file__).parents[1] / "coinductor" / "qml" / "Main.qml"
+    qml = qml_path.read_text(encoding="utf-8")
+
+    assert "CONFIRM_MAINNET_ORDER" in qml
+    assert "appController.submitGuardedTrade" in qml
+    assert "CONFIRM_MAINNET_OCO" in qml
+    assert "appController.submitGuardedOco" in qml

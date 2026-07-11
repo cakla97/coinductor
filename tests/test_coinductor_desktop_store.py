@@ -65,6 +65,14 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
         create table strategy_decisions (
             run_id integer, decision_type text, summary text
         );
+        create table oco_protection_orders (
+            run_id integer, intent_id text, symbol text, side text, status text,
+            quantity text, adjusted_quantity text, available_base text,
+            take_profit_price text, stop_loss_stop_price text,
+            estimated_take_profit_quote text, estimated_stop_quote text,
+            submitted integer, order_list_id text, confirmation_required text,
+            reason text, message text
+        );
         """
     )
     connection.execute(
@@ -98,6 +106,9 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
     connection.execute(
         "insert into ai_proposals values (1, 'BTCUSDC', 'HOLD', '0.7', '15', 'Wait.')"
     )
+    connection.execute(
+        "insert into oco_protection_orders values (1, 'oco-live-1', 'BTCUSDC', 'SELL', 'READY', '0.001', '0.001', '0.001', '110000', '90000', '110', '90', 0, '', 'CONFIRM_MAINNET_OCO', 'SELL OCO protection preview is valid.', '')"
+    )
     connection.commit()
     connection.close()
 
@@ -114,5 +125,9 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
     assert snapshot.strategies[1]["parameters"][2]["label"] == "Trigger"
     assert snapshot.strategies[1]["parameters"][2]["value"] == "By ratio 10.00%"
     assert "BTC 60.00%" in snapshot.strategies[1]["parameters"][3]["value"]
+    assert snapshot.position_protection is not None
+    assert snapshot.position_protection["status"] == "Ready"
+    assert snapshot.position_protection["canSubmitOco"] is True
+    assert snapshot.position_protection["parameters"][2]["value"] == "110000"
     assert snapshot.run_history[0]["dataMode"] == "MOCK"
     assert snapshot.run_history[1]["dataMode"] == "REAL"

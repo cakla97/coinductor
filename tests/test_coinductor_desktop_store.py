@@ -108,7 +108,11 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
     assert snapshot.portfolio_assets[0]["asset"] == "BTC"
     assert snapshot.latest_run.trade_proposal["symbol"] == "BTCUSDC"
     assert snapshot.strategies[0]["type"] == "Spot Grid"
+    assert snapshot.strategies[0]["allowed"] == "Watched"
     assert snapshot.strategies[0]["parameters"][1]["value"] == "90000 - 110000"
+    assert snapshot.strategies[1]["allowed"] == "Blocked"
+    assert snapshot.strategies[1]["parameters"][2]["label"] == "Trigger"
+    assert snapshot.strategies[1]["parameters"][2]["value"] == "By ratio 10.00%"
     assert "BTC 60.00%" in snapshot.strategies[1]["parameters"][3]["value"]
     assert snapshot.run_history[0]["dataMode"] == "MOCK"
     assert snapshot.run_history[1]["dataMode"] == "REAL"

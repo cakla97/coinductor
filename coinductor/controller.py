@@ -1098,11 +1098,12 @@ class AppController(QObject):
                 status = str(item.get("allowed") or item.get("status") or "UNKNOWN")
                 status_upper = status.upper()
                 tone = "ready" if status_upper == "READY" else "blocked" if "BLOCK" in status_upper else "watch"
+                display_status = "Ready" if tone == "ready" else "Blocked" if tone == "blocked" else "Watched"
                 detail = str(item.get("detail", "")).strip()
                 cards.append(
                     {
                         "title": str(item.get("type", "Strategy")),
-                        "status": status,
+                        "status": display_status,
                         "tone": tone,
                         "detail": detail or "No strategy detail was recorded for the latest run.",
                         "parameters": list(item.get("parameters", ())),

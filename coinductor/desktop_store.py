@@ -122,9 +122,9 @@ class DesktopStore:
                     {
                         "type": "Spot Grid",
                         "name": str(grid["symbol"] or "No candidate"),
-                        "status": str(grid["market_status"] or "UNKNOWN"),
+                        "status": "READY" if grid["deployment_allowed"] else str(grid["market_status"] or "WATCH"),
                         "capital": self._money(grid["investment_usdt"]),
-                        "allowed": "Ready" if grid["deployment_allowed"] else "Blocked",
+                        "allowed": "Ready" if grid["deployment_allowed"] else "Watched" if str(grid["market_status"] or "").upper() == "WATCH" else "Blocked",
                         "detail": str(grid["reason"] or ""),
                         "parameters": (
                             {"label": "Symbol", "value": str(grid["symbol"] or "")},
@@ -155,12 +155,12 @@ class DesktopStore:
                         "name": str(rebalance["mode"] or "THRESHOLD"),
                         "status": "READY" if rebalance["deployment_allowed"] else "BLOCKED",
                         "capital": self._money(rebalance["investment_usdt"]),
-                        "allowed": f"Ratio {rebalance['threshold_pct']}%",
+                        "allowed": "Ready" if rebalance["deployment_allowed"] else "Blocked",
                         "detail": str(rebalance["summary"] or ""),
                         "parameters": (
                             {"label": "Mode", "value": str(rebalance["mode"] or "THRESHOLD")},
                             {"label": "Investment", "value": self._money(rebalance["investment_usdt"])},
-                            {"label": "Threshold", "value": self._percent(rebalance["threshold_pct"])},
+                            {"label": "Trigger", "value": f"By ratio {self._percent(rebalance['threshold_pct'])}"},
                             {"label": "Basket", "value": basket},
                             {"label": "Blockers", "value": str(rebalance["blockers"] or "")},
                         ),

@@ -2,7 +2,7 @@ from coinductor.application import CoinductorApplication
 from coinductor.models import RunOptions
 
 
-def test_desktop_options_never_enable_submission() -> None:
+def test_desktop_options_keep_submission_disabled_by_default() -> None:
     config = {
         "app": {"mock_data": True},
         "ai": {"commentary_enabled": False, "enabled": True},
@@ -24,5 +24,30 @@ def test_desktop_options_never_enable_submission() -> None:
     assert config["ai"]["enabled"] is False
     assert config["live_confirm"]["enabled"] is True
     assert config["_runtime"]["live_submit"] is False
+    assert config["_runtime"]["earn_redeem_submit"] is False
+    assert config["_runtime"]["oco_protection_submit"] is False
+
+def test_desktop_options_enable_guarded_live_submit_only_when_requested() -> None:
+    config = {
+        "app": {"mock_data": True},
+        "ai": {"commentary_enabled": False, "enabled": False},
+        "live_confirm": {"enabled": False},
+    }
+
+    CoinductorApplication()._apply_options(
+        config,
+        RunOptions(
+            data_mode="REAL",
+            ai_summary=True,
+            ai_proposals=True,
+            live_preview=True,
+            live_submit=True,
+            live_confirm="CONFIRM_MAINNET_ORDER",
+        ),
+    )
+
+    assert config["live_confirm"]["enabled"] is True
+    assert config["_runtime"]["live_submit"] is True
+    assert config["_runtime"]["mainnet_confirm"] == "CONFIRM_MAINNET_ORDER"
     assert config["_runtime"]["earn_redeem_submit"] is False
     assert config["_runtime"]["oco_protection_submit"] is False

@@ -2709,11 +2709,49 @@ ApplicationWindow {
                         id: actionDetailNote
                         anchors.fill: parent
                         anchors.margins: 12
-                        text: "This dialog is review-only. Trade confirmation and live submission will be added as a separate guarded workflow."
+                        text: activeActionPlanItem.actionCode === "REVIEW_TRADE"
+                            ? "Live trade submission is separate from review. It stays locked unless the latest BUY preview, live key, safety stage, and confirmation text all pass."
+                            : "This dialog is review-only. Manual bot setup remains outside automatic desktop submission."
                         color: warning
                         font.pixelSize: 12
                         font.bold: true
                         wrapMode: Text.WordWrap
+                    }
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: liveTradeGuardContent.implicitHeight + 28
+                    visible: activeActionPlanItem.actionCode === "REVIEW_TRADE"
+                    radius: 7
+                    color: panelRaised
+                    border.color: activeActionPlanItem.submitEnabled ? accent : border
+                    ColumnLayout {
+                        id: liveTradeGuardContent
+                        anchors.fill: parent
+                        anchors.margins: 14
+                        spacing: 8
+                        Text { text: "Guarded live trade"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                        Text {
+                            Layout.fillWidth: true
+                            text: activeActionPlanItem.submitEnabled
+                                ? "This will run a fresh validation pass and submit only if the new mainnet preview is still ready."
+                                : (activeActionPlanItem.submitBlockedReason || "Live submit is locked.")
+                            color: activeActionPlanItem.submitEnabled ? textSecondary : warning
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Item { Layout.fillWidth: true }
+                            Button {
+                                text: activeActionPlanItem.submitEnabled ? activeActionPlanItem.submitLabel : "Locked"
+                                enabled: activeActionPlanItem.submitEnabled && !appController.busy
+                                onClicked: {
+                                    liveTradeConfirmInput.text = ""
+                                    liveTradeConfirmDialog.open()
+                                }
+                            }
+                        }
                     }
                 }
                 Item { Layout.fillWidth: true; Layout.preferredHeight: 14 }
@@ -2721,6 +2759,65 @@ ApplicationWindow {
         }
     }
 
+    Dialog {
+        id: liveTradeConfirmDialog
+        title: "Confirm guarded live trade"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(680, window.width - 120)
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            width: liveTradeConfirmDialog.width - 48
+            spacing: 14
+            Text {
+                Layout.fillWidth: true
+                text: "Coinductor will run a fresh guarded analysis and may submit a mainnet MARKET BUY only if the preview remains ready. This is not a 24/7 process and it will not bypass deterministic limits."
+                color: textSecondary
+                font.pixelSize: 13
+                wrapMode: Text.WordWrap
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: liveTradeConfirmWarning.implicitHeight + 24
+                radius: 7
+                color: "#3a3020"
+                border.color: warning
+                Text {
+                    id: liveTradeConfirmWarning
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    text: "Type CONFIRM_MAINNET_ORDER exactly. Never use this if Binance trusted-IP restrictions, live key permissions, or funding look wrong."
+                    color: warning
+                    font.pixelSize: 12
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                }
+            }
+            TextField {
+                id: liveTradeConfirmInput
+                Layout.fillWidth: true
+                placeholderText: "CONFIRM_MAINNET_ORDER"
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                Button {
+                    text: "Cancel"
+                    onClicked: liveTradeConfirmDialog.close()
+                }
+                Button {
+                    text: "Run guarded submit"
+                    enabled: liveTradeConfirmInput.text === "CONFIRM_MAINNET_ORDER" && activeActionPlanItem.submitEnabled && !appController.busy
+                    onClicked: {
+                        appController.submitGuardedTrade(liveTradeConfirmInput.text)
+                        liveTradeConfirmDialog.close()
+                        actionPlanDetailDialog.close()
+                    }
+                }
+            }
+        }
+    }
     Dialog {
         id: guideDialog
         title: activeGuide.title || "Help & Guides"

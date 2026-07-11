@@ -55,12 +55,12 @@ class CoinductorApplication:
         config["app"]["mock_data"] = mode == "MOCK"
         config["ai"]["commentary_enabled"] = bool(options.ai_summary)
         config["ai"]["enabled"] = bool(options.ai_proposals)
-        config["live_confirm"]["enabled"] = bool(options.live_preview)
+        config["live_confirm"]["enabled"] = bool(options.live_preview or options.live_submit)
         config.setdefault("_runtime", {})
         config["_runtime"].update(
             {
-                "live_submit": False,
-                "mainnet_confirm": "",
+                "live_submit": bool(options.live_submit),
+                "mainnet_confirm": options.live_confirm if options.live_submit else "",
                 "earn_redeem_submit": False,
                 "earn_redeem_confirm": "",
                 "oco_protection_submit": False,

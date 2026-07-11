@@ -765,6 +765,8 @@ class AppController(QObject):
         *,
         result_page: int,
         completion_message: str,
+        live_submit: bool = False,
+        live_confirm: str = "",
     ) -> None:
         if self._busy:
             return
@@ -779,7 +781,9 @@ class AppController(QObject):
             data_mode=data_mode,
             ai_summary=ai_summary,
             ai_proposals=ai_proposals,
-            live_preview=live_preview and self._safety_snapshot.allows_live_preview,
+            live_preview=(live_preview or live_submit) and self._safety_snapshot.allows_live_preview,
+            live_submit=live_submit and self._safety_snapshot.allows_live_submit,
+            live_confirm=live_confirm.strip(),
         )
         self._thread = QThread(self)
         self._worker = AnalysisWorker(options)
@@ -793,6 +797,32 @@ class AppController(QObject):
         self._thread.finished.connect(self._thread.deleteLater)
         self._thread.finished.connect(self._clear_worker)
         self._thread.start()
+
+    @Slot(str)
+    def submitGuardedTrade(self, confirmation: str) -> None:
+        if self._busy:
+            return
+        if not self._safety_snapshot.allows_live_submit:
+            self.notificationRequested.emit("Live submit is locked by the Safety stage. Keep reviewing previews until LIVE_ENABLED is explicit.")
+            return
+        latest_trade = self._snapshot.latest_run.trade_proposal if self._snapshot.latest_run is not None else None
+        action = str(latest_trade.get("action", self._decision) if latest_trade else self._decision).upper()
+        if action != "BUY":
+            self.notificationRequested.emit("Guarded desktop submit currently supports BUY previews only.")
+            return
+        if confirmation.strip() != "CONFIRM_MAINNET_ORDER":
+            self.notificationRequested.emit("Confirmation text did not match CONFIRM_MAINNET_ORDER.")
+            return
+        self._start_analysis(
+            "REAL",
+            True,
+            True,
+            True,
+            result_page=3,
+            completion_message="Guarded trade submit run complete. Review the Action Plan.",
+            live_submit=True,
+            live_confirm=confirmation,
+        )
 
     @Slot()
     def runInitialClassification(self) -> None:
@@ -1036,6 +1066,16 @@ class AppController(QObject):
         ]
         if latest_trade and latest_trade.get("reason"):
             trade_detail = str(latest_trade["reason"])
+        trade_action = str(latest_trade.get("action", trade_status) if latest_trade else trade_status).upper()
+        trade_can_submit = trade_tone == "ready" and trade_action == "BUY"
+        if not trade_can_submit:
+            trade_submit_blocked = "Live submit appears only for BUY previews that pass deterministic checks."
+        elif not self._safety_snapshot.allows_live_submit:
+            trade_submit_blocked = "Live submit is locked until the Safety stage is promoted to LIVE_ENABLED."
+        elif self.liveTradingKeyStatus != "PASS":
+            trade_submit_blocked = "Live trading key is not configured or has not passed setup checks."
+        else:
+            trade_submit_blocked = ""
 
         cards = [
             {
@@ -1046,6 +1086,10 @@ class AppController(QObject):
                 "parameters": trade_parameters,
                 "primaryLabel": "Review trade" if trade_tone == "ready" else "Why watched?" if trade_tone == "watch" else "Show blockers",
                 "actionCode": "REVIEW_TRADE",
+                "canSubmitLive": trade_can_submit,
+                "submitEnabled": trade_can_submit and self._safety_snapshot.allows_live_submit and self.liveTradingKeyStatus == "PASS",
+                "submitLabel": f"Confirm live {trade_action}" if trade_can_submit else "Live submit locked",
+                "submitBlockedReason": trade_submit_blocked,
             }
         ]
 

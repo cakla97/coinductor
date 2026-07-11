@@ -11,6 +11,8 @@ class RunOptions:
     ai_summary: bool = True
     ai_proposals: bool = False
     live_preview: bool = True
+    live_submit: bool = False
+    live_confirm: str = ""
 
 
 @dataclass(frozen=True)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtGui import QDesktopServices, QGuiApplication
 
 from .ai_provider import AiProviderService
 from .application import CoinductorApplication
@@ -758,7 +758,21 @@ class AppController(QObject):
         self.safetyChanged.emit()
         self.readinessChanged.emit()
         self.actionsChanged.emit()
-        self.notificationRequested.emit(f"Safety stage changed to {self._safety_snapshot.label}.")
+        next_step = {
+            "PREVIEW_ONLY": "Next: prepare a trade preview. HOLD and blocked results remain review-only.",
+            "ARMED": "Next: enable guarded live submit when you are ready.",
+            "LIVE_ENABLED": "Guarded submit is available only for READY actions in Action Plan.",
+        }.get(normalized_target, "")
+        self.notificationRequested.emit(f"Safety stage changed to {self._safety_snapshot.label}. {next_step}".strip())
+
+    @Slot(str)
+    def copyText(self, text: str) -> None:
+        clipboard = QGuiApplication.clipboard()
+        if clipboard is None:
+            self.notificationRequested.emit("Clipboard is not available.")
+            return
+        clipboard.setText(text)
+        self.notificationRequested.emit("Confirmation phrase copied.")
 
     @Slot()
     def lockLiveSubmit(self) -> None:

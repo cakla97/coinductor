@@ -43,9 +43,9 @@ class SafetyService:
         current = self.store.load().stage
         target = target.upper()
         requirements = {
-            "PREVIEW_ONLY": ("SETUP", "ENABLE_MAINNET_PREVIEW", False),
-            "ARMED": ("PREVIEW_ONLY", "ARM_GUARDED_ACTIONS", True),
-            "LIVE_ENABLED": ("ARMED", "ENABLE_LIVE_GUARDED_SUBMIT", True),
+            "PREVIEW_ONLY": ("SETUP", "Enable mainnet preview", False),
+            "ARMED": ("PREVIEW_ONLY", "Arm guarded actions", True),
+            "LIVE_ENABLED": ("ARMED", "Enable guarded live submit", True),
         }
         if target not in requirements:
             raise ValueError(f"Unsupported safety transition target: {target}")

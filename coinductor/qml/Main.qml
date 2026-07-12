@@ -75,6 +75,47 @@ ApplicationWindow {
         toastTimer.restart()
     }
 
+    function openSafetyStageConfirmation(target, phrase) {
+        pendingSafetyTarget = target
+        pendingSafetyPhrase = phrase
+        safetyStageConfirmInput.text = ""
+        safetyStageConfirmDialog.open()
+    }
+
+    function safetyNextActionLabel() {
+        if (appController.safetyStageCode === "SETUP")
+            return appController.hasCompletedRealAnalysis ? "Enable preview" : "Run read-only analysis"
+        if (appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview)
+            return "Prepare trade preview"
+        if ((appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED")
+                && appController.liveTradingCheckStatus !== "Verified")
+            return "Verify live API permissions"
+        if (appController.safetyStageCode === "PREVIEW_ONLY")
+            return "Arm guarded actions"
+        if (appController.safetyStageCode === "ARMED")
+            return "Enable live submit"
+        return "Open Action Plan"
+    }
+
+    function runSafetyNextAction() {
+        if (appController.safetyStageCode === "SETUP" && !appController.hasCompletedRealAnalysis) {
+            runDialog.open()
+        } else if (appController.safetyStageCode === "SETUP") {
+            openSafetyStageConfirmation("PREVIEW_ONLY", "Enable mainnet preview")
+        } else if (appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview) {
+            appController.prepareTradePreview()
+        } else if ((appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED")
+                   && appController.liveTradingCheckStatus !== "Verified") {
+            appController.checkBinanceLiveTrading()
+        } else if (appController.safetyStageCode === "PREVIEW_ONLY") {
+            openSafetyStageConfirmation("ARMED", "Arm guarded actions")
+        } else if (appController.safetyStageCode === "ARMED") {
+            openSafetyStageConfirmation("LIVE_ENABLED", "Enable guarded live submit")
+        } else {
+            appController.setCurrentPage(3)
+        }
+    }
+
     function selectedValue(comboBox, fallback) {
         return comboBox.currentValue === undefined ? fallback : comboBox.currentValue
     }
@@ -1306,7 +1347,7 @@ ApplicationWindow {
                                 border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : appController.safetyAllowsLivePreview ? warning : border
                                 Text {
                                     anchors.centerIn: parent
-                                    text: appController.safetyStageCode.replace("_", " ")
+                                    text: appController.safetyStage
                                     color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : appController.safetyAllowsLivePreview ? warning : textSecondary
                                     font.pixelSize: 10
                                     font.bold: true
@@ -2027,7 +2068,7 @@ ApplicationWindow {
                                 border.color: warning
                                 Text {
                                     anchors.centerIn: parent
-                                    text: appController.safetyStageCode.replace("_", " ")
+                                    text: appController.safetyStage
                                     color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : warning
                                     font.pixelSize: 10
                                     font.bold: true
@@ -2249,7 +2290,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.row: 2
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 350
+                    Layout.preferredHeight: 410
                     radius: 7
                     color: panel
                     border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : border
@@ -2260,7 +2301,7 @@ ApplicationWindow {
                         RowLayout {
                             Layout.fillWidth: true
                             Text { Layout.fillWidth: true; text: "Safety stage"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                            Text { text: appController.safetyStageCode; color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : warning; font.pixelSize: 12; font.bold: true }
+                            Text { text: appController.safetyStage; color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : warning; font.pixelSize: 12; font.bold: true }
                         }
                         Text { Layout.fillWidth: true; text: appController.safetyDetail; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                         Text {
@@ -2268,7 +2309,7 @@ ApplicationWindow {
                             text: appController.safetyStageCode === "SETUP" && !appController.hasCompletedRealAnalysis
                                 ? "Next prerequisite: complete a real read-only analysis."
                                 : appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview
-                                    ? "Next prerequisite: review a PREVIEW_READY trade result. HOLD and blocked results do not unlock arming."
+                                    ? "Next prerequisite: prepare and review a ready trade preview. Hold and blocked results do not unlock arming."
                                     : (appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED") && appController.liveTradingCheckStatus !== "Verified"
                                         ? "Next prerequisite: verify the live API permissions for this app session."
                                         : "All prerequisites for the next Safety stage are available."
@@ -2276,6 +2317,22 @@ ApplicationWindow {
                             font.pixelSize: 11
                             font.bold: true
                             wrapMode: Text.WordWrap
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Recommended next step"
+                                color: textSecondary
+                                font.pixelSize: 11
+                                font.bold: true
+                            }
+                            Button {
+                                text: window.safetyNextActionLabel()
+                                highlighted: true
+                                enabled: !appController.busy && !appController.checkingLiveTrading
+                                onClicked: window.runSafetyNextAction()
+                            }
                         }
                         GridLayout {
                             Layout.fillWidth: true
@@ -2312,34 +2369,19 @@ ApplicationWindow {
                             Button {
                                 text: "Enable preview"
                                 enabled: appController.safetyStageCode === "SETUP" && appController.hasCompletedRealAnalysis
-                                onClicked: {
-                                    pendingSafetyTarget = "PREVIEW_ONLY"
-                                    pendingSafetyPhrase = "ENABLE_MAINNET_PREVIEW"
-                                    safetyStageConfirmInput.text = ""
-                                    safetyStageConfirmDialog.open()
-                                }
+                                onClicked: window.openSafetyStageConfirmation("PREVIEW_ONLY", "Enable mainnet preview")
                             }
                             Button {
                                 text: "Arm guarded actions"
                                 enabled: appController.safetyStageCode === "PREVIEW_ONLY"
                                     && appController.hasReadyLivePreview
                                     && appController.liveTradingCheckStatus === "Verified"
-                                onClicked: {
-                                    pendingSafetyTarget = "ARMED"
-                                    pendingSafetyPhrase = "ARM_GUARDED_ACTIONS"
-                                    safetyStageConfirmInput.text = ""
-                                    safetyStageConfirmDialog.open()
-                                }
+                                onClicked: window.openSafetyStageConfirmation("ARMED", "Arm guarded actions")
                             }
                             Button {
                                 text: "Enable live submit"
                                 enabled: appController.safetyStageCode === "ARMED" && appController.liveTradingCheckStatus === "Verified"
-                                onClicked: {
-                                    pendingSafetyTarget = "LIVE_ENABLED"
-                                    pendingSafetyPhrase = "ENABLE_LIVE_GUARDED_SUBMIT"
-                                    safetyStageConfirmInput.text = ""
-                                    safetyStageConfirmDialog.open()
-                                }
+                                onClicked: window.openSafetyStageConfirmation("LIVE_ENABLED", "Enable guarded live submit")
                             }
                             Item { Layout.fillWidth: true }
                             Button {
@@ -2837,19 +2879,26 @@ ApplicationWindow {
             }
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: safetyStageConfirmWarning.implicitHeight + 24
+                Layout.preferredHeight: 58
                 radius: 7
                 color: "#3a3020"
                 border.color: warning
-                Text {
-                    id: safetyStageConfirmWarning
+                RowLayout {
                     anchors.fill: parent
                     anchors.margins: 12
-                    text: "Type " + pendingSafetyPhrase + " exactly to continue."
-                    color: warning
-                    font.pixelSize: 12
-                    font.bold: true
-                    wrapMode: Text.WordWrap
+                    spacing: 12
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Confirmation phrase: " + pendingSafetyPhrase
+                        color: warning
+                        font.pixelSize: 12
+                        font.bold: true
+                        wrapMode: Text.WordWrap
+                    }
+                    Button {
+                        text: "Copy phrase"
+                        onClicked: appController.copyText(pendingSafetyPhrase)
+                    }
                 }
             }
             TextField {

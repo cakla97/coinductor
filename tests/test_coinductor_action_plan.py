@@ -70,6 +70,7 @@ def _set_trade_state(controller: AppController, action: str, *, live_enabled: bo
         warnings=0 if key_ready else 1,
         blocked=0,
     )
+    controller._live_trading_check_status = "Verified" if key_ready else "Not checked"
     return controller._build_action_plan_items()[0]
 
 
@@ -100,3 +101,14 @@ def test_buy_trade_submit_requires_live_stage_and_ready_key(monkeypatch, tmp_pat
     assert "key" in key_locked["submitBlockedReason"].lower()
     assert ready["submitEnabled"] is True
     assert ready["submitBlockedReason"] == ""
+
+
+def test_buy_trade_requires_fresh_live_permission_check(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    card = _set_trade_state(controller, "BUY", live_enabled=True, key_ready=True)
+    controller._live_trading_check_status = "Not checked"
+
+    card = controller._build_action_plan_items()[0]
+
+    assert card["submitEnabled"] is False
+    assert "this app session" in card["submitBlockedReason"]

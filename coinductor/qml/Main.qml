@@ -32,6 +32,8 @@ ApplicationWindow {
     property string fundingCurrency: "USDC"
     property var activeGuide: ({})
     property var activeActionPlanItem: ({})
+    property string pendingSafetyTarget: ""
+    property string pendingSafetyPhrase: ""
     property var wizardSteps: ["Exchange", "Portfolio", "Profile", "AI", "Binance API", "Review"]
     property var exchangeOptions: [
         { label: "Binance", value: "BINANCE" },
@@ -1954,8 +1956,8 @@ ApplicationWindow {
                                 border.color: warning
                                 Text {
                                     anchors.centerIn: parent
-                                    text: "PREVIEW ONLY"
-                                    color: warning
+                                    text: appController.safetyStageCode.replace("_", " ")
+                                    color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : warning
                                     font.pixelSize: 10
                                     font.bold: true
                                 }
@@ -2023,7 +2025,9 @@ ApplicationWindow {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: "Live order submission remains unavailable until a later guarded implementation with explicit confirmations."
+                            text: appController.safetyAllowsLiveSubmit
+                                ? "Guarded submission is available only inside a READY Action Plan item and still requires a fresh validation plus per-action confirmation."
+                                : "Analysis and recommendations do not submit orders. Live actions remain locked by the current Safety stage."
                             color: warning
                             font.pixelSize: 12
                             font.bold: true
@@ -2034,7 +2038,7 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 430
+                    Layout.preferredHeight: 485
                     radius: 7
                     color: panel
                     border.color: border
@@ -2137,22 +2141,125 @@ ApplicationWindow {
                                 wrapMode: Text.WordWrap
                             }
                         }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 12
+                            Button {
+                                text: appController.checkingLiveTrading ? "Checking permissions..." : "Verify live API permissions"
+                                enabled: appController.liveTradingKeyStatus === "PASS" && !appController.checkingLiveTrading
+                                onClicked: appController.checkBinanceLiveTrading()
+                            }
+                            Rectangle {
+                                Layout.preferredWidth: 96
+                                Layout.preferredHeight: 28
+                                radius: 5
+                                color: appController.liveTradingCheckStatus === "Verified" ? "#17372d" : "#3a3020"
+                                border.color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: appController.liveTradingCheckStatus.toUpperCase()
+                                    color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                }
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.liveTradingCheckDetail
+                                color: textSecondary
+                                font.pixelSize: 11
+                                wrapMode: Text.WordWrap
+                            }
+                        }
                     }
                 }
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 190
+                    Layout.preferredHeight: 350
                     radius: 7
                     color: panel
-                    border.color: border
+                    border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : border
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 18
-                        spacing: 10
-                        Text { text: "Execution remains locked"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                        Text { Layout.fillWidth: true; text: "Saving a live trading key only prepares credentials. Coinductor still requires the Safety stage, deterministic limits, and explicit guarded confirmations before any order can be submitted."; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
-                        Text { Layout.fillWidth: true; text: "Never enable withdrawals. If your public IP is dynamic, keep live execution locked unless you can reliably maintain the Binance trusted-IP whitelist."; color: warning; font.pixelSize: 12; font.bold: true; wrapMode: Text.WordWrap }
+                        spacing: 12
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text { Layout.fillWidth: true; text: "Safety stage"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            Text { text: appController.safetyStageCode; color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : warning; font.pixelSize: 12; font.bold: true }
+                        }
+                        Text { Layout.fillWidth: true; text: appController.safetyDetail; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: 3
+                            columnSpacing: 12
+                            Rectangle {
+                                Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: panelRaised; border.color: appController.safetyAllowsLivePreview ? accent : border
+                                Column {
+                                    anchors.fill: parent; anchors.margins: 10; spacing: 4
+                                    Text { text: "1. Preview"; color: textPrimary; font.bold: true }
+                                    Text { width: parent.width; text: "Mainnet validation without submit"; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                }
+                            }
+                            Rectangle {
+                                Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: panelRaised; border.color: appController.safetyStageCode === "ARMED" || appController.safetyAllowsLiveSubmit ? accent : border
+                                Column {
+                                    anchors.fill: parent; anchors.margins: 10; spacing: 4
+                                    Text { text: "2. Armed"; color: textPrimary; font.bold: true }
+                                    Text { width: parent.width; text: "Verified key, submit still locked"; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                }
+                            }
+                            Rectangle {
+                                Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: panelRaised; border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : border
+                                Column {
+                                    anchors.fill: parent; anchors.margins: 10; spacing: 4
+                                    Text { text: "3. Live enabled"; color: textPrimary; font.bold: true }
+                                    Text { width: parent.width; text: "Guarded submit can be confirmed"; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                }
+                            }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 10
+                            Button {
+                                text: "Enable preview"
+                                enabled: appController.safetyStageCode === "SETUP"
+                                onClicked: {
+                                    pendingSafetyTarget = "PREVIEW_ONLY"
+                                    pendingSafetyPhrase = "ENABLE_MAINNET_PREVIEW"
+                                    safetyStageConfirmInput.text = ""
+                                    safetyStageConfirmDialog.open()
+                                }
+                            }
+                            Button {
+                                text: "Arm guarded actions"
+                                enabled: appController.safetyStageCode === "PREVIEW_ONLY" && appController.liveTradingCheckStatus === "Verified"
+                                onClicked: {
+                                    pendingSafetyTarget = "ARMED"
+                                    pendingSafetyPhrase = "ARM_GUARDED_ACTIONS"
+                                    safetyStageConfirmInput.text = ""
+                                    safetyStageConfirmDialog.open()
+                                }
+                            }
+                            Button {
+                                text: "Enable live submit"
+                                enabled: appController.safetyStageCode === "ARMED" && appController.liveTradingCheckStatus === "Verified"
+                                onClicked: {
+                                    pendingSafetyTarget = "LIVE_ENABLED"
+                                    pendingSafetyPhrase = "ENABLE_LIVE_GUARDED_SUBMIT"
+                                    safetyStageConfirmInput.text = ""
+                                    safetyStageConfirmDialog.open()
+                                }
+                            }
+                            Item { Layout.fillWidth: true }
+                            Button {
+                                text: "Lock live submit"
+                                enabled: appController.safetyStageCode === "ARMED" || appController.safetyAllowsLiveSubmit
+                                onClicked: appController.lockLiveSubmit()
+                            }
+                        }
+                        Text { Layout.fillWidth: true; text: "Stage changes are local safety controls and never place an order. Every live trade or OCO protection still needs its own confirmation. If your public IP is dynamic, keep live execution locked unless the Binance whitelist is current."; color: warning; font.pixelSize: 11; font.bold: true; wrapMode: Text.WordWrap }
                     }
                 }
                 Item { Layout.fillWidth: true; Layout.preferredHeight: 44 }
@@ -2613,6 +2720,66 @@ ApplicationWindow {
                     }
                 }
                 Item { Layout.fillWidth: true; Layout.preferredHeight: 44 }
+            }
+        }
+    }
+
+    Dialog {
+        id: safetyStageConfirmDialog
+        title: "Confirm Safety stage change"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(680, window.width - 120)
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            width: safetyStageConfirmDialog.width - 48
+            spacing: 14
+            Text {
+                Layout.fillWidth: true
+                text: pendingSafetyTarget === "LIVE_ENABLED"
+                    ? "This enables guarded live submit controls. It does not place an order, but future READY actions can be submitted after their own confirmation."
+                    : pendingSafetyTarget === "ARMED"
+                        ? "This records that the live API permissions were verified and arms guarded workflows. Live submit remains locked."
+                        : "This enables mainnet previews only. No order or exchange-changing action can be submitted."
+                color: textSecondary
+                font.pixelSize: 13
+                wrapMode: Text.WordWrap
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: safetyStageConfirmWarning.implicitHeight + 24
+                radius: 7
+                color: "#3a3020"
+                border.color: warning
+                Text {
+                    id: safetyStageConfirmWarning
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    text: "Type " + pendingSafetyPhrase + " exactly to continue."
+                    color: warning
+                    font.pixelSize: 12
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                }
+            }
+            TextField {
+                id: safetyStageConfirmInput
+                Layout.fillWidth: true
+                placeholderText: pendingSafetyPhrase
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                Button { text: "Cancel"; onClicked: safetyStageConfirmDialog.close() }
+                Button {
+                    text: "Change Safety stage"
+                    enabled: safetyStageConfirmInput.text === pendingSafetyPhrase
+                    onClicked: {
+                        appController.promoteSafetyStage(pendingSafetyTarget, safetyStageConfirmInput.text)
+                        safetyStageConfirmDialog.close()
+                    }
+                }
             }
         }
     }

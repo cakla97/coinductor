@@ -9,7 +9,7 @@ from .ai_provider import AiProviderService
 from .application import CoinductorApplication
 from .assistant import ProviderBackedAssistant
 from .asset_policy_store import AssetPolicyStore
-from .connection_check import ConnectionCheckService
+from .connection_check import ConnectionCheckService, LiveTradingCheckService
 from .desktop_store import DesktopStore
 from .env_writer import EnvWriter
 from .first_portfolio_planner import FirstPortfolioPlanner
@@ -62,6 +62,21 @@ class ConnectionCheckWorker(QObject):
             self.finished.emit()
 
 
+class LiveTradingCheckWorker(QObject):
+    completed = Signal(object)
+    failed = Signal(str)
+    finished = Signal()
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            self.completed.emit(LiveTradingCheckService().check_binance_live_trading())
+        except Exception as exc:
+            self.failed.emit(str(exc))
+        finally:
+            self.finished.emit()
+
+
 class AiProviderHealthWorker(QObject):
     completed = Signal(object)
     failed = Signal(str)
@@ -103,6 +118,7 @@ class AppController(QObject):
     assistantChanged = Signal()
     setupChanged = Signal()
     connectionChanged = Signal()
+    liveTradingCheckChanged = Signal()
     aiProviderChanged = Signal()
     userProfileChanged = Signal()
     safetyChanged = Signal()
@@ -145,6 +161,9 @@ class AppController(QObject):
         self._checking_connection = False
         self._connection_status = "Not checked"
         self._connection_detail = "Run the read-only check from Settings before live analysis."
+        self._checking_live_trading = False
+        self._live_trading_check_status = "Not checked"
+        self._live_trading_check_detail = "Verify live-key permissions before arming guarded execution."
         self._checking_ai_provider = False
         self._assistant_busy = False
         self._ai_provider_health_status = "Not checked"
@@ -180,6 +199,8 @@ class AppController(QObject):
         self._worker: AnalysisWorker | None = None
         self._connection_thread: QThread | None = None
         self._connection_worker: ConnectionCheckWorker | None = None
+        self._live_trading_check_thread: QThread | None = None
+        self._live_trading_check_worker: LiveTradingCheckWorker | None = None
         self._ai_provider_thread: QThread | None = None
         self._ai_provider_worker: AiProviderHealthWorker | None = None
         self._assistant_thread: QThread | None = None
@@ -320,6 +341,18 @@ class AppController(QObject):
     @Property(str, notify=setupChanged)
     def liveTradingKeyDetail(self) -> str:
         return self._setup_check("Binance live trading").get("detail", "Optional; guarded execution only")
+
+    @Property(bool, notify=liveTradingCheckChanged)
+    def checkingLiveTrading(self) -> bool:
+        return self._checking_live_trading
+
+    @Property(str, notify=liveTradingCheckChanged)
+    def liveTradingCheckStatus(self) -> str:
+        return self._live_trading_check_status
+
+    @Property(str, notify=liveTradingCheckChanged)
+    def liveTradingCheckDetail(self) -> str:
+        return self._live_trading_check_detail
 
     @Property("QVariantList", notify=aiProviderChanged)
     def aiProviderChecks(self) -> list[dict[str, str]]:
@@ -667,7 +700,59 @@ class AppController(QObject):
                 "BINANCE_LIVE_TRADE_API_SECRET": api_secret,
             }
         )
+        self._live_trading_check_status = "Not checked"
+        self._live_trading_check_detail = "Credentials changed. Verify live-key permissions again."
         self.refreshSetup()
+        self.liveTradingCheckChanged.emit()
+
+    @Slot()
+    def checkBinanceLiveTrading(self) -> None:
+        if self._checking_live_trading:
+            return
+        self._checking_live_trading = True
+        self._live_trading_check_status = "Checking"
+        self._live_trading_check_detail = "Checking live-key permissions without placing an order..."
+        self.liveTradingCheckChanged.emit()
+
+        self._live_trading_check_thread = QThread(self)
+        self._live_trading_check_worker = LiveTradingCheckWorker()
+        self._live_trading_check_worker.moveToThread(self._live_trading_check_thread)
+        self._live_trading_check_thread.started.connect(self._live_trading_check_worker.run)
+        self._live_trading_check_worker.completed.connect(self._on_live_trading_check_completed)
+        self._live_trading_check_worker.failed.connect(self._on_live_trading_check_failed)
+        self._live_trading_check_worker.finished.connect(self._live_trading_check_thread.quit)
+        self._live_trading_check_worker.finished.connect(self._live_trading_check_worker.deleteLater)
+        self._live_trading_check_thread.finished.connect(self._live_trading_check_thread.deleteLater)
+        self._live_trading_check_thread.finished.connect(self._clear_live_trading_check_worker)
+        self._live_trading_check_thread.start()
+
+    @Slot(str, str)
+    def promoteSafetyStage(self, target: str, confirmation: str) -> None:
+        try:
+            self._safety_snapshot = self._safety_service.transition(
+                target,
+                confirmation,
+                live_key_verified=self._live_trading_check_status == "Verified",
+            )
+        except ValueError as exc:
+            self.notificationRequested.emit(str(exc))
+            return
+        self._refresh_readiness()
+        self._action_plan_items = self._build_action_plan_items()
+        self.safetyChanged.emit()
+        self.readinessChanged.emit()
+        self.actionsChanged.emit()
+        self.notificationRequested.emit(f"Safety stage changed to {self._safety_snapshot.label}.")
+
+    @Slot()
+    def lockLiveSubmit(self) -> None:
+        self._safety_snapshot = self._safety_service.lock_live_submit()
+        self._refresh_readiness()
+        self._action_plan_items = self._build_action_plan_items()
+        self.safetyChanged.emit()
+        self.readinessChanged.emit()
+        self.actionsChanged.emit()
+        self.notificationRequested.emit("Live submissions locked. Mainnet preview remains available.")
 
     @Slot(str, str)
     def saveLocalAiProvider(self, base_url: str, model: str) -> None:
@@ -955,6 +1040,20 @@ class AppController(QObject):
         self.readinessChanged.emit()
 
     @Slot(object)
+    def _on_live_trading_check_completed(self, result: ConnectionCheckResult) -> None:
+        self._live_trading_check_status = "Verified" if result.status == "PASS" else "Blocked"
+        self._live_trading_check_detail = result.detail
+        self._action_plan_items = self._build_action_plan_items()
+        self.liveTradingCheckChanged.emit()
+        self.actionsChanged.emit()
+
+    @Slot(str)
+    def _on_live_trading_check_failed(self, message: str) -> None:
+        self._live_trading_check_status = "Blocked"
+        self._live_trading_check_detail = message
+        self.liveTradingCheckChanged.emit()
+
+    @Slot(object)
     def _on_ai_provider_completed(self, result: AiProviderHealthResult) -> None:
         self._ai_provider_health_status = "Connected" if result.status == "PASS" else "Blocked"
         self._ai_provider_health_detail = result.detail
@@ -987,6 +1086,13 @@ class AppController(QObject):
         self._connection_thread = None
         self._checking_connection = False
         self.connectionChanged.emit()
+
+    @Slot()
+    def _clear_live_trading_check_worker(self) -> None:
+        self._live_trading_check_worker = None
+        self._live_trading_check_thread = None
+        self._checking_live_trading = False
+        self.liveTradingCheckChanged.emit()
 
     @Slot()
     def _clear_ai_provider_worker(self) -> None:
@@ -1105,6 +1211,8 @@ class AppController(QObject):
             trade_submit_blocked = "Live submit is locked until the Safety stage is promoted to LIVE_ENABLED."
         elif self.liveTradingKeyStatus != "PASS":
             trade_submit_blocked = "Live trading key is not configured or has not passed setup checks."
+        elif self._live_trading_check_status != "Verified":
+            trade_submit_blocked = "Verify live-key permissions in Live Actions for this app session."
         else:
             trade_submit_blocked = ""
 
@@ -1118,7 +1226,10 @@ class AppController(QObject):
                 "primaryLabel": "Review trade" if trade_tone == "ready" else "Why watched?" if trade_tone == "watch" else "Show blockers",
                 "actionCode": "REVIEW_TRADE",
                 "canSubmitLive": trade_can_submit,
-                "submitEnabled": trade_can_submit and self._safety_snapshot.allows_live_submit and self.liveTradingKeyStatus == "PASS",
+                "submitEnabled": trade_can_submit
+                and self._safety_snapshot.allows_live_submit
+                and self.liveTradingKeyStatus == "PASS"
+                and self._live_trading_check_status == "Verified",
                 "submitLabel": f"Confirm live {trade_action}" if trade_can_submit else "Live submit locked",
                 "submitBlockedReason": trade_submit_blocked,
             }
@@ -1165,6 +1276,8 @@ class AppController(QObject):
                 blocked_reason = "OCO submit is locked until the Safety stage is promoted to LIVE_ENABLED."
             elif self.liveTradingKeyStatus != "PASS":
                 blocked_reason = "Live trading key is not configured or has not passed setup checks."
+            elif self._live_trading_check_status != "Verified":
+                blocked_reason = "Verify live-key permissions in Live Actions for this app session."
             else:
                 blocked_reason = ""
             card.update(
@@ -1173,7 +1286,8 @@ class AppController(QObject):
                     "actionCode": "REVIEW_OCO",
                     "submitEnabled": can_submit
                     and self._safety_snapshot.allows_live_submit
-                    and self.liveTradingKeyStatus == "PASS",
+                    and self.liveTradingKeyStatus == "PASS"
+                    and self._live_trading_check_status == "Verified",
                     "submitLabel": "Confirm OCO protection",
                     "submitBlockedReason": blocked_reason,
                 }

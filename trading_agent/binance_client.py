@@ -184,6 +184,31 @@ class BinanceClient:
         if enabled:
             raise BinanceApiError(f"Binance API key is not read-only. Disable these permissions: {', '.join(enabled)}")
 
+    def assert_live_spot_permissions(self) -> None:
+        if self.use_testnet:
+            raise BinanceApiError("Live Spot permission check is not available on Spot Testnet.")
+        permissions = self._signed_get("/sapi/v1/account/apiRestrictions")
+        if not permissions.get("enableReading"):
+            raise BinanceApiError("Live Binance API key must have Reading enabled.")
+        if not permissions.get("enableSpotAndMarginTrading"):
+            raise BinanceApiError("Live Binance API key must have Spot trading enabled.")
+        forbidden_flags = {
+            "withdrawals": permissions.get("enableWithdrawals"),
+            "internal transfer": permissions.get("enableInternalTransfer"),
+            "universal transfer": permissions.get("permitsUniversalTransfer"),
+            "margin": permissions.get("enableMargin"),
+            "futures": permissions.get("enableFutures"),
+            "vanilla options": permissions.get("enableVanillaOptions"),
+            "portfolio margin": permissions.get("enablePortfolioMarginTrading"),
+        }
+        enabled = [name for name, value in forbidden_flags.items() if value]
+        if enabled:
+            raise BinanceApiError(
+                "Live Binance API key has forbidden permissions enabled: " + ", ".join(enabled)
+            )
+        if not permissions.get("ipRestrict"):
+            raise BinanceApiError("Live Binance API key must be restricted to trusted IP addresses.")
+
     def _get_spot_balances(self) -> dict[str, tuple[Decimal, Decimal]]:
         payload = self._signed_get("/api/v3/account", {"omitZeroBalances": "true"})
         balances: dict[str, tuple[Decimal, Decimal]] = {}

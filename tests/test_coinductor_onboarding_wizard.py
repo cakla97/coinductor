@@ -18,9 +18,11 @@ def test_onboarding_wizard_is_first_run_gate(monkeypatch, tmp_path) -> None:
     assert controller.userProfileConfigured is True
     assert controller.onboardingWizardVisible is True
 
+    controller.setCurrentPage(4)
     controller.finishOnboardingWizard()
 
     assert controller.onboardingWizardVisible is False
+    assert controller.currentPage == 0
 
     controller.deleteUserProfile()
 

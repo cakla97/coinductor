@@ -29,6 +29,7 @@ class DesktopStore:
             portfolio: tuple[dict[str, str], ...] = ()
             strategies: tuple[dict[str, str], ...] = ()
             position_protection: dict[str, object] | None = None
+            has_ready_live_preview = False
             if latest is not None:
                 report_path = self._report_path(latest)
                 if report_path is not None and report_path.exists():
@@ -42,8 +43,16 @@ class DesktopStore:
                 portfolio = self._portfolio(connection, int(latest["id"]))
                 strategies = self._strategies(connection, int(latest["id"]))
                 position_protection = self._position_protection(connection, int(latest["id"]))
+                has_ready_live_preview = self._has_ready_live_preview(connection)
             history = self._history(connection)
-            return DesktopSnapshot(latest_result, portfolio, strategies, history, position_protection)
+            return DesktopSnapshot(
+                latest_result,
+                portfolio,
+                strategies,
+                history,
+                position_protection,
+                has_ready_live_preview,
+            )
         finally:
             connection.close()
 
@@ -216,6 +225,19 @@ class DesktopStore:
             "intentId": str(row["intent_id"] or ""),
             "orderListId": str(row["order_list_id"] or ""),
         }
+
+    def _has_ready_live_preview(self, connection: sqlite3.Connection) -> bool:
+        if not self._table_exists(connection, "live_orders"):
+            return False
+        row = connection.execute(
+            """
+            select 1
+            from live_orders
+            where status = 'PREVIEW_READY' and submitted = 0
+            limit 1
+            """
+        ).fetchone()
+        return row is not None
 
     def _rebalancing_basket(self, connection: sqlite3.Connection, run_id: int) -> str:
         if not self._table_exists(connection, "rebalancing_bot_assets"):

@@ -50,3 +50,9 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "ARM_GUARDED_ACTIONS" in qml
     assert "ENABLE_LIVE_GUARDED_SUBMIT" in qml
     assert "appController.lockLiveSubmit" in qml
+    assert "Safety & readiness" in qml
+    assert "appController.hasCompletedRealAnalysis" in qml
+    assert "appController.hasReadyLivePreview" in qml
+    assert "Layout.row: 2" in qml
+    assert "Layout.row: 3" in qml
+    assert "Layout.row: 4" in qml

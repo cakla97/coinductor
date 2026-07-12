@@ -354,6 +354,14 @@ class AppController(QObject):
     def liveTradingCheckDetail(self) -> str:
         return self._live_trading_check_detail
 
+    @Property(bool, notify=dataChanged)
+    def hasCompletedRealAnalysis(self) -> bool:
+        return self._snapshot.latest_run is not None
+
+    @Property(bool, notify=dataChanged)
+    def hasReadyLivePreview(self) -> bool:
+        return self._snapshot.has_ready_live_preview
+
     @Property("QVariantList", notify=aiProviderChanged)
     def aiProviderChecks(self) -> list[dict[str, str]]:
         return list(self._ai_provider_snapshot.checks)
@@ -543,6 +551,7 @@ class AppController(QObject):
     @Slot()
     def finishOnboardingWizard(self) -> None:
         self.closeOnboardingWizard()
+        self.setCurrentPage(0)
 
     @Slot()
     def refreshSetup(self) -> None:
@@ -728,9 +737,16 @@ class AppController(QObject):
 
     @Slot(str, str)
     def promoteSafetyStage(self, target: str, confirmation: str) -> None:
+        normalized_target = target.strip().upper()
+        if normalized_target == "PREVIEW_ONLY" and self._snapshot.latest_run is None:
+            self.notificationRequested.emit("Complete a real read-only analysis before enabling mainnet preview.")
+            return
+        if normalized_target == "ARMED" and not self._snapshot.has_ready_live_preview:
+            self.notificationRequested.emit("Review at least one PREVIEW_READY live trade result before arming guarded actions.")
+            return
         try:
             self._safety_snapshot = self._safety_service.transition(
-                target,
+                normalized_target,
                 confirmation,
                 live_key_verified=self._live_trading_check_status == "Verified",
             )

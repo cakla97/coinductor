@@ -73,6 +73,9 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
             submitted integer, order_list_id text, confirmation_required text,
             reason text, message text
         );
+        create table live_orders (
+            run_id integer, status text, submitted integer
+        );
         """
     )
     connection.execute(
@@ -109,6 +112,7 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
     connection.execute(
         "insert into oco_protection_orders values (1, 'oco-live-1', 'BTCUSDC', 'SELL', 'READY', '0.001', '0.001', '0.001', '110000', '90000', '110', '90', 0, '', 'CONFIRM_MAINNET_OCO', 'SELL OCO protection preview is valid.', '')"
     )
+    connection.execute("insert into live_orders values (1, 'PREVIEW_READY', 0)")
     connection.commit()
     connection.close()
 
@@ -129,5 +133,6 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
     assert snapshot.position_protection["status"] == "Ready"
     assert snapshot.position_protection["canSubmitOco"] is True
     assert snapshot.position_protection["parameters"][2]["value"] == "110000"
+    assert snapshot.has_ready_live_preview is True
     assert snapshot.run_history[0]["dataMode"] == "MOCK"
     assert snapshot.run_history[1]["dataMode"] == "REAL"

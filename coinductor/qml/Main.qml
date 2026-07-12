@@ -1266,6 +1266,74 @@ ApplicationWindow {
                     }
                 }
 
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: overviewSafetyContent.implicitHeight + 32
+                    radius: 7
+                    color: panel
+                    border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e"
+                        : appController.safetyAllowsLivePreview ? warning : border
+                    ColumnLayout {
+                        id: overviewSafetyContent
+                        anchors.fill: parent
+                        anchors.margins: 16
+                        spacing: 8
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 3
+                                Text { text: "Safety & readiness"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: appController.safetyStageCode === "SETUP"
+                                        ? appController.hasCompletedRealAnalysis
+                                            ? "Real analysis is available. Continue in Live Actions when you want to enable mainnet preview."
+                                            : "Setup is complete and exchange-changing actions are locked. Start with a real read-only analysis."
+                                        : appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview
+                                            ? "Mainnet preview is enabled. Wait for a valid BUY setup and review its preview before arming guarded actions."
+                                            : appController.safetyDetail
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            Rectangle {
+                                Layout.preferredWidth: 126
+                                Layout.preferredHeight: 30
+                                radius: 5
+                                color: appController.safetyAllowsLiveSubmit ? "#45262a" : appController.safetyAllowsLivePreview ? "#3a3020" : panelRaised
+                                border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : appController.safetyAllowsLivePreview ? warning : border
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: appController.safetyStageCode.replace("_", " ")
+                                    color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : appController.safetyAllowsLivePreview ? warning : textSecondary
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                }
+                            }
+                            Button {
+                                text: appController.safetyStageCode === "SETUP" && !appController.hasCompletedRealAnalysis
+                                    ? "Run analysis"
+                                    : "Open Live Actions"
+                                onClicked: {
+                                    if (appController.safetyStageCode === "SETUP" && !appController.hasCompletedRealAnalysis)
+                                        runDialog.open()
+                                    else
+                                        appController.setCurrentPage(1)
+                                }
+                            }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "No Safety stage change places an order. Live BUY and OCO protection always require a separate confirmation and fresh deterministic validation."
+                            color: warning
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
                 ProgressBar {
                     Layout.fillWidth: true
                     visible: appController.busy
@@ -1899,13 +1967,15 @@ ApplicationWindow {
             clip: true
             visible: appController.currentPage === 1
 
-            ColumnLayout {
+            GridLayout {
                 x: 28
                 y: 28
                 width: Math.max(window.width - 288, 692)
-                spacing: 18
-                Text { text: "Live Actions"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                columns: 1
+                rowSpacing: 18
+                Text { Layout.row: 0; text: "Live Actions"; color: textPrimary; font.pixelSize: 26; font.bold: true }
                 RowLayout {
+                    Layout.row: 1
                     Layout.fillWidth: true
                     Text {
                         Layout.fillWidth: true
@@ -1925,6 +1995,7 @@ ApplicationWindow {
                 }
 
                 Rectangle {
+                    Layout.row: 4
                     Layout.fillWidth: true
                     Layout.preferredHeight: 330
                     radius: 7
@@ -2037,6 +2108,7 @@ ApplicationWindow {
                 }
 
                 Rectangle {
+                    Layout.row: 3
                     Layout.fillWidth: true
                     Layout.preferredHeight: 485
                     radius: 7
@@ -2175,6 +2247,7 @@ ApplicationWindow {
                 }
 
                 Rectangle {
+                    Layout.row: 2
                     Layout.fillWidth: true
                     Layout.preferredHeight: 350
                     radius: 7
@@ -2190,6 +2263,20 @@ ApplicationWindow {
                             Text { text: appController.safetyStageCode; color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : warning; font.pixelSize: 12; font.bold: true }
                         }
                         Text { Layout.fillWidth: true; text: appController.safetyDetail; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.safetyStageCode === "SETUP" && !appController.hasCompletedRealAnalysis
+                                ? "Next prerequisite: complete a real read-only analysis."
+                                : appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview
+                                    ? "Next prerequisite: review a PREVIEW_READY trade result. HOLD and blocked results do not unlock arming."
+                                    : (appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED") && appController.liveTradingCheckStatus !== "Verified"
+                                        ? "Next prerequisite: verify the live API permissions for this app session."
+                                        : "All prerequisites for the next Safety stage are available."
+                            color: warning
+                            font.pixelSize: 11
+                            font.bold: true
+                            wrapMode: Text.WordWrap
+                        }
                         GridLayout {
                             Layout.fillWidth: true
                             columns: 3
@@ -2224,7 +2311,7 @@ ApplicationWindow {
                             spacing: 10
                             Button {
                                 text: "Enable preview"
-                                enabled: appController.safetyStageCode === "SETUP"
+                                enabled: appController.safetyStageCode === "SETUP" && appController.hasCompletedRealAnalysis
                                 onClicked: {
                                     pendingSafetyTarget = "PREVIEW_ONLY"
                                     pendingSafetyPhrase = "ENABLE_MAINNET_PREVIEW"
@@ -2234,7 +2321,9 @@ ApplicationWindow {
                             }
                             Button {
                                 text: "Arm guarded actions"
-                                enabled: appController.safetyStageCode === "PREVIEW_ONLY" && appController.liveTradingCheckStatus === "Verified"
+                                enabled: appController.safetyStageCode === "PREVIEW_ONLY"
+                                    && appController.hasReadyLivePreview
+                                    && appController.liveTradingCheckStatus === "Verified"
                                 onClicked: {
                                     pendingSafetyTarget = "ARMED"
                                     pendingSafetyPhrase = "ARM_GUARDED_ACTIONS"
@@ -2262,7 +2351,7 @@ ApplicationWindow {
                         Text { Layout.fillWidth: true; text: "Stage changes are local safety controls and never place an order. Every live trade or OCO protection still needs its own confirmation. If your public IP is dynamic, keep live execution locked unless the Binance whitelist is current."; color: warning; font.pixelSize: 11; font.bold: true; wrapMode: Text.WordWrap }
                     }
                 }
-                Item { Layout.fillWidth: true; Layout.preferredHeight: 44 }
+                Item { Layout.row: 5; Layout.fillWidth: true; Layout.preferredHeight: 44 }
             }
         }
 

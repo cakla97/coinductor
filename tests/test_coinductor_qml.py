@@ -85,8 +85,10 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "visible: appController.currentPage === 8" in qml
     assert 'text: "Next review"' in qml
     assert "appController.nextReview" in qml
-    assert 'text: "Run sooner when"' in qml
-    assert 'text: "Before another run"' in qml
+    assert 'text: "Run earlier if"' in qml
+    assert "These are optional triggers for refreshing the analysis" in qml
+    assert 'text: "Resolve before rerunning"' in qml
+    assert "Repeating the same analysis alone will not remove them." in qml
     assert "AI commentary does not control this timing." in qml
     assert "sourceComponent: nextReviewPanelComponent" in qml
     assert "safetyPhraseRow.implicitHeight + 24" in qml

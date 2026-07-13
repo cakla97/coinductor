@@ -1972,7 +1972,14 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 5
-                                Text { text: "Run sooner when"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                Text { text: "Run earlier if"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "These are optional triggers for refreshing the analysis before the scheduled review. You do not need to make them happen."
+                                    color: textSecondary
+                                    font.pixelSize: 10
+                                    wrapMode: Text.WordWrap
+                                }
                                 Repeater {
                                     model: appController.nextReview.triggers || []
                                     delegate: Text {
@@ -1988,7 +1995,14 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 5
-                                Text { text: "Before another run"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                Text { text: "Resolve before rerunning"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: "These blockers need a manual or funding change. Repeating the same analysis alone will not remove them."
+                                    color: textSecondary
+                                    font.pixelSize: 10
+                                    wrapMode: Text.WordWrap
+                                }
                                 Text {
                                     Layout.fillWidth: true
                                     visible: (appController.nextReview.manualSteps || []).length === 0

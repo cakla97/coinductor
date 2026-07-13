@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import re
 import sqlite3
@@ -29,6 +30,7 @@ class DesktopStore:
             portfolio: tuple[dict[str, str], ...] = ()
             strategies: tuple[dict[str, str], ...] = ()
             position_protection: dict[str, object] | None = None
+            live_action_lifecycle: dict[str, object] | None = None
             has_ready_live_preview = False
             if latest is not None:
                 report_path = self._report_path(latest)
@@ -44,6 +46,7 @@ class DesktopStore:
                 strategies = self._strategies(connection, int(latest["id"]))
                 position_protection = self._position_protection(connection, int(latest["id"]))
                 has_ready_live_preview = self._has_ready_live_preview(connection)
+                live_action_lifecycle = self._live_action_lifecycle(connection)
             history = self._history(connection)
             return DesktopSnapshot(
                 latest_result,
@@ -52,6 +55,7 @@ class DesktopStore:
                 history,
                 position_protection,
                 has_ready_live_preview,
+                live_action_lifecycle,
             )
         finally:
             connection.close()
@@ -238,6 +242,217 @@ class DesktopStore:
             """
         ).fetchone()
         return row is not None
+
+    def _live_action_lifecycle(self, connection: sqlite3.Connection) -> dict[str, object] | None:
+        required_live_columns = {
+            "run_id", "intent_id", "symbol", "side", "status", "submitted",
+            "order_id", "executed_quantity", "cumulative_quote_qty",
+        }
+        if not self._table_exists(connection, "live_orders"):
+            return None
+        if not required_live_columns.issubset(self._columns(connection, "live_orders")):
+            return None
+
+        buy = connection.execute(
+            """
+            select live.*, runs.started_at
+            from live_orders live
+            left join runs on runs.id = live.run_id
+            where live.side = 'BUY'
+              and live.submitted = 1
+              and live.status not in ('SUBMIT_ERROR', 'SUBMIT_SKIPPED')
+            order by live.run_id desc, live.rowid desc
+            limit 1
+            """
+        ).fetchone()
+        if buy is None:
+            return None
+
+        intent_id = str(buy["intent_id"] or "")
+        symbol = str(buy["symbol"] or "")
+        buy_status = str(buy["status"] or "SUBMITTED").upper()
+        sell = connection.execute(
+            """
+            select live.*, runs.started_at
+            from live_orders live
+            left join runs on runs.id = live.run_id
+            where live.intent_id = ? and live.side = 'SELL'
+              and live.submitted = 1 and live.status = 'FILLED'
+            order by live.run_id desc, live.rowid desc
+            limit 1
+            """,
+            (f"sell-{intent_id}",),
+        ).fetchone()
+
+        oco = None
+        required_oco_columns = {
+            "run_id", "intent_id", "status", "submitted", "order_list_id",
+            "take_profit_price", "stop_loss_stop_price",
+        }
+        if self._table_exists(connection, "oco_protection_orders") and required_oco_columns.issubset(
+            self._columns(connection, "oco_protection_orders")
+        ):
+            oco = connection.execute(
+                """
+                select protection.*, runs.started_at
+                from oco_protection_orders protection
+                left join runs on runs.id = protection.run_id
+                where protection.intent_id = ?
+                order by protection.run_id desc, protection.rowid desc
+                limit 1
+                """,
+                (f"oco-{intent_id}",),
+            ).fetchone()
+
+        oco_check = None
+        if oco is not None and self._table_exists(connection, "oco_status_checks"):
+            required_check_columns = {
+                "run_id", "intent_id", "order_list_id", "list_order_status", "list_status_type",
+            }
+            if required_check_columns.issubset(self._columns(connection, "oco_status_checks")):
+                oco_check = connection.execute(
+                    """
+                    select status_check.*, runs.started_at
+                    from oco_status_checks status_check
+                    left join runs on runs.id = status_check.run_id
+                    where status_check.intent_id = ? or status_check.order_list_id = ?
+                    order by status_check.run_id desc, status_check.rowid desc
+                    limit 1
+                    """,
+                    (str(oco["intent_id"] or ""), str(oco["order_list_id"] or "")),
+                ).fetchone()
+
+        quantity = self._decimal(buy["executed_quantity"])
+        buy_quote = self._decimal(buy["cumulative_quote_qty"])
+        entry_price = buy_quote / quantity if quantity > 0 else Decimal("0")
+        current_price = self._latest_market_price(connection, symbol)
+        current_value = quantity * current_price if quantity > 0 and current_price is not None else None
+        open_pnl = current_value - buy_quote if current_value is not None else None
+
+        sell_quote = self._decimal(sell["cumulative_quote_qty"]) if sell is not None else None
+        sell_quantity = self._decimal(sell["executed_quantity"]) if sell is not None else None
+        allocated_buy_quote = buy_quote
+        if sell_quantity is not None and quantity > 0:
+            allocated_buy_quote = buy_quote * min(sell_quantity, quantity) / quantity
+        realized_pnl = sell_quote - allocated_buy_quote if sell_quote is not None else None
+
+        protection_submitted = bool(oco["submitted"]) if oco is not None else False
+        protection_status = str(oco["status"] or "") if oco is not None else ""
+        list_order_status = str(oco_check["list_order_status"] or "") if oco_check is not None else ""
+        list_status_type = str(oco_check["list_status_type"] or "") if oco_check is not None else ""
+        protection_active = protection_submitted and sell is None and list_order_status.upper() not in {
+            "ALL_DONE", "DONE", "FILLED", "REJECT", "EXPIRED",
+        }
+
+        if sell is not None:
+            status = "Closed"
+            tone = "ready"
+            detail = "The protected position cycle is closed and the filled SELL has been reconciled locally."
+        elif protection_active:
+            status = "Protected"
+            tone = "ready"
+            detail = "The BUY is filled and Binance-hosted OCO protection is active while Coinductor is offline."
+        elif buy_status == "FILLED":
+            status = "Protection needed"
+            tone = "watch"
+            detail = "The BUY is filled, but active Binance-hosted OCO protection has not been confirmed yet."
+        else:
+            status = "Submitted"
+            tone = "watch"
+            detail = "The BUY was submitted and its latest locally recorded fill status is still being monitored."
+
+        last_checked = self._latest_timestamp(buy, oco, oco_check, sell)
+        pnl = realized_pnl if sell is not None else open_pnl
+        pnl_basis = allocated_buy_quote if sell is not None else buy_quote
+        pnl_pct = pnl * Decimal("100") / pnl_basis if pnl is not None and pnl_basis > 0 else None
+        stages = (
+            self._lifecycle_stage("Submitted", "Done", f"BUY order {buy['order_id'] or 'ID pending'}"),
+            self._lifecycle_stage(
+                "Filled",
+                "Done" if buy_status == "FILLED" else "Active",
+                f"{self._number(quantity)} {self._base_asset(symbol)}" if quantity > 0 else "Awaiting executed quantity",
+            ),
+            self._lifecycle_stage(
+                "Protected",
+                "Done" if protection_submitted else "Action needed" if buy_status == "FILLED" else "Pending",
+                f"OCO {oco['order_list_id']}" if protection_submitted and oco is not None else "OCO not active",
+            ),
+            self._lifecycle_stage(
+                "Closed",
+                "Done" if sell is not None else "Pending",
+                f"SELL order {sell['order_id']}" if sell is not None else "Waiting for an exit leg",
+            ),
+        )
+        return {
+            "title": "Live position lifecycle",
+            "status": status,
+            "tone": tone,
+            "detail": detail,
+            "parameters": (
+                {"label": "Symbol", "value": symbol},
+                {"label": "BUY order ID", "value": str(buy["order_id"] or "Pending")},
+                {"label": "Quantity", "value": self._number(quantity)},
+                {"label": "Entry price", "value": self._number(entry_price)},
+                {"label": "Current / exit price", "value": self._number(current_price if sell is None else self._safe_price(sell_quote, sell_quantity))},
+                {"label": "PnL (fees excluded)", "value": self._pnl(pnl, pnl_pct)},
+                {"label": "Take profit", "value": self._number(oco["take_profit_price"] if oco is not None else None)},
+                {"label": "Stop loss", "value": self._number(oco["stop_loss_stop_price"] if oco is not None else None)},
+                {"label": "OCO list ID", "value": str(oco["order_list_id"] or "Not active") if oco is not None else "Not active"},
+                {"label": "OCO exchange status", "value": " / ".join(part for part in (list_status_type, list_order_status) if part) or protection_status or "Not checked"},
+                {"label": "Last synchronized", "value": last_checked or "Not recorded"},
+            ),
+            "lifecycleSteps": stages,
+            "primaryLabel": "View lifecycle",
+            "actionCode": "REVIEW_LIFECYCLE",
+        }
+
+    def _latest_market_price(self, connection: sqlite3.Connection, symbol: str) -> Decimal | None:
+        if not self._table_exists(connection, "market_snapshots"):
+            return None
+        if not {"run_id", "symbol", "price"}.issubset(self._columns(connection, "market_snapshots")):
+            return None
+        row = connection.execute(
+            "select price from market_snapshots where symbol = ? order by run_id desc, rowid desc limit 1",
+            (symbol,),
+        ).fetchone()
+        return self._decimal(row["price"]) if row is not None else None
+
+    def _lifecycle_stage(self, label: str, status: str, detail: str) -> dict[str, str]:
+        return {"label": label, "status": status, "detail": detail}
+
+    def _latest_timestamp(self, *rows: sqlite3.Row | None) -> str:
+        values = [str(row["started_at"] or "") for row in rows if row is not None and "started_at" in row.keys()]
+        return max((value for value in values if value), default="")
+
+    def _decimal(self, value: object) -> Decimal:
+        try:
+            return Decimal(str(value or "0"))
+        except (InvalidOperation, ValueError):
+            return Decimal("0")
+
+    def _safe_price(self, quote: Decimal | None, quantity: Decimal | None) -> Decimal | None:
+        if quote is None or quantity is None or quantity <= 0:
+            return None
+        return quote / quantity
+
+    def _number(self, value: object) -> str:
+        if value in (None, ""):
+            return "-"
+        number = self._decimal(value)
+        rendered = f"{number:.8f}".rstrip("0").rstrip(".")
+        return rendered or "0"
+
+    def _pnl(self, value: Decimal | None, percent: Decimal | None) -> str:
+        if value is None:
+            return "Not available"
+        pct = f" ({percent:+.2f}%)" if percent is not None else ""
+        return f"{value:+.4f} USDC{pct}"
+
+    def _base_asset(self, symbol: str) -> str:
+        for quote in ("USDC", "USDT", "FDUSD", "BTC", "ETH", "BNB"):
+            if symbol.endswith(quote):
+                return symbol[: -len(quote)]
+        return symbol
 
     def _rebalancing_basket(self, connection: sqlite3.Connection, run_id: int) -> str:
         if not self._table_exists(connection, "rebalancing_bot_assets"):

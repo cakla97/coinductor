@@ -2214,6 +2214,31 @@ ApplicationWindow {
                                     onClicked: appController.checkBinanceLiveTrading()
                                 }
                             }
+                            GridLayout {
+                                Layout.fillWidth: true
+                                visible: modelData.actionCode === "REVIEW_LIFECYCLE"
+                                columns: 4
+                                columnSpacing: 10
+                                Repeater {
+                                    model: modelData.lifecycleSteps || []
+                                    delegate: Rectangle {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 64
+                                        radius: 6
+                                        color: panelRaised
+                                        border.color: modelData.status === "Done" ? accent : modelData.status === "Action needed" ? warning : border
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 9
+                                            spacing: 2
+                                            Text { text: modelData.label; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                            Text { text: modelData.status; color: modelData.status === "Done" ? accent : modelData.status === "Action needed" ? warning : textSecondary; font.pixelSize: 10; font.bold: true }
+                                            Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 9; elide: Text.ElideRight }
+                                        }
+                                    }
+                                }
+                            }
                         }
                         Text {
                             Layout.fillWidth: true
@@ -2888,6 +2913,35 @@ ApplicationWindow {
                         }
                     }
                 }
+                GridLayout {
+                    Layout.fillWidth: true
+                    visible: activeActionPlanItem.actionCode === "REVIEW_LIFECYCLE"
+                    columns: 2
+                    columnSpacing: 12
+                    rowSpacing: 12
+                    Repeater {
+                        model: activeActionPlanItem.lifecycleSteps || []
+                        delegate: Rectangle {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 76
+                            radius: 6
+                            color: panelRaised
+                            border.color: modelData.status === "Done" ? accent : modelData.status === "Action needed" ? warning : border
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 3
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    Text { Layout.fillWidth: true; text: modelData.label; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                    Text { text: modelData.status; color: modelData.status === "Done" ? accent : modelData.status === "Action needed" ? warning : textSecondary; font.pixelSize: 10; font.bold: true }
+                                }
+                                Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                            }
+                        }
+                    }
+                }
                 Text {
                     Layout.fillWidth: true
                     text: appController.liveTradingCheckDetail
@@ -3076,6 +3130,8 @@ ApplicationWindow {
                             ? "Live trade submission is separate from review. It stays locked unless the latest BUY preview, live key, safety stage, and confirmation text all pass."
                             : activeActionPlanItem.actionCode === "REVIEW_OCO"
                                 ? "OCO protection is a separate SELL order pair. Submission requires a READY preview and its own explicit confirmation."
+                                : activeActionPlanItem.actionCode === "REVIEW_LIFECYCLE"
+                                    ? "Lifecycle data comes from locally stored Binance results. Run a fresh analysis to synchronize exchange order and OCO status again."
                                 : "This dialog is review-only. Manual bot setup remains outside automatic desktop submission."
                         color: warning
                         font.pixelSize: 12

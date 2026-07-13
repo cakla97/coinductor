@@ -112,3 +112,33 @@ def test_buy_trade_requires_fresh_live_permission_check(monkeypatch, tmp_path) -
 
     assert card["submitEnabled"] is False
     assert "this app session" in card["submitBlockedReason"]
+
+
+def test_live_lifecycle_is_added_after_trade_card(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    _set_trade_state(controller, "HOLD", live_enabled=False, key_ready=False)
+    lifecycle = {
+        "title": "Live position lifecycle",
+        "status": "Protected",
+        "tone": "ready",
+        "detail": "OCO is active.",
+        "parameters": (),
+        "lifecycleSteps": (),
+        "primaryLabel": "View lifecycle",
+        "actionCode": "REVIEW_LIFECYCLE",
+    }
+    controller._snapshot = DesktopSnapshot(
+        controller._snapshot.latest_run,
+        (),
+        (),
+        (),
+        None,
+        False,
+        lifecycle,
+    )
+
+    cards = controller._build_action_plan_items()
+
+    assert cards[0]["title"] == "Trade"
+    assert cards[1]["title"] == "Live position lifecycle"
+    assert cards[1]["status"] == "Protected"

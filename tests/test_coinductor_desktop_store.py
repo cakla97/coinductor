@@ -136,3 +136,121 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
     assert snapshot.has_ready_live_preview is True
     assert snapshot.run_history[0]["dataMode"] == "MOCK"
     assert snapshot.run_history[1]["dataMode"] == "REAL"
+
+
+def test_desktop_store_builds_protected_and_closed_live_lifecycle(tmp_path) -> None:
+    database = tmp_path / "agent.sqlite3"
+    report = tmp_path / "live_run.md"
+    report.write_text(
+        """# Trading Agent Report
+
+## Executive Summary
+
+- Total portfolio value: `500.00 USDC`
+- Liquid value: `100.00 USDC`
+- Locked value: `400.00 USDC`
+
+## Strategy Decision
+
+- Decision: `HOLD`
+- Summary: Existing position is monitored.
+
+## Risk Decision
+
+- Approved: `True`
+- Reason: Within limits.
+""",
+        encoding="utf-8",
+    )
+    connection = sqlite3.connect(database)
+    connection.executescript(
+        """
+        create table runs (id integer primary key, started_at text, mode text, status text, summary text);
+        create table market_research_reports (run_id integer, status text);
+        create table portfolio_valuations (
+            run_id integer, asset text, role text, total_value_usdt text, allocation_pct text,
+            spot_value_usdt text, flexible_value_usdt text, locked_value_usdt text,
+            rebalance_action text
+        );
+        create table strategy_decisions (run_id integer, decision_type text, summary text);
+        create table market_snapshots (
+            run_id integer, symbol text, price text, rsi14 text, ema20 text, ema50 text,
+            ema200 text, atr14 text, trend_regime text
+        );
+        create table live_orders (
+            run_id integer, intent_id text, symbol text, side text, order_type text,
+            quote_amount_usdt text, quote_asset text, status text, submitted integer,
+            order_id text, executed_quantity text, cumulative_quote_qty text,
+            validation_summary text, message text
+        );
+        create table oco_protection_orders (
+            run_id integer, intent_id text, symbol text, side text, status text,
+            quantity text, adjusted_quantity text, available_base text,
+            take_profit_price text, stop_loss_stop_price text,
+            estimated_take_profit_quote text, estimated_stop_quote text,
+            submitted integer, order_list_id text, confirmation_required text,
+            reason text, message text
+        );
+        create table oco_status_checks (
+            run_id integer, intent_id text, symbol text, order_list_id text,
+            list_order_status text, list_status_type text, filled_order_id text,
+            filled_quantity text, filled_quote text, reconciled integer, message text
+        );
+        """
+    )
+    connection.executemany(
+        "insert into runs values (?, ?, 'REAL', 'OK', ?)",
+        [
+            (1, "2026-07-10T10:00:00+00:00", f"Report written to {report}"),
+            (2, "2026-07-10T10:05:00+00:00", "OCO synchronized"),
+        ],
+    )
+    connection.executemany("insert into market_research_reports values (?, 'OK')", [(1,), (2,)])
+    connection.executemany(
+        "insert into strategy_decisions values (?, 'HOLD', 'Existing position is monitored.')",
+        [(1,), (2,)],
+    )
+    connection.execute(
+        "insert into market_snapshots values (2, 'BTCUSDC', '110000', '50', '0', '0', '0', '0', 'RANGE')"
+    )
+    connection.execute(
+        "insert into live_orders values (1, 'buy-live-1', 'BTCUSDC', 'BUY', 'MARKET', '100', 'USDC', 'FILLED', 1, 'buy-123', '0.001', '100', 'valid', 'filled')"
+    )
+    connection.execute(
+        "insert into oco_protection_orders values (1, 'oco-buy-live-1', 'BTCUSDC', 'SELL', 'PROTECTED', '0.001', '0.001', '0.001', '115000', '95000', '115', '95', 1, 'oco-456', 'CONFIRM_MAINNET_OCO', 'valid', 'submitted')"
+    )
+    connection.execute(
+        "insert into oco_status_checks values (2, 'oco-buy-live-1', 'BTCUSDC', 'oco-456', 'EXECUTING', 'EXEC_STARTED', '', '0', '0', 0, 'active')"
+    )
+    connection.commit()
+    connection.close()
+
+    protected = DesktopStore(database, tmp_path).load().live_action_lifecycle
+
+    assert protected is not None
+    assert protected["status"] == "Protected"
+    assert protected["parameters"][1]["value"] == "buy-123"
+    assert protected["parameters"][5]["value"] == "+10.0000 USDC (+10.00%)"
+    assert protected["lifecycleSteps"][2]["status"] == "Done"
+    assert protected["lifecycleSteps"][3]["status"] == "Pending"
+
+    connection = sqlite3.connect(database)
+    connection.execute(
+        "insert into runs values (3, '2026-07-10T11:00:00+00:00', 'REAL', 'OK', 'OCO sell reconciled')"
+    )
+    connection.execute("insert into market_research_reports values (3, 'OK')")
+    connection.execute("insert into strategy_decisions values (3, 'HOLD', 'Position closed.')")
+    connection.execute(
+        "insert into live_orders values (3, 'sell-buy-live-1', 'BTCUSDC', 'SELL', 'OCO', '0', 'USDC', 'FILLED', 1, 'sell-789', '0.001', '112', 'reconciled', 'closed')"
+    )
+    connection.commit()
+    connection.close()
+
+    closed = DesktopStore(database, tmp_path).load().live_action_lifecycle
+
+    assert closed is not None
+    assert closed["status"] == "Closed"
+    assert closed["parameters"][4]["value"] == "112000"
+    assert closed["parameters"][5]["value"] == "+12.0000 USDC (+12.00%)"
+    assert closed["lifecycleSteps"][3]["status"] == "Done"
+    assert "sell-789" in closed["lifecycleSteps"][3]["detail"]

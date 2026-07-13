@@ -61,5 +61,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "rightPadding: 18" in qml
     assert "Credentials & Safety" not in qml
     assert "Permissions verified this session" in qml
+    assert "REVIEW_LIFECYCLE" in qml
+    assert "Lifecycle data comes from locally stored Binance results" in qml
     assert "safetyPhraseRow.implicitHeight + 24" in qml
     assert 'safetyAllowsLiveSubmit ? "#ee6b6e"' not in qml

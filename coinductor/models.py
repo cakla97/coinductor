@@ -49,6 +49,7 @@ class DesktopSnapshot:
     run_history: tuple[dict[str, str], ...]
     position_protection: dict[str, object] | None = None
     has_ready_live_preview: bool = False
+    live_action_lifecycle: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)

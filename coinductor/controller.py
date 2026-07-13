@@ -1265,6 +1265,9 @@ class AppController(QObject):
             }
         ]
 
+        if self._snapshot.live_action_lifecycle is not None:
+            cards.append(dict(self._snapshot.live_action_lifecycle))
+
         if self._strategies:
             for item in self._strategies:
                 status = str(item.get("allowed") or item.get("status") or "UNKNOWN")

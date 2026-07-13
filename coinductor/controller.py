@@ -1061,6 +1061,27 @@ class AppController(QObject):
             self.refreshActiveStrategies()
         return result.success
 
+    @Slot(str, str, str, bool, result=bool)
+    def updateActiveStrategyStatus(
+        self,
+        strategy_type: str,
+        name: str,
+        status: str,
+        verified: bool,
+    ) -> bool:
+        result = self._strategy_registration_service.update_status(
+            strategy_type=strategy_type,
+            name=name,
+            status=status,
+            verified=verified,
+        )
+        self.notificationRequested.emit(result.message)
+        if result.success:
+            self._registered_strategy_count = self._strategy_registration_service.registered_count()
+            self.dataChanged.emit()
+            self.refreshActiveStrategies()
+        return result.success
+
     @Slot(str)
     def submitGuardedOco(self, confirmation: str) -> None:
         if self._busy:
@@ -1426,6 +1447,32 @@ class AppController(QObject):
                     "parameters": [],
                     "primaryLabel": "Run bot plan",
                     "actionCode": "NONE",
+                }
+            )
+
+        urgent_strategies = [
+            item for item in self._active_strategies if str(item.get("health", "")) == "Action required"
+        ]
+        if urgent_strategies:
+            names = ", ".join(str(item.get("name", "Unnamed bot")) for item in urgent_strategies)
+            cards.append(
+                {
+                    "title": "Active bot attention",
+                    "status": "Review required",
+                    "tone": "blocked",
+                    "detail": (
+                        f"{len(urgent_strategies)} active bot(s) need lifecycle review: {names}. "
+                        "Verify the actual bot in Binance before changing its local monitoring status."
+                    ),
+                    "parameters": [
+                        {
+                            "label": str(item.get("type", "Strategy")),
+                            "value": f"{item.get('name', 'Unnamed bot')} · {item.get('state', 'Unknown state')}",
+                        }
+                        for item in urgent_strategies
+                    ],
+                    "primaryLabel": "Review active bots",
+                    "actionCode": "OPEN_ACTIVE_STRATEGIES",
                 }
             )
 

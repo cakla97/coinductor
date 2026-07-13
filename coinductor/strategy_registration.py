@@ -37,7 +37,38 @@ class StrategyRegistrationService:
         if not self.config_path.exists():
             return 0
         config = self._config()
-        return len(GridRegistry(config).list_bots()) + len(RebalancingRegistry(config).list_bots())
+        grids = GridRegistry(config).list_bots()
+        rebalancing = RebalancingRegistry(config).list_bots()
+        return sum(bot.status == "ACTIVE" for bot in grids) + sum(bot.status == "ACTIVE" for bot in rebalancing)
+
+    def update_status(
+        self,
+        *,
+        strategy_type: str,
+        name: str,
+        status: str,
+        verified: bool,
+    ) -> StrategyRegistrationResult:
+        if not verified:
+            return StrategyRegistrationResult(False, "Confirm that you already changed the bot status in Binance.")
+        wanted = status.strip().upper()
+        if wanted not in {"PAUSED", "STOPPED", "CLOSED"}:
+            return StrategyRegistrationResult(False, "Choose Paused, Stopped, or Closed for the local monitoring record.")
+        try:
+            config = self._config()
+            if strategy_type == "Spot Grid":
+                GridRegistry(config).set_status(name, wanted, "CONFIRM_GRID_STATUS")
+            elif strategy_type == "Rebalancing":
+                RebalancingRegistry(config).set_status(name, wanted, "CONFIRM_REBALANCING_STATUS")
+            else:
+                return StrategyRegistrationResult(False, "This strategy type cannot be updated.")
+        except ValueError as exc:
+            return StrategyRegistrationResult(False, self._friendly_error(exc))
+        label = wanted.title()
+        return StrategyRegistrationResult(
+            True,
+            f"'{name}' is now {label} in Coinductor. This did not change anything in Binance.",
+        )
 
     def register_grid(
         self,

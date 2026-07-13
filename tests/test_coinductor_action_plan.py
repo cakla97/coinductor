@@ -159,3 +159,24 @@ def test_active_strategy_refresh_returns_to_monitor_without_ai(monkeypatch, tmp_
     assert captured["args"] == ("REAL", False, False, False)
     assert captured["kwargs"]["result_page"] == 4
     assert "monitoring refreshed" in captured["kwargs"]["completion_message"].lower()
+
+
+def test_action_plan_surfaces_only_active_bots_requiring_attention(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    controller._active_strategies = [
+        {"type": "Spot Grid", "name": "BTC Grid", "health": "Healthy", "state": "In Range"},
+        {
+            "type": "Rebalancing",
+            "name": "Core Basket",
+            "health": "Action required",
+            "state": "Threshold Reached",
+        },
+    ]
+
+    cards = controller._build_action_plan_items()
+    alert = next(card for card in cards if card["title"] == "Active bot attention")
+
+    assert alert["status"] == "Review required"
+    assert alert["actionCode"] == "OPEN_ACTIVE_STRATEGIES"
+    assert "Core Basket" in alert["detail"]
+    assert "BTC Grid" not in alert["detail"]

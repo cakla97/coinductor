@@ -3275,6 +3275,10 @@ ApplicationWindow {
         width: Math.min(860, window.width - 96)
         height: Math.min(680, window.height - 96)
         standardButtons: Dialog.Close
+        onOpened: {
+            strategyStatusChoice.currentIndex = 0
+            strategyStatusVerified.checked = false
+        }
 
         ScrollView {
             id: activeStrategyDetailScroll
@@ -3339,6 +3343,58 @@ ApplicationWindow {
                         color: warning
                         font.pixelSize: 11
                         font.bold: true
+                        wrapMode: Text.WordWrap
+                    }
+                }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: border }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+                    Text { text: "Update local monitoring status"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                    Text {
+                        Layout.fillWidth: true
+                        text: "First pause, stop, or close the bot in Binance. This control only updates Coinductor's local monitoring record and never sends a command to Binance."
+                        color: warning
+                        font.pixelSize: 11
+                        font.bold: true
+                        wrapMode: Text.WordWrap
+                    }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 12
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            Text { text: "New local status"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                            ComboBox {
+                                id: strategyStatusChoice
+                                Layout.fillWidth: true
+                                model: ["Paused", "Stopped", "Closed"]
+                            }
+                        }
+                        Button {
+                            text: appController.busy ? "Working..." : "Update local record"
+                            enabled: strategyStatusVerified.checked && !appController.busy
+                            onClicked: {
+                                if (appController.updateActiveStrategyStatus(
+                                    activeStrategyItem.type || "",
+                                    activeStrategyItem.name || "",
+                                    strategyStatusChoice.currentText,
+                                    strategyStatusVerified.checked)) {
+                                    activeStrategyDetailDialog.close()
+                                }
+                            }
+                        }
+                    }
+                    CheckBox {
+                        id: strategyStatusVerified
+                        Layout.fillWidth: true
+                        text: "I already applied this status change to the bot in Binance."
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        text: "Paused, Stopped, and Closed records leave active monitoring but remain in the local registry and historical run data."
+                        color: textSecondary
+                        font.pixelSize: 10
                         wrapMode: Text.WordWrap
                     }
                 }
@@ -3734,6 +3790,8 @@ ApplicationWindow {
                                 : "Live trade submission is separate from review. It stays locked unless the latest BUY preview, live key, safety stage, and confirmation text all pass.")
                             : activeActionPlanItem.actionCode === "REVIEW_OCO"
                                 ? "OCO protection is a separate SELL order pair. Submission requires a READY preview and its own explicit confirmation."
+                                : activeActionPlanItem.actionCode === "OPEN_ACTIVE_STRATEGIES"
+                                    ? "Coinductor detected a lifecycle condition from locally registered parameters. Verify the real bot state in Binance before updating the local record."
                                 : "This dialog is review-only. Manual bot setup remains outside automatic desktop submission."
                         color: warning
                         font.pixelSize: 12
@@ -3786,6 +3844,18 @@ ApplicationWindow {
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    visible: activeActionPlanItem.actionCode === "OPEN_ACTIVE_STRATEGIES"
+                    Item { Layout.fillWidth: true }
+                    Button {
+                        text: "Open Active Strategies"
+                        onClicked: {
+                            actionPlanDetailDialog.close()
+                            appController.setCurrentPage(4)
                         }
                     }
                 }

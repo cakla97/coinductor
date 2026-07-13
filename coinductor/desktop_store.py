@@ -491,6 +491,7 @@ class DesktopStore:
         health, tone = self._strategy_health(state)
         return {
             "type": "Spot Grid",
+            "localStatus": "Active",
             "name": str(row["name"] or "Unnamed Grid"),
             "botId": str(row["binance_bot_id"] or "Not recorded"),
             "health": health,
@@ -524,6 +525,7 @@ class DesktopStore:
         )
         return {
             "type": "Rebalancing",
+            "localStatus": "Active",
             "name": str(row["name"] or "Unnamed Rebalancing Bot"),
             "botId": str(row["binance_bot_id"] or "Not recorded"),
             "health": health,

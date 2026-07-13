@@ -76,6 +76,10 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "Compare every field with" in qml
     assert "appController.registerGridStrategy(" in qml
     assert "appController.registerRebalancingStrategy(" in qml
+    assert "appController.updateActiveStrategyStatus(" in qml
+    assert "I already applied this status change to the bot in Binance." in qml
+    assert "OPEN_ACTIVE_STRATEGIES" in qml
+    assert 'text: "Open Active Strategies"' in qml
     assert "I verified that these values match the currently active bot in Binance." in qml
     assert "activeStrategyDetailDialog.open()" in qml
     assert "visible: appController.currentPage === 8" in qml

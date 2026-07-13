@@ -107,3 +107,27 @@ def test_registration_surfaces_registry_validation_as_user_message(tmp_path, mon
 
     assert result.success is False
     assert "lower range" in result.message
+
+
+def test_local_status_update_requires_binance_confirmation_and_preserves_record(tmp_path, monkeypatch) -> None:
+    service = _service(tmp_path, monkeypatch)
+    assert _register_grid(service).success is True
+
+    rejected = service.update_status(
+        strategy_type="Spot Grid",
+        name="BTC range bot",
+        status="Paused",
+        verified=False,
+    )
+    updated = service.update_status(
+        strategy_type="Spot Grid",
+        name="BTC range bot",
+        status="Paused",
+        verified=True,
+    )
+
+    bots = GridRegistry(service._config()).list_bots()
+    assert rejected.success is False
+    assert updated.success is True
+    assert bots[0].status == "PAUSED"
+    assert service.registered_count() == 0

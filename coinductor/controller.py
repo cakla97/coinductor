@@ -637,6 +637,10 @@ class AppController(QObject):
 
     @Slot(int)
     def setCurrentPage(self, index: int) -> None:
+        if self._app_tour_visible:
+            tour_page = int(self._app_tour_steps[self._app_tour_step]["page"])
+            if index != tour_page:
+                return
         if index == self._current_page:
             return
         self._current_page = index

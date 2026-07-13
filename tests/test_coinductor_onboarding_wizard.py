@@ -26,6 +26,10 @@ def test_onboarding_wizard_is_first_run_gate(monkeypatch, tmp_path) -> None:
     assert controller.appTourVisible is True
     assert controller.appTourStep == 0
 
+    controller.setCurrentPage(3)
+
+    assert controller.currentPage == 0
+
     controller.nextAppTourStep()
 
     assert controller.appTourStep == 1

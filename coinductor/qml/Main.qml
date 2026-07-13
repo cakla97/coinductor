@@ -3440,9 +3440,9 @@ ApplicationWindow {
             ? targetItem.mapToItem(appTourOverlay, 0, 0)
             : Qt.point(16, 120)
         property real holeX: Math.max(8, targetPosition.x - 6)
-        property real holeY: Math.max(8, targetPosition.y - 6)
+        property real holeY: Math.max(8, targetPosition.y - 3)
         property real holeWidth: targetItem ? targetItem.width + 12 : 220
-        property real holeHeight: targetItem ? targetItem.height + 12 : 54
+        property real holeHeight: targetItem ? targetItem.height + 6 : 48
         property color shade: "#c4000000"
 
         MouseArea { anchors.fill: parent }

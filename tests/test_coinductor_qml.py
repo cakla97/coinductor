@@ -56,6 +56,9 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.hasReadyLivePreview" in qml
     assert "Layout.row: 2" in qml
     assert "Layout.row: 3" in qml
-    assert "Layout.row: 4" in qml
+    assert "Manage live trading API" in qml
+    assert "liveApiManagerDialog.open()" in qml
+    assert "Credentials & Safety" not in qml
+    assert "Permissions verified this session" in qml
     assert "safetyPhraseRow.implicitHeight + 24" in qml
     assert 'safetyAllowsLiveSubmit ? "#ee6b6e"' not in qml

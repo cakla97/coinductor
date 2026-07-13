@@ -2036,7 +2036,7 @@ ApplicationWindow {
                 }
 
                 Rectangle {
-                    Layout.row: 4
+                    Layout.row: 3
                     Layout.fillWidth: true
                     Layout.preferredHeight: 330
                     radius: 7
@@ -2149,152 +2149,14 @@ ApplicationWindow {
                 }
 
                 Rectangle {
-                    Layout.row: 3
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 485
-                    radius: 7
-                    color: panel
-                    border.color: border
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        spacing: 12
-                        RowLayout {
-                            Layout.fillWidth: true
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 5
-                                Text { text: "Credentials & Safety"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: "Add a separate Binance Spot trading key only after read-only reports and preview workflows are trusted. Saving this key does not unlock live submit."
-                                    color: textSecondary
-                                    font.pixelSize: 12
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-                            Rectangle {
-                                Layout.preferredWidth: 112
-                                Layout.preferredHeight: 30
-                                radius: 5
-                                color: appController.liveTradingKeyStatus === "PASS" ? "#17372d" : "#3a3020"
-                                border.color: appController.liveTradingKeyStatus === "PASS" ? accent : warning
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: appController.liveTradingKeyStatus === "PASS" ? "CONFIGURED" : "LOCKED"
-                                    color: appController.liveTradingKeyStatus === "PASS" ? accent : warning
-                                    font.pixelSize: 10
-                                    font.bold: true
-                                }
-                            }
-                        }
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: liveWarningText.implicitHeight + 24
-                            radius: 7
-                            color: "#3a3020"
-                            border.color: warning
-                            Text {
-                                id: liveWarningText
-                                anchors.fill: parent
-                                anchors.margins: 12
-                                text: "Use a separate key with Reading + Spot trading only, trusted-IP restriction enabled, and withdrawals disabled. Dynamic-IP users should keep live execution locked unless they can maintain the whitelist."
-                                color: warning
-                                font.pixelSize: 12
-                                font.bold: true
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: appController.liveTradingKeyDetail
-                            color: textSecondary
-                            font.pixelSize: 11
-                            wrapMode: Text.WordWrap
-                        }
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 8
-                            TextField { id: liveTradingApiKey; Layout.fillWidth: true; placeholderText: "Live trading API key" }
-                            TextField { id: liveTradingApiSecret; Layout.fillWidth: true; placeholderText: "Live trading secret key"; echoMode: TextInput.Password }
-                        }
-                        GridLayout {
-                            Layout.fillWidth: true
-                            columns: 3
-                            columnSpacing: 12
-                            rowSpacing: 6
-                            CheckBox { id: liveSeparateKey; text: "Separate from read-only key"; checked: false }
-                            CheckBox { id: liveIpRestricted; text: "Trusted-IP restriction understood"; checked: false }
-                            CheckBox { id: liveNoWithdrawals; text: "Withdrawals remain disabled"; checked: false }
-                        }
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Button {
-                                text: "Save live trading key"
-                                enabled: liveTradingApiKey.text.trim().length > 0
-                                    && liveTradingApiSecret.text.trim().length > 0
-                                    && liveSeparateKey.checked
-                                    && liveIpRestricted.checked
-                                    && liveNoWithdrawals.checked
-                                onClicked: {
-                                    appController.saveBinanceLiveTradingCredentials(liveTradingApiKey.text, liveTradingApiSecret.text)
-                                    liveTradingApiKey.text = ""
-                                    liveTradingApiSecret.text = ""
-                                    liveSeparateKey.checked = false
-                                    liveIpRestricted.checked = false
-                                    liveNoWithdrawals.checked = false
-                                    window.showToast("Live trading key saved locally; submit remains locked")
-                                }
-                            }
-                            Text {
-                                Layout.fillWidth: true
-                                text: "Live submit still depends on the Safety stage and explicit guarded confirmations. This panel only stores local credentials."
-                                color: textSecondary
-                                font.pixelSize: 11
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-                        RowLayout {
-                            Layout.fillWidth: true
-                            spacing: 12
-                            Button {
-                                text: appController.checkingLiveTrading ? "Checking permissions..." : "Verify live API permissions"
-                                enabled: appController.liveTradingKeyStatus === "PASS" && !appController.checkingLiveTrading
-                                onClicked: appController.checkBinanceLiveTrading()
-                            }
-                            Rectangle {
-                                Layout.preferredWidth: 96
-                                Layout.preferredHeight: 28
-                                radius: 5
-                                color: appController.liveTradingCheckStatus === "Verified" ? "#17372d" : "#3a3020"
-                                border.color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: appController.liveTradingCheckStatus.toUpperCase()
-                                    color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
-                                    font.pixelSize: 10
-                                    font.bold: true
-                                }
-                            }
-                            Text {
-                                Layout.fillWidth: true
-                                text: appController.liveTradingCheckDetail
-                                color: textSecondary
-                                font.pixelSize: 11
-                                wrapMode: Text.WordWrap
-                            }
-                        }
-                    }
-                }
-
-                Rectangle {
                     Layout.row: 2
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 410
+                    Layout.preferredHeight: safetyStageContent.implicitHeight + 36
                     radius: 7
                     color: panel
                     border.color: appController.safetyAllowsLiveSubmit ? accent : border
                     ColumnLayout {
+                        id: safetyStageContent
                         anchors.fill: parent
                         anchors.margins: 18
                         spacing: 12
@@ -2304,6 +2166,55 @@ ApplicationWindow {
                             Text { text: appController.safetyStage; color: appController.safetyAllowsLiveSubmit ? accent : warning; font.pixelSize: 12; font.bold: true }
                         }
                         Text { Layout.fillWidth: true; text: appController.safetyDetail; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: liveApiSummaryContent.implicitHeight + 24
+                            radius: 6
+                            color: panelRaised
+                            border.color: appController.liveTradingCheckStatus === "Verified" ? accent : border
+                            RowLayout {
+                                id: liveApiSummaryContent
+                                anchors.fill: parent
+                                anchors.margins: 12
+                                spacing: 12
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 4
+                                    Text { text: "Live API"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: (appController.liveTradingKeyStatus === "PASS" ? "Credentials configured" : "Credentials not configured")
+                                            + "  |  " + (appController.liveTradingCheckStatus === "Verified" ? "Permissions verified this session" : "Permissions not verified this session")
+                                        color: textSecondary
+                                        font.pixelSize: 11
+                                        wrapMode: Text.WordWrap
+                                    }
+                                }
+                                Rectangle {
+                                    Layout.preferredWidth: 92
+                                    Layout.preferredHeight: 28
+                                    radius: 5
+                                    color: appController.liveTradingCheckStatus === "Verified" ? "#17372d" : "#3a3020"
+                                    border.color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: appController.liveTradingCheckStatus === "Verified" ? "VERIFIED" : appController.liveTradingKeyStatus === "PASS" ? "CONFIGURED" : "LOCKED"
+                                        color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
+                                        font.pixelSize: 10
+                                        font.bold: true
+                                    }
+                                }
+                                Button {
+                                    text: "Manage live API"
+                                    onClicked: liveApiManagerDialog.open()
+                                }
+                                Button {
+                                    text: appController.checkingLiveTrading ? "Verifying..." : "Verify permissions"
+                                    enabled: appController.liveTradingKeyStatus === "PASS" && !appController.checkingLiveTrading
+                                    onClicked: appController.checkBinanceLiveTrading()
+                                }
+                            }
+                        }
                         Text {
                             Layout.fillWidth: true
                             text: appController.safetyStageCode === "SETUP" && !appController.hasCompletedRealAnalysis
@@ -2393,7 +2304,7 @@ ApplicationWindow {
                         Text { Layout.fillWidth: true; text: "Stage changes are local safety controls and never place an order. Every live trade or OCO protection still needs its own confirmation. If your public IP is dynamic, keep live execution locked unless the Binance whitelist is current."; color: warning; font.pixelSize: 11; font.bold: true; wrapMode: Text.WordWrap }
                     }
                 }
-                Item { Layout.row: 5; Layout.fillWidth: true; Layout.preferredHeight: 44 }
+                Item { Layout.row: 4; Layout.fillWidth: true; Layout.preferredHeight: 44 }
             }
         }
 
@@ -2851,6 +2762,150 @@ ApplicationWindow {
                     }
                 }
                 Item { Layout.fillWidth: true; Layout.preferredHeight: 44 }
+            }
+        }
+    }
+
+    Dialog {
+        id: liveApiManagerDialog
+        title: "Manage live trading API"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(840, window.width - 96)
+        height: Math.min(720, window.height - 96)
+        standardButtons: Dialog.NoButton
+        onClosed: {
+            liveTradingApiKey.text = ""
+            liveTradingApiSecret.text = ""
+            liveSeparateKey.checked = false
+            liveIpRestricted.checked = false
+            liveNoWithdrawals.checked = false
+        }
+
+        ScrollView {
+            id: liveApiManagerScroll
+            anchors.fill: parent
+            anchors.margins: 12
+            clip: true
+            contentWidth: availableWidth
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+            ColumnLayout {
+                width: liveApiManagerScroll.availableWidth
+                spacing: 14
+                Text {
+                    Layout.fillWidth: true
+                    text: "Store and verify the separate Binance key used by guarded live actions. Managing credentials never changes the Safety stage or submits an order."
+                    color: textSecondary
+                    font.pixelSize: 13
+                    wrapMode: Text.WordWrap
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: liveApiWarningText.implicitHeight + 24
+                    radius: 7
+                    color: "#3a3020"
+                    border.color: warning
+                    Text {
+                        id: liveApiWarningText
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        text: "Use a separate key with Reading + Spot trading only, trusted-IP restriction enabled, and withdrawals disabled. Dynamic-IP users should keep live execution locked unless they can maintain the whitelist."
+                        color: warning
+                        font.pixelSize: 12
+                        font.bold: true
+                        wrapMode: Text.WordWrap
+                    }
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        Layout.fillWidth: true
+                        text: appController.liveTradingKeyDetail
+                        color: textSecondary
+                        font.pixelSize: 11
+                        wrapMode: Text.WordWrap
+                    }
+                    Button {
+                        text: "Open setup guide"
+                        onClicked: window.openGuide("binance-live-api")
+                    }
+                }
+                GridLayout {
+                    Layout.fillWidth: true
+                    columns: liveApiManagerDialog.width < 680 ? 1 : 2
+                    columnSpacing: 10
+                    rowSpacing: 10
+                    TextField { id: liveTradingApiKey; Layout.fillWidth: true; placeholderText: "Live trading API key" }
+                    TextField { id: liveTradingApiSecret; Layout.fillWidth: true; placeholderText: "Live trading secret key"; echoMode: TextInput.Password }
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 6
+                    CheckBox { id: liveSeparateKey; text: "This key is separate from the read-only key"; checked: false }
+                    CheckBox { id: liveIpRestricted; text: "Trusted-IP restriction is enabled in Binance"; checked: false }
+                    CheckBox { id: liveNoWithdrawals; text: "Withdrawals and transfer permissions remain disabled"; checked: false }
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Button {
+                        text: "Save live trading key"
+                        enabled: liveTradingApiKey.text.trim().length > 0
+                            && liveTradingApiSecret.text.trim().length > 0
+                            && liveSeparateKey.checked
+                            && liveIpRestricted.checked
+                            && liveNoWithdrawals.checked
+                        onClicked: {
+                            appController.saveBinanceLiveTradingCredentials(liveTradingApiKey.text, liveTradingApiSecret.text)
+                            liveTradingApiKey.text = ""
+                            liveTradingApiSecret.text = ""
+                            liveSeparateKey.checked = false
+                            liveIpRestricted.checked = false
+                            liveNoWithdrawals.checked = false
+                            window.showToast("Live trading key saved locally; submit remains locked")
+                        }
+                    }
+                    Button {
+                        text: appController.checkingLiveTrading ? "Checking permissions..." : "Verify permissions"
+                        enabled: appController.liveTradingKeyStatus === "PASS" && !appController.checkingLiveTrading
+                        onClicked: appController.checkBinanceLiveTrading()
+                    }
+                    Item { Layout.fillWidth: true }
+                    Rectangle {
+                        Layout.preferredWidth: 104
+                        Layout.preferredHeight: 30
+                        radius: 5
+                        color: appController.liveTradingCheckStatus === "Verified" ? "#17372d" : "#3a3020"
+                        border.color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
+                        Text {
+                            anchors.centerIn: parent
+                            text: appController.liveTradingCheckStatus === "Verified" ? "VERIFIED" : appController.liveTradingKeyStatus === "PASS" ? "CONFIGURED" : "LOCKED"
+                            color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
+                            font.pixelSize: 10
+                            font.bold: true
+                        }
+                    }
+                }
+                Text {
+                    Layout.fillWidth: true
+                    text: appController.liveTradingCheckDetail
+                    color: textSecondary
+                    font.pixelSize: 11
+                    wrapMode: Text.WordWrap
+                }
+                Text {
+                    Layout.fillWidth: true
+                    text: "Live submit remains controlled by Safety stage, fresh validation, and a separate confirmation for every trade or OCO action."
+                    color: warning
+                    font.pixelSize: 11
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Item { Layout.fillWidth: true }
+                    Button { text: "Close"; onClicked: liveApiManagerDialog.close() }
+                }
             }
         }
     }

@@ -66,5 +66,10 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "activeActionPlanItem.liveLifecycle.lifecycleSteps" in qml
     assert "contentHeight: actionPlanPageContent.implicitHeight + 72" in qml
     assert "REVIEW_LIFECYCLE" not in qml
+    assert '"Active Strategies"' in qml
+    assert "appController.activeStrategiesSummary" in qml
+    assert "appController.refreshActiveStrategies()" in qml
+    assert "activeStrategyDetailDialog.open()" in qml
+    assert "visible: appController.currentPage === 8" in qml
     assert "safetyPhraseRow.implicitHeight + 24" in qml
     assert 'safetyAllowsLiveSubmit ? "#ee6b6e"' not in qml

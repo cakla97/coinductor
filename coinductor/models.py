@@ -50,6 +50,8 @@ class DesktopSnapshot:
     position_protection: dict[str, object] | None = None
     has_ready_live_preview: bool = False
     live_action_lifecycle: dict[str, object] | None = None
+    active_strategies: tuple[dict[str, object], ...] = ()
+    active_strategies_summary: str = "No active strategies are registered."
 
 
 @dataclass(frozen=True)

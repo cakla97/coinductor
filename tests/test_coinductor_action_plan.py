@@ -142,3 +142,20 @@ def test_live_lifecycle_is_nested_in_trade_card(monkeypatch, tmp_path) -> None:
     assert cards[0]["title"] == "Trade"
     assert cards[0]["liveLifecycle"]["status"] == "Protected"
     assert all(card["title"] != "Live position lifecycle" for card in cards[1:])
+
+
+def test_active_strategy_refresh_returns_to_monitor_without_ai(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    captured = {}
+
+    def capture(*args, **kwargs):
+        captured["args"] = args
+        captured["kwargs"] = kwargs
+
+    controller._start_analysis = capture
+
+    controller.refreshActiveStrategies()
+
+    assert captured["args"] == ("REAL", False, False, False)
+    assert captured["kwargs"]["result_page"] == 4
+    assert "monitoring refreshed" in captured["kwargs"]["completion_message"].lower()

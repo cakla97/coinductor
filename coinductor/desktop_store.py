@@ -31,6 +31,8 @@ class DesktopStore:
             strategies: tuple[dict[str, str], ...] = ()
             position_protection: dict[str, object] | None = None
             live_action_lifecycle: dict[str, object] | None = None
+            active_strategies: tuple[dict[str, object], ...] = ()
+            active_strategies_summary = "No active strategies are registered."
             has_ready_live_preview = False
             if latest is not None:
                 report_path = self._report_path(latest)
@@ -47,6 +49,7 @@ class DesktopStore:
                 position_protection = self._position_protection(connection, int(latest["id"]))
                 has_ready_live_preview = self._has_ready_live_preview(connection)
                 live_action_lifecycle = self._live_action_lifecycle(connection)
+                active_strategies, active_strategies_summary = self._active_strategies(connection, int(latest["id"]))
             history = self._history(connection)
             return DesktopSnapshot(
                 latest_result,
@@ -56,6 +59,8 @@ class DesktopStore:
                 position_protection,
                 has_ready_live_preview,
                 live_action_lifecycle,
+                active_strategies,
+                active_strategies_summary,
             )
         finally:
             connection.close()
@@ -405,6 +410,127 @@ class DesktopStore:
             "primaryLabel": "View lifecycle",
             "actionCode": "REVIEW_LIFECYCLE",
         }
+
+    def _active_strategies(
+        self,
+        connection: sqlite3.Connection,
+        run_id: int,
+    ) -> tuple[tuple[dict[str, object], ...], str]:
+        items: list[dict[str, object]] = []
+        if self._table_exists(connection, "active_grid_evaluations"):
+            columns = self._columns(connection, "active_grid_evaluations")
+            required = {"run_id", "name", "symbol", "state", "recommendation"}
+            if required.issubset(columns):
+                rows = connection.execute(
+                    f"""
+                    select name, symbol, range_low, range_high, investment_usdt, current_price,
+                           state, distance_to_lower_pct, distance_to_upper_pct, recommendation,
+                           {self._column_expr(columns, "binance_bot_id")},
+                           {self._column_expr(columns, "grid_count")},
+                           {self._column_expr(columns, "grid_type")},
+                           {self._column_expr(columns, "entry_price")},
+                           {self._column_expr(columns, "stop_loss_price")},
+                           {self._column_expr(columns, "take_profit_price")},
+                           {self._column_expr(columns, "age_days")}
+                    from active_grid_evaluations
+                    where run_id = ?
+                    order by name
+                    """,
+                    (run_id,),
+                ).fetchall()
+                items.extend(self._active_grid_item(row) for row in rows)
+
+        if self._table_exists(connection, "active_rebalancing_evaluations"):
+            columns = self._columns(connection, "active_rebalancing_evaluations")
+            required = {"run_id", "name", "state", "recommendation"}
+            if required.issubset(columns):
+                rows = connection.execute(
+                    """
+                    select name, binance_bot_id, assets, target_weights_pct, current_weights_pct,
+                           investment_usdt, threshold_pct, max_drift_pct, state, age_days,
+                           recommendation
+                    from active_rebalancing_evaluations
+                    where run_id = ?
+                    order by name
+                    """,
+                    (run_id,),
+                ).fetchall()
+                items.extend(self._active_rebalancing_item(row) for row in rows)
+
+        if not items:
+            return (), "No registered active Grid or Rebalancing bots were evaluated in the latest run."
+        healthy = len([item for item in items if item["health"] == "Healthy"])
+        review = len([item for item in items if item["health"] == "Review"])
+        action = len(items) - healthy - review
+        return tuple(items), f"{len(items)} active strategy(s): {healthy} healthy, {review} to review, {action} requiring action."
+
+    def _active_grid_item(self, row: sqlite3.Row) -> dict[str, object]:
+        state = str(row["state"] or "UNKNOWN_PRICE").upper()
+        health, tone = self._strategy_health(state)
+        return {
+            "type": "Spot Grid",
+            "name": str(row["name"] or "Unnamed Grid"),
+            "botId": str(row["binance_bot_id"] or "Not recorded"),
+            "health": health,
+            "tone": tone,
+            "state": self._strategy_state_label(state),
+            "recommendation": str(row["recommendation"] or "Review the strategy in Binance."),
+            "parameters": (
+                {"label": "Symbol", "value": str(row["symbol"] or "")},
+                {"label": "Current price", "value": self._number(row["current_price"])},
+                {"label": "Range", "value": self._range(row["range_low"], row["range_high"])},
+                {"label": "Investment", "value": self._money(row["investment_usdt"])},
+                {"label": "Grid setup", "value": f"{row['grid_count'] or '-'} / {row['grid_type'] or '-'}"},
+                {"label": "Age", "value": f"{self._number(row['age_days'])} days" if row["age_days"] not in (None, "") else "-"},
+                {"label": "Distance to range", "value": f"Lower {self._percent(row['distance_to_lower_pct'])}, upper {self._percent(row['distance_to_upper_pct'])}"},
+                {"label": "Entry", "value": self._number(row["entry_price"])},
+                {"label": "TP / SL", "value": self._range(row["take_profit_price"], row["stop_loss_price"])},
+            ),
+        }
+
+    def _active_rebalancing_item(self, row: sqlite3.Row) -> dict[str, object]:
+        state = str(row["state"] or "UNKNOWN_PRICE").upper()
+        health, tone = self._strategy_health(state)
+        assets = self._line_values(row["assets"])
+        targets = self._line_values(row["target_weights_pct"])
+        currents = self._line_values(row["current_weights_pct"])
+        target_basket = ", ".join(
+            f"{asset} {self._percent(weight)}" for asset, weight in zip(assets, targets)
+        )
+        current_basket = ", ".join(
+            f"{asset} {self._percent(weight)}" for asset, weight in zip(assets, currents)
+        )
+        return {
+            "type": "Rebalancing",
+            "name": str(row["name"] or "Unnamed Rebalancing Bot"),
+            "botId": str(row["binance_bot_id"] or "Not recorded"),
+            "health": health,
+            "tone": tone,
+            "state": self._strategy_state_label(state),
+            "recommendation": str(row["recommendation"] or "Review the strategy in Binance."),
+            "parameters": (
+                {"label": "Assets", "value": ", ".join(assets)},
+                {"label": "Target basket", "value": target_basket or "-"},
+                {"label": "Current estimate", "value": current_basket or "-"},
+                {"label": "Investment", "value": self._money(row["investment_usdt"])},
+                {"label": "Rebalance threshold", "value": self._percent(row["threshold_pct"])},
+                {"label": "Maximum drift", "value": self._percent(row["max_drift_pct"])},
+                {"label": "Age", "value": f"{self._number(row['age_days'])} days" if row["age_days"] not in (None, "") else "-"},
+            ),
+        }
+
+    def _strategy_health(self, state: str) -> tuple[str, str]:
+        if state in {"IN_RANGE", "WITHIN_THRESHOLD"}:
+            return "Healthy", "ready"
+        if state in {"NEAR_LOWER", "NEAR_UPPER"}:
+            return "Review", "watch"
+        return "Action required", "blocked"
+
+    def _strategy_state_label(self, state: str) -> str:
+        return state.replace("_", " ").title()
+
+    def _line_values(self, value: object) -> tuple[str, ...]:
+        return tuple(part.strip() for part in str(value or "").splitlines() if part.strip())
 
     def _latest_market_price(self, connection: sqlite3.Connection, symbol: str) -> Decimal | None:
         if not self._table_exists(connection, "market_snapshots"):

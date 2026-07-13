@@ -145,6 +145,8 @@ class AppController(QObject):
         self._action_plan_items: list[dict[str, object]] = []
         self._portfolio_assets: list[dict[str, str]] = []
         self._strategies: list[dict[str, object]] = []
+        self._active_strategies: list[dict[str, object]] = []
+        self._active_strategies_summary = "No active strategies are registered."
         self._run_history: list[dict[str, str]] = []
         self._onboarding_review: list[dict[str, str]] = []
         self._onboarding_review_summary = "Run a real analysis to prepare portfolio classification."
@@ -266,6 +268,14 @@ class AppController(QObject):
     @Property("QVariantList", notify=dataChanged)
     def strategies(self) -> list[dict[str, object]]:
         return self._strategies
+
+    @Property("QVariantList", notify=dataChanged)
+    def activeStrategies(self) -> list[dict[str, object]]:
+        return self._active_strategies
+
+    @Property(str, notify=dataChanged)
+    def activeStrategiesSummary(self) -> str:
+        return self._active_strategies_summary
 
     @Property("QVariantList", notify=dataChanged)
     def runHistory(self) -> list[dict[str, str]]:
@@ -943,6 +953,17 @@ class AppController(QObject):
             live_confirm=confirmation,
         )
 
+    @Slot()
+    def refreshActiveStrategies(self) -> None:
+        self._start_analysis(
+            "REAL",
+            False,
+            False,
+            False,
+            result_page=4,
+            completion_message="Active strategy monitoring refreshed.",
+        )
+
     @Slot(str)
     def submitGuardedOco(self, confirmation: str) -> None:
         if self._busy:
@@ -984,7 +1005,7 @@ class AppController(QObject):
         elif code == "OPEN_PORTFOLIO":
             self.setCurrentPage(2)
         elif code == "OPEN_SETTINGS":
-            self.setCurrentPage(7)
+            self.setCurrentPage(8)
 
     @Slot(str, str)
     def saveAssetRoleOverride(self, asset: str, role: str) -> None:
@@ -1148,6 +1169,8 @@ class AppController(QObject):
     def _apply_snapshot(self) -> None:
         self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)
         self._strategies = list(self._snapshot.strategies)
+        self._active_strategies = list(self._snapshot.active_strategies)
+        self._active_strategies_summary = self._snapshot.active_strategies_summary
         self._run_history = list(self._snapshot.run_history)
         self._action_plan_items = self._build_action_plan_items()
         self._refresh_onboarding_review()

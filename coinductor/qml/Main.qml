@@ -32,6 +32,7 @@ ApplicationWindow {
     property string fundingCurrency: "USDC"
     property var activeGuide: ({})
     property var activeActionPlanItem: ({})
+    property var activeStrategyItem: ({})
     property string pendingSafetyTarget: ""
     property string pendingSafetyPhrase: ""
     property var wizardSteps: ["Exchange", "Portfolio", "Profile", "AI", "Binance API", "Review"]
@@ -1186,7 +1187,7 @@ ApplicationWindow {
                 }
 
                 Repeater {
-                    model: ["Overview", "Live Actions", "Portfolio", "Action Plan", "Run History", "AI Assistant", "Help & Guides", "Settings"]
+                    model: ["Overview", "Live Actions", "Portfolio", "Action Plan", "Active Strategies", "Run History", "AI Assistant", "Help & Guides", "Settings"]
                     delegate: Rectangle {
                         required property string modelData
                         required property int index
@@ -1819,6 +1820,145 @@ ApplicationWindow {
             Layout.fillHeight: true
             clip: true
             visible: appController.currentPage === 4
+            contentWidth: availableWidth
+            contentHeight: activeStrategiesContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+            ColumnLayout {
+                id: activeStrategiesContent
+                x: 28
+                y: 28
+                width: Math.max(window.width - 288, 692)
+                spacing: 18
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 4
+                        Text { text: "Active Strategies"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                        Text { Layout.fillWidth: true; text: appController.activeStrategiesSummary; color: textSecondary; font.pixelSize: 13; wrapMode: Text.WordWrap }
+                    }
+                    Button {
+                        text: appController.busy ? "Refreshing..." : "Refresh monitoring"
+                        enabled: !appController.busy
+                        onClicked: appController.refreshActiveStrategies()
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 190
+                    visible: appController.activeStrategies.length === 0
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 10
+                        Text { text: "No active bots registered"; color: textPrimary; font.pixelSize: 17; font.bold: true }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Create a Grid or Rebalancing Bot in Binance from a READY Action Plan recommendation, then register its real parameters in Coinductor for periodic monitoring."
+                            color: textSecondary
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                        }
+                        Item { Layout.fillHeight: true }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Item { Layout.fillWidth: true }
+                            Button { text: "Open Action Plan"; onClicked: appController.setCurrentPage(3) }
+                        }
+                    }
+                }
+
+                ListView {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: contentHeight
+                    visible: appController.activeStrategies.length > 0
+                    interactive: false
+                    spacing: 12
+                    model: appController.activeStrategies
+                    delegate: Rectangle {
+                        required property var modelData
+                        width: ListView.view.width
+                        height: Math.max(250, activeStrategyCardContent.implicitHeight + 36)
+                        radius: 7
+                        color: panel
+                        border.color: modelData.tone === "ready" ? accent : warning
+                        ColumnLayout {
+                            id: activeStrategyCardContent
+                            anchors.fill: parent
+                            anchors.margins: 18
+                            spacing: 12
+                            RowLayout {
+                                Layout.fillWidth: true
+                                ColumnLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 3
+                                    Text { text: modelData.name; color: textPrimary; font.pixelSize: 17; font.bold: true }
+                                    Text { text: modelData.type + "  |  Binance ID " + modelData.botId; color: textSecondary; font.pixelSize: 11 }
+                                }
+                                Rectangle {
+                                    Layout.preferredWidth: Math.max(110, strategyHealth.implicitWidth + 22)
+                                    Layout.preferredHeight: 30
+                                    radius: 5
+                                    color: modelData.tone === "ready" ? "#17372d" : modelData.tone === "watch" ? "#3a3020" : "#3a2226"
+                                    border.color: modelData.tone === "ready" ? accent : warning
+                                    Text {
+                                        id: strategyHealth
+                                        anchors.centerIn: parent
+                                        text: modelData.health
+                                        color: modelData.tone === "ready" ? accent : warning
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                    }
+                                }
+                            }
+                            Text { text: modelData.state; color: modelData.tone === "ready" ? accent : warning; font.pixelSize: 11; font.bold: true }
+                            GridLayout {
+                                Layout.fillWidth: true
+                                columns: 4
+                                columnSpacing: 18
+                                rowSpacing: 8
+                                Repeater {
+                                    model: modelData.parameters || []
+                                    delegate: ColumnLayout {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        spacing: 2
+                                        Text { text: modelData.label; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                        Text { Layout.fillWidth: true; text: modelData.value || "-"; color: textPrimary; font.pixelSize: 11; elide: Text.ElideRight }
+                                    }
+                                }
+                            }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                spacing: 12
+                                Text { Layout.fillWidth: true; text: modelData.recommendation; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap; maximumLineCount: 3; elide: Text.ElideRight }
+                                Button {
+                                    Layout.preferredWidth: 150
+                                    text: "View details"
+                                    onClicked: {
+                                        window.activeStrategyItem = modelData
+                                        activeStrategyDetailDialog.open()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Item { Layout.fillWidth: true; Layout.preferredHeight: 36 }
+            }
+        }
+
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            visible: appController.currentPage === 5
 
             ColumnLayout {
                 x: 28
@@ -1875,7 +2015,7 @@ ApplicationWindow {
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: appController.currentPage === 5
+            visible: appController.currentPage === 6
 
             ColumnLayout {
                 anchors.fill: parent
@@ -1973,7 +2113,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            visible: appController.currentPage === 6
+            visible: appController.currentPage === 7
 
             ColumnLayout {
                 x: 28
@@ -2350,7 +2490,7 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            visible: appController.currentPage === 7
+            visible: appController.currentPage === 8
 
             ColumnLayout {
                 x: 28
@@ -2800,6 +2940,85 @@ ApplicationWindow {
                     }
                 }
                 Item { Layout.fillWidth: true; Layout.preferredHeight: 44 }
+            }
+        }
+    }
+
+    Dialog {
+        id: activeStrategyDetailDialog
+        title: activeStrategyItem.name || "Active strategy"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(860, window.width - 96)
+        height: Math.min(680, window.height - 96)
+        standardButtons: Dialog.Close
+
+        ScrollView {
+            id: activeStrategyDetailScroll
+            anchors.fill: parent
+            anchors.margins: 12
+            rightPadding: 18
+            clip: true
+            contentWidth: availableWidth
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+            ColumnLayout {
+                width: activeStrategyDetailScroll.availableWidth
+                spacing: 14
+                RowLayout {
+                    Layout.fillWidth: true
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 3
+                        Text { text: activeStrategyItem.name || ""; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                        Text { text: (activeStrategyItem.type || "") + "  |  Binance ID " + (activeStrategyItem.botId || "-"); color: textSecondary; font.pixelSize: 12 }
+                    }
+                    Text { text: activeStrategyItem.health || "Unknown"; color: activeStrategyItem.tone === "ready" ? accent : warning; font.pixelSize: 12; font.bold: true }
+                }
+                Text { text: activeStrategyItem.state || ""; color: activeStrategyItem.tone === "ready" ? accent : warning; font.pixelSize: 12; font.bold: true }
+                Text { Layout.fillWidth: true; text: activeStrategyItem.recommendation || ""; color: textSecondary; font.pixelSize: 13; wrapMode: Text.WordWrap }
+                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: border }
+                GridLayout {
+                    Layout.fillWidth: true
+                    columns: 2
+                    columnSpacing: 12
+                    rowSpacing: 10
+                    Repeater {
+                        model: activeStrategyItem.parameters || []
+                        delegate: Rectangle {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 68
+                            radius: 6
+                            color: panelRaised
+                            border.color: border
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 3
+                                Text { text: modelData.label; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                Text { Layout.fillWidth: true; text: modelData.value || "-"; color: textPrimary; font.pixelSize: 12; elide: Text.ElideRight }
+                            }
+                        }
+                    }
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: strategyMonitorNote.implicitHeight + 24
+                    radius: 7
+                    color: "#3a3020"
+                    border.color: warning
+                    Text {
+                        id: strategyMonitorNote
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        text: "Monitoring compares registered parameters with locally collected market data. Verify profit, fills, and final bot status directly in Binance before changing or stopping a bot."
+                        color: warning
+                        font.pixelSize: 11
+                        font.bold: true
+                        wrapMode: Text.WordWrap
+                    }
+                }
             }
         }
     }

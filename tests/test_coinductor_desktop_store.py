@@ -254,3 +254,43 @@ def test_desktop_store_builds_protected_and_closed_live_lifecycle(tmp_path) -> N
     assert closed["parameters"][5]["value"] == "+12.0000 USDC (+12.00%)"
     assert closed["lifecycleSteps"][3]["status"] == "Done"
     assert "sell-789" in closed["lifecycleSteps"][3]["detail"]
+
+
+def test_desktop_store_maps_active_strategy_health(tmp_path) -> None:
+    connection = sqlite3.connect(":memory:")
+    connection.row_factory = sqlite3.Row
+    connection.executescript(
+        """
+        create table active_grid_evaluations (
+            run_id integer, name text, symbol text, range_low text, range_high text,
+            investment_usdt text, current_price text, state text,
+            distance_to_lower_pct text, distance_to_upper_pct text, recommendation text,
+            binance_bot_id text, grid_count integer, grid_type text, entry_price text,
+            stop_loss_price text, take_profit_price text, age_days text
+        );
+        create table active_rebalancing_evaluations (
+            run_id integer, name text, binance_bot_id text, assets text,
+            target_weights_pct text, current_weights_pct text, entry_prices_usdt text,
+            investment_usdt text, threshold_pct text, max_drift_pct text,
+            state text, age_days text, recommendation text
+        );
+        """
+    )
+    connection.execute(
+        "insert into active_grid_evaluations values (1, 'btc-grid', 'BTCUSDC', '90000', '115000', '250', '103000', 'IN_RANGE', '14.44', '10.43', 'Continue monitoring.', 'grid-123', 20, 'ARITHMETIC', '100000', '88000', '118000', '3.5')"
+    )
+    connection.execute(
+        "insert into active_rebalancing_evaluations values (1, 'core-basket', 'reb-456', 'BTC\nETH', '60\n40', '52\n48', '100000\n3000', '300', '5', '8', 'THRESHOLD_REACHED', '7', 'Verify Binance rebalance activity.')"
+    )
+
+    items, summary = DesktopStore(tmp_path / "unused.sqlite3", tmp_path)._active_strategies(connection, 1)
+
+    assert len(items) == 2
+    assert items[0]["type"] == "Spot Grid"
+    assert items[0]["health"] == "Healthy"
+    assert items[0]["parameters"][4]["value"] == "20 / ARITHMETIC"
+    assert items[1]["type"] == "Rebalancing"
+    assert items[1]["health"] == "Action required"
+    assert items[1]["parameters"][1]["value"] == "BTC 60.00%, ETH 40.00%"
+    assert summary == "2 active strategy(s): 1 healthy, 0 to review, 1 requiring action."
+    connection.close()

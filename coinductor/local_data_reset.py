@@ -14,9 +14,9 @@ class LocalDataResetService:
             self._item(
                 code="PROFILE",
                 name="Onboarding profile",
-                detail="Region, language, risk preference, automation preference, budget, and planner settings.",
+                detail="Region, language, risk preference, automation preference, budget, planner settings, and first-use tour status.",
                 default=True,
-                paths=("state/user_profile.toml",),
+                paths=("state/user_profile.toml", "state/app_ui_state.toml"),
             ),
             self._item(
                 code="POLICY_AND_STRATEGY",

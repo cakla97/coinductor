@@ -9,3 +9,9 @@ outputs/reports/
 research/requests/*
 !research/requests/.gitkeep
 state/active_strategies.toml
+state/app_ui_state.toml
+state/app_safety_state.toml
+state/asset_policy_overrides.toml
+state/user_profile.toml
+state/grid_registry.toml
+state/rebalancing_registry.toml

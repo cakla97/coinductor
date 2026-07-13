@@ -1187,6 +1187,7 @@ ApplicationWindow {
                 }
 
                 Repeater {
+                    id: navigationRepeater
                     model: ["Overview", "Live Actions", "Portfolio", "Action Plan", "Active Strategies", "Run History", "AI Assistant", "Help & Guides", "Settings"]
                     delegate: Rectangle {
                         required property string modelData
@@ -2681,6 +2682,10 @@ ApplicationWindow {
                         onClicked: appController.openOnboardingWizard()
                     }
                     Button {
+                        text: "Replay app tour"
+                        onClicked: appController.startAppTour()
+                    }
+                    Button {
                         text: "Refresh checks"
                         onClicked: appController.refreshSetup()
                     }
@@ -3420,6 +3425,152 @@ ApplicationWindow {
                 text: "Close"
                 DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
                 onClicked: strategyRegistrationDialog.close()
+            }
+        }
+    }
+
+    Item {
+        id: appTourOverlay
+        anchors.fill: parent
+        visible: !appController.onboardingWizardVisible && appController.appTourVisible
+        z: 1000
+
+        property var targetItem: navigationRepeater.itemAt(appController.currentAppTourStep.page || 0)
+        property point targetPosition: targetItem
+            ? targetItem.mapToItem(appTourOverlay, 0, 0)
+            : Qt.point(16, 120)
+        property real holeX: Math.max(8, targetPosition.x - 6)
+        property real holeY: Math.max(8, targetPosition.y - 6)
+        property real holeWidth: targetItem ? targetItem.width + 12 : 220
+        property real holeHeight: targetItem ? targetItem.height + 12 : 54
+        property color shade: "#c4000000"
+
+        MouseArea { anchors.fill: parent }
+
+        Rectangle { x: 0; y: 0; width: parent.width; height: appTourOverlay.holeY; color: appTourOverlay.shade }
+        Rectangle {
+            x: 0
+            y: appTourOverlay.holeY
+            width: appTourOverlay.holeX
+            height: appTourOverlay.holeHeight
+            color: appTourOverlay.shade
+        }
+        Rectangle {
+            x: appTourOverlay.holeX + appTourOverlay.holeWidth
+            y: appTourOverlay.holeY
+            width: Math.max(0, parent.width - x)
+            height: appTourOverlay.holeHeight
+            color: appTourOverlay.shade
+        }
+        Rectangle {
+            x: 0
+            y: appTourOverlay.holeY + appTourOverlay.holeHeight
+            width: parent.width
+            height: Math.max(0, parent.height - y)
+            color: appTourOverlay.shade
+        }
+
+        Rectangle {
+            x: appTourOverlay.holeX
+            y: appTourOverlay.holeY
+            width: appTourOverlay.holeWidth
+            height: appTourOverlay.holeHeight
+            radius: 8
+            color: "transparent"
+            border.width: 2
+            border.color: accent
+        }
+
+        Rectangle {
+            id: appTourCard
+            width: Math.min(540, appTourOverlay.width - 300)
+            implicitHeight: appTourCardContent.implicitHeight + 40
+            x: Math.min(appTourOverlay.width - width - 28, appTourOverlay.holeX + appTourOverlay.holeWidth + 28)
+            y: Math.max(28, Math.min(appTourOverlay.height - height - 28, appTourOverlay.holeY - 18))
+            radius: 7
+            color: panel
+            border.color: accent
+            border.width: 1
+
+            ColumnLayout {
+                id: appTourCardContent
+                anchors.fill: parent
+                anchors.margins: 20
+                spacing: 12
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        text: "QUICK TOUR  " + (appController.appTourStep + 1) + " / " + appController.appTourStepCount
+                        color: accent
+                        font.pixelSize: 10
+                        font.bold: true
+                    }
+                    Item { Layout.fillWidth: true }
+                    Button {
+                        text: "Skip tour"
+                        flat: true
+                        onClicked: appController.skipAppTour()
+                    }
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    text: appController.currentAppTourStep.title || ""
+                    color: textPrimary
+                    font.pixelSize: 20
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                }
+                Text {
+                    Layout.fillWidth: true
+                    text: appController.currentAppTourStep.detail || ""
+                    color: textSecondary
+                    font.pixelSize: 13
+                    wrapMode: Text.WordWrap
+                }
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: appTourTip.implicitHeight + 24
+                    radius: 6
+                    color: panelRaised
+                    border.color: border
+                    Text {
+                        id: appTourTip
+                        anchors.fill: parent
+                        anchors.margins: 12
+                        text: appController.currentAppTourStep.tip || ""
+                        color: textPrimary
+                        font.pixelSize: 12
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Repeater {
+                        model: appController.appTourStepCount
+                        delegate: Rectangle {
+                            required property int index
+                            Layout.preferredWidth: index === appController.appTourStep ? 20 : 7
+                            Layout.preferredHeight: 7
+                            radius: 4
+                            color: index === appController.appTourStep ? accent : border
+                        }
+                    }
+                    Item { Layout.fillWidth: true }
+                    Button {
+                        text: "Back"
+                        enabled: appController.appTourStep > 0
+                        onClicked: appController.previousAppTourStep()
+                    }
+                    Button {
+                        text: appController.appTourStep === appController.appTourStepCount - 1 ? "Finish" : "Next"
+                        highlighted: true
+                        onClicked: appController.nextAppTourStep()
+                    }
+                }
             }
         }
     }

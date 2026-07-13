@@ -7,6 +7,7 @@ from PySide6.QtGui import QDesktopServices, QGuiApplication
 
 from .ai_provider import AiProviderService
 from .application import CoinductorApplication
+from .app_tour_service import AppTourService
 from .assistant import ProviderBackedAssistant
 from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService, LiveTradingCheckService
@@ -127,6 +128,7 @@ class AppController(QObject):
     notificationRequested = Signal(str)
     firstPortfolioPlanChanged = Signal()
     onboardingWizardChanged = Signal()
+    appTourChanged = Signal()
     localAiRecommendationChanged = Signal()
 
     def __init__(self, parent: QObject | None = None):
@@ -181,6 +183,60 @@ class AppController(QObject):
         self._user_profile_service = UserProfileService()
         self._user_profile_snapshot = self._user_profile_service.inspect()
         self._onboarding_wizard_visible = not self._user_profile_snapshot.configured
+        self._app_tour_service = AppTourService()
+        self._app_tour_steps: list[dict[str, object]] = [
+            {
+                "page": 0,
+                "navLabel": "Overview",
+                "title": "Your portfolio at a glance",
+                "detail": "Overview shows the latest portfolio totals, readiness state, safety stage, and the clearest next action.",
+                "tip": "Start a normal read-only analysis here. It never submits an order by itself.",
+            },
+            {
+                "page": 1,
+                "navLabel": "Live Actions",
+                "title": "Safety before execution",
+                "detail": "Live Actions contains analysis controls, the staged safety lock, and the separate live API management workflow.",
+                "tip": "Preview, Armed, and Live Enabled are local gates. Every real order still needs its own confirmation.",
+            },
+            {
+                "page": 2,
+                "navLabel": "Portfolio",
+                "title": "Review how every asset may be used",
+                "detail": "Portfolio lists all detected holdings and their roles, including protected assets, funding sources, trading assets, and dust.",
+                "tip": "You can override a role, but Coinductor keeps deterministic risk and funding limits in force.",
+            },
+            {
+                "page": 3,
+                "navLabel": "Action Plan",
+                "title": "One place for every run result",
+                "detail": "After an analysis, Action Plan consolidates the trade decision, Spot Grid plan, Rebalancing plan, blockers, and next-review timing.",
+                "tip": "A READY action can expose a guarded confirmation. HOLD, Watched, and Blocked remain review-only.",
+            },
+            {
+                "page": 4,
+                "navLabel": "Active Strategies",
+                "title": "Monitor Binance bots you created",
+                "detail": "Register the real parameters of an active Grid or Rebalancing Bot so future runs can evaluate its lifecycle and health.",
+                "tip": "Coinductor currently guides bot creation in Binance; registration here does not create or modify the bot.",
+            },
+            {
+                "page": 6,
+                "navLabel": "AI Assistant",
+                "title": "Ask for explanations, not permission bypasses",
+                "detail": "The assistant can explain reports, portfolio roles, settings, and market context using your configured local or cloud provider.",
+                "tip": "AI commentary supports decisions but cannot override deterministic safety gates or submit an action on its own.",
+            },
+            {
+                "page": 7,
+                "navLabel": "Help & Guides",
+                "title": "Detailed help stays available",
+                "detail": "Open the built-in guides whenever you need step-by-step help with Ollama, Binance APIs, safety, or portfolio roles.",
+                "tip": "You can replay this tour later from Settings.",
+            },
+        ]
+        self._app_tour_step = 0
+        self._app_tour_visible = self._user_profile_snapshot.configured and not self._app_tour_service.is_completed()
         self._safety_service = SafetyService()
         self._safety_snapshot = self._safety_service.inspect()
         self._readiness_service = ReadinessService()
@@ -324,6 +380,22 @@ class AppController(QObject):
     @Property(bool, notify=onboardingWizardChanged)
     def onboardingWizardVisible(self) -> bool:
         return self._onboarding_wizard_visible
+
+    @Property(bool, notify=appTourChanged)
+    def appTourVisible(self) -> bool:
+        return self._app_tour_visible
+
+    @Property(int, notify=appTourChanged)
+    def appTourStep(self) -> int:
+        return self._app_tour_step
+
+    @Property(int, constant=True)
+    def appTourStepCount(self) -> int:
+        return len(self._app_tour_steps)
+
+    @Property("QVariantMap", notify=appTourChanged)
+    def currentAppTourStep(self) -> dict[str, object]:
+        return dict(self._app_tour_steps[self._app_tour_step])
 
     @Property("QVariantList", notify=setupChanged)
     def setupChecks(self) -> list[dict[str, str]]:
@@ -590,6 +662,47 @@ class AppController(QObject):
     def finishOnboardingWizard(self) -> None:
         self.closeOnboardingWizard()
         self.setCurrentPage(0)
+        if not self._app_tour_service.is_completed():
+            self.startAppTour()
+
+    @Slot()
+    def startAppTour(self) -> None:
+        if self._onboarding_wizard_visible:
+            return
+        self._app_tour_step = 0
+        self._app_tour_visible = True
+        self._show_app_tour_step()
+
+    @Slot()
+    def previousAppTourStep(self) -> None:
+        if not self._app_tour_visible or self._app_tour_step == 0:
+            return
+        self._app_tour_step -= 1
+        self._show_app_tour_step()
+
+    @Slot()
+    def nextAppTourStep(self) -> None:
+        if not self._app_tour_visible:
+            return
+        if self._app_tour_step >= len(self._app_tour_steps) - 1:
+            self.finishAppTour()
+            return
+        self._app_tour_step += 1
+        self._show_app_tour_step()
+
+    @Slot()
+    def skipAppTour(self) -> None:
+        self.finishAppTour()
+
+    @Slot()
+    def finishAppTour(self) -> None:
+        self._app_tour_service.mark_completed()
+        self._app_tour_visible = False
+        self.appTourChanged.emit()
+
+    def _show_app_tour_step(self) -> None:
+        self.setCurrentPage(int(self._app_tour_steps[self._app_tour_step]["page"]))
+        self.appTourChanged.emit()
 
     @Slot()
     def refreshSetup(self) -> None:
@@ -598,6 +711,7 @@ class AppController(QObject):
         self._user_profile_snapshot = self._user_profile_service.inspect()
         if not self._user_profile_snapshot.configured:
             self._onboarding_wizard_visible = True
+            self._app_tour_visible = False
         self._safety_snapshot = self._safety_service.inspect()
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
@@ -608,6 +722,7 @@ class AppController(QObject):
         self.readinessChanged.emit()
         self.firstPortfolioPlanChanged.emit()
         self.onboardingWizardChanged.emit()
+        self.appTourChanged.emit()
 
     @Slot(str)
     def selectOnboardingPath(self, path: str) -> None:
@@ -633,6 +748,8 @@ class AppController(QObject):
     @Slot()
     def deleteUserProfile(self) -> None:
         self._user_profile_snapshot = self._user_profile_service.delete_profile()
+        self._app_tour_service.reset()
+        self._app_tour_visible = False
         self._onboarding_wizard_visible = True
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
@@ -640,6 +757,7 @@ class AppController(QObject):
         self.readinessChanged.emit()
         self.firstPortfolioPlanChanged.emit()
         self.onboardingWizardChanged.emit()
+        self.appTourChanged.emit()
 
     @Slot(str, str, str, str, str, bool, bool, float, float)
     def saveGuidedProfile(

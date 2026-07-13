@@ -91,5 +91,12 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "Repeating the same analysis alone will not remove them." in qml
     assert "AI commentary does not control this timing." in qml
     assert "sourceComponent: nextReviewPanelComponent" in qml
+    assert "id: appTourOverlay" in qml
+    assert "navigationRepeater.itemAt" in qml
+    assert "appController.currentAppTourStep" in qml
+    assert "appController.nextAppTourStep()" in qml
+    assert "appController.previousAppTourStep()" in qml
+    assert "appController.skipAppTour()" in qml
+    assert 'text: "Replay app tour"' in qml
     assert "safetyPhraseRow.implicitHeight + 24" in qml
     assert 'safetyAllowsLiveSubmit ? "#ee6b6e"' not in qml

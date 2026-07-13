@@ -69,6 +69,10 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert '"Active Strategies"' in qml
     assert "appController.activeStrategiesSummary" in qml
     assert "appController.refreshActiveStrategies()" in qml
+    assert "strategyRegistrationDialog.open()" in qml
+    assert "appController.registerGridStrategy(" in qml
+    assert "appController.registerRebalancingStrategy(" in qml
+    assert "I verified that these values match the currently active bot in Binance." in qml
     assert "activeStrategyDetailDialog.open()" in qml
     assert "visible: appController.currentPage === 8" in qml
     assert "safetyPhraseRow.implicitHeight + 24" in qml

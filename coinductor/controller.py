@@ -20,6 +20,7 @@ from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunRes
 from .readiness_service import ReadinessService
 from .safety_service import SafetyService
 from .setup_service import SetupService
+from .strategy_registration import StrategyRegistrationService
 from .user_profile_service import UserProfileService
 
 
@@ -147,6 +148,7 @@ class AppController(QObject):
         self._strategies: list[dict[str, object]] = []
         self._active_strategies: list[dict[str, object]] = []
         self._active_strategies_summary = "No active strategies are registered."
+        self._registered_strategy_count = 0
         self._run_history: list[dict[str, str]] = []
         self._onboarding_review: list[dict[str, str]] = []
         self._onboarding_review_summary = "Run a real analysis to prepare portfolio classification."
@@ -196,6 +198,7 @@ class AppController(QObject):
         self._local_data_reset_snapshot = LocalDataResetService().preview()
         self._asset_policy_store = AssetPolicyStore()
         self._asset_role_overrides = self._asset_policy_store.load()
+        self._strategy_registration_service = StrategyRegistrationService()
         self._portfolio_sort_mode = "VALUE_DESC"
         self._thread: QThread | None = None
         self._worker: AnalysisWorker | None = None
@@ -276,6 +279,18 @@ class AppController(QObject):
     @Property(str, notify=dataChanged)
     def activeStrategiesSummary(self) -> str:
         return self._active_strategies_summary
+
+    @Property(int, notify=dataChanged)
+    def registeredStrategyCount(self) -> int:
+        return self._registered_strategy_count
+
+    @Property("QVariantList", constant=True)
+    def gridRegistrationSymbols(self) -> list[str]:
+        return list(self._strategy_registration_service.grid_symbols())
+
+    @Property("QVariantList", constant=True)
+    def rebalancingRegistrationAssets(self) -> list[str]:
+        return list(self._strategy_registration_service.rebalancing_assets())
 
     @Property("QVariantList", notify=dataChanged)
     def runHistory(self) -> list[dict[str, str]]:
@@ -964,6 +979,80 @@ class AppController(QObject):
             completion_message="Active strategy monitoring refreshed.",
         )
 
+    @Slot(str, str, str, str, str, str, str, str, str, str, str, str, str, bool, result=bool)
+    def registerGridStrategy(
+        self,
+        name: str,
+        binance_bot_id: str,
+        symbol: str,
+        range_low: str,
+        range_high: str,
+        grid_count: str,
+        grid_type: str,
+        investment: str,
+        entry_price: str,
+        stop_loss: str,
+        take_profit: str,
+        created_at: str,
+        notes: str,
+        verified: bool,
+    ) -> bool:
+        result = self._strategy_registration_service.register_grid(
+            name=name,
+            binance_bot_id=binance_bot_id,
+            symbol=symbol,
+            range_low=range_low,
+            range_high=range_high,
+            grid_count=grid_count,
+            grid_type=grid_type,
+            investment=investment,
+            entry_price=entry_price,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
+            created_at=created_at,
+            notes=notes,
+            verified=verified,
+        )
+        self.notificationRequested.emit(result.message)
+        if result.success:
+            self._registered_strategy_count = self._strategy_registration_service.registered_count()
+            self.dataChanged.emit()
+            self.refreshActiveStrategies()
+        return result.success
+
+    @Slot(str, str, str, str, str, str, str, str, str, bool, result=bool)
+    def registerRebalancingStrategy(
+        self,
+        name: str,
+        binance_bot_id: str,
+        assets: str,
+        target_weights: str,
+        entry_prices: str,
+        investment: str,
+        threshold: str,
+        created_at: str,
+        notes: str,
+        verified: bool,
+    ) -> bool:
+        result = self._strategy_registration_service.register_rebalancing(
+            name=name,
+            binance_bot_id=binance_bot_id,
+            assets=assets,
+            target_weights=target_weights,
+            entry_prices=entry_prices,
+            investment=investment,
+            threshold=threshold,
+            created_at=created_at,
+            notes=notes,
+            verified=verified,
+        )
+        self.notificationRequested.emit(result.message)
+        if result.success:
+            self._registered_strategy_count = self._strategy_registration_service.registered_count()
+            self.dataChanged.emit()
+            self.refreshActiveStrategies()
+        return result.success
+
     @Slot(str)
     def submitGuardedOco(self, confirmation: str) -> None:
         if self._busy:
@@ -1171,6 +1260,11 @@ class AppController(QObject):
         self._strategies = list(self._snapshot.strategies)
         self._active_strategies = list(self._snapshot.active_strategies)
         self._active_strategies_summary = self._snapshot.active_strategies_summary
+        self._registered_strategy_count = self._strategy_registration_service.registered_count()
+        pending = max(0, self._registered_strategy_count - len(self._active_strategies))
+        if pending:
+            suffix = "strategy is" if pending == 1 else "strategies are"
+            self._active_strategies_summary += f" {pending} registered {suffix} awaiting a fresh evaluation."
         self._run_history = list(self._snapshot.run_history)
         self._action_plan_items = self._build_action_plan_items()
         self._refresh_onboarding_review()

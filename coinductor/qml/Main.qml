@@ -2787,8 +2787,10 @@ ApplicationWindow {
             anchors.fill: parent
             anchors.margins: 12
             clip: true
+            rightPadding: 18
             contentWidth: availableWidth
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
 
             ColumnLayout {
                 width: liveApiManagerScroll.availableWidth

@@ -2959,6 +2959,7 @@ ApplicationWindow {
 
     Dialog {
         id: strategyRegistrationDialog
+        property string importNotice: ""
         title: "Register an active Binance bot"
         modal: true
         anchors.centerIn: parent
@@ -2968,6 +2969,7 @@ ApplicationWindow {
         onOpened: {
             gridVerified.checked = false
             rebalancingVerified.checked = false
+            importNotice = ""
         }
 
         contentItem: ScrollView {
@@ -2989,6 +2991,15 @@ ApplicationWindow {
                     font.bold: true
                     wrapMode: Text.WordWrap
                 }
+                Text {
+                    Layout.fillWidth: true
+                    visible: strategyRegistrationDialog.importNotice.length > 0
+                    text: strategyRegistrationDialog.importNotice
+                    color: accent
+                    font.pixelSize: 12
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                }
 
                 TabBar {
                     id: strategyRegistrationTabs
@@ -3003,12 +3014,36 @@ ApplicationWindow {
 
                     ColumnLayout {
                         spacing: 14
-                        Text {
+                        RowLayout {
                             Layout.fillWidth: true
-                            text: "Copy the exact active Grid parameters from Binance. Price range, entry, TP/SL, and creation time are used to identify review conditions."
-                            color: textSecondary
-                            font.pixelSize: 12
-                            wrapMode: Text.WordWrap
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Copy the exact active Grid parameters from Binance. Price range, entry, TP/SL, and creation time are used to identify review conditions."
+                                color: textSecondary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                            }
+                            Button {
+                                text: "Import latest recommendation"
+                                enabled: Boolean(appController.latestGridRegistrationSuggestion.available)
+                                onClicked: {
+                                    var suggestion = appController.latestGridRegistrationSuggestion
+                                    gridName.text = suggestion.name || ""
+                                    var symbolIndex = gridSymbol.find(suggestion.symbol || "")
+                                    if (symbolIndex >= 0) gridSymbol.currentIndex = symbolIndex
+                                    var typeIndex = gridType.find(suggestion.gridType || "ARITHMETIC")
+                                    if (typeIndex >= 0) gridType.currentIndex = typeIndex
+                                    gridRangeLow.text = suggestion.rangeLow || ""
+                                    gridRangeHigh.text = suggestion.rangeHigh || ""
+                                    gridCount.text = suggestion.gridCount || ""
+                                    gridInvestment.text = suggestion.investment || ""
+                                    gridEntryPrice.text = suggestion.entryPrice || ""
+                                    gridStopLoss.text = suggestion.stopLoss || ""
+                                    gridTakeProfit.text = suggestion.takeProfit || ""
+                                    gridVerified.checked = false
+                                    strategyRegistrationDialog.importNotice = "Imported proposed values from run " + suggestion.sourceRun + ". Compare every field with the bot you actually created in Binance; missing values remain blank."
+                                }
+                            }
                         }
                         GridLayout {
                             Layout.fillWidth: true
@@ -3109,12 +3144,30 @@ ApplicationWindow {
 
                     ColumnLayout {
                         spacing: 14
-                        Text {
+                        RowLayout {
                             Layout.fillWidth: true
-                            text: "Use comma-separated values in the same order for assets, target weights, and entry prices. Target weights must total exactly 100%."
-                            color: textSecondary
-                            font.pixelSize: 12
-                            wrapMode: Text.WordWrap
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Use comma-separated values in the same order for assets, target weights, and entry prices. Target weights must total exactly 100%."
+                                color: textSecondary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                            }
+                            Button {
+                                text: "Import latest recommendation"
+                                enabled: Boolean(appController.latestRebalancingRegistrationSuggestion.available)
+                                onClicked: {
+                                    var suggestion = appController.latestRebalancingRegistrationSuggestion
+                                    rebalancingName.text = suggestion.name || ""
+                                    rebalancingAssets.text = suggestion.assets || ""
+                                    rebalancingWeights.text = suggestion.targetWeights || ""
+                                    rebalancingEntryPrices.text = suggestion.entryPrices || ""
+                                    rebalancingInvestment.text = suggestion.investment || ""
+                                    rebalancingThreshold.text = suggestion.threshold || ""
+                                    rebalancingVerified.checked = false
+                                    strategyRegistrationDialog.importNotice = "Imported proposed values from run " + suggestion.sourceRun + ". Compare every field with Binance; entry prices stay blank if the latest run did not contain all required markets."
+                                }
+                            }
                         }
                         Text {
                             Layout.fillWidth: true

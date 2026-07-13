@@ -70,6 +70,10 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.activeStrategiesSummary" in qml
     assert "appController.refreshActiveStrategies()" in qml
     assert "strategyRegistrationDialog.open()" in qml
+    assert qml.count('text: "Import latest recommendation"') == 2
+    assert "appController.latestGridRegistrationSuggestion" in qml
+    assert "appController.latestRebalancingRegistrationSuggestion" in qml
+    assert "Compare every field with" in qml
     assert "appController.registerGridStrategy(" in qml
     assert "appController.registerRebalancingStrategy(" in qml
     assert "I verified that these values match the currently active bot in Binance." in qml

@@ -138,10 +138,12 @@ class DesktopStore:
                 (run_id,),
             ).fetchone()
             if grid is not None:
+                symbol = str(grid["symbol"] or "")
+                entry_price = self._market_price_for_run(connection, run_id, symbol)
                 strategies.append(
                     {
                         "type": "Spot Grid",
-                        "name": str(grid["symbol"] or "No candidate"),
+                        "name": symbol or "No candidate",
                         "status": "READY" if grid["deployment_allowed"] else str(grid["market_status"] or "WATCH"),
                         "capital": self._money(grid["investment_usdt"]),
                         "allowed": "Ready" if grid["deployment_allowed"] else "Watched" if str(grid["market_status"] or "").upper() == "WATCH" else "Blocked",
@@ -155,6 +157,20 @@ class DesktopStore:
                             {"label": "TP / SL", "value": self._range(grid["take_profit_price"], grid["stop_loss_price"])},
                             {"label": "Blockers", "value": str(grid["blockers"] or "")},
                         ),
+                        "registrationSuggestion": {
+                            "available": bool(symbol),
+                            "name": f"{symbol} Grid" if symbol else "",
+                            "symbol": symbol,
+                            "rangeLow": self._number(grid["range_low"]),
+                            "rangeHigh": self._number(grid["range_high"]),
+                            "gridCount": str(grid["grid_count"] or ""),
+                            "gridType": "ARITHMETIC",
+                            "investment": self._number(grid["investment_usdt"]),
+                            "entryPrice": self._number(entry_price) if entry_price is not None else "",
+                            "stopLoss": self._number(grid["stop_loss_price"]),
+                            "takeProfit": self._number(grid["take_profit_price"]),
+                            "sourceRun": str(run_id),
+                        },
                     }
                 )
         if self._table_exists(connection, "rebalancing_bot_recommendations"):
@@ -183,6 +199,12 @@ class DesktopStore:
                             {"label": "Trigger", "value": f"By ratio {self._percent(rebalance['threshold_pct'])}"},
                             {"label": "Basket", "value": basket},
                             {"label": "Blockers", "value": str(rebalance["blockers"] or "")},
+                        ),
+                        "registrationSuggestion": self._rebalancing_registration_suggestion(
+                            connection,
+                            run_id,
+                            rebalance["investment_usdt"],
+                            rebalance["threshold_pct"],
                         ),
                     }
                 )
@@ -543,6 +565,17 @@ class DesktopStore:
         ).fetchone()
         return self._decimal(row["price"]) if row is not None else None
 
+    def _market_price_for_run(self, connection: sqlite3.Connection, run_id: int, symbol: str) -> Decimal | None:
+        if not self._table_exists(connection, "market_snapshots"):
+            return None
+        if not {"run_id", "symbol", "price"}.issubset(self._columns(connection, "market_snapshots")):
+            return None
+        row = connection.execute(
+            "select price from market_snapshots where run_id = ? and symbol = ? order by rowid desc limit 1",
+            (run_id, symbol),
+        ).fetchone()
+        return self._decimal(row["price"]) if row is not None else None
+
     def _lifecycle_stage(self, label: str, status: str, detail: str) -> dict[str, str]:
         return {"label": label, "status": status, "detail": detail}
 
@@ -592,6 +625,38 @@ class DesktopStore:
             (run_id,),
         ).fetchall()
         return ", ".join(f"{row['asset']} {self._percent(row['target_weight_pct'])}" for row in rows)
+
+    def _rebalancing_registration_suggestion(
+        self,
+        connection: sqlite3.Connection,
+        run_id: int,
+        investment: object,
+        threshold: object,
+    ) -> dict[str, object]:
+        if not self._table_exists(connection, "rebalancing_bot_assets"):
+            return {"available": False}
+        rows = connection.execute(
+            """
+            select asset, target_weight_pct from rebalancing_bot_assets
+            where run_id = ? and status != 'EXCLUDED'
+            order by cast(target_weight_pct as real) desc
+            """,
+            (run_id,),
+        ).fetchall()
+        assets = tuple(str(row["asset"] or "").upper() for row in rows if row["asset"])
+        weights = tuple(self._number(row["target_weight_pct"]) for row in rows if row["asset"])
+        prices = tuple(self._market_price_for_run(connection, run_id, f"{asset}USDC") for asset in assets)
+        entry_prices = ", ".join(self._number(price) for price in prices) if prices and all(price is not None for price in prices) else ""
+        return {
+            "available": bool(assets),
+            "name": "Core Rebalancing Basket",
+            "assets": ", ".join(assets),
+            "targetWeights": ", ".join(weights),
+            "entryPrices": entry_prices,
+            "investment": self._number(investment),
+            "threshold": self._number(threshold),
+            "sourceRun": str(run_id),
+        }
 
 
     def _history(self, connection: sqlite3.Connection) -> tuple[dict[str, str], ...]:

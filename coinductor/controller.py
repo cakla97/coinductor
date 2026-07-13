@@ -292,6 +292,14 @@ class AppController(QObject):
     def rebalancingRegistrationAssets(self) -> list[str]:
         return list(self._strategy_registration_service.rebalancing_assets())
 
+    @Property("QVariantMap", notify=dataChanged)
+    def latestGridRegistrationSuggestion(self) -> dict[str, object]:
+        return self._registration_suggestion("Spot Grid")
+
+    @Property("QVariantMap", notify=dataChanged)
+    def latestRebalancingRegistrationSuggestion(self) -> dict[str, object]:
+        return self._registration_suggestion("Rebalancing")
+
     @Property("QVariantList", notify=dataChanged)
     def runHistory(self) -> list[dict[str, str]]:
         return self._run_history
@@ -1270,6 +1278,13 @@ class AppController(QObject):
         self._refresh_onboarding_review()
         if self._snapshot.latest_run is not None:
             self._on_completed(self._snapshot.latest_run)
+
+    def _registration_suggestion(self, strategy_type: str) -> dict[str, object]:
+        for strategy in self._strategies:
+            if str(strategy.get("type", "")) == strategy_type:
+                suggestion = strategy.get("registrationSuggestion", {})
+                return dict(suggestion) if isinstance(suggestion, dict) else {}
+        return {}
 
     def _refresh_onboarding_review(self) -> None:
         assets = self._portfolio_assets

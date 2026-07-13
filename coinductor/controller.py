@@ -149,6 +149,7 @@ class AppController(QObject):
         self._active_strategies: list[dict[str, object]] = []
         self._active_strategies_summary = "No active strategies are registered."
         self._registered_strategy_count = 0
+        self._next_review: dict[str, object] = {}
         self._run_history: list[dict[str, str]] = []
         self._onboarding_review: list[dict[str, str]] = []
         self._onboarding_review_summary = "Run a real analysis to prepare portfolio classification."
@@ -299,6 +300,10 @@ class AppController(QObject):
     @Property("QVariantMap", notify=dataChanged)
     def latestRebalancingRegistrationSuggestion(self) -> dict[str, object]:
         return self._registration_suggestion("Rebalancing")
+
+    @Property("QVariantMap", notify=dataChanged)
+    def nextReview(self) -> dict[str, object]:
+        return self._next_review
 
     @Property("QVariantList", notify=dataChanged)
     def runHistory(self) -> list[dict[str, str]]:
@@ -1290,6 +1295,7 @@ class AppController(QObject):
         self._active_strategies = list(self._snapshot.active_strategies)
         self._active_strategies_summary = self._snapshot.active_strategies_summary
         self._registered_strategy_count = self._strategy_registration_service.registered_count()
+        self._next_review = self._enrich_next_review(self._snapshot.next_review)
         pending = max(0, self._registered_strategy_count - len(self._active_strategies))
         if pending:
             suffix = "strategy is" if pending == 1 else "strategies are"
@@ -1306,6 +1312,20 @@ class AppController(QObject):
                 suggestion = strategy.get("registrationSuggestion", {})
                 return dict(suggestion) if isinstance(suggestion, dict) else {}
         return {}
+
+    def _enrich_next_review(self, review: dict[str, object] | None) -> dict[str, object]:
+        if review is None:
+            return {}
+        result = dict(review)
+        profile = self._user_profile_service.current_profile("EXISTING_PORTFOLIO")
+        cadence_labels = {
+            "DAILY": "Daily",
+            "TWICE_WEEKLY": "Twice weekly",
+            "WEEKLY": "Weekly",
+            "MANUAL": "Manual / irregular",
+        }
+        result["profileCadence"] = cadence_labels.get(profile.run_cadence, profile.run_cadence.replace("_", " ").title())
+        return result
 
     def _refresh_onboarding_review(self) -> None:
         assets = self._portfolio_assets

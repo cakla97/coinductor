@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import re
@@ -33,6 +34,7 @@ class DesktopStore:
             live_action_lifecycle: dict[str, object] | None = None
             active_strategies: tuple[dict[str, object], ...] = ()
             active_strategies_summary = "No active strategies are registered."
+            next_review: dict[str, object] | None = None
             has_ready_live_preview = False
             if latest is not None:
                 report_path = self._report_path(latest)
@@ -50,6 +52,12 @@ class DesktopStore:
                 has_ready_live_preview = self._has_ready_live_preview(connection)
                 live_action_lifecycle = self._live_action_lifecycle(connection)
                 active_strategies, active_strategies_summary = self._active_strategies(connection, int(latest["id"]))
+                next_review = self._next_review(
+                    connection,
+                    int(latest["id"]),
+                    str(latest["started_at"] or ""),
+                    strategies,
+                )
             history = self._history(connection)
             return DesktopSnapshot(
                 latest_result,
@@ -61,6 +69,7 @@ class DesktopStore:
                 live_action_lifecycle,
                 active_strategies,
                 active_strategies_summary,
+                next_review,
             )
         finally:
             connection.close()
@@ -485,6 +494,103 @@ class DesktopStore:
         review = len([item for item in items if item["health"] == "Review"])
         action = len(items) - healthy - review
         return tuple(items), f"{len(items)} active strategy(s): {healthy} healthy, {review} to review, {action} requiring action."
+
+    def _next_review(
+        self,
+        connection: sqlite3.Connection,
+        run_id: int,
+        started_at: str,
+        strategies: tuple[dict[str, object], ...],
+    ) -> dict[str, object] | None:
+        if not self._table_exists(connection, "next_run_recommendations"):
+            return None
+        required = {"run_id", "run_again_in_hours", "urgency", "reason", "triggers"}
+        if not required.issubset(self._columns(connection, "next_run_recommendations")):
+            return None
+        row = connection.execute(
+            """
+            select run_again_in_hours, urgency, reason, triggers
+            from next_run_recommendations where run_id = ? order by rowid desc limit 1
+            """,
+            (run_id,),
+        ).fetchone()
+        if row is None:
+            return None
+
+        hours = max(0, int(row["run_again_in_hours"] or 0))
+        triggers = list(self._line_values(row["triggers"]))
+        structural_terms = (
+            "funding",
+            "capital",
+            "protected asset",
+            "minimum investment",
+            "uncovered",
+            "insufficient",
+            "liquidity",
+            "redeem",
+        )
+        manual_steps: list[str] = []
+        market_conditions: list[str] = []
+        for strategy in strategies:
+            strategy_type = str(strategy.get("type", "Strategy"))
+            for parameter in strategy.get("parameters", ()):
+                if str(parameter.get("label", "")) != "Blockers":
+                    continue
+                for blocker in self._line_values(parameter.get("value", "")):
+                    item = f"{strategy_type}: {blocker}"
+                    if any(term in blocker.lower() for term in structural_terms):
+                        manual_steps.append(item)
+                    else:
+                        market_conditions.append(item)
+
+        scheduled_at = self._scheduled_review(started_at, hours)
+        due_now = scheduled_at is not None and scheduled_at <= datetime.now(timezone.utc)
+        if manual_steps:
+            status = "Manual step before rerun"
+            tone = "blocked"
+            headline = "A fresh run can update market data, but it cannot remove the listed funding or configuration blocker."
+        elif hours == 0:
+            status = "Review now"
+            tone = "watch"
+            headline = "The latest run produced an action that should be reviewed before waiting for another scheduled check."
+        elif due_now:
+            status = "Review due now"
+            tone = "watch"
+            headline = "The recommended review interval has elapsed. Run a fresh analysis when convenient."
+        else:
+            status = f"Check again in {hours} hours"
+            tone = "watch"
+            headline = "No immediate action is required. Wait for the suggested interval unless an earlier trigger occurs."
+
+        return {
+            "status": status,
+            "tone": tone,
+            "headline": headline,
+            "hours": hours,
+            "timing": "After the manual step" if manual_steps else "Now" if due_now or hours == 0 else f"In {hours} hours",
+            "scheduledAt": self._format_scheduled_review(scheduled_at),
+            "reason": str(row["reason"] or "No next-run reason was recorded."),
+            "triggers": tuple(dict.fromkeys(triggers + market_conditions)),
+            "manualSteps": tuple(dict.fromkeys(manual_steps)),
+            "sourceRun": str(run_id),
+            "urgency": str(row["urgency"] or "NORMAL").replace("_", " ").title(),
+        }
+
+    def _scheduled_review(self, started_at: str, hours: int) -> datetime | None:
+        if not started_at:
+            return None
+        try:
+            started = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+        except ValueError:
+            return None
+        if started.tzinfo is None:
+            started = started.replace(tzinfo=timezone.utc)
+        return started.astimezone(timezone.utc) + timedelta(hours=hours)
+
+    def _format_scheduled_review(self, value: datetime | None) -> str:
+        if value is None:
+            return "Not available"
+        return value.astimezone().strftime("%Y-%m-%d %H:%M %Z")
 
     def _active_grid_item(self, row: sqlite3.Row) -> dict[str, object]:
         state = str(row["state"] or "UNKNOWN_PRICE").upper()

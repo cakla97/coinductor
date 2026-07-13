@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 import sqlite3
 
 from coinductor.desktop_store import DesktopStore
@@ -79,6 +80,10 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
         create table live_orders (
             run_id integer, status text, submitted integer
         );
+        create table next_run_recommendations (
+            run_id integer, run_again_in_hours integer, urgency text,
+            reason text, triggers text
+        );
         """
     )
     connection.execute(
@@ -120,6 +125,13 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
         "insert into oco_protection_orders values (1, 'oco-live-1', 'BTCUSDC', 'SELL', 'READY', '0.001', '0.001', '0.001', '110000', '90000', '110', '90', 0, '', 'CONFIRM_MAINNET_OCO', 'SELL OCO protection preview is valid.', '')"
     )
     connection.execute("insert into live_orders values (1, 'PREVIEW_READY', 0)")
+    connection.execute(
+        "insert into next_run_recommendations values (1, 24, 'NORMAL', ?, ?)",
+        (
+            "No action was recommended in this run.",
+            "Run sooner after a large BTC move.\nRun sooner after changing the portfolio.",
+        ),
+    )
     connection.commit()
     connection.close()
 
@@ -147,8 +159,53 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
     assert snapshot.position_protection["canSubmitOco"] is True
     assert snapshot.position_protection["parameters"][2]["value"] == "110000"
     assert snapshot.has_ready_live_preview is True
+    assert snapshot.next_review is not None
+    assert snapshot.next_review["status"] == "Manual step before rerun"
+    assert snapshot.next_review["tone"] == "blocked"
+    assert snapshot.next_review["timing"] == "After the manual step"
+    assert "Rebalancing: Funding gap." in snapshot.next_review["manualSteps"]
+    assert "Spot Grid: Market status is WATCH." in snapshot.next_review["triggers"]
+    assert snapshot.next_review["sourceRun"] == "1"
     assert snapshot.run_history[0]["dataMode"] == "MOCK"
     assert snapshot.run_history[1]["dataMode"] == "REAL"
+
+
+def test_next_review_waits_for_market_conditions_without_manual_blocker(tmp_path) -> None:
+    database = tmp_path / "agent.sqlite3"
+    connection = sqlite3.connect(database)
+    connection.row_factory = sqlite3.Row
+    connection.execute(
+        """
+        create table next_run_recommendations (
+            run_id integer, run_again_in_hours integer, urgency text,
+            reason text, triggers text
+        )
+        """
+    )
+    connection.execute(
+        "insert into next_run_recommendations values (7, 24, 'NORMAL', ?, ?)",
+        ("No immediate action is needed.", "Run sooner after a material price move."),
+    )
+    strategies = (
+        {
+            "type": "Spot Grid",
+            "parameters": ({"label": "Blockers", "value": "Market status is WATCH."},),
+        },
+    )
+
+    review = DesktopStore(database, tmp_path)._next_review(
+        connection,
+        7,
+        datetime.now(timezone.utc).isoformat(),
+        strategies,
+    )
+    connection.close()
+
+    assert review is not None
+    assert review["status"] == "Check again in 24 hours"
+    assert review["timing"] == "In 24 hours"
+    assert review["manualSteps"] == ()
+    assert "Spot Grid: Market status is WATCH." in review["triggers"]
 
 
 def test_desktop_store_builds_protected_and_closed_live_lifecycle(tmp_path) -> None:

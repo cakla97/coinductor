@@ -1694,6 +1694,12 @@ ApplicationWindow {
                     }
                 }
 
+                Loader {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: item && item.visible ? item.implicitHeight : 0
+                    sourceComponent: nextReviewPanelComponent
+                }
+
                 ListView {
                     Layout.fillWidth: true
                     Layout.preferredHeight: Math.max(620, contentHeight)
@@ -1885,6 +1891,143 @@ ApplicationWindow {
                             Button { text: "Open Action Plan"; onClicked: appController.setCurrentPage(3) }
                         }
                     }
+                }
+
+                Component {
+                    id: nextReviewPanelComponent
+                    Rectangle {
+                    implicitHeight: nextReviewContent.implicitHeight + 36
+                    visible: Object.keys(appController.nextReview).length > 0
+                    radius: 7
+                    color: panel
+                    border.color: appController.nextReview.tone === "blocked" ? warning : border
+                    ColumnLayout {
+                        id: nextReviewContent
+                        anchors.fill: parent
+                        anchors.margins: 18
+                        spacing: 12
+                        RowLayout {
+                            Layout.fillWidth: true
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 3
+                                Text { text: "Next review"; color: textPrimary; font.pixelSize: 17; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    text: appController.nextReview.headline || ""
+                                    color: textSecondary
+                                    font.pixelSize: 12
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                            Rectangle {
+                                Layout.preferredWidth: Math.max(140, nextReviewStatus.implicitWidth + 24)
+                                Layout.preferredHeight: 30
+                                radius: 5
+                                color: appController.nextReview.tone === "blocked" ? "#3a3020" : panelRaised
+                                border.color: appController.nextReview.tone === "blocked" ? warning : border
+                                Text {
+                                    id: nextReviewStatus
+                                    anchors.centerIn: parent
+                                    text: appController.nextReview.status || "Not scheduled"
+                                    color: appController.nextReview.tone === "blocked" ? warning : textPrimary
+                                    font.pixelSize: 11
+                                    font.bold: true
+                                }
+                            }
+                        }
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: width < 760 ? 1 : 3
+                            columnSpacing: 24
+                            rowSpacing: 8
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Text { text: "Suggested timing"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                Text { Layout.fillWidth: true; text: appController.nextReview.timing || "Not available"; color: textPrimary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Text { text: "Scheduled from latest run"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                Text { Layout.fillWidth: true; text: appController.nextReview.scheduledAt || "Not available"; color: textPrimary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                Text { text: "Profile review rhythm"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                Text { Layout.fillWidth: true; text: appController.nextReview.profileCadence || "Not configured"; color: textPrimary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                            }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.nextReview.reason || ""
+                            color: textSecondary
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                        }
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: width < 760 ? 1 : 2
+                            columnSpacing: 28
+                            rowSpacing: 12
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 5
+                                Text { text: "Run sooner when"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                Repeater {
+                                    model: appController.nextReview.triggers || []
+                                    delegate: Text {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        text: "- " + modelData
+                                        color: textSecondary
+                                        font.pixelSize: 11
+                                        wrapMode: Text.WordWrap
+                                    }
+                                }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 5
+                                Text { text: "Before another run"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                Text {
+                                    Layout.fillWidth: true
+                                    visible: (appController.nextReview.manualSteps || []).length === 0
+                                    text: "No manual prerequisite. A fresh run can reassess current market conditions."
+                                    color: textSecondary
+                                    font.pixelSize: 11
+                                    wrapMode: Text.WordWrap
+                                }
+                                Repeater {
+                                    model: appController.nextReview.manualSteps || []
+                                    delegate: Text {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        text: "- " + modelData
+                                        color: warning
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                        wrapMode: Text.WordWrap
+                                    }
+                                }
+                            }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Based on deterministic output from run " + (appController.nextReview.sourceRun || "-") + ". AI commentary does not control this timing."
+                                color: textSecondary
+                                font.pixelSize: 10
+                                wrapMode: Text.WordWrap
+                            }
+                            Button {
+                                text: "Run analysis now"
+                                enabled: !appController.busy
+                                onClicked: runDialog.open()
+                            }
+                        }
+                    }
+                }
                 }
 
                 ListView {

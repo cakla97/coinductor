@@ -83,5 +83,11 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "I verified that these values match the currently active bot in Binance." in qml
     assert "activeStrategyDetailDialog.open()" in qml
     assert "visible: appController.currentPage === 8" in qml
+    assert 'text: "Next review"' in qml
+    assert "appController.nextReview" in qml
+    assert 'text: "Run sooner when"' in qml
+    assert 'text: "Before another run"' in qml
+    assert "AI commentary does not control this timing." in qml
+    assert "sourceComponent: nextReviewPanelComponent" in qml
     assert "safetyPhraseRow.implicitHeight + 24" in qml
     assert 'safetyAllowsLiveSubmit ? "#ee6b6e"' not in qml

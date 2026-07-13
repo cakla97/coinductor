@@ -1218,7 +1218,7 @@ ApplicationWindow {
                     Layout.preferredHeight: 86
                     radius: 6
                     color: panel
-                    border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e"
+                    border.color: appController.safetyAllowsLiveSubmit ? accent
                         : appController.safetyAllowsLivePreview ? warning : border
                     Column {
                         anchors.fill: parent
@@ -1231,7 +1231,7 @@ ApplicationWindow {
                                 width: 8
                                 height: 8
                                 radius: 4
-                                color: appController.safetyAllowsLiveSubmit ? "#ee6b6e"
+                                color: appController.safetyAllowsLiveSubmit ? accent
                                     : appController.safetyAllowsLivePreview ? warning : accent
                                 anchors.verticalCenter: parent.verticalCenter
                             }
@@ -1312,7 +1312,7 @@ ApplicationWindow {
                     Layout.preferredHeight: overviewSafetyContent.implicitHeight + 32
                     radius: 7
                     color: panel
-                    border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e"
+                    border.color: appController.safetyAllowsLiveSubmit ? accent
                         : appController.safetyAllowsLivePreview ? warning : border
                     ColumnLayout {
                         id: overviewSafetyContent
@@ -1343,12 +1343,12 @@ ApplicationWindow {
                                 Layout.preferredWidth: 126
                                 Layout.preferredHeight: 30
                                 radius: 5
-                                color: appController.safetyAllowsLiveSubmit ? "#45262a" : appController.safetyAllowsLivePreview ? "#3a3020" : panelRaised
-                                border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : appController.safetyAllowsLivePreview ? warning : border
+                                color: appController.safetyAllowsLiveSubmit ? "#17372d" : appController.safetyAllowsLivePreview ? "#3a3020" : panelRaised
+                                border.color: appController.safetyAllowsLiveSubmit ? accent : appController.safetyAllowsLivePreview ? warning : border
                                 Text {
                                     anchors.centerIn: parent
                                     text: appController.safetyStage
-                                    color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : appController.safetyAllowsLivePreview ? warning : textSecondary
+                                    color: appController.safetyAllowsLiveSubmit ? accent : appController.safetyAllowsLivePreview ? warning : textSecondary
                                     font.pixelSize: 10
                                     font.bold: true
                                 }
@@ -2069,7 +2069,7 @@ ApplicationWindow {
                                 Text {
                                     anchors.centerIn: parent
                                     text: appController.safetyStage
-                                    color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : warning
+                                    color: appController.safetyAllowsLiveSubmit ? accent : warning
                                     font.pixelSize: 10
                                     font.bold: true
                                 }
@@ -2293,7 +2293,7 @@ ApplicationWindow {
                     Layout.preferredHeight: 410
                     radius: 7
                     color: panel
-                    border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : border
+                    border.color: appController.safetyAllowsLiveSubmit ? accent : border
                     ColumnLayout {
                         anchors.fill: parent
                         anchors.margins: 18
@@ -2301,7 +2301,7 @@ ApplicationWindow {
                         RowLayout {
                             Layout.fillWidth: true
                             Text { Layout.fillWidth: true; text: "Safety stage"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                            Text { text: appController.safetyStage; color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : warning; font.pixelSize: 12; font.bold: true }
+                            Text { text: appController.safetyStage; color: appController.safetyAllowsLiveSubmit ? accent : warning; font.pixelSize: 12; font.bold: true }
                         }
                         Text { Layout.fillWidth: true; text: appController.safetyDetail; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                         Text {
@@ -2355,7 +2355,7 @@ ApplicationWindow {
                                 }
                             }
                             Rectangle {
-                                Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: panelRaised; border.color: appController.safetyAllowsLiveSubmit ? "#ee6b6e" : border
+                                Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: panelRaised; border.color: appController.safetyAllowsLiveSubmit ? accent : border
                                 Column {
                                     anchors.fill: parent; anchors.margins: 10; spacing: 4
                                     Text { text: "3. Live enabled"; color: textPrimary; font.bold: true }
@@ -2818,7 +2818,7 @@ ApplicationWindow {
                                 Text {
                                     anchors.centerIn: parent
                                     text: "Stage: " + appController.safetyStage
-                                    color: appController.safetyAllowsLiveSubmit ? "#ee6b6e"
+                                    color: appController.safetyAllowsLiveSubmit ? accent
                                         : appController.safetyAllowsLivePreview ? warning : accent
                                     font.pixelSize: 11
                                     font.bold: true
@@ -2879,11 +2879,12 @@ ApplicationWindow {
             }
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 58
+                Layout.preferredHeight: safetyPhraseRow.implicitHeight + 24
                 radius: 7
                 color: "#3a3020"
                 border.color: warning
                 RowLayout {
+                    id: safetyPhraseRow
                     anchors.fill: parent
                     anchors.margins: 12
                     spacing: 12

@@ -570,8 +570,8 @@ class DesktopStore:
             "timing": "After the manual step" if manual_steps else "Now" if due_now or hours == 0 else f"In {hours} hours",
             "scheduledAt": self._format_scheduled_review(scheduled_at),
             "reason": str(row["reason"] or "No next-run reason was recorded."),
-            "triggers": tuple(dict.fromkeys(triggers + market_conditions)),
-            "manualSteps": tuple(dict.fromkeys(manual_steps)),
+            "triggers": list(dict.fromkeys(triggers + market_conditions)),
+            "manualSteps": list(dict.fromkeys(manual_steps)),
             "sourceRun": str(run_id),
             "urgency": str(row["urgency"] or "NORMAL").replace("_", " ").title(),
         }

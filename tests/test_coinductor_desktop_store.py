@@ -163,6 +163,8 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
     assert snapshot.next_review["status"] == "Manual step before rerun"
     assert snapshot.next_review["tone"] == "blocked"
     assert snapshot.next_review["timing"] == "After the manual step"
+    assert isinstance(snapshot.next_review["triggers"], list)
+    assert isinstance(snapshot.next_review["manualSteps"], list)
     assert "Rebalancing: Funding gap." in snapshot.next_review["manualSteps"]
     assert "Spot Grid: Market status is WATCH." in snapshot.next_review["triggers"]
     assert snapshot.next_review["sourceRun"] == "1"
@@ -204,7 +206,7 @@ def test_next_review_waits_for_market_conditions_without_manual_blocker(tmp_path
     assert review is not None
     assert review["status"] == "Check again in 24 hours"
     assert review["timing"] == "In 24 hours"
-    assert review["manualSteps"] == ()
+    assert review["manualSteps"] == []
     assert "Spot Grid: Market status is WATCH." in review["triggers"]
 
 

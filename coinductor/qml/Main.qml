@@ -1660,12 +1660,17 @@ ApplicationWindow {
         }
 
         ScrollView {
+            id: actionPlanScroll
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
             visible: appController.currentPage === 3
+            contentWidth: availableWidth
+            contentHeight: actionPlanPageContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
             ColumnLayout {
+                id: actionPlanPageContent
                 x: 28
                 y: 28
                 width: Math.max(window.width - 288, 692)
@@ -1744,6 +1749,39 @@ ApplicationWindow {
                                             font.pixelSize: 12
                                             elide: Text.ElideRight
                                         }
+                                    }
+                                }
+                            }
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: tradeLifecycleSummary.implicitHeight + 22
+                                visible: modelData.liveLifecycle !== undefined && modelData.liveLifecycle !== null
+                                radius: 6
+                                color: panelRaised
+                                border.color: modelData.liveLifecycle && modelData.liveLifecycle.tone === "ready" ? accent : border
+                                RowLayout {
+                                    id: tradeLifecycleSummary
+                                    anchors.fill: parent
+                                    anchors.margins: 11
+                                    spacing: 12
+                                    Text {
+                                        text: "Last live trade"
+                                        color: textPrimary
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                    }
+                                    Text {
+                                        text: modelData.liveLifecycle ? modelData.liveLifecycle.status : ""
+                                        color: modelData.liveLifecycle && modelData.liveLifecycle.tone === "ready" ? accent : warning
+                                        font.pixelSize: 11
+                                        font.bold: true
+                                    }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: modelData.liveLifecycle ? modelData.liveLifecycle.detail : ""
+                                        color: textSecondary
+                                        font.pixelSize: 10
+                                        elide: Text.ElideRight
                                     }
                                 }
                             }
@@ -2212,31 +2250,6 @@ ApplicationWindow {
                                     text: appController.checkingLiveTrading ? "Verifying..." : "Verify permissions"
                                     enabled: appController.liveTradingKeyStatus === "PASS" && !appController.checkingLiveTrading
                                     onClicked: appController.checkBinanceLiveTrading()
-                                }
-                            }
-                            GridLayout {
-                                Layout.fillWidth: true
-                                visible: modelData.actionCode === "REVIEW_LIFECYCLE"
-                                columns: 4
-                                columnSpacing: 10
-                                Repeater {
-                                    model: modelData.lifecycleSteps || []
-                                    delegate: Rectangle {
-                                        required property var modelData
-                                        Layout.fillWidth: true
-                                        Layout.preferredHeight: 64
-                                        radius: 6
-                                        color: panelRaised
-                                        border.color: modelData.status === "Done" ? accent : modelData.status === "Action needed" ? warning : border
-                                        ColumnLayout {
-                                            anchors.fill: parent
-                                            anchors.margins: 9
-                                            spacing: 2
-                                            Text { text: modelData.label; color: textPrimary; font.pixelSize: 11; font.bold: true }
-                                            Text { text: modelData.status; color: modelData.status === "Done" ? accent : modelData.status === "Action needed" ? warning : textSecondary; font.pixelSize: 10; font.bold: true }
-                                            Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 9; elide: Text.ElideRight }
-                                        }
-                                    }
                                 }
                             }
                         }
@@ -2913,35 +2926,6 @@ ApplicationWindow {
                         }
                     }
                 }
-                GridLayout {
-                    Layout.fillWidth: true
-                    visible: activeActionPlanItem.actionCode === "REVIEW_LIFECYCLE"
-                    columns: 2
-                    columnSpacing: 12
-                    rowSpacing: 12
-                    Repeater {
-                        model: activeActionPlanItem.lifecycleSteps || []
-                        delegate: Rectangle {
-                            required property var modelData
-                            Layout.fillWidth: true
-                            Layout.preferredHeight: 76
-                            radius: 6
-                            color: panelRaised
-                            border.color: modelData.status === "Done" ? accent : modelData.status === "Action needed" ? warning : border
-                            ColumnLayout {
-                                anchors.fill: parent
-                                anchors.margins: 10
-                                spacing: 3
-                                RowLayout {
-                                    Layout.fillWidth: true
-                                    Text { Layout.fillWidth: true; text: modelData.label; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                    Text { text: modelData.status; color: modelData.status === "Done" ? accent : modelData.status === "Action needed" ? warning : textSecondary; font.pixelSize: 10; font.bold: true }
-                                }
-                                Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
-                            }
-                        }
-                    }
-                }
                 Text {
                     Layout.fillWidth: true
                     text: appController.liveTradingCheckDetail
@@ -3030,6 +3014,7 @@ ApplicationWindow {
                         safetyStageConfirmDialog.close()
                     }
                 }
+                Item { Layout.fillWidth: true; Layout.preferredHeight: 36 }
             }
         }
     }
@@ -3116,6 +3101,81 @@ ApplicationWindow {
                         }
                     }
                 }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    visible: activeActionPlanItem.liveLifecycle !== undefined && activeActionPlanItem.liveLifecycle !== null
+                    spacing: 12
+                    Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: border }
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Text { Layout.fillWidth: true; text: "Last live trade"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                        Text {
+                            text: activeActionPlanItem.liveLifecycle ? activeActionPlanItem.liveLifecycle.status : ""
+                            color: activeActionPlanItem.liveLifecycle && activeActionPlanItem.liveLifecycle.tone === "ready" ? accent : warning
+                            font.pixelSize: 11
+                            font.bold: true
+                        }
+                    }
+                    Text {
+                        Layout.fillWidth: true
+                        text: activeActionPlanItem.liveLifecycle ? activeActionPlanItem.liveLifecycle.detail : ""
+                        color: textSecondary
+                        font.pixelSize: 12
+                        wrapMode: Text.WordWrap
+                    }
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: 2
+                        columnSpacing: 12
+                        rowSpacing: 12
+                        Repeater {
+                            model: activeActionPlanItem.liveLifecycle ? activeActionPlanItem.liveLifecycle.lifecycleSteps : []
+                            delegate: Rectangle {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 76
+                                radius: 6
+                                color: panelRaised
+                                border.color: modelData.status === "Done" ? accent : modelData.status === "Action needed" ? warning : border
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 10
+                                    spacing: 3
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Text { Layout.fillWidth: true; text: modelData.label; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                        Text { text: modelData.status; color: modelData.status === "Done" ? accent : modelData.status === "Action needed" ? warning : textSecondary; font.pixelSize: 10; font.bold: true }
+                                    }
+                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                }
+                            }
+                        }
+                    }
+                    GridLayout {
+                        Layout.fillWidth: true
+                        columns: 2
+                        columnSpacing: 12
+                        rowSpacing: 10
+                        Repeater {
+                            model: activeActionPlanItem.liveLifecycle ? activeActionPlanItem.liveLifecycle.parameters : []
+                            delegate: Rectangle {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 64
+                                radius: 6
+                                color: panelRaised
+                                border.color: border
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: 10
+                                    spacing: 3
+                                    Text { text: modelData.label; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                    Text { Layout.fillWidth: true; text: modelData.value || "-"; color: textPrimary; font.pixelSize: 12; elide: Text.ElideRight }
+                                }
+                            }
+                        }
+                    }
+                }
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: actionDetailNote.implicitHeight + 28
@@ -3127,11 +3187,11 @@ ApplicationWindow {
                         anchors.fill: parent
                         anchors.margins: 12
                         text: activeActionPlanItem.actionCode === "REVIEW_TRADE"
-                            ? "Live trade submission is separate from review. It stays locked unless the latest BUY preview, live key, safety stage, and confirmation text all pass."
+                            ? (activeActionPlanItem.liveLifecycle
+                                ? "The current recommendation and the last live trade are separate. Run a fresh analysis to synchronize Binance order and OCO status again."
+                                : "Live trade submission is separate from review. It stays locked unless the latest BUY preview, live key, safety stage, and confirmation text all pass.")
                             : activeActionPlanItem.actionCode === "REVIEW_OCO"
                                 ? "OCO protection is a separate SELL order pair. Submission requires a READY preview and its own explicit confirmation."
-                                : activeActionPlanItem.actionCode === "REVIEW_LIFECYCLE"
-                                    ? "Lifecycle data comes from locally stored Binance results. Run a fresh analysis to synchronize exchange order and OCO status again."
                                 : "This dialog is review-only. Manual bot setup remains outside automatic desktop submission."
                         color: warning
                         font.pixelSize: 12

@@ -114,7 +114,7 @@ def test_buy_trade_requires_fresh_live_permission_check(monkeypatch, tmp_path) -
     assert "this app session" in card["submitBlockedReason"]
 
 
-def test_live_lifecycle_is_added_after_trade_card(monkeypatch, tmp_path) -> None:
+def test_live_lifecycle_is_nested_in_trade_card(monkeypatch, tmp_path) -> None:
     controller = _controller(monkeypatch, tmp_path)
     _set_trade_state(controller, "HOLD", live_enabled=False, key_ready=False)
     lifecycle = {
@@ -140,5 +140,5 @@ def test_live_lifecycle_is_added_after_trade_card(monkeypatch, tmp_path) -> None
     cards = controller._build_action_plan_items()
 
     assert cards[0]["title"] == "Trade"
-    assert cards[1]["title"] == "Live position lifecycle"
-    assert cards[1]["status"] == "Protected"
+    assert cards[0]["liveLifecycle"]["status"] == "Protected"
+    assert all(card["title"] != "Live position lifecycle" for card in cards[1:])

@@ -1246,27 +1246,25 @@ class AppController(QObject):
         else:
             trade_submit_blocked = ""
 
-        cards = [
-            {
-                "title": "Trade",
-                "status": trade_status,
-                "tone": trade_tone,
-                "detail": trade_detail,
-                "parameters": trade_parameters,
-                "primaryLabel": "Review trade" if trade_tone == "ready" else "Why watched?" if trade_tone == "watch" else "Show blockers",
-                "actionCode": "REVIEW_TRADE",
-                "canSubmitLive": trade_can_submit,
-                "submitEnabled": trade_can_submit
-                and self._safety_snapshot.allows_live_submit
-                and self.liveTradingKeyStatus == "PASS"
-                and self._live_trading_check_status == "Verified",
-                "submitLabel": f"Confirm live {trade_action}" if trade_can_submit else "Live submit locked",
-                "submitBlockedReason": trade_submit_blocked,
-            }
-        ]
-
+        trade_card = {
+            "title": "Trade",
+            "status": trade_status,
+            "tone": trade_tone,
+            "detail": trade_detail,
+            "parameters": trade_parameters,
+            "primaryLabel": "Review trade" if trade_tone == "ready" else "Why watched?" if trade_tone == "watch" else "Show blockers",
+            "actionCode": "REVIEW_TRADE",
+            "canSubmitLive": trade_can_submit,
+            "submitEnabled": trade_can_submit
+            and self._safety_snapshot.allows_live_submit
+            and self.liveTradingKeyStatus == "PASS"
+            and self._live_trading_check_status == "Verified",
+            "submitLabel": f"Confirm live {trade_action}" if trade_can_submit else "Live submit locked",
+            "submitBlockedReason": trade_submit_blocked,
+        }
         if self._snapshot.live_action_lifecycle is not None:
-            cards.append(dict(self._snapshot.live_action_lifecycle))
+            trade_card["liveLifecycle"] = dict(self._snapshot.live_action_lifecycle)
+        cards = [trade_card]
 
         if self._strategies:
             for item in self._strategies:

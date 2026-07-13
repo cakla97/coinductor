@@ -35,6 +35,7 @@ def test_main_qml_loads(monkeypatch) -> None:
         qInstallMessageHandler(previous_handler)
 
     assert not any("appController" in message and "null" in message for message in messages)
+    assert not any("undefined" in message.lower() for message in messages)
 
 
 def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> None:
@@ -61,7 +62,9 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "rightPadding: 18" in qml
     assert "Credentials & Safety" not in qml
     assert "Permissions verified this session" in qml
-    assert "REVIEW_LIFECYCLE" in qml
-    assert "Lifecycle data comes from locally stored Binance results" in qml
+    assert "Last live trade" in qml
+    assert "activeActionPlanItem.liveLifecycle.lifecycleSteps" in qml
+    assert "contentHeight: actionPlanPageContent.implicitHeight + 72" in qml
+    assert "REVIEW_LIFECYCLE" not in qml
     assert "safetyPhraseRow.implicitHeight + 24" in qml
     assert 'safetyAllowsLiveSubmit ? "#ee6b6e"' not in qml

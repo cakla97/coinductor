@@ -2240,13 +2240,15 @@ ApplicationWindow {
                     model: appController.assistantMessages
                     onCountChanged: positionViewAtEnd()
                     delegate: Item {
+                        id: assistantMessageDelegate
                         required property var modelData
+                        property bool isTyping: modelData.role === "typing"
                         width: ListView.view.width
-                        height: messageBubble.implicitHeight
+                        height: isTyping ? 44 : messageBubble.implicitHeight
                         Rectangle {
                             id: messageBubble
-                            width: Math.min(parent.width * 0.72, Math.max(280, messageText.implicitWidth + 30))
-                            implicitHeight: messageText.implicitHeight + 24
+                            width: assistantMessageDelegate.isTyping ? 72 : Math.min(parent.width * 0.72, Math.max(280, messageText.implicitWidth + 30))
+                            implicitHeight: assistantMessageDelegate.isTyping ? 44 : messageText.implicitHeight + 24
                             anchors.right: modelData.role === "user" ? parent.right : undefined
                             anchors.left: modelData.role === "user" ? undefined : parent.left
                             radius: 7
@@ -2257,10 +2259,61 @@ ApplicationWindow {
                                 anchors.fill: parent
                                 anchors.margins: 12
                                 text: modelData.text
+                                visible: !assistantMessageDelegate.isTyping
                                 color: textPrimary
                                 font.pixelSize: 13
                                 wrapMode: Text.WordWrap
                             }
+                            Row {
+                                visible: assistantMessageDelegate.isTyping
+                                anchors.centerIn: parent
+                                spacing: 6
+                                Repeater {
+                                    model: 3
+                                    delegate: Rectangle {
+                                        required property int index
+                                        width: 7
+                                        height: 7
+                                        radius: 4
+                                        color: accent
+                                        opacity: 0.25
+                                        SequentialAnimation on opacity {
+                                            running: assistantMessageDelegate.isTyping
+                                            loops: Animation.Infinite
+                                            PauseAnimation { duration: index * 140 }
+                                            NumberAnimation { from: 0.25; to: 1.0; duration: 320; easing.type: Easing.InOutQuad }
+                                            NumberAnimation { from: 1.0; to: 0.25; duration: 320; easing.type: Easing.InOutQuad }
+                                            PauseAnimation { duration: (2 - index) * 140 }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: assistantActionContent.implicitHeight + 28
+                    visible: Object.keys(appController.assistantPendingAction).length > 0
+                    radius: 7
+                    color: panelRaised
+                    border.color: accent
+
+                    ColumnLayout {
+                        id: assistantActionContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 14
+                        spacing: 8
+                        Text { Layout.fillWidth: true; text: appController.assistantPendingAction.title || "Proposed app action"; color: textPrimary; font.pixelSize: 15; font.bold: true; wrapMode: Text.WordWrap }
+                        Text { Layout.fillWidth: true; text: appController.assistantPendingAction.description || ""; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                        RowLayout {
+                            Layout.alignment: Qt.AlignRight
+                            spacing: 8
+                            Button { text: "Dismiss"; onClicked: appController.dismissAssistantAction() }
+                            Button { text: appController.assistantPendingAction.confirmLabel || "Confirm"; highlighted: true; onClicked: appController.confirmAssistantAction() }
                         }
                     }
                 }
@@ -2279,7 +2332,7 @@ ApplicationWindow {
                         }
                     }
                     Button {
-                        text: appController.assistantBusy ? "Thinking..." : "Send"
+                        text: "Send"
                         enabled: assistantInput.text.trim().length > 0 && !appController.assistantBusy
                         onClicked: {
                             appController.askAssistant(assistantInput.text)
@@ -3553,49 +3606,6 @@ ApplicationWindow {
                         color: textPrimary
                         font.pixelSize: 12
                         wrapMode: Text.WordWrap
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: assistantActionContent.implicitHeight + 28
-                    visible: Object.keys(appController.assistantPendingAction).length > 0
-                    radius: 7
-                    color: panelRaised
-                    border.color: accent
-
-                    ColumnLayout {
-                        id: assistantActionContent
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        anchors.margins: 14
-                        spacing: 8
-                        Text {
-                            Layout.fillWidth: true
-                            text: appController.assistantPendingAction.title || "Proposed app action"
-                            color: textPrimary
-                            font.pixelSize: 15
-                            font.bold: true
-                            wrapMode: Text.WordWrap
-                        }
-                        Text {
-                            Layout.fillWidth: true
-                            text: appController.assistantPendingAction.description || ""
-                            color: textSecondary
-                            font.pixelSize: 12
-                            wrapMode: Text.WordWrap
-                        }
-                        RowLayout {
-                            Layout.alignment: Qt.AlignRight
-                            spacing: 8
-                            Button { text: "Dismiss"; onClicked: appController.dismissAssistantAction() }
-                            Button {
-                                text: appController.assistantPendingAction.confirmLabel || "Confirm"
-                                highlighted: true
-                                onClicked: appController.confirmAssistantAction()
-                            }
-                        }
                     }
                 }
 

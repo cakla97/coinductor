@@ -12,6 +12,7 @@ from trading_agent.env import load_env_file
 
 from .ai_provider import AiProviderService
 from .models import DesktopSnapshot
+from .ui_knowledge import UiKnowledgeService, is_czech
 
 
 @dataclass(frozen=True)
@@ -224,6 +225,9 @@ class ProviderBackedAssistant:
         deterministic = AssistantIntentService().propose(question, snapshot)
         if deterministic is not None:
             return deterministic
+        ui_answer = UiKnowledgeService().answer(question)
+        if ui_answer is not None:
+            return AssistantResponse(ui_answer)
         return AssistantResponse(self.answer(question, snapshot))
 
     def _provider_answer(self, question: str, snapshot: DesktopSnapshot) -> str:
@@ -238,16 +242,22 @@ class ProviderBackedAssistant:
         if not model:
             raise RuntimeError("LLM_MODEL is not set.")
 
+        response_language = "Czech" if is_czech(question) else "English"
         payload = {
             "task": "Answer a user question about Coinductor in a concise, read-only way.",
+            "response_language": response_language,
             "strict_boundaries": [
+                f"Answer exclusively in {response_language}; do not mix languages except exact UI labels and technical identifiers.",
                 "Do not claim that you changed settings, placed orders, redeemed Earn, or created Binance bots.",
                 "Do not provide financial guarantees.",
                 "Do not invent live market prices. If asked for current prices and no market-data payload is present, explain that this milestone cannot fetch standalone live prices yet.",
-                "If the user asks to change app state, explain that command intents are planned and require deterministic validation plus confirmation.",
+                "For documented UI behavior, answer directly from ui_component_catalog. Never hedge with likely, probably, may, or might.",
+                "If a component is absent from the catalog, say that its exact behavior is not in the supplied context instead of guessing.",
+                "If the user asks to change app state, explain that supported command intents require deterministic validation plus confirmation.",
                 "Use only the supplied context. Say when data is unavailable.",
             ],
             "project_context": AiProviderService(self.config_path, self.env_path).inspect().context_sections,
+            "ui_component_catalog": UiKnowledgeService().context(),
             "snapshot": self._snapshot_payload(snapshot),
             "question": question,
             "schema": {"answer": "plain-language answer, max 180 words"},
@@ -260,7 +270,9 @@ class ProviderBackedAssistant:
                         "role": "system",
                         "content": (
                             "You are Coinductor's read-only assistant. You explain the app, reports, portfolio state, "
-                            "risk controls, and setup. You cannot execute actions. Return JSON only."
+                            "risk controls, and setup from supplied authoritative context. Match the user's language exactly, "
+                            "never guess undocumented behavior, and never use uncertain wording for catalogued controls. "
+                            "You cannot execute actions. Return JSON only."
                         ),
                     },
                     {"role": "user", "content": json.dumps(payload, default=str)},

@@ -983,7 +983,7 @@ class AppController(QObject):
             return
         self._assistant_pending_action = {}
         self._assistant_messages.append({"role": "user", "text": text})
-        self._assistant_messages.append({"role": "assistant", "text": "Thinking..."})
+        self._assistant_messages.append({"role": "typing", "text": ""})
         self._assistant_busy = True
         self.assistantChanged.emit()
 
@@ -1394,7 +1394,7 @@ class AppController(QObject):
     def _on_assistant_completed(self, response: AssistantResponse) -> None:
         answer = response.text
         self._assistant_pending_action = dict(response.proposed_action or {})
-        if self._assistant_messages and self._assistant_messages[-1]["text"] == "Thinking...":
+        if self._assistant_messages and self._assistant_messages[-1].get("role") == "typing":
             self._assistant_messages[-1] = {"role": "assistant", "text": answer}
         else:
             self._assistant_messages.append({"role": "assistant", "text": answer})

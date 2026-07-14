@@ -5,6 +5,7 @@ from coinductor import assistant as assistant_module
 from coinductor.assistant import AssistantIntentService, AssistantResponse, LocalHelpAssistant, ProviderBackedAssistant
 from coinductor.controller import AppController
 from coinductor.models import ActionSummary, DesktopRunResult, DesktopSnapshot
+from coinductor.ui_knowledge import UiKnowledgeService
 from test_coinductor_setup_service import VALID_CONFIG
 
 
@@ -47,6 +48,9 @@ def test_provider_backed_assistant_uses_chat_completions(tmp_path, monkeypatch) 
         body = json.loads(request.data.decode("utf-8"))
         assert body["model"] == "qwen3:14b"
         assert "chat/completions" in request.full_url
+        prompt = json.loads(body["messages"][1]["content"])
+        assert prompt["response_language"] == "English"
+        assert any(item["component"] == "Refresh checks" for item in prompt["ui_component_catalog"])
         return FakeResponse()
 
     monkeypatch.setattr(assistant_module.urllib.request, "urlopen", fake_urlopen)
@@ -140,6 +144,31 @@ def test_controller_rejects_unknown_asset_role_change(tmp_path, monkeypatch) -> 
     controller.confirmAssistantAction()
 
     assert controller._asset_policy_store.load() == {}
+
+
+def test_ui_knowledge_answers_refresh_checks_exactly_in_czech() -> None:
+    answer = UiKnowledgeService().answer("Co udělá tlačítko Refresh checks v Live actions?")
+
+    assert answer is not None
+    assert "znovu načte lokální stav" in answer
+    assert "Neprovádí síťovou kontrolu" in answer
+    assert "likely" not in answer.lower()
+
+
+def test_ui_knowledge_explains_safe_defaults_without_guessing() -> None:
+    answer = UiKnowledgeService().answer("What does Use safe defaults do?")
+
+    assert answer is not None
+    assert "20% reserve" in answer
+    assert "spot trading disabled" in answer
+
+
+def test_ui_knowledge_summarizes_action_plan_in_czech() -> None:
+    answer = UiKnowledgeService().answer("Shrň mi sekci Action Plan")
+
+    assert answer is not None
+    assert "konsolidovaný výsledek" in answer
+    assert "deterministické podmínky" in answer
 
 
 def _snapshot() -> DesktopSnapshot:

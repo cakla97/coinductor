@@ -55,9 +55,9 @@ class LocalDataResetService:
             self._item(
                 code="AI_CHAT_HISTORY",
                 name="AI chat history",
-                detail="Locally stored AI Assistant conversations. The newest 20 chats are retained until this data group is removed.",
+                detail="Locally stored AI Assistant conversations and screenshots pasted from the clipboard. The newest 20 chats and up to 40 pasted images are retained until this data group is removed.",
                 default=False,
-                paths=("state/assistant_history.json",),
+                paths=("state/assistant_history.json", "state/assistant_attachments"),
             ),
             self._item(
                 code="ENV",

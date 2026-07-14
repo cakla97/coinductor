@@ -15,36 +15,72 @@ class UiKnowledgeEntry:
 
 class UiKnowledgeService:
     def answer(self, question: str) -> str | None:
+        entries = self.matches(question)
+        if not entries:
+            return None
+        czech = is_czech(question)
+        if len(entries) == 1:
+            return entries[0].czech if czech else entries[0].english
+        heading = "Relevantní zdokumentované prvky:" if czech else "Relevant documented components:"
+        details = "\n\n".join(
+            f"{entry.name}: {entry.czech if czech else entry.english}"
+            for entry in entries
+        )
+        return f"{heading}\n\n{details}"
+
+    def match(self, question: str) -> UiKnowledgeEntry | None:
+        matches = self.matches(question)
+        return matches[0] if len(matches) == 1 else None
+
+    def matches(self, question: str) -> tuple[UiKnowledgeEntry, ...]:
         query = _normalize(question)
         if not _looks_like_explanation_request(query):
-            return None
-        entry = next(
+            return ()
+        exact = tuple(item for item in UI_KNOWLEDGE if any(alias in query for alias in item.aliases))
+        if exact:
+            return exact
+        query_tokens = _meaningful_tokens(query)
+        ranked = sorted(
             (
-                item
+                (_semantic_score(query_tokens, _entry_tokens(item)), item)
                 for item in UI_KNOWLEDGE
-                if any(alias in query for alias in item.aliases)
             ),
-            None,
+            key=lambda candidate: candidate[0],
+            reverse=True,
         )
-        if entry is None:
-            return None
-        return entry.czech if is_czech(question) else entry.english
+        if not ranked or ranked[0][0] < 2:
+            return ()
+        if len(ranked) > 1 and ranked[0][0] == ranked[1][0]:
+            return ()
+        return (ranked[0][1],)
+
+    def relevant_context(self, question: str, limit: int = 6) -> tuple[dict[str, str], ...]:
+        query_tokens = _meaningful_tokens(_normalize(question))
+        ranked = sorted(
+            (
+                (_semantic_score(query_tokens, _entry_tokens(item)), index, item)
+                for index, item in enumerate(UI_KNOWLEDGE)
+            ),
+            key=lambda candidate: (-candidate[0], candidate[1]),
+        )
+        selected = [item for score, _index, item in ranked if score > 0][:limit]
+        return tuple(self._context_item(item) for item in selected)
 
     def context(self) -> tuple[dict[str, str], ...]:
-        return tuple(
-            {
-                "component": item.name,
-                "page": item.page,
-                "documented_behavior": item.english,
-            }
-            for item in UI_KNOWLEDGE
-        )
+        return tuple(self._context_item(item) for item in UI_KNOWLEDGE)
 
     def page_summary(self, page_name: str, *, czech: bool) -> str | None:
         entry = next((item for item in UI_KNOWLEDGE if item.name == page_name), None)
         if entry is None:
             return None
         return entry.czech if czech else entry.english
+
+    def _context_item(self, item: UiKnowledgeEntry) -> dict[str, str]:
+        return {
+            "component": item.name,
+            "page": item.page,
+            "documented_behavior": item.english,
+        }
 
 
 UI_KNOWLEDGE = (
@@ -114,7 +150,7 @@ UI_KNOWLEDGE = (
     UiKnowledgeEntry(
         "Safety stage",
         "Live Actions",
-        ("safety stage", "enable preview", "arm guarded actions", "enable live submit", "lock live submit"),
+        ("safety stage", "enable preview", "arm guarded actions", "enable live submit", "live enabled", "lock live submit"),
         "Safety stage is a local execution gate. Preview enables mainnet validation without submission, Armed verifies guarded prerequisites while submission stays locked, and Live enabled permits a separately confirmed guarded submit. Lock live submit returns execution to a locked state. Stage changes never place an order by themselves.",
         "Safety stage je lokální brána exekuce. Preview povolí mainnet validaci bez odeslání, Armed ověří podmínky zabezpečených akcí při stále zamčeném odesílání a Live enabled dovolí samostatně potvrzené zabezpečené odeslání. Lock live submit exekuci znovu zamkne. Samotná změna stage nikdy neprovede příkaz.",
     ),
@@ -262,7 +298,8 @@ def _looks_like_explanation_request(query: str) -> bool:
         phrase in query
         for phrase in (
             "what does", "what is", "explain", "how does", "what happens", "co dela", "co udela",
-            "co znamena", "k cemu", "jak funguje", "vysvetli", "co se stane", "summarize", "tell me about", "shrn",
+            "co znamena", "k cemu", "jak funguje", "jak spolu", "souvisi", "vysvetli", "co se stane",
+            "summarize", "tell me about", "shrn", "relationship between", "how are",
         )
     )
 
@@ -273,3 +310,33 @@ def _normalize(value: str) -> str:
         for character in unicodedata.normalize("NFKD", value.strip().lower())
         if not unicodedata.combining(character)
     )
+
+
+_STOP_WORDS = {
+    "a", "an", "the", "this", "that", "what", "does", "is", "how", "explain", "means", "mean",
+    "co", "to", "znamena", "dela", "udela", "jak", "funguje", "vysvetli", "mi", "box", "nad", "tim",
+    "v", "ve", "na", "u", "k", "se", "tady", "tahle", "tento", "tato", "prosim",
+}
+
+
+def _meaningful_tokens(value: str) -> set[str]:
+    cleaned = "".join(character if character.isalnum() else " " for character in value)
+    return {token for token in cleaned.split() if len(token) >= 3 and token not in _STOP_WORDS}
+
+
+def _entry_tokens(item: UiKnowledgeEntry) -> set[str]:
+    return _meaningful_tokens(" ".join((item.name, item.page, *item.aliases, item.english, item.czech)))
+
+
+def _semantic_score(query_tokens: set[str], candidate_tokens: set[str]) -> int:
+    score = 0
+    for query_token in query_tokens:
+        if any(
+            query_token == candidate
+            or (min(len(query_token), len(candidate)) >= 4 and (
+                query_token.startswith(candidate) or candidate.startswith(query_token)
+            ))
+            for candidate in candidate_tokens
+        ):
+            score += 1
+    return score

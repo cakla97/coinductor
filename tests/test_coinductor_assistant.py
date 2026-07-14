@@ -59,6 +59,8 @@ def test_provider_backed_assistant_uses_chat_completions(tmp_path, monkeypatch) 
         assert any(item["component"] == "Refresh checks" for item in prompt["ui_component_catalog"])
         assert prompt["current_app_context"]["context_page"] == "Action Plan"
         assert prompt["recent_conversation"] == [{"role": "user", "text": "Earlier question"}]
+        assert prompt["most_relevant_ui_components"]
+        assert body["reasoning_effort"] == "none"
         return FakeResponse()
 
     monkeypatch.setattr(assistant_module.urllib.request, "urlopen", fake_urlopen)
@@ -72,6 +74,45 @@ def test_provider_backed_assistant_uses_chat_completions(tmp_path, monkeypatch) 
 
     assert answer == "Provider answer."
     assert called_urls == ["http://127.0.0.1:11434/v1/chat/completions"]
+
+
+def test_provider_retries_empty_answer_as_plain_text(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\n",
+        encoding="utf-8",
+    )
+    bodies: list[dict] = []
+
+    class FakeResponse:
+        def __init__(self, content: str):
+            self.content = content
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def read(self) -> bytes:
+            return json.dumps({"choices": [{"message": {"content": self.content}}]}).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        bodies.append(json.loads(request.data.decode("utf-8")))
+        return FakeResponse("") if len(bodies) == 1 else FakeResponse("Safety stage is a local execution gate.")
+
+    monkeypatch.setattr(assistant_module.urllib.request, "urlopen", fake_urlopen)
+
+    answer = ProviderBackedAssistant("config.toml", ".env").answer("Explain the safety status", _snapshot())
+
+    assert answer == "Safety stage is a local execution gate."
+    assert len(bodies) == 2
+    assert "response_format" in bodies[0]
+    assert "response_format" not in bodies[1]
+    assert bodies[1]["reasoning_effort"] == "none"
 
 
 def test_provider_backed_assistant_sends_image_to_vision_model(tmp_path, monkeypatch) -> None:
@@ -283,25 +324,35 @@ def test_contextual_help_explains_binance_not_checked_without_provider() -> None
         context,
     )
 
-    assert "read-only API connection state" in response.text
-    assert "does not by itself mean" in response.text
-    assert response.proposed_action["type"] == "NAVIGATE"
-    assert response.proposed_action["page"] == 8
+    assert "read-only Binance API connection" in response.text
+    assert "does not prove" in response.text
+    assert response.proposed_action is None
 
 
 def test_contextual_help_explains_exact_binance_status_question_in_czech() -> None:
-    answer = ContextualHelpService().answer(
-        "Co znamená box Binance Not checked v levém spodním rohu?",
-        {
-            "binance_read_only": {
-                "status": "Not checked",
-                "detail": "Run the read-only check from Settings before live analysis.",
-            }
-        },
+    answer = UiKnowledgeService().answer("Co znamená box Binance Not checked v levém spodním rohu?")
+
+    assert "read-only Binance API" in answer
+    assert "neznamená, že klíč chybí" in answer
+
+
+def test_ui_knowledge_semantically_resolves_safety_follow_up() -> None:
+    answer = UiKnowledgeService().answer("A co znamená box nad tím SAFETY - Live enabled?")
+
+    assert answer is not None
+    assert "lokální brána exekuce" in answer
+    assert "Samotná změna stage nikdy neprovede příkaz" in answer
+
+
+def test_ui_knowledge_combines_multiple_documented_components() -> None:
+    answer = UiKnowledgeService().answer(
+        "Jak spolu v aplikaci souvisí Safety stage a stav Binance read-only připojení?"
     )
 
-    assert "zatím nespustila nebo nedokončila" in answer
-    assert "neříká, že klíč chybí" in answer
+    assert answer is not None
+    assert "Safety stage:" in answer
+    assert "BINANCE connection status box:" in answer
+    assert "podezřel" not in answer.lower()
 
 
 def test_contextual_next_step_offers_navigation_not_execution() -> None:

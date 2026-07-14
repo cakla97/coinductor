@@ -9,6 +9,7 @@ import unicodedata
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlparse
 
 from trading_agent.config import load_config
 from trading_agent.env import load_env_file
@@ -29,29 +30,6 @@ class ContextualHelpService:
         query = _normalize(question)
         czech = is_czech(question)
         page_name = str(app_context.get("context_page", "AI Assistant"))
-
-        if any(
-            phrase in query
-            for phrase in (
-                "binance not checked", "box binance", "binance status", "stav binance",
-                "binance v levem spodnim", "binance vlevo dole",
-            )
-        ):
-            connection = app_context.get("binance_read_only", {})
-            status = str(connection.get("status", "Not checked"))
-            detail = str(connection.get("detail", ""))
-            if czech:
-                return (
-                    f"Box BINANCE ukazuje stav read-only API připojení v aktuální session. Stav {status} znamená, "
-                    "že aplikace zatím nespustila nebo nedokončila síťovou kontrolu read-only klíče; sám o sobě "
-                    "neříká, že klíč chybí nebo je neplatný. Kontrolu spustíte v Settings v části Binance read-only "
-                    f"connection. Aktuální detail aplikace: {detail}"
-                )
-            return (
-                f"The BINANCE box shows the read-only API connection state for this app session. {status} means "
-                "the read-only key has not yet completed a network check; it does not by itself mean the key is "
-                f"missing or invalid. Run the check in Settings > Binance read-only connection. Current detail: {detail}"
-            )
 
         if any(
             phrase in query
@@ -123,22 +101,6 @@ class ContextualHelpService:
 
     def proposed_action(self, question: str, app_context: dict[str, object]) -> dict[str, object] | None:
         query = _normalize(question)
-        if any(
-            phrase in query
-            for phrase in ("binance not checked", "box binance", "binance status", "stav binance")
-        ):
-            czech = is_czech(question)
-            return {
-                "type": "NAVIGATE",
-                "title": "Otevřít Settings" if czech else "Open Settings",
-                "description": (
-                    "Přejde k Binance read-only connection kontrole. Samotný přechod žádnou kontrolu nespustí."
-                    if czech
-                    else "Navigate to the Binance read-only connection check. Navigation does not run the check."
-                ),
-                "confirmLabel": "Otevřít Settings" if czech else "Open Settings",
-                "page": 8,
-            }
         if not any(
             phrase in query
             for phrase in (
@@ -445,6 +407,7 @@ class ProviderBackedAssistant:
             ],
             "project_context": AiProviderService(self.config_path, self.env_path).inspect().context_sections,
             "ui_component_catalog": UiKnowledgeService().context(),
+            "most_relevant_ui_components": UiKnowledgeService().relevant_context(question),
             "current_app_context": app_context,
             "recent_conversation": list(conversation[-8:]),
             "snapshot": self._snapshot_payload(snapshot),
@@ -463,42 +426,70 @@ class ProviderBackedAssistant:
                 {"type": "text", "text": json.dumps(payload, default=str)},
                 {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{encoded}"}},
             ]
-        body = json.dumps(
-            {
+        request_body: dict[str, object] = {
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": (
+                        "You are Coinductor's read-only assistant. Use the supplied application knowledge manifest, "
+                        "dynamic screen state, snapshot, and recent conversation as authoritative context. Resolve natural "
+                        "follow-up references from conversation. Match the user's language exactly, never guess undocumented "
+                        "behavior, and never use uncertain wording for documented controls. You cannot execute actions. "
+                        "Return JSON only."
+                    ),
+                },
+                {"role": "user", "content": user_content},
+            ],
+            "temperature": 0.2,
+            "response_format": {"type": "json_object"},
+        }
+        if _is_local_endpoint(base_url):
+            request_body["reasoning_effort"] = "none"
+        headers = {"Content-Type": "application/json"}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        timeout = int(ai.get("timeout_seconds", 60))
+        answer = self._request_answer(base_url, headers, request_body, timeout)
+        if not answer:
+            retry_body = {
                 "model": model,
                 "messages": [
                     {
                         "role": "system",
                         "content": (
-                            "You are Coinductor's read-only assistant. You explain the app, reports, portfolio state, "
-                            "risk controls, and setup from supplied authoritative context. Match the user's language exactly, "
-                            "never guess undocumented behavior, and never use uncertain wording for catalogued controls. "
-                            "You cannot execute actions. Return JSON only."
+                            f"Answer the question in {response_language} using only the supplied Coinductor context. "
+                            "Return a concise plain-text answer. Do not output reasoning or JSON."
                         ),
                     },
                     {"role": "user", "content": user_content},
                 ],
-                "temperature": 0.2,
-                "response_format": {"type": "json_object"},
+                "temperature": 0.1,
             }
-        ).encode("utf-8")
-        headers = {"Content-Type": "application/json"}
-        if api_key:
-            headers["Authorization"] = f"Bearer {api_key}"
+            if _is_local_endpoint(base_url):
+                retry_body["reasoning_effort"] = "none"
+            answer = self._request_answer(base_url, headers, retry_body, timeout)
+        if not answer:
+            raise RuntimeError("AI provider returned an empty answer after one plain-text retry.")
+        return answer
+
+    def _request_answer(
+        self,
+        base_url: str,
+        headers: dict[str, str],
+        body: dict[str, object],
+        timeout: int,
+    ) -> str:
         request = urllib.request.Request(
             f"{base_url}/chat/completions",
-            data=body,
+            data=json.dumps(body).encode("utf-8"),
             headers=headers,
             method="POST",
         )
-        with urllib.request.urlopen(request, timeout=int(ai.get("timeout_seconds", 60))) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             response_payload = json.loads(response.read().decode("utf-8"))
-        content = str(response_payload["choices"][0]["message"]["content"])
-        data = json.loads(content)
-        answer = str(data.get("answer", "")).strip()
-        if not answer:
-            raise RuntimeError("AI provider returned an empty answer.")
-        return answer
+        message = response_payload["choices"][0]["message"]
+        return _extract_provider_answer(message.get("content"))
 
     def _snapshot_payload(self, snapshot: DesktopSnapshot) -> dict:
         latest = snapshot.latest_run
@@ -523,6 +514,35 @@ class ProviderBackedAssistant:
             "strategies": list(snapshot.strategies),
             "run_history": list(snapshot.run_history[:10]),
         }
+
+
+def _extract_provider_answer(content: object) -> str:
+    if isinstance(content, list):
+        content = "\n".join(
+            str(item.get("text", ""))
+            for item in content
+            if isinstance(item, dict) and item.get("type") in {None, "text"}
+        )
+    if not isinstance(content, str) or not content.strip():
+        return ""
+    cleaned = content.strip()
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", cleaned, flags=re.IGNORECASE | re.DOTALL).strip()
+    try:
+        parsed = json.loads(cleaned)
+    except json.JSONDecodeError:
+        return cleaned
+    if isinstance(parsed, dict):
+        for key in ("answer", "response", "message", "content"):
+            value = parsed.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+        return ""
+    return cleaned
+
+
+def _is_local_endpoint(base_url: str) -> bool:
+    return (urlparse(base_url).hostname or "").lower() in {"127.0.0.1", "localhost", "::1"}
 
 
 def _normalize(value: str) -> str:

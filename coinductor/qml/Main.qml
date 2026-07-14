@@ -2378,7 +2378,7 @@ ApplicationWindow {
                             Text {
                                 Layout.fillWidth: true
                                 text: appController.assistantVisionAvailable
-                                      ? "The active AI supports image input. The screenshot will be sent with this message."
+                                      ? "The active AI supports image input. The screenshot will be sent with this message. You can paste another screenshot with Ctrl+V."
                                       : appController.assistantVisionDetail
                                 color: appController.assistantVisionAvailable ? textSecondary : warning
                                 font.pixelSize: 11
@@ -2406,6 +2406,11 @@ ApplicationWindow {
                         Layout.fillWidth: true
                         placeholderText: "Ask about the latest run, portfolio, risk, Grid..."
                         enabled: !appController.assistantBusy
+                        Keys.onPressed: function(event) {
+                            if (event.key === Qt.Key_V && (event.modifiers & Qt.ControlModifier)) {
+                                event.accepted = appController.pasteAssistantImageFromClipboard()
+                            }
+                        }
                         onAccepted: {
                             if ((text.trim().length > 0 || Object.keys(appController.assistantAttachment).length > 0)
                                     && (Object.keys(appController.assistantAttachment).length === 0 || appController.assistantVisionAvailable)) {

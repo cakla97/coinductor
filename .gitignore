@@ -16,3 +16,4 @@ state/user_profile.toml
 state/grid_registry.toml
 state/rebalancing_registry.toml
 state/assistant_history.json
+state/assistant_attachments/

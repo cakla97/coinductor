@@ -22,3 +22,7 @@ def test_local_data_reset_preview_lists_expected_groups(tmp_path) -> None:
         item["code"] == "AI_CHAT_HISTORY" and "assistant_history.json" in item["paths"]
         for item in snapshot.items
     )
+    assert any(
+        item["code"] == "AI_CHAT_HISTORY" and "assistant_attachments" in item["paths"]
+        for item in snapshot.items
+    )

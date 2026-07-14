@@ -1084,6 +1084,27 @@ class AppController(QObject):
         if not QImageReader(str(path)).canRead():
             self.notificationRequested.emit("The selected file is not a readable image.")
             return
+        self._set_assistant_attachment(path)
+
+    @Slot(result=bool)
+    def pasteAssistantImageFromClipboard(self) -> bool:
+        clipboard = QGuiApplication.clipboard()
+        if clipboard is None or clipboard.mimeData() is None or not clipboard.mimeData().hasImage():
+            return False
+        image = clipboard.image()
+        if image.isNull():
+            return False
+        directory = Path("state/assistant_attachments")
+        directory.mkdir(parents=True, exist_ok=True)
+        path = directory / f"clipboard-{uuid4().hex}.png"
+        if not image.save(str(path), "PNG"):
+            self.notificationRequested.emit("The screenshot could not be saved locally.")
+            return True
+        self._rotate_assistant_attachments(directory)
+        self._set_assistant_attachment(path)
+        return True
+
+    def _set_assistant_attachment(self, path: Path) -> None:
         self._assistant_attachment = {
             "path": str(path.resolve()),
             "url": QUrl.fromLocalFile(str(path.resolve())).toString(),
@@ -1091,6 +1112,15 @@ class AppController(QObject):
             "size": f"{path.stat().st_size / (1024 * 1024):.1f} MB",
         }
         self.assistantChanged.emit()
+
+    def _rotate_assistant_attachments(self, directory: Path, keep: int = 40) -> None:
+        files = sorted(
+            directory.glob("clipboard-*.png"),
+            key=lambda candidate: candidate.stat().st_mtime,
+            reverse=True,
+        )
+        for expired in files[keep:]:
+            expired.unlink(missing_ok=True)
 
     @Slot()
     def clearAssistantAttachment(self) -> None:
@@ -1595,6 +1625,24 @@ class AppController(QObject):
     def _assistant_context(self) -> dict[str, object]:
         return {
             "context_page": self._page_label(self._assistant_origin_page),
+            "navigation_pages": [
+                "Overview", "Live Actions", "Portfolio", "Action Plan", "Active Strategies",
+                "Run History", "AI Assistant", "Help & Guides", "Settings",
+            ],
+            "visible_sidebar_statuses": [
+                {
+                    "label": "SAFETY",
+                    "status": self._safety_snapshot.label,
+                    "meaning": "Current local execution gate; it never submits an order by changing stage alone.",
+                    "details_page": "Live Actions",
+                },
+                {
+                    "label": "BINANCE",
+                    "status": self._connection_status,
+                    "meaning": "Read-only Binance API connection check state for the current app session.",
+                    "details_page": "Settings",
+                },
+            ],
             "safety": {
                 "stage": self._safety_snapshot.stage,
                 "label": self._safety_snapshot.label,

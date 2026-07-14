@@ -5,7 +5,7 @@ import pytest
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import qInstallMessageHandler, QUrl
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication, QImage
 from PySide6.QtQml import QQmlApplicationEngine
 
 from coinductor.controller import AppController
@@ -36,6 +36,22 @@ def test_main_qml_loads(monkeypatch) -> None:
 
     assert not any("appController" in message and "null" in message for message in messages)
     assert not any("undefined" in message.lower() for message in messages)
+
+
+def test_controller_pastes_clipboard_image_as_local_attachment(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    app = QGuiApplication.instance() or QGuiApplication([])
+    image = QImage(8, 8, QImage.Format_ARGB32)
+    image.fill("#36c98f")
+    app.clipboard().setImage(image)
+    controller = AppController()
+
+    handled = controller.pasteAssistantImageFromClipboard()
+
+    assert handled is True
+    assert controller.assistantAttachment["name"].startswith("clipboard-")
+    assert Path(controller.assistantAttachment["path"]).is_file()
+    app.clipboard().clear()
 
 
 def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> None:
@@ -106,3 +122,5 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.attachAssistantImage" in qml
     assert "appController.assistantVisionAvailable" in qml
     assert "PlatformDialogs.FileDialog" in qml
+    assert "appController.pasteAssistantImageFromClipboard" in qml
+    assert "Qt.Key_V" in qml

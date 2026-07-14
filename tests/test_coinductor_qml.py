@@ -127,3 +127,9 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "TextEdit {\n                                    id: messageText" in qml
     assert "selectByMouse: true" in qml
     assert "persistentSelection: true" in qml
+    assert "id: localAiVisionModel" in qml
+    assert "appController.aiVisionModel" in qml
+    assert "appController.saveLocalAiProvider(localAiBaseUrl.text, localAiModel.text, localAiVisionModel.text)" in qml
+    assert 'text: "Configure AI models"' in qml
+    assert "id: cloudAiVisionModel" in qml
+    assert "appController.saveCloudAiProvider(cloudAiBaseUrl.text, cloudAiModel.text, cloudAiVisionModel.text, cloudAiKey.text)" in qml

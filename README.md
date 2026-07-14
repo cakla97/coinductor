@@ -122,6 +122,8 @@ To enable local LLM commentary, expose an OpenAI-compatible endpoint and set:
 ```env
 LLM_BASE_URL=http://127.0.0.1:11434/v1
 LLM_MODEL=qwen3:14b
+# Optional companion used only for AI Assistant image messages:
+LLM_VISION_MODEL=qwen3-vl:8b
 ```
 
 Then set `commentary_enabled = true` under `[ai]` in your local config. AI commentary

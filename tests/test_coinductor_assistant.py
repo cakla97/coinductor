@@ -30,9 +30,10 @@ def test_provider_backed_assistant_uses_chat_completions(tmp_path, monkeypatch) 
     monkeypatch.delenv("LLM_BASE_URL", raising=False)
     monkeypatch.delenv("LLM_API_KEY", raising=False)
     monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("LLM_VISION_MODEL", raising=False)
     (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
     (tmp_path / ".env").write_text(
-        "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\n",
+        "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\nLLM_VISION_MODEL=qwen3-vl:8b\n",
         encoding="utf-8",
     )
     called_urls: list[str] = []
@@ -119,10 +120,11 @@ def test_provider_backed_assistant_sends_image_to_vision_model(tmp_path, monkeyp
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("LLM_BASE_URL", raising=False)
     monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("LLM_VISION_MODEL", raising=False)
     monkeypatch.delenv("LLM_VISION_ENABLED", raising=False)
     (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
     (tmp_path / ".env").write_text(
-        "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3-vl:8b\n",
+        "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\nLLM_VISION_MODEL=qwen3-vl:8b\n",
         encoding="utf-8",
     )
     image_path = tmp_path / "screen.png"
@@ -142,6 +144,7 @@ def test_provider_backed_assistant_sends_image_to_vision_model(tmp_path, monkeyp
 
     def fake_urlopen(request, timeout):
         body = json.loads(request.data.decode("utf-8"))
+        assert body["model"] == "qwen3-vl:8b"
         content = body["messages"][1]["content"]
         assert content[0]["type"] == "text"
         assert json.loads(content[0]["text"])["image_attached"] is True
@@ -361,8 +364,8 @@ def test_ui_knowledge_explains_its_own_vision_warning() -> None:
     )
 
     assert answer is not None
-    assert "qwen3:14b screenshot nevidí" in answer
-    assert "pouze ručně přepíše detekci" in answer
+    assert "qwen3:14b vision schopnosti nepřidá" in answer
+    assert "pouze přepíše detekci" in answer
     assert "Safe defaults" not in answer
 
 
@@ -374,10 +377,10 @@ def test_ui_knowledge_explains_how_to_enable_image_input_for_rephrased_question(
     assert answer is not None
     assert "https://ollama.com/library/qwen3-vl" in answer
     assert "qwen3-vl:8b" in answer
-    assert "Settings > Setup wizard > AI" in answer
+    assert "Settings > Configure AI models" in answer
     assert "Save local AI" in answer
     assert "Check AI provider" in answer
-    assert "qwen3:14b screenshot nevidí" in answer
+    assert "qwen3:14b vision schopnosti nepřidá" in answer
 
 
 def test_ui_knowledge_explains_image_setup_for_english_support_question() -> None:
@@ -385,7 +388,7 @@ def test_ui_knowledge_explains_image_setup_for_english_support_question() -> Non
 
     assert answer is not None
     assert "https://ollama.com/library/qwen3-vl" in answer
-    assert "Settings > Setup wizard > AI" in answer
+    assert "Settings > Configure AI models" in answer
 
 
 def test_ui_knowledge_does_not_use_description_words_as_confident_match() -> None:

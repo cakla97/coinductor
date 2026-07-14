@@ -48,6 +48,7 @@ provider = "openai_compatible"
 base_url_env = "LLM_BASE_URL"
 api_key_env = "LLM_API_KEY"
 model_env = "LLM_MODEL"
+vision_model_env = "LLM_VISION_MODEL"
 timeout_seconds = 60
 temperature = 0.2
 

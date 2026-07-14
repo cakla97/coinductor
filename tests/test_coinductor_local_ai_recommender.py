@@ -6,6 +6,7 @@ def test_local_ai_recommender_prefers_14b_for_strong_gpu() -> None:
 
     assert recommendations[0].model == "qwen3:14b"
     assert recommendations[0].fit == "Best fit"
+    assert any(item.model == "qwen3-vl:8b" and item.purpose == "Vision" for item in recommendations)
 
 
 def test_local_ai_recommender_prefers_smaller_models_without_gpu() -> None:

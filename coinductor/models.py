@@ -74,6 +74,9 @@ class AiProviderSnapshot:
     summary: str
     checks: tuple[dict[str, str], ...]
     context_sections: tuple[dict[str, str], ...]
+    base_url: str = ""
+    text_model: str = ""
+    vision_model: str = ""
 
 
 @dataclass(frozen=True)

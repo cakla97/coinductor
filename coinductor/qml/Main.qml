@@ -789,8 +789,8 @@ ApplicationWindow {
                                         rowSpacing: 12
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 680 : 640) : 390
-                                            Layout.minimumHeight: appController.localAiModelRecommendations.length > 0 ? 610 : 360
+                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 760 : 690) : 460
+                                            Layout.minimumHeight: appController.localAiModelRecommendations.length > 0 ? 660 : 430
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
@@ -807,12 +807,32 @@ ApplicationWindow {
                                                     font.pixelSize: 11
                                                     wrapMode: Text.WordWrap
                                                 }
-                                                Text { Layout.fillWidth: true; text: "1. Install Ollama.  2. Pull a model, e.g. qwen3:8b or qwen3:14b.  3. Keep Ollama running.  4. Save these settings."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                                Text { Layout.fillWidth: true; text: "1. Install Ollama.  2. Pull a text model.  3. Optionally pull a vision model for screenshots.  4. Keep Ollama running and save both model tags."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                                 RowLayout {
                                                     Layout.fillWidth: true
                                                     spacing: 8
-                                                    TextField { id: localAiBaseUrl; Layout.fillWidth: true; placeholderText: "http://127.0.0.1:11434/v1"; text: "http://127.0.0.1:11434/v1" }
-                                                    TextField { id: localAiModel; Layout.preferredWidth: 170; placeholderText: "qwen3:14b"; text: "qwen3:14b" }
+                                                    TextField {
+                                                        id: localAiBaseUrl
+                                                        Layout.fillWidth: true
+                                                        placeholderText: "Local endpoint"
+                                                        text: appController.aiProviderBaseUrl.length > 0 ? appController.aiProviderBaseUrl : "http://127.0.0.1:11434/v1"
+                                                    }
+                                                }
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    TextField {
+                                                        id: localAiModel
+                                                        Layout.fillWidth: true
+                                                        placeholderText: "Text model, e.g. qwen3:14b"
+                                                        text: appController.aiTextModel.length > 0 ? appController.aiTextModel : "qwen3:14b"
+                                                    }
+                                                    TextField {
+                                                        id: localAiVisionModel
+                                                        Layout.fillWidth: true
+                                                        placeholderText: "Vision model (optional), e.g. qwen3-vl:8b"
+                                                        text: appController.aiVisionModel
+                                                    }
                                                 }
                                                 RowLayout {
                                                     Layout.fillWidth: true
@@ -820,7 +840,7 @@ ApplicationWindow {
                                                     Button {
                                                         text: "Save local AI"
                                                         onClicked: {
-                                                            appController.saveLocalAiProvider(localAiBaseUrl.text, localAiModel.text)
+                                                            appController.saveLocalAiProvider(localAiBaseUrl.text, localAiModel.text, localAiVisionModel.text)
                                                             window.showToast("Local AI settings saved")
                                                         }
                                                     }
@@ -879,8 +899,9 @@ ApplicationWindow {
                                                                     anchors.leftMargin: 10
                                                                     anchors.rightMargin: 10
                                                                     spacing: 8
-                                                                    Text { Layout.preferredWidth: 90; text: modelData.model; color: accent; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
-                                                                    Text { Layout.preferredWidth: 86; text: modelData.fit; color: textPrimary; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
+                                                                    Text { Layout.preferredWidth: 88; text: modelData.model; color: accent; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
+                                                                    Text { Layout.preferredWidth: 44; text: modelData.purpose; color: modelData.purpose === "Vision" ? warning : textSecondary; font.pixelSize: 9; font.bold: true }
+                                                                    Text { Layout.preferredWidth: 72; text: modelData.fit; color: textPrimary; font.pixelSize: 10; font.bold: true; elide: Text.ElideRight }
                                                                     Text { Layout.fillWidth: true; text: modelData.reason; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight }
                                                                 }
                                                             }
@@ -891,8 +912,8 @@ ApplicationWindow {
                                         }
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 350 : 640) : 390
-                                            Layout.minimumHeight: 340
+                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 430 : 690) : 460
+                                            Layout.minimumHeight: 410
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
@@ -914,14 +935,19 @@ ApplicationWindow {
                                                     Layout.fillWidth: true
                                                     spacing: 8
                                                     TextField { id: cloudAiBaseUrl; Layout.fillWidth: true; placeholderText: "https://api.openai.com/v1" }
-                                                    TextField { id: cloudAiModel; Layout.preferredWidth: 170; placeholderText: "model name" }
+                                                }
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    TextField { id: cloudAiModel; Layout.fillWidth: true; placeholderText: "Text model" }
+                                                    TextField { id: cloudAiVisionModel; Layout.fillWidth: true; placeholderText: "Vision model (optional)" }
                                                 }
                                                 TextField { id: cloudAiKey; Layout.fillWidth: true; placeholderText: "API key"; echoMode: TextInput.Password }
                                                 Button {
                                                     text: "Save cloud AI"
                                                     enabled: cloudAiBaseUrl.text.trim().length > 0 && cloudAiModel.text.trim().length > 0 && cloudAiKey.text.trim().length > 0
                                                     onClicked: {
-                                                        appController.saveCloudAiProvider(cloudAiBaseUrl.text, cloudAiModel.text, cloudAiKey.text)
+                                                        appController.saveCloudAiProvider(cloudAiBaseUrl.text, cloudAiModel.text, cloudAiVisionModel.text, cloudAiKey.text)
                                                         window.showToast("Cloud AI settings saved")
                                                     }
                                                 }
@@ -2949,6 +2975,13 @@ ApplicationWindow {
                                 text: appController.checkingAiProvider ? "Checking..." : "Check AI provider"
                                 enabled: !appController.checkingAiProvider
                                 onClicked: appController.checkAiProvider()
+                            }
+                            Button {
+                                text: "Configure AI models"
+                                onClicked: {
+                                    window.wizardStep = 3
+                                    appController.openOnboardingWizard()
+                                }
                             }
                         }
                         Text {

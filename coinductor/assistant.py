@@ -381,11 +381,13 @@ class ProviderBackedAssistant:
         ai = config.get("ai", {})
         base_url = os.getenv(str(ai.get("base_url_env", "LLM_BASE_URL")), "").rstrip("/")
         api_key = os.getenv(str(ai.get("api_key_env", "LLM_API_KEY")), "")
-        model = os.getenv(str(ai.get("model_env", "LLM_MODEL")), "")
+        text_model = os.getenv(str(ai.get("model_env", "LLM_MODEL")), "")
+        vision_model = os.getenv(str(ai.get("vision_model_env", "LLM_VISION_MODEL")), "").strip()
+        model = (vision_model or text_model) if image_path else text_model
         if not base_url:
             raise RuntimeError("LLM_BASE_URL is not set.")
         if not model:
-            raise RuntimeError("LLM_MODEL is not set.")
+            raise RuntimeError("LLM_MODEL is not set." if not image_path else "No usable text or vision model is set.")
         if image_path:
             vision_available, vision_detail = AiProviderService(self.config_path, self.env_path).vision_support()
             if not vision_available:

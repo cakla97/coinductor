@@ -535,6 +535,18 @@ class AppController(QObject):
     def aiProviderSummary(self) -> str:
         return self._ai_provider_snapshot.summary
 
+    @Property(str, notify=aiProviderChanged)
+    def aiProviderBaseUrl(self) -> str:
+        return self._ai_provider_snapshot.base_url
+
+    @Property(str, notify=aiProviderChanged)
+    def aiTextModel(self) -> str:
+        return self._ai_provider_snapshot.text_model
+
+    @Property(str, notify=aiProviderChanged)
+    def aiVisionModel(self) -> str:
+        return self._ai_provider_snapshot.vision_model
+
     @Property(bool, notify=aiProviderChanged)
     def checkingAiProvider(self) -> bool:
         return self._checking_ai_provider
@@ -899,7 +911,7 @@ class AppController(QObject):
         snapshot = LocalAiRecommender().inspect()
         self._local_ai_hardware_summary = snapshot.summary
         self._local_ai_model_recommendations = [
-            {"model": item.model, "fit": item.fit, "reason": item.reason}
+            {"model": item.model, "fit": item.fit, "reason": item.reason, "purpose": item.purpose}
             for item in snapshot.recommendations
         ]
         self.localAiRecommendationChanged.emit()
@@ -1000,12 +1012,13 @@ class AppController(QObject):
         self.actionsChanged.emit()
         self.notificationRequested.emit("Live submissions locked. Mainnet preview remains available.")
 
-    @Slot(str, str)
-    def saveLocalAiProvider(self, base_url: str, model: str) -> None:
+    @Slot(str, str, str)
+    def saveLocalAiProvider(self, base_url: str, model: str, vision_model: str) -> None:
         EnvWriter().update(
             {
                 "LLM_BASE_URL": base_url,
                 "LLM_MODEL": model,
+                "LLM_VISION_MODEL": vision_model,
             }
         )
         self._ai_provider_health_status = "Not checked"
@@ -1013,12 +1026,13 @@ class AppController(QObject):
         self.refreshSetup()
         self.aiProviderChanged.emit()
 
-    @Slot(str, str, str)
-    def saveCloudAiProvider(self, base_url: str, model: str, api_key: str) -> None:
+    @Slot(str, str, str, str)
+    def saveCloudAiProvider(self, base_url: str, model: str, vision_model: str, api_key: str) -> None:
         EnvWriter().update(
             {
                 "LLM_BASE_URL": base_url,
                 "LLM_MODEL": model,
+                "LLM_VISION_MODEL": vision_model,
                 "LLM_API_KEY": api_key,
             }
         )

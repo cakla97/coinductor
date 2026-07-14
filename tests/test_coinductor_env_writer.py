@@ -38,6 +38,16 @@ def test_env_writer_quotes_values_with_spaces_or_hash(tmp_path):
     assert 'LLM_API_KEY="key#part"' in rendered
 
 
+def test_env_writer_stores_optional_vision_model(tmp_path, monkeypatch):
+    monkeypatch.delenv("LLM_VISION_MODEL", raising=False)
+    env_path = tmp_path / ".env"
+
+    EnvWriter(env_path).update({"LLM_VISION_MODEL": "qwen3-vl:8b"})
+
+    assert "LLM_VISION_MODEL=qwen3-vl:8b" in env_path.read_text(encoding="utf-8")
+    assert os.environ["LLM_VISION_MODEL"] == "qwen3-vl:8b"
+
+
 def test_env_writer_can_store_separate_live_trading_key(tmp_path, monkeypatch):
     monkeypatch.delenv("BINANCE_LIVE_TRADE_API_KEY", raising=False)
     env_path = tmp_path / ".env"

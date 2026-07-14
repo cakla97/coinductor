@@ -25,6 +25,8 @@ def test_guides_include_local_image_assets() -> None:
     assert len(guides["local-ai"]["images"]) == 2
     assert "14B-class models are the preferred minimum" in guides["local-ai"]["body"]
     assert "does not upload hardware details" in guides["local-ai"]["body"]
+    assert "Vision model" in guides["local-ai"]["body"]
+    assert "routes only image messages" in guides["local-ai"]["body"]
     assert len(guides["binance-api"]["images"]) == 2
     assert len(guides["binance-live-api"]["images"]) == 2
     assert any(

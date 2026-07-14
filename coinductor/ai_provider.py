@@ -36,8 +36,10 @@ class AiProviderService:
         base_url_key = str(ai.get("base_url_env", "LLM_BASE_URL"))
         api_key_name = str(ai.get("api_key_env", "LLM_API_KEY"))
         model_key = str(ai.get("model_env", "LLM_MODEL"))
+        vision_model_key = str(ai.get("vision_model_env", "LLM_VISION_MODEL"))
         base_url = self._value(env, base_url_key)
         model = self._value(env, model_key)
+        vision_model = self._value(env, vision_model_key)
         api_key = self._value(env, api_key_name)
 
         self._add(checks, "Provider", "PASS", provider, "AI")
@@ -57,6 +59,19 @@ class AiProviderService:
         )
         self._add(
             checks,
+            "Vision model",
+            "PASS" if vision_model and supports_vision_model(vision_model) else "WARN",
+            (
+                vision_model
+                if vision_model and supports_vision_model(vision_model)
+                else f"{vision_model} is not recognized as vision-capable"
+                if vision_model
+                else f"Optional; set {vision_model_key} to enable image input without replacing the text model"
+            ),
+            "AI",
+        )
+        self._add(
+            checks,
             "API key",
             "PASS" if api_key else "WARN",
             "Configured" if api_key else f"Optional for local providers; set {api_key_name} for cloud providers",
@@ -69,13 +84,18 @@ class AiProviderService:
             "Local endpoint" if self._is_local_url(base_url) else "External/cloud endpoint or not configured",
             "Privacy",
         )
+        vision_summary = vision_model or (model if supports_vision_model(model) else "not configured")
         summary = (
-            f"{provider}: {model or 'model not set'} at {self._redact_url(base_url) if base_url else 'no endpoint'}"
+            f"{provider}: text {model or 'not set'}, vision {vision_summary} at "
+            f"{self._redact_url(base_url) if base_url else 'no endpoint'}"
         )
         return AiProviderSnapshot(
             summary=summary,
             checks=tuple(checks),
             context_sections=self._context_sections(),
+            base_url=self._redact_url(base_url),
+            text_model=model,
+            vision_model=vision_model,
         )
 
     def health_check(self) -> AiProviderHealthResult:
@@ -87,8 +107,18 @@ class AiProviderService:
         ai = config.get("ai", {})
         base_url = os.getenv(str(ai.get("base_url_env", "LLM_BASE_URL")), "").rstrip("/")
         api_key = os.getenv(str(ai.get("api_key_env", "LLM_API_KEY")), "")
+        text_model = os.getenv(str(ai.get("model_env", "LLM_MODEL")), "").strip()
+        vision_model_key = str(ai.get("vision_model_env", "LLM_VISION_MODEL"))
+        vision_model = os.getenv(vision_model_key, "").strip()
         if not base_url:
             return AiProviderHealthResult("BLOCK", "LLM_BASE_URL is not set.")
+        if not text_model:
+            return AiProviderHealthResult("BLOCK", "LLM_MODEL is not set.")
+        if vision_model and not supports_vision_model(vision_model):
+            return AiProviderHealthResult(
+                "BLOCK",
+                f"Configured vision model {vision_model} is not recognized as vision-capable.",
+            )
 
         headers: dict[str, str] = {}
         if api_key:
@@ -102,14 +132,40 @@ class AiProviderService:
 
         models = payload.get("data", []) if isinstance(payload, dict) else []
         model_count = len(models) if isinstance(models, list) else 0
-        return AiProviderHealthResult("PASS", f"Endpoint reachable; {model_count} model(s) reported.")
+        model_ids = {
+            str(item.get("id", "")).strip().lower()
+            for item in models
+            if isinstance(item, dict) and str(item.get("id", "")).strip()
+        }
+        if text_model.lower() not in model_ids:
+            return AiProviderHealthResult(
+                "BLOCK",
+                f"Endpoint reachable, but text model {text_model} was not reported by /models.",
+            )
+        if vision_model and vision_model.lower() not in model_ids:
+            return AiProviderHealthResult(
+                "BLOCK",
+                f"Text model ready, but vision model {vision_model} was not reported by /models.",
+            )
+        vision_detail = (
+            f" Vision model ready: {vision_model}."
+            if vision_model
+            else " Vision model is optional and not configured."
+        )
+        return AiProviderHealthResult(
+            "PASS",
+            f"Endpoint reachable; {model_count} model(s) reported. Text model ready: {text_model}.{vision_detail}",
+        )
 
     def vision_support(self) -> tuple[bool, str]:
         config = load_config(self.config_path).raw if self.config_path.exists() else {}
         ai = config.get("ai", {})
         env = self._env_values()
         model_key = str(ai.get("model_env", "LLM_MODEL"))
-        model = self._value(env, model_key)
+        vision_model_key = str(ai.get("vision_model_env", "LLM_VISION_MODEL"))
+        text_model = self._value(env, model_key)
+        vision_model = self._value(env, vision_model_key)
+        model = vision_model or text_model
         override = self._value(env, "LLM_VISION_ENABLED").strip().lower()
         if override in {"1", "true", "yes", "on"}:
             return (True, f"Vision explicitly enabled for {model or 'the configured model'}.")
@@ -117,10 +173,11 @@ class AiProviderService:
             return (False, f"Vision explicitly disabled for {model or 'the configured model'}.")
         supported = supports_vision_model(model)
         if supported:
-            return (True, f"{model} is recognized as a vision-capable model.")
+            source = "dedicated vision model" if vision_model else "active text model"
+            return (True, f"{model} is configured as the {source} and is recognized as vision-capable.")
         return (
             False,
-            f"{model or 'The configured model'} is treated as text-only. To analyze screenshots, configure a real vision model. LLM_VISION_ENABLED=true is an advanced detection override; it does not add image support and is safe only when the endpoint and model already accept images.",
+            f"{model or 'The configured model'} is treated as text-only. To analyze screenshots without replacing the text model, configure LLM_VISION_MODEL with a real vision model. LLM_VISION_ENABLED=true is an advanced detection override; it does not add image support and is safe only when the endpoint and model already accept images.",
         )
 
     def _env_values(self) -> dict[str, str]:

@@ -13,6 +13,7 @@ class LocalAiRecommendation:
     model: str
     fit: str
     reason: str
+    purpose: str = "Text"
 
 
 @dataclass(frozen=True)
@@ -37,23 +38,47 @@ class LocalAiRecommender:
         if gpu_vram_gb >= 15 and ram_gb >= 30:
             return [
                 LocalAiRecommendation("qwen3:14b", "Best fit", "Good balance for stronger consumer GPUs with about 16 GB VRAM."),
+                LocalAiRecommendation(
+                    "qwen3-vl:8b",
+                    "Best vision",
+                    "Dedicated image model for screenshots; Coinductor uses it only when an image is attached.",
+                    "Vision",
+                ),
                 LocalAiRecommendation("qwen3:8b", "Safer/faster", "Lower memory pressure and faster responses."),
                 LocalAiRecommendation("llama3.1:8b", "Alternative", "Popular general-purpose 8B-class local model."),
             ]
         if gpu_vram_gb >= 10:
             return [
                 LocalAiRecommendation("qwen3:8b", "Best fit", "Practical 8B-class starting point for mid-range GPUs; use mainly if 14B does not fit."),
+                LocalAiRecommendation(
+                    "qwen3-vl:8b",
+                    "Vision",
+                    "Image-capable companion model; close other GPU-heavy apps if memory is tight.",
+                    "Vision",
+                ),
                 LocalAiRecommendation("llama3.1:8b", "Alternative", "General-purpose option with similar hardware expectations."),
                 LocalAiRecommendation("qwen3:4b", "Safer/faster", "Lower memory usage if 8B feels slow."),
             ]
         if gpu_vram_gb >= 6 or ram_gb >= 16:
             return [
                 LocalAiRecommendation("qwen3:4b", "Basic help only", "Smaller model for limited VRAM or CPU/RAM fallback; not preferred for portfolio analysis."),
+                LocalAiRecommendation(
+                    "qwen3-vl:4b",
+                    "Basic vision",
+                    "Smaller image-capable model for screenshots on limited hardware.",
+                    "Vision",
+                ),
                 LocalAiRecommendation("llama3.2:3b", "Basic help only", "Lightweight baseline for setup help; expect weaker reasoning."),
                 LocalAiRecommendation("qwen3:8b", "Try carefully", "May work slowly with partial offload on some systems."),
             ]
         return [
             LocalAiRecommendation("llama3.2:3b", "Basic help only", "Small local model for basic app help; not recommended for trading analysis."),
+            LocalAiRecommendation(
+                "qwen3-vl:2b",
+                "Basic vision",
+                "Small image model for simple screenshot help; expect weaker interpretation.",
+                "Vision",
+            ),
             LocalAiRecommendation("qwen3:1.7b", "Basic help only", "Very small fallback for low-memory systems; expect inaccurate or incomplete answers."),
             LocalAiRecommendation("qwen3:4b", "Try carefully", "May be slow without enough memory."),
         ]

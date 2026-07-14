@@ -20,6 +20,7 @@ def test_ai_provider_inspect_reports_configuration_without_secrets(tmp_path, mon
     monkeypatch.delenv("LLM_BASE_URL", raising=False)
     monkeypatch.delenv("LLM_API_KEY", raising=False)
     monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("LLM_VISION_MODEL", raising=False)
     (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
     secret = "never-show-ai-key"
     (tmp_path / ".env").write_text(
@@ -38,6 +39,9 @@ def test_ai_provider_inspect_reports_configuration_without_secrets(tmp_path, mon
 
     assert secret not in rendered
     assert "qwen3:14b" in snapshot.summary
+    assert snapshot.text_model == "qwen3:14b"
+    assert snapshot.vision_model == ""
+    assert any(item["name"] == "Vision model" and item["status"] == "WARN" for item in snapshot.checks)
     assert any(item["name"] == "Privacy mode" and item["status"] == "PASS" for item in snapshot.checks)
     assert snapshot.context_sections
 
@@ -47,6 +51,7 @@ def test_ai_provider_health_check_uses_models_endpoint(tmp_path, monkeypatch) ->
     monkeypatch.delenv("LLM_BASE_URL", raising=False)
     monkeypatch.delenv("LLM_API_KEY", raising=False)
     monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("LLM_VISION_MODEL", raising=False)
     (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
     (tmp_path / ".env").write_text(
         "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\n",
@@ -65,6 +70,50 @@ def test_ai_provider_health_check_uses_models_endpoint(tmp_path, monkeypatch) ->
     assert result.status == "PASS"
     assert "1 model" in result.detail
     assert called_urls == ["http://127.0.0.1:11434/v1/models"]
+
+
+def test_ai_provider_health_verifies_separate_text_and_vision_models(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    for key in ("LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL", "LLM_VISION_MODEL"):
+        monkeypatch.delenv(key, raising=False)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        "LLM_BASE_URL=http://127.0.0.1:11434/v1\n"
+        "LLM_MODEL=qwen3:14b\n"
+        "LLM_VISION_MODEL=qwen3-vl:8b\n",
+        encoding="utf-8",
+    )
+
+    class VisionResponse(FakeResponse):
+        def read(self) -> bytes:
+            return b'{"data": [{"id": "qwen3:14b"}, {"id": "qwen3-vl:8b"}]}'
+
+    monkeypatch.setattr(ai_provider.urllib.request, "urlopen", lambda request, timeout: VisionResponse())
+
+    result = AiProviderService("config.toml", ".env").health_check()
+
+    assert result.status == "PASS"
+    assert "Text model ready: qwen3:14b" in result.detail
+    assert "Vision model ready: qwen3-vl:8b" in result.detail
+
+
+def test_ai_provider_health_blocks_unavailable_vision_model(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    for key in ("LLM_BASE_URL", "LLM_API_KEY", "LLM_MODEL", "LLM_VISION_MODEL"):
+        monkeypatch.delenv(key, raising=False)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        "LLM_BASE_URL=http://127.0.0.1:11434/v1\n"
+        "LLM_MODEL=qwen3:14b\n"
+        "LLM_VISION_MODEL=qwen3-vl:8b\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(ai_provider.urllib.request, "urlopen", lambda request, timeout: FakeResponse())
+
+    result = AiProviderService("config.toml", ".env").health_check()
+
+    assert result.status == "BLOCK"
+    assert "vision model qwen3-vl:8b was not reported" in result.detail
 
 
 def test_ai_provider_health_blocks_missing_endpoint(tmp_path, monkeypatch) -> None:

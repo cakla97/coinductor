@@ -45,6 +45,7 @@ This does not give the model execution authority.
 ```powershell
 $env:LLM_BASE_URL="http://127.0.0.1:11434/v1"
 $env:LLM_MODEL="qwen3:14b"
+$env:LLM_VISION_MODEL="qwen3-vl:8b"  # optional; image messages only
 python -m trading_agent run --config config.example.toml --real-data --live-confirm-preview --ai-commentary
 ```
 

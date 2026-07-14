@@ -2282,13 +2282,19 @@ ApplicationWindow {
                                     sourceSize.width: 640
                                     sourceSize.height: 360
                                 }
-                                Text {
+                                TextEdit {
                                     id: messageText
                                     width: parent.width
                                     text: modelData.text
                                     color: textPrimary
                                     font.pixelSize: 13
-                                    wrapMode: Text.WordWrap
+                                    wrapMode: TextEdit.Wrap
+                                    textFormat: TextEdit.PlainText
+                                    readOnly: true
+                                    selectByMouse: true
+                                    persistentSelection: true
+                                    selectionColor: accent
+                                    selectedTextColor: "#08130f"
                                 }
                             }
                             Row {

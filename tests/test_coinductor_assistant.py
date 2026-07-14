@@ -366,6 +366,28 @@ def test_ui_knowledge_explains_its_own_vision_warning() -> None:
     assert "Safe defaults" not in answer
 
 
+def test_ui_knowledge_explains_how_to_enable_image_input_for_rephrased_question() -> None:
+    answer = UiKnowledgeService().answer(
+        "Proč nyní nemohu vložit obrázek? Co mám udělat pro to, abych obrázky mohl vkládat?"
+    )
+
+    assert answer is not None
+    assert "https://ollama.com/library/qwen3-vl" in answer
+    assert "qwen3-vl:8b" in answer
+    assert "Settings > Setup wizard > AI" in answer
+    assert "Save local AI" in answer
+    assert "Check AI provider" in answer
+    assert "qwen3:14b screenshot nevidí" in answer
+
+
+def test_ui_knowledge_explains_image_setup_for_english_support_question() -> None:
+    answer = UiKnowledgeService().answer("Why can't I attach an image and how do I enable it?")
+
+    assert answer is not None
+    assert "https://ollama.com/library/qwen3-vl" in answer
+    assert "Settings > Setup wizard > AI" in answer
+
+
 def test_ui_knowledge_does_not_use_description_words_as_confident_match() -> None:
     answer = UiKnowledgeService().answer("Co znamená enabled only?")
 

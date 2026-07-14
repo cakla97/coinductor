@@ -124,3 +124,6 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "PlatformDialogs.FileDialog" in qml
     assert "appController.pasteAssistantImageFromClipboard" in qml
     assert "Qt.Key_V" in qml
+    assert "TextEdit {\n                                    id: messageText" in qml
+    assert "selectByMouse: true" in qml
+    assert "persistentSelection: true" in qml

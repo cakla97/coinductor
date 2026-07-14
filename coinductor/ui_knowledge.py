@@ -187,10 +187,11 @@ UI_KNOWLEDGE = (
         "AI Assistant and Settings",
         (
             "vision model", "llm_vision_enabled", "endpoint supports images", "image input",
-            "attach image", "vlozit obrazek", "vložit obrázek",
+            "attach image", "vlozit obrazek", "vložit obrázek", "vkladat obrazky",
+            "vkládat obrázky", "nemohu vlozit", "nemohu vložit", "image attachment",
         ),
-        "Image analysis requires a model that actually accepts image input, such as a compatible Qwen3-VL model. A text-only model such as qwen3:14b cannot inspect screenshots. LLM_VISION_ENABLED=true only overrides Coinductor's capability detection; it does not add vision to a model, so use it only when the configured endpoint and model already support OpenAI-compatible image input. Until then, Coinductor may show the attachment but keeps Send disabled.",
-        "Analýza obrázků vyžaduje model, který skutečně přijímá obrazový vstup, například kompatibilní Qwen3-VL. Textový model jako qwen3:14b screenshot nevidí. LLM_VISION_ENABLED=true pouze ručně přepíše detekci schopností v Coinductoru; obrazové schopnosti modelu nepřidá, proto se smí použít jen tehdy, když nastavený endpoint i model již podporují OpenAI-compatible image input. Do té doby Coinductor přílohu zobrazí, ale tlačítko Send ponechá vypnuté.",
+        "Coinductor blocks image sending when the active model is text-only. To enable it with Ollama: 1. Open https://ollama.com/library/qwen3-vl and install a vision model that fits your hardware; qwen3-vl:8b is a practical candidate for a 16 GB VRAM GPU. 2. Keep Ollama running. 3. In Coinductor open Settings > Setup wizard > AI. Keep the local endpoint http://127.0.0.1:11434/v1, change Model to the exact installed tag, for example qwen3-vl:8b, then select Save local AI and Check AI provider. 4. Return to AI Assistant; the active-provider label must show the vision model before Attach image or Ctrl+V can be sent. A text-only model such as qwen3:14b cannot inspect screenshots. LLM_VISION_ENABLED=true only overrides capability detection and never adds vision, so do not use it to force-enable qwen3:14b.",
+        "Coinductor blokuje odeslání obrázku, když je aktivní pouze textový model. Zprovoznění přes Ollamu: 1. Otevřete https://ollama.com/library/qwen3-vl a nainstalujte vision model odpovídající vašemu HW; pro GPU s 16 GB VRAM je praktickým kandidátem qwen3-vl:8b. 2. Nechte Ollamu spuštěnou. 3. V Coinductoru otevřete Settings > Setup wizard > AI. Ponechte lokální endpoint http://127.0.0.1:11434/v1, do pole Model vložte přesný tag nainstalovaného modelu, například qwen3-vl:8b, a klikněte na Save local AI a poté Check AI provider. 4. Vraťte se do AI Assistant; před odesláním přes Attach image nebo Ctrl+V musí štítek aktivního providera ukazovat vision model. Textový qwen3:14b screenshot nevidí. LLM_VISION_ENABLED=true pouze ručně přepíše detekci schopností a vision nepřidá, proto jím qwen3:14b nikdy nevynucujte.",
     ),
     UiKnowledgeEntry(
         "Setup wizard",
@@ -310,6 +311,9 @@ def _looks_like_explanation_request(query: str) -> bool:
             "what does", "what is", "explain", "how does", "what happens", "co dela", "co udela",
             "co znamena", "k cemu", "jak funguje", "jak spolu", "souvisi", "vysvetli", "co se stane",
             "summarize", "tell me about", "shrn", "relationship between", "how are",
+            "why cant", "why can t", "cannot", "how can i", "how do i", "what should i do",
+            "not working", "proc nemohu", "proc nemuzu", "co mam udelat", "jak mohu", "jak muzu",
+            "jak mam", "jak zprovoznit", "nejde mi", "nefunguje",
         )
     )
 

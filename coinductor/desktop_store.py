@@ -590,7 +590,12 @@ class DesktopStore:
     def _format_scheduled_review(self, value: datetime | None) -> str:
         if value is None:
             return "Not available"
-        return value.astimezone().strftime("%Y-%m-%d %H:%M %Z")
+        local_value = value.astimezone()
+        offset = local_value.utcoffset() or timedelta(0)
+        total_minutes = int(offset.total_seconds() // 60)
+        sign = "+" if total_minutes >= 0 else "-"
+        offset_hours, offset_minutes = divmod(abs(total_minutes), 60)
+        return f"{local_value:%Y-%m-%d %H:%M} UTC{sign}{offset_hours:02d}:{offset_minutes:02d}"
 
     def _active_grid_item(self, row: sqlite3.Row) -> dict[str, object]:
         state = str(row["state"] or "UNKNOWN_PRICE").upper()

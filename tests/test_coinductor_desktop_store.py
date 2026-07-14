@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import sqlite3
 
 from coinductor.desktop_store import DesktopStore
@@ -208,6 +208,19 @@ def test_next_review_waits_for_market_conditions_without_manual_blocker(tmp_path
     assert review["timing"] == "In 24 hours"
     assert review["manualSteps"] == []
     assert "Spot Grid: Market status is WATCH." in review["triggers"]
+
+
+def test_scheduled_review_uses_stable_numeric_utc_offset(tmp_path) -> None:
+    store = DesktopStore(tmp_path / "agent.sqlite3", tmp_path)
+    value = datetime(2026, 7, 14, 22, 43, tzinfo=timezone(timedelta(hours=2)))
+
+    formatted = store._format_scheduled_review(value)
+    local_value = value.astimezone()
+    compact_offset = local_value.strftime("%z")
+    expected_offset = f"UTC{compact_offset[:3]}:{compact_offset[3:]}"
+
+    assert formatted == f"{local_value:%Y-%m-%d %H:%M} {expected_offset}"
+    assert formatted.isascii()
 
 
 def test_desktop_store_builds_protected_and_closed_live_lifecycle(tmp_path) -> None:

@@ -1,3 +1,4 @@
+from dataclasses import replace
 from decimal import Decimal
 
 import pytest
@@ -80,6 +81,19 @@ def test_hold_trade_is_review_only(monkeypatch, tmp_path) -> None:
     assert card["tone"] == "watch"
     assert card["canSubmitLive"] is False
     assert card["submitEnabled"] is False
+
+
+def test_snapshot_hydrates_deterministic_trade_before_building_cards(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    latest = replace(_run("HOLD"), trade_proposal=None)
+    controller._snapshot = DesktopSnapshot(latest, (), (), (), None)
+
+    controller._apply_snapshot()
+
+    card = controller.actionPlanItems[0]
+    assert card["status"] == "HOLD"
+    assert card["tone"] == "watch"
+    assert card["parameters"][0]["value"] == "HOLD"
 
 
 def test_buy_trade_stays_locked_before_live_stage(monkeypatch, tmp_path) -> None:

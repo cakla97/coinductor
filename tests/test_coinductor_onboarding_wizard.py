@@ -44,6 +44,7 @@ def test_onboarding_wizard_is_first_run_gate(monkeypatch, tmp_path) -> None:
 
     assert restarted_controller.onboardingWizardVisible is False
     assert restarted_controller.appTourVisible is False
+    assert restarted_controller.currentPage == 0
 
     controller.setCurrentPage(8)
     controller.startAppTour()

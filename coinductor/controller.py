@@ -1284,27 +1284,12 @@ class AppController(QObject):
 
     @Slot(object)
     def _on_completed(self, result: DesktopRunResult) -> None:
-        self._decision = result.decision
-        self._decision_summary = result.decision_summary
-        self._portfolio_value = f"{result.portfolio_value:.2f} USDC"
-        self._liquid_value = f"{result.liquid_value:.2f} USDC"
-        self._locked_value = f"{result.locked_value:.2f} USDC"
-        self._risk_state = "Approved" if result.risk_approved else result.risk_reason
-        self._ai_summary = result.ai_summary or "AI summary was not requested."
-        self._report_path = str(Path(result.report_path))
-        self._actions = [
-            {"priority": item.priority, "action": item.action, "reason": item.reason}
-            for item in result.actions
-        ]
+        self._hydrate_run_result(result)
         self._status_text = f"Run {result.run_id} completed - {self._pending_completion_message}"
         self._progress = 100
         self._snapshot = DesktopStore().load()
         self._asset_role_overrides = self._asset_policy_store.load()
-        self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)
-        self._strategies = list(self._snapshot.strategies)
-        self._run_history = list(self._snapshot.run_history)
-        self._action_plan_items = self._build_action_plan_items()
-        self._refresh_onboarding_review()
+        self._apply_snapshot()
         self._refresh_readiness()
         self.actionsChanged.emit()
         self.dataChanged.emit()
@@ -1423,10 +1408,24 @@ class AppController(QObject):
             suffix = "strategy is" if pending == 1 else "strategies are"
             self._active_strategies_summary += f" {pending} registered {suffix} awaiting a fresh evaluation."
         self._run_history = list(self._snapshot.run_history)
+        if self._snapshot.latest_run is not None:
+            self._hydrate_run_result(self._snapshot.latest_run)
         self._action_plan_items = self._build_action_plan_items()
         self._refresh_onboarding_review()
-        if self._snapshot.latest_run is not None:
-            self._on_completed(self._snapshot.latest_run)
+
+    def _hydrate_run_result(self, result: DesktopRunResult) -> None:
+        self._decision = result.decision
+        self._decision_summary = result.decision_summary
+        self._portfolio_value = f"{result.portfolio_value:.2f} USDC"
+        self._liquid_value = f"{result.liquid_value:.2f} USDC"
+        self._locked_value = f"{result.locked_value:.2f} USDC"
+        self._risk_state = "Approved" if result.risk_approved else result.risk_reason
+        self._ai_summary = result.ai_summary or "AI summary was not requested."
+        self._report_path = str(Path(result.report_path))
+        self._actions = [
+            {"priority": item.priority, "action": item.action, "reason": item.reason}
+            for item in result.actions
+        ]
 
     def _registration_suggestion(self, strategy_type: str) -> dict[str, object]:
         for strategy in self._strategies:

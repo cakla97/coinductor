@@ -65,6 +65,8 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "Last live trade" in qml
     assert "activeActionPlanItem.liveLifecycle.lifecycleSteps" in qml
     assert "contentHeight: actionPlanPageContent.implicitHeight + 72" in qml
+    assert "contentHeight: portfolioPageContent.implicitHeight + 72" in qml
+    assert "contentHeight: runHistoryPageContent.implicitHeight + 72" in qml
     assert "REVIEW_LIFECYCLE" not in qml
     assert '"Active Strategies"' in qml
     assert "appController.activeStrategiesSummary" in qml

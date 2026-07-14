@@ -1526,12 +1526,17 @@ ApplicationWindow {
         }
 
         ScrollView {
+            id: portfolioScroll
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
             visible: appController.currentPage === 2
+            contentWidth: availableWidth
+            contentHeight: portfolioPageContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
             ColumnLayout {
+                id: portfolioPageContent
                 x: 28
                 y: 28
                 width: Math.max(window.width - 288, 692)
@@ -2126,12 +2131,17 @@ ApplicationWindow {
         }
 
         ScrollView {
+            id: runHistoryScroll
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
             visible: appController.currentPage === 5
+            contentWidth: availableWidth
+            contentHeight: runHistoryPageContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
             ColumnLayout {
+                id: runHistoryPageContent
                 x: 28
                 y: 28
                 width: Math.max(window.width - 288, 692)

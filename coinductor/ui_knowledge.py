@@ -40,6 +40,12 @@ class UiKnowledgeService:
             for item in UI_KNOWLEDGE
         )
 
+    def page_summary(self, page_name: str, *, czech: bool) -> str | None:
+        entry = next((item for item in UI_KNOWLEDGE if item.name == page_name), None)
+        if entry is None:
+            return None
+        return entry.czech if czech else entry.english
+
 
 UI_KNOWLEDGE = (
     UiKnowledgeEntry(

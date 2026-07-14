@@ -98,15 +98,24 @@ class AssistantWorker(QObject):
     completed = Signal(object)
     finished = Signal()
 
-    def __init__(self, question: str, snapshot):
+    def __init__(self, question: str, snapshot, app_context: dict[str, object], conversation: tuple[dict[str, str], ...]):
         super().__init__()
         self.question = question
         self.snapshot = snapshot
+        self.app_context = app_context
+        self.conversation = conversation
 
     @Slot()
     def run(self) -> None:
         try:
-            self.completed.emit(ProviderBackedAssistant().respond(self.question, self.snapshot))
+            self.completed.emit(
+                ProviderBackedAssistant().respond(
+                    self.question,
+                    self.snapshot,
+                    self.app_context,
+                    self.conversation,
+                )
+            )
         finally:
             self.finished.emit()
 
@@ -236,6 +245,7 @@ class AppController(QObject):
             },
         ]
         self._assistant_pending_action: dict[str, object] = {}
+        self._assistant_origin_page = 0
         self._app_tour_step = 0
         self._app_tour_visible = self._user_profile_snapshot.configured and not self._app_tour_service.is_completed()
         self._safety_service = SafetyService()
@@ -377,6 +387,10 @@ class AppController(QObject):
     @Property("QVariantMap", notify=assistantChanged)
     def assistantPendingAction(self) -> dict[str, object]:
         return self._assistant_pending_action
+
+    @Property(str, notify=assistantChanged)
+    def assistantContextPage(self) -> str:
+        return self._page_label(self._assistant_origin_page)
 
     @Property(int, notify=pageChanged)
     def currentPage(self) -> int:
@@ -648,8 +662,12 @@ class AppController(QObject):
                 return
         if index == self._current_page:
             return
+        if index == 6 and self._current_page != 6:
+            self._assistant_origin_page = self._current_page
         self._current_page = index
         self.pageChanged.emit()
+        if index == 6:
+            self.assistantChanged.emit()
 
     @Slot()
     def openOnboardingWizard(self) -> None:
@@ -981,6 +999,11 @@ class AppController(QObject):
         text = question.strip()
         if not text or self._assistant_busy:
             return
+        conversation = tuple(
+            {"role": str(item.get("role", "")), "text": str(item.get("text", ""))}
+            for item in self._assistant_messages[-8:]
+            if item.get("role") in {"user", "assistant"}
+        )
         self._assistant_pending_action = {}
         self._assistant_messages.append({"role": "user", "text": text})
         self._assistant_messages.append({"role": "typing", "text": ""})
@@ -988,7 +1011,7 @@ class AppController(QObject):
         self.assistantChanged.emit()
 
         self._assistant_thread = QThread(self)
-        self._assistant_worker = AssistantWorker(text, self._snapshot)
+        self._assistant_worker = AssistantWorker(text, self._snapshot, self._assistant_context(), conversation)
         self._assistant_worker.moveToThread(self._assistant_thread)
         self._assistant_thread.started.connect(self._assistant_worker.run)
         self._assistant_worker.completed.connect(self._on_assistant_completed)
@@ -997,6 +1020,19 @@ class AppController(QObject):
         self._assistant_thread.finished.connect(self._assistant_thread.deleteLater)
         self._assistant_thread.finished.connect(self._clear_assistant_worker)
         self._assistant_thread.start()
+
+    @Slot()
+    def newAssistantChat(self) -> None:
+        if self._assistant_busy:
+            return
+        self._assistant_pending_action = {}
+        self._assistant_messages = [
+            {
+                "role": "assistant",
+                "text": "New chat started. Ask about the current page, latest run, portfolio, or risk controls.",
+            }
+        ]
+        self.assistantChanged.emit()
 
     @Slot()
     def dismissAssistantAction(self) -> None:
@@ -1440,6 +1476,41 @@ class AppController(QObject):
         self._busy = value
         self.busyChanged.emit()
         self.readinessChanged.emit()
+
+    def _assistant_context(self) -> dict[str, object]:
+        return {
+            "context_page": self._page_label(self._assistant_origin_page),
+            "safety": {
+                "stage": self._safety_snapshot.stage,
+                "label": self._safety_snapshot.label,
+                "detail": self._safety_snapshot.detail,
+                "allows_live_preview": self._safety_snapshot.allows_live_preview,
+                "allows_live_submit": self._safety_snapshot.allows_live_submit,
+            },
+            "readiness": {
+                "summary": self._readiness_snapshot.summary,
+                "next_step": self._readiness_snapshot.next_step,
+                "action_code": self._readiness_snapshot.action_code,
+                "action_label": self._readiness_snapshot.action_label,
+            },
+            "action_plan": [dict(item) for item in self._action_plan_items],
+            "active_strategies_summary": self._active_strategies_summary,
+            "next_review": dict(self._next_review),
+        }
+
+    def _page_label(self, index: int) -> str:
+        pages = (
+            "Overview",
+            "Live Actions",
+            "Portfolio",
+            "Action Plan",
+            "Active Strategies",
+            "Run History",
+            "AI Assistant",
+            "Help & Guides",
+            "Settings",
+        )
+        return pages[index] if 0 <= index < len(pages) else "Unknown"
 
     def _apply_snapshot(self) -> None:
         self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)

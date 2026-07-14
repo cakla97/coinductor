@@ -21,6 +21,108 @@ class AssistantResponse:
     proposed_action: dict[str, object] | None = None
 
 
+class ContextualHelpService:
+    def answer(self, question: str, app_context: dict[str, object]) -> str | None:
+        query = _normalize(question)
+        czech = is_czech(question)
+        page_name = str(app_context.get("context_page", "AI Assistant"))
+
+        if any(
+            phrase in query
+            for phrase in (
+                "shrn tuto stranku", "shrn tuhle stranku", "shrn tuto sekci", "co je tady",
+                "co je na teto strance", "summarize this page", "summarize this section", "what is on this page",
+            )
+        ):
+            summary = UiKnowledgeService().page_summary(page_name, czech=czech)
+            if summary is not None:
+                return summary
+
+        if any(
+            phrase in query
+            for phrase in (
+                "brani obchodu", "blokuje obchod", "proc je trade hold", "proc je obchod hold",
+                "what blocks the trade", "why is the trade hold", "why is trading blocked",
+            )
+        ):
+            trade = next(
+                (
+                    item
+                    for item in app_context.get("action_plan", [])
+                    if str(item.get("title", "")) == "Trade"
+                ),
+                None,
+            )
+            if trade is None:
+                return "Trade zatím nebyl vyhodnocen." if czech else "Trade has not been evaluated yet."
+            status = str(trade.get("status", "Unknown"))
+            detail = str(trade.get("detail", "No detail is available."))
+            submit_blocker = str(trade.get("submitBlockedReason", "")).strip()
+            if czech:
+                response = f"Aktuální stav Trade je {status}. Důvod z posledního běhu: {detail}"
+                if submit_blocker:
+                    response += f" Live odeslání navíc blokuje: {submit_blocker}"
+                return response
+            response = f"The current Trade status is {status}. Latest-run reason: {detail}"
+            if submit_blocker:
+                response += f" Live submission is also blocked by: {submit_blocker}"
+            return response
+
+        if any(
+            phrase in query
+            for phrase in (
+                "co mam udelat dal", "jaky je dalsi krok", "co je dalsi krok", "what should i do next",
+                "what is the next step", "next step here",
+            )
+        ):
+            readiness = app_context.get("readiness", {})
+            next_step = str(readiness.get("next_step", "")).strip()
+            action_label = str(readiness.get("action_label", "")).strip()
+            if not next_step:
+                return "Aplikace nyní nemá uložený jednoznačný další krok." if czech else "The app has no single stored next step right now."
+            if czech:
+                suffix = f" Doporučená akce v UI: {action_label}." if action_label else ""
+                return f"Podle aktuální readiness je další krok: {next_step}{suffix}"
+            suffix = f" Recommended UI action: {action_label}." if action_label else ""
+            return f"According to current readiness, the next step is: {next_step}{suffix}"
+        return None
+
+    def proposed_action(self, question: str, app_context: dict[str, object]) -> dict[str, object] | None:
+        query = _normalize(question)
+        if not any(
+            phrase in query
+            for phrase in (
+                "co mam udelat dal", "jaky je dalsi krok", "co je dalsi krok", "what should i do next",
+                "what is the next step", "next step here",
+            )
+        ):
+            return None
+        readiness = app_context.get("readiness", {})
+        code = str(readiness.get("action_code", ""))
+        page = {
+            "GUIDE_PROFILE": 8,
+            "CHECK_BINANCE": 8,
+            "OPEN_SETTINGS": 8,
+            "RUN_CLASSIFICATION": 0,
+            "OPEN_PORTFOLIO": 2,
+        }.get(code)
+        if page is None:
+            return None
+        label = {0: "Overview", 2: "Portfolio", 8: "Settings"}[page]
+        czech = is_czech(question)
+        return {
+            "type": "NAVIGATE",
+            "title": f"Otevřít {label}" if czech else f"Open {label}",
+            "description": (
+                f"Přejde do sekce {label}, kde můžete doporučený krok zkontrolovat. Nic se neprovede automaticky."
+                if czech
+                else f"Navigate to {label} so you can review the recommended step. Nothing is executed automatically."
+            ),
+            "confirmLabel": "Otevřít sekci" if czech else "Open page",
+            "page": page,
+        }
+
+
 class AssistantIntentService:
     _PAGES = {
         "overview": (0, "Overview"),
@@ -214,23 +316,45 @@ class ProviderBackedAssistant:
         self.env_path = env_path
         self.fallback = fallback or LocalHelpAssistant()
 
-    def answer(self, question: str, snapshot: DesktopSnapshot) -> str:
+    def answer(
+        self,
+        question: str,
+        snapshot: DesktopSnapshot,
+        app_context: dict[str, object] | None = None,
+        conversation: tuple[dict[str, str], ...] = (),
+    ) -> str:
         try:
-            return self._provider_answer(question, snapshot)
+            return self._provider_answer(question, snapshot, app_context or {}, conversation)
         except Exception as exc:
             offline = self.fallback.answer(question, snapshot)
             return f"{offline}\n\nAI provider fallback: {exc}"
 
-    def respond(self, question: str, snapshot: DesktopSnapshot) -> AssistantResponse:
+    def respond(
+        self,
+        question: str,
+        snapshot: DesktopSnapshot,
+        app_context: dict[str, object] | None = None,
+        conversation: tuple[dict[str, str], ...] = (),
+    ) -> AssistantResponse:
         deterministic = AssistantIntentService().propose(question, snapshot)
         if deterministic is not None:
             return deterministic
+        contextual = ContextualHelpService().answer(question, app_context or {})
+        if contextual is not None:
+            proposal = ContextualHelpService().proposed_action(question, app_context or {})
+            return AssistantResponse(contextual, proposal)
         ui_answer = UiKnowledgeService().answer(question)
         if ui_answer is not None:
             return AssistantResponse(ui_answer)
-        return AssistantResponse(self.answer(question, snapshot))
+        return AssistantResponse(self.answer(question, snapshot, app_context, conversation))
 
-    def _provider_answer(self, question: str, snapshot: DesktopSnapshot) -> str:
+    def _provider_answer(
+        self,
+        question: str,
+        snapshot: DesktopSnapshot,
+        app_context: dict[str, object],
+        conversation: tuple[dict[str, str], ...],
+    ) -> str:
         load_env_file(self.env_path)
         config = load_config(self.config_path).raw
         ai = config.get("ai", {})
@@ -258,6 +382,8 @@ class ProviderBackedAssistant:
             ],
             "project_context": AiProviderService(self.config_path, self.env_path).inspect().context_sections,
             "ui_component_catalog": UiKnowledgeService().context(),
+            "current_app_context": app_context,
+            "recent_conversation": list(conversation[-8:]),
             "snapshot": self._snapshot_payload(snapshot),
             "question": question,
             "schema": {"answer": "plain-language answer, max 180 words"},

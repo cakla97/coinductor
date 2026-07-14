@@ -2,7 +2,13 @@ from decimal import Decimal
 import json
 
 from coinductor import assistant as assistant_module
-from coinductor.assistant import AssistantIntentService, AssistantResponse, LocalHelpAssistant, ProviderBackedAssistant
+from coinductor.assistant import (
+    AssistantIntentService,
+    AssistantResponse,
+    ContextualHelpService,
+    LocalHelpAssistant,
+    ProviderBackedAssistant,
+)
 from coinductor.controller import AppController
 from coinductor.models import ActionSummary, DesktopRunResult, DesktopSnapshot
 from coinductor.ui_knowledge import UiKnowledgeService
@@ -51,11 +57,18 @@ def test_provider_backed_assistant_uses_chat_completions(tmp_path, monkeypatch) 
         prompt = json.loads(body["messages"][1]["content"])
         assert prompt["response_language"] == "English"
         assert any(item["component"] == "Refresh checks" for item in prompt["ui_component_catalog"])
+        assert prompt["current_app_context"]["context_page"] == "Action Plan"
+        assert prompt["recent_conversation"] == [{"role": "user", "text": "Earlier question"}]
         return FakeResponse()
 
     monkeypatch.setattr(assistant_module.urllib.request, "urlopen", fake_urlopen)
 
-    answer = ProviderBackedAssistant("config.toml", ".env").answer("Explain risk", _snapshot())
+    answer = ProviderBackedAssistant("config.toml", ".env").answer(
+        "Explain risk",
+        _snapshot(),
+        {"context_page": "Action Plan"},
+        ({"role": "user", "text": "Earlier question"},),
+    )
 
     assert answer == "Provider answer."
     assert called_urls == ["http://127.0.0.1:11434/v1/chat/completions"]
@@ -169,6 +182,72 @@ def test_ui_knowledge_summarizes_action_plan_in_czech() -> None:
     assert answer is not None
     assert "konsolidovaný výsledek" in answer
     assert "deterministické podmínky" in answer
+
+
+def test_contextual_help_explains_current_trade_blocker_in_czech() -> None:
+    answer = ContextualHelpService().answer(
+        "Co tady teď brání obchodu?",
+        {
+            "context_page": "Action Plan",
+            "action_plan": [
+                {
+                    "title": "Trade",
+                    "status": "HOLD",
+                    "detail": "Risk-off trend and price below EMA200.",
+                    "submitBlockedReason": "Live submit appears only for BUY previews.",
+                }
+            ],
+        },
+    )
+
+    assert answer is not None
+    assert "Aktuální stav Trade je HOLD" in answer
+    assert "Risk-off trend" in answer
+
+
+def test_contextual_help_summarizes_origin_page() -> None:
+    answer = ContextualHelpService().answer(
+        "Shrň tuto stránku",
+        {"context_page": "Active Strategies"},
+    )
+
+    assert answer is not None
+    assert "monitoruje" in answer
+
+
+def test_contextual_next_step_offers_navigation_not_execution() -> None:
+    context = {
+        "context_page": "AI Assistant",
+        "readiness": {
+            "next_step": "Read-only keys exist but have not been checked.",
+            "action_code": "CHECK_BINANCE",
+            "action_label": "Run read-only check",
+        },
+    }
+    service = ContextualHelpService()
+
+    answer = service.answer("Co mám udělat dál?", context)
+    proposal = service.proposed_action("Co mám udělat dál?", context)
+
+    assert answer is not None
+    assert proposal["type"] == "NAVIGATE"
+    assert proposal["page"] == 8
+    assert "Nic se neprovede automaticky" in proposal["description"]
+
+
+def test_controller_tracks_assistant_origin_and_starts_new_chat(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    controller = AppController()
+    controller.setCurrentPage(3)
+    controller.setCurrentPage(6)
+    controller._assistant_messages.append({"role": "user", "text": "Old question"})
+
+    assert controller.assistantContextPage == "Action Plan"
+
+    controller.newAssistantChat()
+
+    assert len(controller.assistantMessages) == 1
+    assert controller.assistantMessages[0]["role"] == "assistant"
 
 
 def _snapshot() -> DesktopSnapshot:

@@ -2208,12 +2208,13 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Text {
                         Layout.fillWidth: true
-                        text: "Read-only help with offline fallback and optional configured AI provider"
+                        text: "Read-only help | Context: " + appController.assistantContextPage
                         color: textSecondary
                         font.pixelSize: 14
                     }
                     Rectangle {
-                        Layout.preferredWidth: 360
+                        Layout.preferredWidth: 280
+                        Layout.minimumWidth: 180
                         Layout.preferredHeight: 34
                         radius: 6
                         color: panel
@@ -2228,6 +2229,11 @@ ApplicationWindow {
                             font.pixelSize: 12
                             elide: Text.ElideRight
                         }
+                    }
+                    Button {
+                        text: "New chat"
+                        enabled: !appController.assistantBusy
+                        onClicked: appController.newAssistantChat()
                     }
                 }
 

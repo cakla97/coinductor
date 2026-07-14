@@ -4,7 +4,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
-from PySide6.QtGui import QDesktopServices, QGuiApplication
+from PySide6.QtGui import QDesktopServices, QGuiApplication, QImageReader
 
 from .ai_provider import AiProviderService
 from .application import CoinductorApplication
@@ -100,12 +100,20 @@ class AssistantWorker(QObject):
     completed = Signal(object)
     finished = Signal()
 
-    def __init__(self, question: str, snapshot, app_context: dict[str, object], conversation: tuple[dict[str, str], ...]):
+    def __init__(
+        self,
+        question: str,
+        snapshot,
+        app_context: dict[str, object],
+        conversation: tuple[dict[str, str], ...],
+        image_path: str,
+    ):
         super().__init__()
         self.question = question
         self.snapshot = snapshot
         self.app_context = app_context
         self.conversation = conversation
+        self.image_path = image_path
 
     @Slot()
     def run(self) -> None:
@@ -116,6 +124,7 @@ class AssistantWorker(QObject):
                     self.snapshot,
                     self.app_context,
                     self.conversation,
+                    self.image_path,
                 )
             )
         finally:
@@ -251,6 +260,8 @@ class AppController(QObject):
         self._assistant_history_store = AssistantHistoryStore()
         self._assistant_history = self._assistant_history_store.summaries()
         self._assistant_conversation_id = uuid4().hex
+        self._assistant_attachment: dict[str, str] = {}
+        self._assistant_vision_available, self._assistant_vision_detail = AiProviderService().vision_support()
         self._app_tour_step = 0
         self._app_tour_visible = self._user_profile_snapshot.configured and not self._app_tour_service.is_completed()
         self._safety_service = SafetyService()
@@ -400,6 +411,18 @@ class AppController(QObject):
     @Property("QVariantList", notify=assistantChanged)
     def assistantHistory(self) -> list[dict[str, object]]:
         return self._assistant_history
+
+    @Property("QVariantMap", notify=assistantChanged)
+    def assistantAttachment(self) -> dict[str, str]:
+        return self._assistant_attachment
+
+    @Property(bool, notify=assistantChanged)
+    def assistantVisionAvailable(self) -> bool:
+        return self._assistant_vision_available
+
+    @Property(str, notify=assistantChanged)
+    def assistantVisionDetail(self) -> str:
+        return self._assistant_vision_detail
 
     @Property(int, notify=pageChanged)
     def currentPage(self) -> int:
@@ -744,6 +767,7 @@ class AppController(QObject):
     def refreshSetup(self) -> None:
         self._setup_snapshot = SetupService().inspect()
         self._ai_provider_snapshot = AiProviderService().inspect()
+        self._assistant_vision_available, self._assistant_vision_detail = AiProviderService().vision_support()
         self._user_profile_snapshot = self._user_profile_service.inspect()
         if not self._user_profile_snapshot.configured:
             self._onboarding_wizard_visible = True
@@ -1006,21 +1030,36 @@ class AppController(QObject):
     @Slot(str)
     def askAssistant(self, question: str) -> None:
         text = question.strip()
-        if not text or self._assistant_busy:
+        if (not text and not self._assistant_attachment) or self._assistant_busy:
             return
+        if self._assistant_attachment and not self._assistant_vision_available:
+            self.notificationRequested.emit(self._assistant_vision_detail)
+            return
+        if not text:
+            text = "Describe this image and explain how it relates to Coinductor."
         conversation = tuple(
             {"role": str(item.get("role", "")), "text": str(item.get("text", ""))}
             for item in self._assistant_messages[-8:]
             if item.get("role") in {"user", "assistant"}
         )
         self._assistant_pending_action = {}
-        self._assistant_messages.append({"role": "user", "text": text})
+        attachment = dict(self._assistant_attachment)
+        user_message = {"role": "user", "text": text}
+        if attachment:
+            user_message.update({"imageUrl": attachment["url"], "imageName": attachment["name"]})
+        self._assistant_messages.append(user_message)
         self._assistant_messages.append({"role": "typing", "text": ""})
         self._assistant_busy = True
         self.assistantChanged.emit()
 
         self._assistant_thread = QThread(self)
-        self._assistant_worker = AssistantWorker(text, self._snapshot, self._assistant_context(), conversation)
+        self._assistant_worker = AssistantWorker(
+            text,
+            self._snapshot,
+            self._assistant_context(),
+            conversation,
+            attachment.get("path", ""),
+        )
         self._assistant_worker.moveToThread(self._assistant_thread)
         self._assistant_thread.started.connect(self._assistant_worker.run)
         self._assistant_worker.completed.connect(self._on_assistant_completed)
@@ -1029,12 +1068,43 @@ class AppController(QObject):
         self._assistant_thread.finished.connect(self._assistant_thread.deleteLater)
         self._assistant_thread.finished.connect(self._clear_assistant_worker)
         self._assistant_thread.start()
+        self._assistant_attachment = {}
+        self.assistantChanged.emit()
+
+    @Slot(str)
+    def attachAssistantImage(self, image_url: str) -> None:
+        local_path = QUrl(image_url).toLocalFile() or image_url
+        path = Path(local_path)
+        if path.suffix.lower() not in {".png", ".jpg", ".jpeg", ".webp"}:
+            self.notificationRequested.emit("Choose a PNG, JPEG, or WebP image.")
+            return
+        if not path.is_file() or path.stat().st_size > 10 * 1024 * 1024:
+            self.notificationRequested.emit("The image is missing or exceeds the 10 MB limit.")
+            return
+        if not QImageReader(str(path)).canRead():
+            self.notificationRequested.emit("The selected file is not a readable image.")
+            return
+        self._assistant_attachment = {
+            "path": str(path.resolve()),
+            "url": QUrl.fromLocalFile(str(path.resolve())).toString(),
+            "name": path.name,
+            "size": f"{path.stat().st_size / (1024 * 1024):.1f} MB",
+        }
+        self.assistantChanged.emit()
+
+    @Slot()
+    def clearAssistantAttachment(self) -> None:
+        if not self._assistant_attachment:
+            return
+        self._assistant_attachment = {}
+        self.assistantChanged.emit()
 
     @Slot()
     def newAssistantChat(self) -> None:
         if self._assistant_busy:
             return
         self._assistant_pending_action = {}
+        self._assistant_attachment = {}
         self._assistant_conversation_id = uuid4().hex
         self._assistant_messages = [
             {
@@ -1055,12 +1125,21 @@ class AppController(QObject):
         if not isinstance(messages, list):
             return
         self._assistant_conversation_id = conversation_id
-        self._assistant_messages = [
-            {"role": str(item.get("role", "assistant")), "text": str(item.get("text", ""))}
-            for item in messages
-            if isinstance(item, dict) and item.get("role") in {"user", "assistant"}
-        ]
+        self._assistant_messages = []
+        for item in messages:
+            if not isinstance(item, dict) or item.get("role") not in {"user", "assistant"}:
+                continue
+            message = {"role": str(item.get("role", "assistant")), "text": str(item.get("text", ""))}
+            if item.get("imageUrl"):
+                message.update(
+                    {
+                        "imageUrl": str(item["imageUrl"]),
+                        "imageName": str(item.get("imageName", "Attached image")),
+                    }
+                )
+            self._assistant_messages.append(message)
         self._assistant_pending_action = {}
+        self._assistant_attachment = {}
         self._assistant_origin_page = self._page_index(str(record.get("contextPage", "Overview")))
         self.assistantChanged.emit()
 
@@ -1528,6 +1607,14 @@ class AppController(QObject):
                 "next_step": self._readiness_snapshot.next_step,
                 "action_code": self._readiness_snapshot.action_code,
                 "action_label": self._readiness_snapshot.action_label,
+            },
+            "binance_read_only": {
+                "status": self._connection_status,
+                "detail": self._connection_detail,
+            },
+            "binance_live_key": {
+                "status": self._live_trading_check_status,
+                "detail": self._live_trading_check_detail,
             },
             "action_plan": [dict(item) for item in self._action_plan_items],
             "active_strategies_summary": self._active_strategies_summary,

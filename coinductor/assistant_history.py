@@ -29,14 +29,19 @@ class AssistantHistoryStore:
         messages: list[dict[str, str]],
         context_page: str,
     ) -> None:
-        normalized = [
-            {
+        normalized = []
+        for item in messages:
+            if item.get("role") not in {"user", "assistant"} or not str(item.get("text", "")).strip():
+                continue
+            message = {
                 "role": str(item.get("role", "")),
                 "text": str(item.get("text", ""))[:4000],
             }
-            for item in messages
-            if item.get("role") in {"user", "assistant"} and str(item.get("text", "")).strip()
-        ][-self.max_messages :]
+            if item.get("imageUrl"):
+                message["imageUrl"] = str(item["imageUrl"])
+                message["imageName"] = str(item.get("imageName", "Attached image"))
+            normalized.append(message)
+        normalized = normalized[-self.max_messages :]
         first_user = next((item["text"] for item in normalized if item["role"] == "user"), "")
         if not first_user:
             return

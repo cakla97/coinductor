@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import QtQuick.Dialogs as PlatformDialogs
 
 ApplicationWindow {
     id: window
@@ -2253,26 +2254,42 @@ ApplicationWindow {
                         id: assistantMessageDelegate
                         required property var modelData
                         property bool isTyping: modelData.role === "typing"
+                        property bool hasImage: !isTyping && modelData.imageUrl !== undefined && String(modelData.imageUrl).length > 0
                         width: ListView.view.width
                         height: isTyping ? 44 : messageBubble.implicitHeight
                         Rectangle {
                             id: messageBubble
-                            width: assistantMessageDelegate.isTyping ? 72 : Math.min(parent.width * 0.72, Math.max(280, messageText.implicitWidth + 30))
-                            implicitHeight: assistantMessageDelegate.isTyping ? 44 : messageText.implicitHeight + 24
+                            width: assistantMessageDelegate.isTyping ? 72 : Math.min(parent.width * 0.72, Math.max(assistantMessageDelegate.hasImage ? 380 : 280, messageText.implicitWidth + 30))
+                            implicitHeight: assistantMessageDelegate.isTyping ? 44 : messageContent.implicitHeight + 24
                             anchors.right: modelData.role === "user" ? parent.right : undefined
                             anchors.left: modelData.role === "user" ? undefined : parent.left
                             radius: 7
                             color: modelData.role === "user" ? "#234f43" : panel
                             border.color: modelData.role === "user" ? "#337660" : border
-                            Text {
-                                id: messageText
+                            Column {
+                                id: messageContent
                                 anchors.fill: parent
                                 anchors.margins: 12
-                                text: modelData.text
                                 visible: !assistantMessageDelegate.isTyping
-                                color: textPrimary
-                                font.pixelSize: 13
-                                wrapMode: Text.WordWrap
+                                spacing: 8
+                                Image {
+                                    width: parent.width
+                                    height: assistantMessageDelegate.hasImage ? 180 : 0
+                                    visible: assistantMessageDelegate.hasImage
+                                    source: assistantMessageDelegate.hasImage ? modelData.imageUrl : ""
+                                    fillMode: Image.PreserveAspectFit
+                                    asynchronous: true
+                                    sourceSize.width: 640
+                                    sourceSize.height: 360
+                                }
+                                Text {
+                                    id: messageText
+                                    width: parent.width
+                                    text: modelData.text
+                                    color: textPrimary
+                                    font.pixelSize: 13
+                                    wrapMode: Text.WordWrap
+                                }
                             }
                             Row {
                                 visible: assistantMessageDelegate.isTyping
@@ -2328,22 +2345,80 @@ ApplicationWindow {
                     }
                 }
 
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 92
+                    visible: Object.keys(appController.assistantAttachment).length > 0
+                    radius: 7
+                    color: panelRaised
+                    border.color: appController.assistantVisionAvailable ? accent : warning
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        spacing: 12
+                        Image {
+                            Layout.preferredWidth: 70
+                            Layout.preferredHeight: 70
+                            source: appController.assistantAttachment.url || ""
+                            fillMode: Image.PreserveAspectFit
+                            asynchronous: true
+                        }
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 3
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.assistantAttachment.name || "Attached image"
+                                color: textPrimary
+                                font.pixelSize: 13
+                                font.bold: true
+                                elide: Text.ElideMiddle
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.assistantVisionAvailable
+                                      ? "The active AI supports image input. The screenshot will be sent with this message."
+                                      : appController.assistantVisionDetail
+                                color: appController.assistantVisionAvailable ? textSecondary : warning
+                                font.pixelSize: 11
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                        Button {
+                            text: "Remove"
+                            enabled: !appController.assistantBusy
+                            onClicked: appController.clearAssistantAttachment()
+                        }
+                    }
+                }
+
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 10
+                    Button {
+                        text: "Attach image"
+                        enabled: !appController.assistantBusy
+                        onClicked: assistantImageDialog.open()
+                    }
                     TextField {
                         id: assistantInput
                         Layout.fillWidth: true
                         placeholderText: "Ask about the latest run, portfolio, risk, Grid..."
                         enabled: !appController.assistantBusy
                         onAccepted: {
-                            appController.askAssistant(text)
-                            clear()
+                            if ((text.trim().length > 0 || Object.keys(appController.assistantAttachment).length > 0)
+                                    && (Object.keys(appController.assistantAttachment).length === 0 || appController.assistantVisionAvailable)) {
+                                appController.askAssistant(text)
+                                clear()
+                            }
                         }
                     }
                     Button {
                         text: "Send"
-                        enabled: assistantInput.text.trim().length > 0 && !appController.assistantBusy
+                        enabled: !appController.assistantBusy
+                                 && (assistantInput.text.trim().length > 0 || Object.keys(appController.assistantAttachment).length > 0)
+                                 && (Object.keys(appController.assistantAttachment).length === 0 || appController.assistantVisionAvailable)
                         onClicked: {
                             appController.askAssistant(assistantInput.text)
                             assistantInput.clear()
@@ -4304,6 +4379,15 @@ ApplicationWindow {
             }
         }
     }
+
+    PlatformDialogs.FileDialog {
+        id: assistantImageDialog
+        title: "Attach a screenshot or image"
+        fileMode: PlatformDialogs.FileDialog.OpenFile
+        nameFilters: ["Images (*.png *.jpg *.jpeg *.webp)"]
+        onAccepted: appController.attachAssistantImage(selectedFile.toString())
+    }
+
     Dialog {
         id: assistantHistoryDialog
         title: "AI chat history"

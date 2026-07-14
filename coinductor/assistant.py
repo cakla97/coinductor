@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import base64
 import json
+import mimetypes
 import os
 import re
 import unicodedata
 import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 
 from trading_agent.config import load_config
 from trading_agent.env import load_env_file
@@ -26,6 +29,29 @@ class ContextualHelpService:
         query = _normalize(question)
         czech = is_czech(question)
         page_name = str(app_context.get("context_page", "AI Assistant"))
+
+        if any(
+            phrase in query
+            for phrase in (
+                "binance not checked", "box binance", "binance status", "stav binance",
+                "binance v levem spodnim", "binance vlevo dole",
+            )
+        ):
+            connection = app_context.get("binance_read_only", {})
+            status = str(connection.get("status", "Not checked"))
+            detail = str(connection.get("detail", ""))
+            if czech:
+                return (
+                    f"Box BINANCE ukazuje stav read-only API připojení v aktuální session. Stav {status} znamená, "
+                    "že aplikace zatím nespustila nebo nedokončila síťovou kontrolu read-only klíče; sám o sobě "
+                    "neříká, že klíč chybí nebo je neplatný. Kontrolu spustíte v Settings v části Binance read-only "
+                    f"connection. Aktuální detail aplikace: {detail}"
+                )
+            return (
+                f"The BINANCE box shows the read-only API connection state for this app session. {status} means "
+                "the read-only key has not yet completed a network check; it does not by itself mean the key is "
+                f"missing or invalid. Run the check in Settings > Binance read-only connection. Current detail: {detail}"
+            )
 
         if any(
             phrase in query
@@ -97,6 +123,22 @@ class ContextualHelpService:
 
     def proposed_action(self, question: str, app_context: dict[str, object]) -> dict[str, object] | None:
         query = _normalize(question)
+        if any(
+            phrase in query
+            for phrase in ("binance not checked", "box binance", "binance status", "stav binance")
+        ):
+            czech = is_czech(question)
+            return {
+                "type": "NAVIGATE",
+                "title": "Otevřít Settings" if czech else "Open Settings",
+                "description": (
+                    "Přejde k Binance read-only connection kontrole. Samotný přechod žádnou kontrolu nespustí."
+                    if czech
+                    else "Navigate to the Binance read-only connection check. Navigation does not run the check."
+                ),
+                "confirmLabel": "Otevřít Settings" if czech else "Open Settings",
+                "page": 8,
+            }
         if not any(
             phrase in query
             for phrase in (
@@ -330,9 +372,10 @@ class ProviderBackedAssistant:
         snapshot: DesktopSnapshot,
         app_context: dict[str, object] | None = None,
         conversation: tuple[dict[str, str], ...] = (),
+        image_path: str = "",
     ) -> str:
         try:
-            return self._provider_answer(question, snapshot, app_context or {}, conversation)
+            return self._provider_answer(question, snapshot, app_context or {}, conversation, image_path)
         except Exception as exc:
             if is_czech(question):
                 return (
@@ -349,6 +392,7 @@ class ProviderBackedAssistant:
         snapshot: DesktopSnapshot,
         app_context: dict[str, object] | None = None,
         conversation: tuple[dict[str, str], ...] = (),
+        image_path: str = "",
     ) -> AssistantResponse:
         deterministic = AssistantIntentService().propose(question, snapshot)
         if deterministic is not None:
@@ -360,7 +404,7 @@ class ProviderBackedAssistant:
         ui_answer = UiKnowledgeService().answer(question)
         if ui_answer is not None:
             return AssistantResponse(ui_answer)
-        return AssistantResponse(self.answer(question, snapshot, app_context, conversation))
+        return AssistantResponse(self.answer(question, snapshot, app_context, conversation, image_path))
 
     def _provider_answer(
         self,
@@ -368,6 +412,7 @@ class ProviderBackedAssistant:
         snapshot: DesktopSnapshot,
         app_context: dict[str, object],
         conversation: tuple[dict[str, str], ...],
+        image_path: str,
     ) -> str:
         load_env_file(self.env_path)
         config = load_config(self.config_path).raw
@@ -379,6 +424,10 @@ class ProviderBackedAssistant:
             raise RuntimeError("LLM_BASE_URL is not set.")
         if not model:
             raise RuntimeError("LLM_MODEL is not set.")
+        if image_path:
+            vision_available, vision_detail = AiProviderService(self.config_path, self.env_path).vision_support()
+            if not vision_available:
+                raise RuntimeError(vision_detail)
 
         response_language = "Czech" if is_czech(question) else "English"
         payload = {
@@ -400,8 +449,20 @@ class ProviderBackedAssistant:
             "recent_conversation": list(conversation[-8:]),
             "snapshot": self._snapshot_payload(snapshot),
             "question": question,
+            "image_attached": bool(image_path),
             "schema": {"answer": "plain-language answer, max 180 words"},
         }
+        user_content: str | list[dict[str, object]] = json.dumps(payload, default=str)
+        if image_path:
+            image_file = Path(image_path)
+            if not image_file.is_file() or image_file.stat().st_size > 10 * 1024 * 1024:
+                raise RuntimeError("The attached image is missing or exceeds the 10 MB limit.")
+            mime_type = mimetypes.guess_type(image_file.name)[0] or "image/png"
+            encoded = base64.b64encode(image_file.read_bytes()).decode("ascii")
+            user_content = [
+                {"type": "text", "text": json.dumps(payload, default=str)},
+                {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{encoded}"}},
+            ]
         body = json.dumps(
             {
                 "model": model,
@@ -415,7 +476,7 @@ class ProviderBackedAssistant:
                             "You cannot execute actions. Return JSON only."
                         ),
                     },
-                    {"role": "user", "content": json.dumps(payload, default=str)},
+                    {"role": "user", "content": user_content},
                 ],
                 "temperature": 0.2,
                 "response_format": {"type": "json_object"},

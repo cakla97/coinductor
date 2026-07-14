@@ -74,6 +74,51 @@ def test_provider_backed_assistant_uses_chat_completions(tmp_path, monkeypatch) 
     assert called_urls == ["http://127.0.0.1:11434/v1/chat/completions"]
 
 
+def test_provider_backed_assistant_sends_image_to_vision_model(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    monkeypatch.delenv("LLM_VISION_ENABLED", raising=False)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3-vl:8b\n",
+        encoding="utf-8",
+    )
+    image_path = tmp_path / "screen.png"
+    image_path.write_bytes(b"fake-png-content")
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return False
+
+        def read(self) -> bytes:
+            return json.dumps(
+                {"choices": [{"message": {"content": json.dumps({"answer": "Image answer."})}}]}
+            ).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        body = json.loads(request.data.decode("utf-8"))
+        content = body["messages"][1]["content"]
+        assert content[0]["type"] == "text"
+        assert json.loads(content[0]["text"])["image_attached"] is True
+        assert content[1]["type"] == "image_url"
+        assert content[1]["image_url"]["url"].startswith("data:image/png;base64,")
+        return FakeResponse()
+
+    monkeypatch.setattr(assistant_module.urllib.request, "urlopen", fake_urlopen)
+
+    answer = ProviderBackedAssistant("config.toml", ".env").answer(
+        "Explain this screenshot",
+        _snapshot(),
+        image_path=str(image_path),
+    )
+
+    assert answer == "Image answer."
+
+
 def test_provider_backed_assistant_falls_back_when_provider_missing(tmp_path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("LLM_BASE_URL", raising=False)
@@ -223,6 +268,42 @@ def test_contextual_help_explains_itself_in_czech_without_provider() -> None:
     assert "fallback" not in response.text.lower()
 
 
+def test_contextual_help_explains_binance_not_checked_without_provider() -> None:
+    context = {
+        "context_page": "Overview",
+        "binance_read_only": {
+            "status": "Not checked",
+            "detail": "Run the read-only check from Settings before live analysis.",
+        },
+    }
+
+    response = ProviderBackedAssistant().respond(
+        "What does the Binance Not checked box in the lower-left corner mean?",
+        _snapshot(),
+        context,
+    )
+
+    assert "read-only API connection state" in response.text
+    assert "does not by itself mean" in response.text
+    assert response.proposed_action["type"] == "NAVIGATE"
+    assert response.proposed_action["page"] == 8
+
+
+def test_contextual_help_explains_exact_binance_status_question_in_czech() -> None:
+    answer = ContextualHelpService().answer(
+        "Co znamená box Binance Not checked v levém spodním rohu?",
+        {
+            "binance_read_only": {
+                "status": "Not checked",
+                "detail": "Run the read-only check from Settings before live analysis.",
+            }
+        },
+    )
+
+    assert "zatím nespustila nebo nedokončila" in answer
+    assert "neříká, že klíč chybí" in answer
+
+
 def test_contextual_next_step_offers_navigation_not_execution() -> None:
     context = {
         "context_page": "AI Assistant",
@@ -272,6 +353,25 @@ def test_controller_restores_saved_assistant_chat(tmp_path, monkeypatch) -> None
 
     assert controller.assistantMessages[-1]["text"] == "Saved answer"
     assert controller.assistantContextPage == "Portfolio"
+
+
+def test_controller_restores_image_metadata_from_saved_chat(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    controller = AppController()
+    messages = [
+        {
+            "role": "user",
+            "text": "Explain this screenshot",
+            "imageUrl": "file:///D:/Screenshots/example.png",
+            "imageName": "example.png",
+        },
+        {"role": "assistant", "text": "It shows the Overview page."},
+    ]
+    controller._assistant_history_store.save("image-chat", messages, "Overview")
+
+    controller.restoreAssistantChat("image-chat")
+
+    assert controller.assistantMessages[0]["imageName"] == "example.png"
 
 
 def test_completed_answer_is_immediately_visible_in_chat_history(tmp_path, monkeypatch) -> None:

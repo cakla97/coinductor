@@ -40,3 +40,25 @@ def test_history_store_rotates_conversations_and_message_count(tmp_path) -> None
     summaries = store.summaries()
     assert [item["id"] for item in summaries] == ["chat-2", "chat-1"]
     assert summaries[0]["messageCount"] == 3
+
+
+def test_history_store_preserves_local_image_reference(tmp_path) -> None:
+    store = AssistantHistoryStore(tmp_path / "assistant_history.json")
+    store.save(
+        "image-chat",
+        [
+            {
+                "role": "user",
+                "text": "What is shown here?",
+                "imageUrl": "file:///D:/Screenshots/example.png",
+                "imageName": "example.png",
+            },
+            {"role": "assistant", "text": "It shows the Overview page."},
+        ],
+        "AI Assistant",
+    )
+
+    restored = store.get("image-chat")
+
+    assert restored["messages"][0]["imageUrl"].endswith("example.png")
+    assert restored["messages"][0]["imageName"] == "example.png"

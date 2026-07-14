@@ -104,6 +104,25 @@ class AiProviderService:
         model_count = len(models) if isinstance(models, list) else 0
         return AiProviderHealthResult("PASS", f"Endpoint reachable; {model_count} model(s) reported.")
 
+    def vision_support(self) -> tuple[bool, str]:
+        config = load_config(self.config_path).raw if self.config_path.exists() else {}
+        ai = config.get("ai", {})
+        env = self._env_values()
+        model_key = str(ai.get("model_env", "LLM_MODEL"))
+        model = self._value(env, model_key)
+        override = self._value(env, "LLM_VISION_ENABLED").strip().lower()
+        if override in {"1", "true", "yes", "on"}:
+            return (True, f"Vision explicitly enabled for {model or 'the configured model'}.")
+        if override in {"0", "false", "no", "off"}:
+            return (False, f"Vision explicitly disabled for {model or 'the configured model'}.")
+        supported = supports_vision_model(model)
+        if supported:
+            return (True, f"{model} is recognized as a vision-capable model.")
+        return (
+            False,
+            f"{model or 'The configured model'} is treated as text-only. Configure a vision model or set LLM_VISION_ENABLED=true only when the endpoint supports images.",
+        )
+
     def _env_values(self) -> dict[str, str]:
         values: dict[str, str] = {}
         if self.env_path.exists():
@@ -156,3 +175,13 @@ class AiProviderService:
                 "detail": "Changing policy, funding, or execution state will require structured intents, validation, and confirmation.",
             },
         )
+
+
+def supports_vision_model(model: str) -> bool:
+    normalized = model.strip().lower().replace("_", "-")
+    markers = (
+        "vision", "llava", "moondream", "minicpm-v", "qwen2-vl", "qwen2.5-vl", "qwen2.5vl",
+        "qwen3-vl", "qwen3vl", "pixtral", "gemma3", "gemma-3", "gpt-4o", "gpt-4.1", "gpt-5",
+        "claude-3", "claude-4", "claude-sonnet", "claude-opus", "gemini-1.5", "gemini-2", "gemini-3",
+    )
+    return any(marker in normalized for marker in markers)

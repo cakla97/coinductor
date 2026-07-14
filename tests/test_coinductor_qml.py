@@ -102,3 +102,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert 'text: "Replay app tour"' in qml
     assert "safetyPhraseRow.implicitHeight + 24" in qml
     assert 'safetyAllowsLiveSubmit ? "#ee6b6e"' not in qml
+    assert 'text: "Attach image"' in qml
+    assert "appController.attachAssistantImage" in qml
+    assert "appController.assistantVisionAvailable" in qml
+    assert "PlatformDialogs.FileDialog" in qml

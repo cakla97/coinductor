@@ -1,5 +1,5 @@
 from coinductor import ai_provider
-from coinductor.ai_provider import AiProviderService
+from coinductor.ai_provider import AiProviderService, supports_vision_model
 
 from test_coinductor_setup_service import VALID_CONFIG
 
@@ -76,3 +76,9 @@ def test_ai_provider_health_blocks_missing_endpoint(tmp_path, monkeypatch) -> No
 
     assert result.status == "BLOCK"
     assert "LLM_BASE_URL" in result.detail
+
+
+def test_vision_model_detection_is_conservative() -> None:
+    assert supports_vision_model("qwen3:14b") is False
+    assert supports_vision_model("qwen3-vl:8b") is True
+    assert supports_vision_model("llava:13b") is True

@@ -49,6 +49,13 @@ class UiKnowledgeService:
 
 UI_KNOWLEDGE = (
     UiKnowledgeEntry(
+        "BINANCE connection status box",
+        "Sidebar",
+        ("binance not checked", "box binance", "binance status", "stav binance"),
+        "The sidebar BINANCE box shows whether the read-only Binance API connection was checked in the current app session. Not checked does not prove that the key is missing or invalid; run the dedicated read-only check in Settings. This is separate from live trading-key verification.",
+        "Box BINANCE v postranním panelu ukazuje, zda bylo read-only Binance API připojení ověřeno v aktuální session aplikace. Not checked neznamená, že klíč chybí nebo je neplatný; samostatnou read-only kontrolu spustíte v Settings. Jde o jiný stav než ověření live trading klíče.",
+    ),
+    UiKnowledgeEntry(
         "Refresh checks",
         "Live Actions and Settings",
         ("refresh checks", "obnovit kontroly", "aktualizovat kontroly"),

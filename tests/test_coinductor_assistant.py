@@ -355,6 +355,23 @@ def test_ui_knowledge_combines_multiple_documented_components() -> None:
     assert "podezřel" not in answer.lower()
 
 
+def test_ui_knowledge_explains_its_own_vision_warning() -> None:
+    answer = UiKnowledgeService().answer(
+        "Co znamená, že mám nakonfigurovat vision model or set LLM_VISION_ENABLED=true only when the endpoint supports images?"
+    )
+
+    assert answer is not None
+    assert "qwen3:14b screenshot nevidí" in answer
+    assert "pouze ručně přepíše detekci" in answer
+    assert "Safe defaults" not in answer
+
+
+def test_ui_knowledge_does_not_use_description_words_as_confident_match() -> None:
+    answer = UiKnowledgeService().answer("Co znamená enabled only?")
+
+    assert answer is None
+
+
 def test_contextual_next_step_offers_navigation_not_execution() -> None:
     context = {
         "context_page": "AI Assistant",

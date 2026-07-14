@@ -120,7 +120,7 @@ class AiProviderService:
             return (True, f"{model} is recognized as a vision-capable model.")
         return (
             False,
-            f"{model or 'The configured model'} is treated as text-only. Configure a vision model or set LLM_VISION_ENABLED=true only when the endpoint supports images.",
+            f"{model or 'The configured model'} is treated as text-only. To analyze screenshots, configure a real vision model. LLM_VISION_ENABLED=true is an advanced detection override; it does not add image support and is safe only when the endpoint and model already accept images.",
         )
 
     def _env_values(self) -> dict[str, str]:

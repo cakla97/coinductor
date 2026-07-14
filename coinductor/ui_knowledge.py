@@ -42,7 +42,7 @@ class UiKnowledgeService:
         query_tokens = _meaningful_tokens(query)
         ranked = sorted(
             (
-                (_semantic_score(query_tokens, _entry_tokens(item)), item)
+                (_semantic_score(query_tokens, _entry_identity_tokens(item)), item)
                 for item in UI_KNOWLEDGE
             ),
             key=lambda candidate: candidate[0],
@@ -58,7 +58,7 @@ class UiKnowledgeService:
         query_tokens = _meaningful_tokens(_normalize(question))
         ranked = sorted(
             (
-                (_semantic_score(query_tokens, _entry_tokens(item)), index, item)
+                (_semantic_score(query_tokens, _entry_context_tokens(item)), index, item)
                 for index, item in enumerate(UI_KNOWLEDGE)
             ),
             key=lambda candidate: (-candidate[0], candidate[1]),
@@ -181,6 +181,16 @@ UI_KNOWLEDGE = (
         ("check ai provider", "kontrola ai providera", "overit ai"),
         "Check AI provider contacts the configured model endpoint and verifies that it responds. It does not send portfolio analysis or change the selected model.",
         "Check AI provider kontaktuje nastavený endpoint modelu a ověří, že odpovídá. Neodesílá portfolio analýzu ani nemění vybraný model.",
+    ),
+    UiKnowledgeEntry(
+        "AI image input and vision model",
+        "AI Assistant and Settings",
+        (
+            "vision model", "llm_vision_enabled", "endpoint supports images", "image input",
+            "attach image", "vlozit obrazek", "vložit obrázek",
+        ),
+        "Image analysis requires a model that actually accepts image input, such as a compatible Qwen3-VL model. A text-only model such as qwen3:14b cannot inspect screenshots. LLM_VISION_ENABLED=true only overrides Coinductor's capability detection; it does not add vision to a model, so use it only when the configured endpoint and model already support OpenAI-compatible image input. Until then, Coinductor may show the attachment but keeps Send disabled.",
+        "Analýza obrázků vyžaduje model, který skutečně přijímá obrazový vstup, například kompatibilní Qwen3-VL. Textový model jako qwen3:14b screenshot nevidí. LLM_VISION_ENABLED=true pouze ručně přepíše detekci schopností v Coinductoru; obrazové schopnosti modelu nepřidá, proto se smí použít jen tehdy, když nastavený endpoint i model již podporují OpenAI-compatible image input. Do té doby Coinductor přílohu zobrazí, ale tlačítko Send ponechá vypnuté.",
     ),
     UiKnowledgeEntry(
         "Setup wizard",
@@ -324,7 +334,11 @@ def _meaningful_tokens(value: str) -> set[str]:
     return {token for token in cleaned.split() if len(token) >= 3 and token not in _STOP_WORDS}
 
 
-def _entry_tokens(item: UiKnowledgeEntry) -> set[str]:
+def _entry_identity_tokens(item: UiKnowledgeEntry) -> set[str]:
+    return _meaningful_tokens(" ".join((item.name, item.page, *item.aliases)))
+
+
+def _entry_context_tokens(item: UiKnowledgeEntry) -> set[str]:
     return _meaningful_tokens(" ".join((item.name, item.page, *item.aliases, item.english, item.czech)))
 
 

@@ -2,7 +2,8 @@ from decimal import Decimal
 import json
 
 from coinductor import assistant as assistant_module
-from coinductor.assistant import LocalHelpAssistant, ProviderBackedAssistant
+from coinductor.assistant import AssistantIntentService, AssistantResponse, LocalHelpAssistant, ProviderBackedAssistant
+from coinductor.controller import AppController
 from coinductor.models import ActionSummary, DesktopRunResult, DesktopSnapshot
 from test_coinductor_setup_service import VALID_CONFIG
 
@@ -66,6 +67,79 @@ def test_provider_backed_assistant_falls_back_when_provider_missing(tmp_path, mo
 
     assert "Coinductor keeps execution deterministic" in answer
     assert "AI provider fallback" in answer
+
+
+def test_assistant_prepares_safe_navigation_without_calling_provider() -> None:
+    response = ProviderBackedAssistant().respond("Open portfolio", _snapshot())
+
+    assert response.proposed_action == {
+        "type": "NAVIGATE",
+        "title": "Open Portfolio",
+        "description": "Navigate to the Portfolio page. This does not change portfolio or exchange state.",
+        "confirmLabel": "Open page",
+        "page": 2,
+    }
+
+
+def test_assistant_prepares_read_only_analysis_but_blocks_live_trade() -> None:
+    service = AssistantIntentService()
+
+    analysis = service.propose("Spust novou analyzu", _snapshot())
+    live = service.propose("Buy BTC now", _snapshot())
+
+    assert analysis is not None
+    assert analysis.proposed_action["type"] == "RUN_READ_ONLY_ANALYSIS"
+    assert live is not None
+    assert live.proposed_action is None
+    assert "cannot prepare or execute" in live.text
+
+
+def test_assistant_prepares_validated_asset_role_change() -> None:
+    response = AssistantIntentService().propose("Change BTC role to grid candidate", _snapshot())
+
+    assert response is not None
+    assert response.proposed_action["type"] == "SET_ASSET_ROLE"
+    assert response.proposed_action["asset"] == "BTC"
+    assert response.proposed_action["role"] == "GRID_CANDIDATE"
+
+
+def test_controller_confirms_only_known_asset_role_change(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    controller = AppController()
+    controller._portfolio_assets = [{"asset": "BTC", "policy": "System default"}]
+    controller._on_assistant_completed(
+        AssistantResponse(
+            "Prepared.",
+            {
+                "type": "SET_ASSET_ROLE",
+                "asset": "BTC",
+                "role": "GRID_CANDIDATE",
+                "title": "Change BTC role",
+                "description": "Test",
+                "confirmLabel": "Change role",
+            },
+        )
+    )
+
+    controller.confirmAssistantAction()
+
+    assert controller.assistantPendingAction == {}
+    assert controller._asset_policy_store.load() == {"BTC": "GRID_CANDIDATE"}
+
+
+def test_controller_rejects_unknown_asset_role_change(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    controller = AppController()
+    controller._portfolio_assets = [{"asset": "BTC", "policy": "System default"}]
+    controller._assistant_pending_action = {
+        "type": "SET_ASSET_ROLE",
+        "asset": "ETH",
+        "role": "GRID_CANDIDATE",
+    }
+
+    controller.confirmAssistantAction()
+
+    assert controller._asset_policy_store.load() == {}
 
 
 def _snapshot() -> DesktopSnapshot:

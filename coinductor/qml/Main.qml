@@ -3556,6 +3556,49 @@ ApplicationWindow {
                     }
                 }
 
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: assistantActionContent.implicitHeight + 28
+                    visible: Object.keys(appController.assistantPendingAction).length > 0
+                    radius: 7
+                    color: panelRaised
+                    border.color: accent
+
+                    ColumnLayout {
+                        id: assistantActionContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 14
+                        spacing: 8
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.assistantPendingAction.title || "Proposed app action"
+                            color: textPrimary
+                            font.pixelSize: 15
+                            font.bold: true
+                            wrapMode: Text.WordWrap
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.assistantPendingAction.description || ""
+                            color: textSecondary
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                        }
+                        RowLayout {
+                            Layout.alignment: Qt.AlignRight
+                            spacing: 8
+                            Button { text: "Dismiss"; onClicked: appController.dismissAssistantAction() }
+                            Button {
+                                text: appController.assistantPendingAction.confirmLabel || "Confirm"
+                                highlighted: true
+                                onClicked: appController.confirmAssistantAction()
+                            }
+                        }
+                    }
+                }
+
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 8

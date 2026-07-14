@@ -8,7 +8,7 @@ from PySide6.QtGui import QDesktopServices, QGuiApplication
 from .ai_provider import AiProviderService
 from .application import CoinductorApplication
 from .app_tour_service import AppTourService
-from .assistant import ProviderBackedAssistant
+from .assistant import AssistantResponse, ProviderBackedAssistant
 from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService, LiveTradingCheckService
 from .desktop_store import DesktopStore
@@ -95,7 +95,7 @@ class AiProviderHealthWorker(QObject):
 
 
 class AssistantWorker(QObject):
-    completed = Signal(str)
+    completed = Signal(object)
     finished = Signal()
 
     def __init__(self, question: str, snapshot):
@@ -106,7 +106,7 @@ class AssistantWorker(QObject):
     @Slot()
     def run(self) -> None:
         try:
-            self.completed.emit(ProviderBackedAssistant().answer(self.question, self.snapshot))
+            self.completed.emit(ProviderBackedAssistant().respond(self.question, self.snapshot))
         finally:
             self.finished.emit()
 
@@ -235,6 +235,7 @@ class AppController(QObject):
                 "tip": "You can replay this tour later from Settings.",
             },
         ]
+        self._assistant_pending_action: dict[str, object] = {}
         self._app_tour_step = 0
         self._app_tour_visible = self._user_profile_snapshot.configured and not self._app_tour_service.is_completed()
         self._safety_service = SafetyService()
@@ -372,6 +373,10 @@ class AppController(QObject):
     @Property(bool, notify=assistantChanged)
     def assistantBusy(self) -> bool:
         return self._assistant_busy
+
+    @Property("QVariantMap", notify=assistantChanged)
+    def assistantPendingAction(self) -> dict[str, object]:
+        return self._assistant_pending_action
 
     @Property(int, notify=pageChanged)
     def currentPage(self) -> int:
@@ -976,6 +981,7 @@ class AppController(QObject):
         text = question.strip()
         if not text or self._assistant_busy:
             return
+        self._assistant_pending_action = {}
         self._assistant_messages.append({"role": "user", "text": text})
         self._assistant_messages.append({"role": "assistant", "text": "Thinking..."})
         self._assistant_busy = True
@@ -991,6 +997,43 @@ class AppController(QObject):
         self._assistant_thread.finished.connect(self._assistant_thread.deleteLater)
         self._assistant_thread.finished.connect(self._clear_assistant_worker)
         self._assistant_thread.start()
+
+    @Slot()
+    def dismissAssistantAction(self) -> None:
+        if not self._assistant_pending_action:
+            return
+        self._assistant_pending_action = {}
+        self.assistantChanged.emit()
+
+    @Slot()
+    def confirmAssistantAction(self) -> None:
+        action = dict(self._assistant_pending_action)
+        self._assistant_pending_action = {}
+        action_type = str(action.get("type", ""))
+        if action_type == "NAVIGATE":
+            page = int(action.get("page", -1))
+            if 0 <= page <= 8:
+                self.setCurrentPage(page)
+                self.notificationRequested.emit("Page opened from the AI Assistant.")
+        elif action_type == "OPEN_REPORT":
+            self.openReport()
+        elif action_type == "RUN_READ_ONLY_ANALYSIS":
+            self._start_analysis(
+                "REAL",
+                True,
+                True,
+                False,
+                result_page=3,
+                completion_message="Read-only analysis complete. Review the Action Plan.",
+            )
+        elif action_type == "SET_ASSET_ROLE":
+            asset = str(action.get("asset", "")).upper()
+            role = str(action.get("role", "")).upper()
+            known_assets = {str(item.get("asset", "")).upper() for item in self._portfolio_assets}
+            if asset in known_assets and role in self._asset_policy_store.role_options:
+                self.saveAssetRoleOverride(asset, role)
+                self.notificationRequested.emit(f"{asset} role changed to {_humanize_policy_label(role)}.")
+        self.assistantChanged.emit()
 
     @Slot(str, bool, bool, bool)
     def runAnalysis(
@@ -1347,8 +1390,10 @@ class AppController(QObject):
         self._ai_provider_health_detail = message
         self.aiProviderChanged.emit()
 
-    @Slot(str)
-    def _on_assistant_completed(self, answer: str) -> None:
+    @Slot(object)
+    def _on_assistant_completed(self, response: AssistantResponse) -> None:
+        answer = response.text
+        self._assistant_pending_action = dict(response.proposed_action or {})
         if self._assistant_messages and self._assistant_messages[-1]["text"] == "Thinking...":
             self._assistant_messages[-1] = {"role": "assistant", "text": answer}
         else:

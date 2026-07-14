@@ -2231,6 +2231,10 @@ ApplicationWindow {
                         }
                     }
                     Button {
+                        text: "History"
+                        onClicked: assistantHistoryDialog.open()
+                    }
+                    Button {
                         text: "New chat"
                         enabled: !appController.assistantBusy
                         onClicked: appController.newAssistantChat()
@@ -4300,6 +4304,73 @@ ApplicationWindow {
             }
         }
     }
+    Dialog {
+        id: assistantHistoryDialog
+        title: "AI chat history"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(760, window.width - 96)
+        height: Math.min(600, window.height - 96)
+        standardButtons: Dialog.Close
+
+        contentItem: ColumnLayout {
+            spacing: 12
+            Text {
+                Layout.fillWidth: true
+                text: "Stored locally. The newest 20 conversations are kept."
+                color: textSecondary
+                font.pixelSize: 12
+                wrapMode: Text.WordWrap
+            }
+            Text {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                visible: appController.assistantHistory.length === 0
+                text: "No saved conversations yet. A chat appears here after its first completed answer."
+                color: textSecondary
+                font.pixelSize: 13
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.WordWrap
+            }
+            ListView {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                visible: appController.assistantHistory.length > 0
+                spacing: 10
+                clip: true
+                model: appController.assistantHistory
+                delegate: Rectangle {
+                    required property var modelData
+                    width: ListView.view.width
+                    height: 112
+                    radius: 7
+                    color: panelRaised
+                    border.color: border
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: 14
+                        spacing: 12
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 5
+                            Text { Layout.fillWidth: true; text: modelData.title; color: textPrimary; font.pixelSize: 14; font.bold: true; elide: Text.ElideRight }
+                            Text { Layout.fillWidth: true; text: modelData.preview; color: textSecondary; font.pixelSize: 11; elide: Text.ElideRight }
+                            Text { text: modelData.contextPage + " | " + modelData.messageCount + " messages | " + modelData.updatedAt; color: textSecondary; font.pixelSize: 10 }
+                        }
+                        Button {
+                            text: "Open"
+                            onClicked: {
+                                appController.restoreAssistantChat(modelData.id)
+                                assistantHistoryDialog.close()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Dialog {
         id: ocoConfirmDialog
         title: "Confirm OCO position protection"

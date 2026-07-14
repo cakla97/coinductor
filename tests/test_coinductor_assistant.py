@@ -215,6 +215,14 @@ def test_contextual_help_summarizes_origin_page() -> None:
     assert "monitoruje" in answer
 
 
+def test_contextual_help_explains_itself_in_czech_without_provider() -> None:
+    response = ProviderBackedAssistant().respond("Tak co mi o sobě řekneš?", _snapshot(), {})
+
+    assert "AI Assistant vysvětluje" in response.text
+    assert "Chat nemůže přímo" in response.text
+    assert "fallback" not in response.text.lower()
+
+
 def test_contextual_next_step_offers_navigation_not_execution() -> None:
     context = {
         "context_page": "AI Assistant",
@@ -248,6 +256,36 @@ def test_controller_tracks_assistant_origin_and_starts_new_chat(tmp_path, monkey
 
     assert len(controller.assistantMessages) == 1
     assert controller.assistantMessages[0]["role"] == "assistant"
+
+
+def test_controller_restores_saved_assistant_chat(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    controller = AppController()
+    controller._assistant_messages = [
+        {"role": "user", "text": "Saved question"},
+        {"role": "assistant", "text": "Saved answer"},
+    ]
+    controller._assistant_history_store.save("saved-chat", controller._assistant_messages, "Portfolio")
+    controller._assistant_history = controller._assistant_history_store.summaries()
+
+    controller.restoreAssistantChat("saved-chat")
+
+    assert controller.assistantMessages[-1]["text"] == "Saved answer"
+    assert controller.assistantContextPage == "Portfolio"
+
+
+def test_completed_answer_is_immediately_visible_in_chat_history(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    controller = AppController()
+    controller._assistant_messages = [
+        {"role": "user", "text": "What does Refresh checks do?"},
+        {"role": "typing", "text": ""},
+    ]
+
+    controller._on_assistant_completed(AssistantResponse("It reloads local setup state."))
+
+    assert len(controller.assistantHistory) == 1
+    assert controller.assistantHistory[0]["title"] == "What does Refresh checks do?"
 
 
 def _snapshot() -> DesktopSnapshot:

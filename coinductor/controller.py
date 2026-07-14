@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from uuid import uuid4
 
 from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication
@@ -9,6 +10,7 @@ from .ai_provider import AiProviderService
 from .application import CoinductorApplication
 from .app_tour_service import AppTourService
 from .assistant import AssistantResponse, ProviderBackedAssistant
+from .assistant_history import AssistantHistoryStore
 from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService, LiveTradingCheckService
 from .desktop_store import DesktopStore
@@ -246,6 +248,9 @@ class AppController(QObject):
         ]
         self._assistant_pending_action: dict[str, object] = {}
         self._assistant_origin_page = 0
+        self._assistant_history_store = AssistantHistoryStore()
+        self._assistant_history = self._assistant_history_store.summaries()
+        self._assistant_conversation_id = uuid4().hex
         self._app_tour_step = 0
         self._app_tour_visible = self._user_profile_snapshot.configured and not self._app_tour_service.is_completed()
         self._safety_service = SafetyService()
@@ -391,6 +396,10 @@ class AppController(QObject):
     @Property(str, notify=assistantChanged)
     def assistantContextPage(self) -> str:
         return self._page_label(self._assistant_origin_page)
+
+    @Property("QVariantList", notify=assistantChanged)
+    def assistantHistory(self) -> list[dict[str, object]]:
+        return self._assistant_history
 
     @Property(int, notify=pageChanged)
     def currentPage(self) -> int:
@@ -1026,12 +1035,33 @@ class AppController(QObject):
         if self._assistant_busy:
             return
         self._assistant_pending_action = {}
+        self._assistant_conversation_id = uuid4().hex
         self._assistant_messages = [
             {
                 "role": "assistant",
                 "text": "New chat started. Ask about the current page, latest run, portfolio, or risk controls.",
             }
         ]
+        self.assistantChanged.emit()
+
+    @Slot(str)
+    def restoreAssistantChat(self, conversation_id: str) -> None:
+        if self._assistant_busy:
+            return
+        record = self._assistant_history_store.get(conversation_id)
+        if record is None:
+            return
+        messages = record.get("messages", [])
+        if not isinstance(messages, list):
+            return
+        self._assistant_conversation_id = conversation_id
+        self._assistant_messages = [
+            {"role": str(item.get("role", "assistant")), "text": str(item.get("text", ""))}
+            for item in messages
+            if isinstance(item, dict) and item.get("role") in {"user", "assistant"}
+        ]
+        self._assistant_pending_action = {}
+        self._assistant_origin_page = self._page_index(str(record.get("contextPage", "Overview")))
         self.assistantChanged.emit()
 
     @Slot()
@@ -1434,6 +1464,12 @@ class AppController(QObject):
             self._assistant_messages[-1] = {"role": "assistant", "text": answer}
         else:
             self._assistant_messages.append({"role": "assistant", "text": answer})
+        self._assistant_history_store.save(
+            self._assistant_conversation_id,
+            self._assistant_messages,
+            self.assistantContextPage,
+        )
+        self._assistant_history = self._assistant_history_store.summaries()
         self.assistantChanged.emit()
 
     @Slot()
@@ -1511,6 +1547,13 @@ class AppController(QObject):
             "Settings",
         )
         return pages[index] if 0 <= index < len(pages) else "Unknown"
+
+    def _page_index(self, label: str) -> int:
+        pages = (
+            "Overview", "Live Actions", "Portfolio", "Action Plan", "Active Strategies",
+            "Run History", "AI Assistant", "Help & Guides", "Settings",
+        )
+        return pages.index(label) if label in pages else 0
 
     def _apply_snapshot(self) -> None:
         self._portfolio_assets = self._apply_asset_role_overrides(self._snapshot.portfolio_assets)

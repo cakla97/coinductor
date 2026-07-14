@@ -53,6 +53,13 @@ class LocalDataResetService:
                 paths=("research/notes", "research/requests"),
             ),
             self._item(
+                code="AI_CHAT_HISTORY",
+                name="AI chat history",
+                detail="Locally stored AI Assistant conversations. The newest 20 chats are retained until this data group is removed.",
+                default=False,
+                paths=("state/assistant_history.json",),
+            ),
+            self._item(
                 code="ENV",
                 name="API keys and local environment",
                 detail=".env file with Binance keys and optional AI provider settings. Only delete this when you want a completely clean app setup.",

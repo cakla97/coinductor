@@ -29,6 +29,14 @@ class ContextualHelpService:
 
         if any(
             phrase in query
+            for phrase in ("o sobe reknes", "kdo jsi", "co umis", "who are you", "about yourself", "what can you do")
+        ):
+            summary = UiKnowledgeService().page_summary("AI Assistant", czech=czech)
+            if summary is not None:
+                return summary
+
+        if any(
+            phrase in query
             for phrase in (
                 "shrn tuto stranku", "shrn tuhle stranku", "shrn tuto sekci", "co je tady",
                 "co je na teto strance", "summarize this page", "summarize this section", "what is on this page",
@@ -326,6 +334,12 @@ class ProviderBackedAssistant:
         try:
             return self._provider_answer(question, snapshot, app_context or {}, conversation)
         except Exception as exc:
+            if is_czech(question):
+                return (
+                    "Lokální AI model tentokrát nevrátil použitelnou odpověď. "
+                    "Zdokumentované funkce aplikace mohu vysvětlit přímo; u obecného dotazu jej zkuste formulovat konkrétněji. "
+                    f"Technický detail: {exc}"
+                )
             offline = self.fallback.answer(question, snapshot)
             return f"{offline}\n\nAI provider fallback: {exc}"
 

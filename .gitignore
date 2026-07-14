@@ -15,3 +15,4 @@ state/asset_policy_overrides.toml
 state/user_profile.toml
 state/grid_registry.toml
 state/rebalancing_registry.toml
+state/assistant_history.json

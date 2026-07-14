@@ -53,6 +53,8 @@ For day-to-day operation, use [docs/RUNBOOK.md](docs/RUNBOOK.md). It lists the s
 command, guarded submit commands, and the report sections to check before taking action.
 The desktop and open-source direction is tracked in [docs/ROADMAP.md](docs/ROADMAP.md),
 including onboarding for both existing portfolios and users starting from USDC.
+For continuation by another coding agent, start with
+[docs/AI_PROVIDER_HANDOFF.md](docs/AI_PROVIDER_HANDOFF.md).
 
 ## Coinductor Desktop Preview
 

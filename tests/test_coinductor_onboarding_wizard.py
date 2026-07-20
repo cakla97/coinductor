@@ -33,7 +33,7 @@ def test_onboarding_wizard_is_first_run_gate(monkeypatch, tmp_path) -> None:
     controller.nextAppTourStep()
 
     assert controller.appTourStep == 1
-    assert controller.currentPage == 1
+    assert controller.currentPage == 2
 
     controller.skipAppTour()
 

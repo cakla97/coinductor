@@ -37,6 +37,25 @@ ApplicationWindow {
     property string pendingSafetyTarget: ""
     property string pendingSafetyPhrase: ""
     property var wizardSteps: ["Exchange", "Portfolio", "Profile", "AI", "Binance API", "Review"]
+    property var navigationItems: [
+        { label: "Overview", page: 0 },
+        { label: "Portfolio", page: 2 },
+        { label: "Live Actions", page: 1 },
+        { label: "Action Plan", page: 3 },
+        { label: "Active Strategies", page: 4 },
+        { label: "Run History", page: 5 },
+        { label: "AI Assistant", page: 6 },
+        { label: "Help & Guides", page: 7 },
+        { label: "Settings", page: 8 }
+    ]
+
+    function navIndexForPage(page) {
+        for (let i = 0; i < navigationItems.length; i++) {
+            if (navigationItems[i].page === page)
+                return i
+        }
+        return 0
+    }
     property var exchangeOptions: [
         { label: "Binance", value: "BINANCE" },
         { label: "Coinbase", value: "COINBASE" }
@@ -1409,27 +1428,27 @@ ApplicationWindow {
 
                 Repeater {
                     id: navigationRepeater
-                    model: ["Overview", "Live Actions", "Portfolio", "Action Plan", "Active Strategies", "Run History", "AI Assistant", "Help & Guides", "Settings"]
+                    model: window.navigationItems
                     delegate: Rectangle {
-                        required property string modelData
+                        required property var modelData
                         required property int index
                         Layout.fillWidth: true
                         Layout.preferredHeight: 42
                         radius: 6
-                        color: appController.currentPage === index ? panelRaised : "transparent"
-                        border.color: appController.currentPage === index ? border : "transparent"
+                        color: appController.currentPage === modelData.page ? panelRaised : "transparent"
+                        border.color: appController.currentPage === modelData.page ? border : "transparent"
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             anchors.left: parent.left
                             anchors.leftMargin: 14
-                            text: modelData
-                            color: appController.currentPage === index ? textPrimary : textSecondary
+                            text: modelData.label
+                            color: appController.currentPage === modelData.page ? textPrimary : textSecondary
                             font.pixelSize: 14
                         }
                         MouseArea {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: appController.setCurrentPage(index)
+                            onClicked: appController.setCurrentPage(modelData.page)
                         }
                     }
                 }
@@ -1635,7 +1654,7 @@ ApplicationWindow {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: "No Safety stage change places an order. Live BUY and OCO protection always require a separate confirmation and fresh deterministic validation."
+                            text: "This stage never places an order by itself. See Live Actions for the full safety-stage controls and confirmation gates."
                             color: warning
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
@@ -1662,10 +1681,10 @@ ApplicationWindow {
                     columns: 4
                     columnSpacing: 12
                     rowSpacing: 12
-                    MetricCard { title: "Portfolio"; value: appController.portfolioValue; accentColor: accent }
-                    MetricCard { title: "Liquid"; value: appController.liquidValue; accentColor: "#5aa9e6" }
-                    MetricCard { title: "Locked"; value: appController.lockedValue; accentColor: warning }
-                    MetricCard { title: "Risk gate"; value: appController.riskState; accentColor: "#d66b75" }
+                    MetricCard { title: "Portfolio"; value: appController.portfolioValue; accentColor: accent; helpText: "Total value of everything Coinductor tracks, including Spot, Flexible Earn, and Locked balances." }
+                    MetricCard { title: "Liquid"; value: appController.liquidValue; accentColor: "#5aa9e6"; helpText: "Value in Spot or Flexible Earn that could be used without waiting." }
+                    MetricCard { title: "Locked"; value: appController.lockedValue; accentColor: warning; helpText: "Value in Locked Earn or otherwise not immediately available." }
+                    MetricCard { title: "Risk gate"; value: appController.riskState; accentColor: "#d66b75"; helpText: "Whether the deterministic risk engine currently approves a new trade. When it does not, the reason is shown here instead of \"Approved\"." }
                 }
 
                 Rectangle {
@@ -1694,6 +1713,14 @@ ApplicationWindow {
                                     color: appController.decision === "HOLD" ? warning : accent
                                     font.pixelSize: 12
                                     font.bold: true
+                                }
+                                MouseArea {
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.WhatsThisCursor
+                                    ToolTip.visible: containsMouse
+                                    ToolTip.text: "HOLD means no trade is currently recommended. Any other decision type is explained below and detailed further in Action Plan."
+                                    ToolTip.delay: 300
                                 }
                             }
                         }
@@ -1970,6 +1997,28 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: item && item.visible ? item.implicitHeight : 0
                     sourceComponent: nextReviewPanelComponent
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    visible: appController.actionPlanItems.length > 0
+                    spacing: 16
+                    Row {
+                        spacing: 6
+                        Rectangle { width: 10; height: 10; radius: 5; color: accent; anchors.verticalCenter: parent.verticalCenter }
+                        Text { text: "Ready - can be confirmed now"; color: textSecondary; font.pixelSize: 11 }
+                    }
+                    Row {
+                        spacing: 6
+                        Rectangle { width: 10; height: 10; radius: 5; color: warning; anchors.verticalCenter: parent.verticalCenter }
+                        Text { text: "Watch - conditions not met yet"; color: textSecondary; font.pixelSize: 11 }
+                    }
+                    Row {
+                        spacing: 6
+                        Rectangle { width: 10; height: 10; radius: 5; color: textSecondary; anchors.verticalCenter: parent.verticalCenter }
+                        Text { text: "Other - review-only, e.g. HOLD or blocked"; color: textSecondary; font.pixelSize: 11 }
+                    }
+                    Item { Layout.fillWidth: true }
                 }
 
                 ListView {
@@ -2415,6 +2464,13 @@ ApplicationWindow {
 
                 Text { text: "Run History"; color: textPrimary; font.pixelSize: 26; font.bold: true }
                 Text { text: "The latest 30 analytical runs"; color: textSecondary; font.pixelSize: 13 }
+                Text {
+                    Layout.fillWidth: true
+                    text: "REAL runs read your live Binance account and are the ones behind Action Plan and Active Strategies. MOCK runs use example data for trying the app and never touch your real portfolio. This is a read-only log; to act on a decision, use Action Plan."
+                    color: textSecondary
+                    font.pixelSize: 11
+                    wrapMode: Text.WordWrap
+                }
 
                 ListView {
                     Layout.fillWidth: true
@@ -3866,7 +3922,7 @@ ApplicationWindow {
         visible: !appController.onboardingWizardVisible && appController.appTourVisible
         z: 1000
 
-        property var targetItem: navigationRepeater.itemAt(appController.currentAppTourStep.page || 0)
+        property var targetItem: navigationRepeater.itemAt(window.navIndexForPage(appController.currentAppTourStep.page || 0))
         property point targetPosition: targetItem
             ? targetItem.mapToItem(appTourOverlay, 0, 0)
             : Qt.point(16, 120)
@@ -5127,6 +5183,7 @@ ApplicationWindow {
         required property string title
         required property string value
         required property color accentColor
+        property string helpText: ""
         Layout.fillWidth: true
         Layout.preferredHeight: 98
         radius: 7
@@ -5146,6 +5203,14 @@ ApplicationWindow {
                 elide: Text.ElideRight
             }
             Rectangle { width: 28; height: 3; radius: 1; color: accentColor }
+        }
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: parent.helpText.length > 0
+            cursorShape: parent.helpText.length > 0 ? Qt.WhatsThisCursor : Qt.ArrowCursor
+            ToolTip.visible: parent.helpText.length > 0 && containsMouse
+            ToolTip.text: parent.helpText
+            ToolTip.delay: 300
         }
     }
 }

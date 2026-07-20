@@ -232,18 +232,18 @@ class AppController(QObject):
                 "tip": "Start a normal read-only analysis here. It never submits an order by itself.",
             },
             {
-                "page": 1,
-                "navLabel": "Live Actions",
-                "title": "Safety before execution",
-                "detail": "Live Actions contains analysis controls, the staged safety lock, and the separate live API management workflow.",
-                "tip": "Preview, Armed, and Live Enabled are local gates. Every real order still needs its own confirmation.",
-            },
-            {
                 "page": 2,
                 "navLabel": "Portfolio",
                 "title": "Review how every asset may be used",
                 "detail": "Portfolio lists all detected holdings and their roles, including protected assets, funding sources, trading assets, and dust.",
                 "tip": "You can override a role, but Coinductor keeps deterministic risk and funding limits in force.",
+            },
+            {
+                "page": 1,
+                "navLabel": "Live Actions",
+                "title": "Safety before execution",
+                "detail": "Live Actions contains analysis controls, the staged safety lock, and the separate live API management workflow.",
+                "tip": "Preview, Armed, and Live Enabled are local gates. Every real order still needs its own confirmation.",
             },
             {
                 "page": 3,
@@ -260,6 +260,13 @@ class AppController(QObject):
                 "tip": "Coinductor currently guides bot creation in Binance; registration here does not create or modify the bot.",
             },
             {
+                "page": 5,
+                "navLabel": "Run History",
+                "title": "Every past run stays on record",
+                "detail": "Run History lists the latest analytical runs with their data mode, status, and decision, so you can trace what happened and when.",
+                "tip": "REAL runs read your live Binance account. MOCK runs use example data and never touch it.",
+            },
+            {
                 "page": 6,
                 "navLabel": "AI Assistant",
                 "title": "Ask for explanations, not permission bypasses",
@@ -272,6 +279,13 @@ class AppController(QObject):
                 "title": "Detailed help stays available",
                 "detail": "Open the built-in guides whenever you need step-by-step help with Ollama, Binance APIs, safety, or portfolio roles.",
                 "tip": "You can replay this tour later from Settings.",
+            },
+            {
+                "page": 8,
+                "navLabel": "Settings",
+                "title": "Configuration and system status live here",
+                "detail": "Settings holds your Binance and AI connections, onboarding profile, privacy controls, and the detailed Safety stage state.",
+                "tip": "Nothing here places an order. \"Delete local data\" is currently a preview only and is not executed.",
             },
         ]
         self._assistant_pending_action: dict[str, object] = {}

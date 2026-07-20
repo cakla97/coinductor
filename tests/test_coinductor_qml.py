@@ -141,3 +141,11 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert 'text: "Configure AI models"' in qml
     assert "id: cloudAiVisionModel" in qml
     assert "appController.saveCloudAiProvider(cloudAiBaseUrl.text, cloudAiModel.text, cloudAiVisionModel.text, cloudAiKey.text)" in qml
+    assert "First portfolio deployment" in qml
+    assert "appController.firstPortfolioAllocation" in qml
+    assert "appController.firstPortfolioDeploymentProgress" in qml
+    assert "appController.runFirstPortfolioTranche(" in qml
+    assert "CONFIRM_TESTNET_ORDER" in qml
+    assert "id: firstPortfolioBudgetInput" in qml
+    assert "id: firstPortfolioDeployDialog" in qml
+    assert "Enter the real USDC amount you intend to deploy here" in qml

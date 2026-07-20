@@ -36,6 +36,8 @@ ApplicationWindow {
     property var activeStrategyItem: ({})
     property string pendingSafetyTarget: ""
     property string pendingSafetyPhrase: ""
+    property string firstPortfolioDeployAsset: ""
+    property real firstPortfolioDeployTargetPct: 0
     property var wizardSteps: ["Exchange", "Portfolio", "Profile", "AI", "Binance API", "Review"]
     property var navigationItems: [
         { label: "Overview", page: 0 },
@@ -55,6 +57,15 @@ ApplicationWindow {
                 return i
         }
         return 0
+    }
+    function firstPortfolioProgressCount(asset, mode) {
+        var progress = appController.firstPortfolioDeploymentProgress
+        var count = 0
+        for (let i = 0; i < progress.length; i++) {
+            if (progress[i].asset === asset && progress[i].mode === mode && progress[i].submitted)
+                count++
+        }
+        return count
     }
     property var exchangeOptions: [
         { label: "Binance", value: "BINANCE" },
@@ -1997,6 +2008,81 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: item && item.visible ? item.implicitHeight : 0
                     sourceComponent: nextReviewPanelComponent
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: firstPortfolioDeploymentContent.implicitHeight + 32
+                    visible: appController.onboardingPath === "FIRST_PORTFOLIO" && appController.firstPortfolioAllocation.length > 0
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        id: firstPortfolioDeploymentContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 8
+                        Text { text: "First portfolio deployment"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Staged, guarded purchase of your starting basket. Each tranche still passes bankroll, stop-loss, and confirmation checks; only market-timing (consensus/RSI) is intentionally skipped, since this executes a plan you already chose."
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                        Repeater {
+                            model: appController.firstPortfolioAllocation
+                            delegate: Rectangle {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 40
+                                radius: 5
+                                color: panelRaised
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 12
+                                    spacing: 10
+                                    Text { Layout.preferredWidth: 60; text: modelData.asset; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                    Text { Layout.preferredWidth: 50; text: modelData.target; color: accent; font.pixelSize: 12 }
+                                    Text {
+                                        Layout.fillWidth: true
+                                        text: "Testnet " + window.firstPortfolioProgressCount(modelData.asset, "TESTNET") + "/" + firstPortfolioTranchesInput.value
+                                            + "  ·  Mainnet " + window.firstPortfolioProgressCount(modelData.asset, "MAINNET") + "/" + firstPortfolioTranchesInput.value
+                                        color: textSecondary
+                                        font.pixelSize: 11
+                                    }
+                                    Button {
+                                        text: "Deploy"
+                                        enabled: !appController.busy
+                                        onClicked: {
+                                            firstPortfolioDeployAsset = modelData.asset
+                                            firstPortfolioDeployTargetPct = modelData.targetPct
+                                            firstPortfolioConfirmInput.text = ""
+                                            firstPortfolioDeployDialog.open()
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            Text { text: "Total USDC budget for the whole basket:"; color: textSecondary; font.pixelSize: 11 }
+                            TextField { id: firstPortfolioBudgetInput; Layout.preferredWidth: 120; placeholderText: "e.g. 400" }
+                            Text { text: "Tranches:"; color: textSecondary; font.pixelSize: 11 }
+                            SpinBox { id: firstPortfolioTranchesInput; from: 1; to: 10; value: 3 }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Enter the real USDC amount you intend to deploy here — the wizard's planned budget may be in a different currency and is not auto-converted."
+                            color: warning
+                            font.pixelSize: 10
+                            wrapMode: Text.WordWrap
+                        }
+                    }
                 }
 
                 RowLayout {
@@ -4956,6 +5042,120 @@ ApplicationWindow {
                         appController.submitGuardedEarnRedeem(earnRedeemConfirmInput.text)
                         earnRedeemConfirmDialog.close()
                         actionPlanDetailDialog.close()
+                    }
+                }
+            }
+        }
+    }
+    Dialog {
+        id: firstPortfolioDeployDialog
+        title: "Deploy " + firstPortfolioDeployAsset + " tranche"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(680, window.width - 120)
+        standardButtons: Dialog.NoButton
+
+        property string mode: "TESTNET"
+        property string expectedConfirm: mode === "MAINNET" ? "CONFIRM_MAINNET_ORDER" : "CONFIRM_TESTNET_ORDER"
+
+        onOpened: {
+            mode = "TESTNET"
+            firstPortfolioConfirmInput.text = ""
+        }
+
+        ColumnLayout {
+            width: firstPortfolioDeployDialog.width - 48
+            spacing: 14
+            Text {
+                Layout.fillWidth: true
+                text: "This runs the next tranche for " + firstPortfolioDeployAsset + " (target " + firstPortfolioDeployTargetPct + "% of the basket) using the total USDC budget and tranche count set on the Action Plan page. Every existing safety gate applies except market-timing consensus, which is intentionally skipped for this initial deployment."
+                color: textSecondary
+                font.pixelSize: 13
+                wrapMode: Text.WordWrap
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                Text { text: "Mode:"; color: textPrimary; font.pixelSize: 12 }
+                ComboBox {
+                    id: firstPortfolioModeCombo
+                    Layout.preferredWidth: 160
+                    model: ["TESTNET", "MAINNET"]
+                    onCurrentTextChanged: firstPortfolioDeployDialog.mode = currentText
+                }
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: firstPortfolioMainnetWarning.implicitHeight + 24
+                visible: firstPortfolioDeployDialog.mode === "MAINNET"
+                radius: 7
+                color: "#3a3020"
+                border.color: warning
+                Text {
+                    id: firstPortfolioMainnetWarning
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    text: "Mainnet submit also requires the Safety stage to be LIVE_ENABLED and will place a real order."
+                    color: warning
+                    font.pixelSize: 12
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                Button {
+                    text: "Validate only"
+                    enabled: parseFloat(firstPortfolioBudgetInput.text) > 0 && !appController.busy
+                    onClicked: {
+                        appController.runFirstPortfolioTranche(
+                            firstPortfolioDeployAsset,
+                            firstPortfolioDeployTargetPct,
+                            parseFloat(firstPortfolioBudgetInput.text) || 0,
+                            firstPortfolioTranchesInput.value,
+                            firstPortfolioDeployDialog.mode,
+                            false,
+                            ""
+                        )
+                        firstPortfolioDeployDialog.close()
+                    }
+                }
+            }
+            Text {
+                Layout.fillWidth: true
+                text: "To submit for real, type " + firstPortfolioDeployDialog.expectedConfirm + " exactly."
+                color: textSecondary
+                font.pixelSize: 12
+            }
+            TextField {
+                id: firstPortfolioConfirmInput
+                Layout.fillWidth: true
+                placeholderText: firstPortfolioDeployDialog.expectedConfirm
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                Button {
+                    text: "Cancel"
+                    onClicked: firstPortfolioDeployDialog.close()
+                }
+                Button {
+                    text: "Submit tranche"
+                    enabled: firstPortfolioConfirmInput.text === firstPortfolioDeployDialog.expectedConfirm
+                        && parseFloat(firstPortfolioBudgetInput.text) > 0
+                        && !appController.busy
+                    onClicked: {
+                        appController.runFirstPortfolioTranche(
+                            firstPortfolioDeployAsset,
+                            firstPortfolioDeployTargetPct,
+                            parseFloat(firstPortfolioBudgetInput.text) || 0,
+                            firstPortfolioTranchesInput.value,
+                            firstPortfolioDeployDialog.mode,
+                            true,
+                            firstPortfolioConfirmInput.text
+                        )
+                        firstPortfolioDeployDialog.close()
                     }
                 }
             }

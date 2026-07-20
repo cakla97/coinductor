@@ -81,10 +81,14 @@ This path is for a user who starts with no crypto portfolio.
 1. Choose a planned USDC budget, time horizon, and risk profile.
 2. Keep a configurable USDC reserve outside the initial allocation.
 3. Select an auditable portfolio template such as Conservative, Balanced, or Growth.
-4. Simulate the allocation and staged entry plan without placing orders.
-5. Validate the same plan on Binance Spot Testnet where supported.
-6. Create mainnet buy previews split across multiple entries rather than one immediate purchase.
-7. Require explicit confirmation for every initial live deployment step.
+4. Simulate the allocation and staged entry plan without placing orders - implemented
+   (wizard Step 6 basket preview and the Action Plan "First portfolio deployment"
+   panel's per-tranche validation).
+5. Validate the same plan on Binance Spot Testnet where supported - implemented.
+6. Create mainnet buy previews split across multiple entries rather than one
+   immediate purchase - implemented (tranche count is user-configurable, default 3).
+7. Require explicit confirmation for every initial live deployment step -
+   implemented (`CONFIRM_TESTNET_ORDER`/`CONFIRM_MAINNET_ORDER`).
 8. Enable Grid or Rebalancing only when their minimum capital and risk conditions are met.
 
 Portfolio templates will be deterministic and versioned. AI can explain trade-offs
@@ -166,6 +170,13 @@ exists.
   request a BUY evaluation for one allowed symbol; the deterministic risk
   engine still independently evaluates consensus/RSI/trend, bankroll, stop-loss,
   and live-submit confirmation, and can still reject it)
+- staged first-portfolio basket deployment - implemented ("First portfolio
+  deployment" panel on the Action Plan page runs one basket asset/tranche at a
+  time through `FirstPortfolioExecutor`; only market-timing consensus/RSI/trend
+  is intentionally skipped, every other deterministic gate - whitelist,
+  bankroll, stop-loss, kill switch/cooldown, idempotency, safety stage, and the
+  usual typed confirmation - still applies; requires an explicitly typed USDC
+  budget rather than auto-filling from the wizard's fiat-denominated plan)
 
 ## Stage B: Open-source Distribution
 

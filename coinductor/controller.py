@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
 
@@ -7,6 +8,7 @@ from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication, QImageReader
 
 from trading_agent.config import load_config
+from trading_agent.storage import Storage
 
 from .ai_provider import AiProviderService
 from .application import CoinductorApplication
@@ -17,6 +19,7 @@ from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService, LiveTradingCheckService, TestnetCheckService
 from .desktop_store import DesktopStore
 from .env_writer import EnvWriter
+from .first_portfolio_executor import FirstPortfolioExecutor
 from .first_portfolio_planner import FirstPortfolioPlanner
 from .guide_service import GuideService
 from .local_data_reset import LocalDataResetService
@@ -98,6 +101,52 @@ class TestnetCheckWorker(QObject):
             self.finished.emit()
 
 
+class FirstPortfolioTrancheWorker(QObject):
+    completed = Signal(object)
+    failed = Signal(str)
+    finished = Signal()
+
+    def __init__(
+        self,
+        asset: str,
+        target_pct: Decimal,
+        total_budget: Decimal,
+        tranche_index: int,
+        tranches_total: int,
+        mode: str,
+        submit: bool,
+        confirm: str,
+    ):
+        super().__init__()
+        self.asset = asset
+        self.target_pct = target_pct
+        self.total_budget = total_budget
+        self.tranche_index = tranche_index
+        self.tranches_total = tranches_total
+        self.mode = mode
+        self.submit = submit
+        self.confirm = confirm
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            result = FirstPortfolioExecutor().run_tranche(
+                asset=self.asset,
+                target_pct=self.target_pct,
+                total_budget=self.total_budget,
+                tranche_index=self.tranche_index,
+                tranches_total=self.tranches_total,
+                mode=self.mode,
+                submit=self.submit,
+                confirm=self.confirm,
+            )
+            self.completed.emit(result)
+        except Exception as exc:
+            self.failed.emit(str(exc))
+        finally:
+            self.finished.emit()
+
+
 class AiProviderHealthWorker(QObject):
     completed = Signal(object)
     failed = Signal(str)
@@ -169,6 +218,7 @@ class AppController(QObject):
     appTourChanged = Signal()
     localAiRecommendationChanged = Signal()
     localDataResetChanged = Signal()
+    firstPortfolioDeploymentChanged = Signal()
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
@@ -314,6 +364,7 @@ class AppController(QObject):
         self._first_portfolio_plan = self._first_portfolio_planner.plan(
             self._user_profile_service.current_profile("EXISTING_PORTFOLIO")
         )
+        self._first_portfolio_deployment_progress: list[dict[str, object]] = self._load_first_portfolio_progress()
         self._guides = GuideService().list_guides()
         try:
             self._manual_override_symbols = load_config("config.example.toml").allowed_symbols
@@ -332,6 +383,8 @@ class AppController(QObject):
         self._live_trading_check_worker: LiveTradingCheckWorker | None = None
         self._testnet_check_thread: QThread | None = None
         self._testnet_check_worker: TestnetCheckWorker | None = None
+        self._first_portfolio_tranche_thread: QThread | None = None
+        self._first_portfolio_tranche_worker: FirstPortfolioTrancheWorker | None = None
         self._ai_provider_thread: QThread | None = None
         self._ai_provider_worker: AiProviderHealthWorker | None = None
         self._assistant_thread: QThread | None = None
@@ -712,6 +765,10 @@ class AppController(QObject):
     @Property("QVariantList", notify=firstPortfolioPlanChanged)
     def firstPortfolioNotes(self) -> list[dict[str, str]]:
         return list(self._first_portfolio_plan.notes)
+
+    @Property("QVariantList", notify=firstPortfolioDeploymentChanged)
+    def firstPortfolioDeploymentProgress(self) -> list[dict[str, object]]:
+        return list(self._first_portfolio_deployment_progress)
 
     @Property(str, notify=setupChanged)
     def onboardingPath(self) -> str:
@@ -1396,6 +1453,92 @@ class AppController(QObject):
             completion_message=f"Manual override evaluated for {normalized}. Review the Action Plan.",
             manual_override_symbol=normalized,
         )
+
+    @Slot(str, float, float, int, str, bool, str)
+    def runFirstPortfolioTranche(
+        self,
+        asset: str,
+        target_pct: float,
+        total_budget_usdc: float,
+        tranches_total: int,
+        mode: str,
+        submit: bool,
+        confirm: str,
+    ) -> None:
+        if self._busy:
+            self.notificationRequested.emit("Wait for the current analysis to finish first.")
+            return
+        mode_normalized = mode.strip().upper()
+        if mode_normalized not in {"TESTNET", "MAINNET"}:
+            self.notificationRequested.emit("Mode must be Testnet or Mainnet.")
+            return
+        if total_budget_usdc <= 0:
+            self.notificationRequested.emit("Enter the actual USDC budget for this basket before continuing.")
+            return
+        if tranches_total <= 0:
+            self.notificationRequested.emit("Tranches total must be at least 1.")
+            return
+        if mode_normalized == "MAINNET" and submit and not self._safety_snapshot.allows_live_submit:
+            self.notificationRequested.emit("Mainnet submit is locked until the Safety stage is promoted to LIVE_ENABLED.")
+            return
+
+        asset_normalized = asset.strip().upper()
+        completed = sum(
+            1
+            for item in self._first_portfolio_deployment_progress
+            if item.get("asset") == asset_normalized
+            and item.get("mode") == mode_normalized
+            and item.get("submitted")
+        )
+        tranche_index = completed + 1
+        if tranche_index > tranches_total:
+            self.notificationRequested.emit(
+                f"All {tranches_total} tranche(s) for {asset_normalized} on {mode_normalized} are already complete."
+            )
+            return
+
+        self._set_busy(True)
+        self._status_text = f"Running first portfolio tranche {tranche_index}/{tranches_total} for {asset_normalized}..."
+        self.stateChanged.emit()
+
+        self._first_portfolio_tranche_thread = QThread(self)
+        self._first_portfolio_tranche_worker = FirstPortfolioTrancheWorker(
+            asset=asset_normalized,
+            target_pct=Decimal(str(target_pct)),
+            total_budget=Decimal(str(total_budget_usdc)),
+            tranche_index=tranche_index,
+            tranches_total=tranches_total,
+            mode=mode_normalized,
+            submit=submit,
+            confirm=confirm,
+        )
+        self._first_portfolio_tranche_worker.moveToThread(self._first_portfolio_tranche_thread)
+        self._first_portfolio_tranche_thread.started.connect(self._first_portfolio_tranche_worker.run)
+        self._first_portfolio_tranche_worker.completed.connect(self._on_first_portfolio_tranche_completed)
+        self._first_portfolio_tranche_worker.failed.connect(self._on_first_portfolio_tranche_failed)
+        self._first_portfolio_tranche_worker.finished.connect(self._first_portfolio_tranche_thread.quit)
+        self._first_portfolio_tranche_worker.finished.connect(self._first_portfolio_tranche_worker.deleteLater)
+        self._first_portfolio_tranche_thread.finished.connect(self._first_portfolio_tranche_thread.deleteLater)
+        self._first_portfolio_tranche_thread.finished.connect(self._clear_first_portfolio_tranche_worker)
+        self._first_portfolio_tranche_thread.start()
+
+    @Slot(object)
+    def _on_first_portfolio_tranche_completed(self, result) -> None:
+        self._first_portfolio_deployment_progress = self._load_first_portfolio_progress()
+        self.firstPortfolioDeploymentChanged.emit()
+        self.notificationRequested.emit(result.message or result.validation_summary or result.status)
+
+    @Slot(str)
+    def _on_first_portfolio_tranche_failed(self, message: str) -> None:
+        self.notificationRequested.emit(f"First portfolio tranche failed: {message}")
+
+    @Slot()
+    def _clear_first_portfolio_tranche_worker(self) -> None:
+        self._first_portfolio_tranche_worker = None
+        self._first_portfolio_tranche_thread = None
+        self._set_busy(False)
+        self._status_text = "Ready for analysis"
+        self.stateChanged.emit()
 
     def _start_analysis(
         self,
@@ -2189,6 +2332,13 @@ class AppController(QObject):
         self._first_portfolio_plan = self._first_portfolio_planner.plan(
             self._user_profile_service.current_profile(fallback)
         )
+
+    def _load_first_portfolio_progress(self) -> list[dict[str, object]]:
+        try:
+            config = load_config("config.example.toml")
+            return Storage(config.database_path).get_first_portfolio_progress()
+        except Exception:
+            return []
 
     def _apply_asset_role_overrides(self, assets: tuple[dict[str, str], ...]) -> list[dict[str, str]]:
         enriched: list[dict[str, str]] = []

@@ -188,9 +188,23 @@ checks and current generated state when the user asks for an actual portfolio de
    `portfolio.pricing_quote_assets` pair in order. It runs ahead of the LLM in
    `ProviderBackedAssistant.respond()`, consistent with "deterministic answers ahead of
    model guesses."
-5. **First portfolio execution path.** The planner exists, but deterministic allocation
-   simulation, Testnet validation, staged mainnet previews, and confirmed initial basket
-   deployment remain incomplete.
+5. ~~**First portfolio execution path.**~~ Implemented: `FirstPortfolioExecutor`
+   (`coinductor/first_portfolio_executor.py`) runs one basket asset/tranche at a time
+   through the same deterministic `RiskEngine.evaluate()` as any other proposal, with a
+   narrowly-scoped `skip_consensus=True` (market-timing/RSI/trend only — bankroll,
+   stop-loss, kill switch/cooldown, and idempotency all still apply) and an
+   `allowed_symbols` override so basket assets outside `strategy.allowed_symbols` are
+   still individually whitelisted rather than open-ended. Testnet validation goes through
+   `TestnetExecutor` (USDT-quoted pairs), mainnet through `LivePreviewExecutor`
+   (`live_confirm.quote_asset`), both idempotent via a dedicated, non-day-windowed
+   `OrderIntentFactory.first_portfolio_intent_id`. The Action Plan page has a "First
+   portfolio deployment" panel (`appController.runFirstPortfolioTranche`) requiring an
+   explicitly typed USDC budget — the wizard's planned deposit amount is stored in the
+   user's raw locale fiat currency with no real FX conversion, so it is shown only as
+   non-authoritative context, never auto-filled into the trade amount — plus a
+   Testnet/Mainnet mode choice, a "Validate only" action, and the same typed
+   `CONFIRM_TESTNET_ORDER`/`CONFIRM_MAINNET_ORDER` confirmation pattern as other guarded
+   actions.
 6. ~~**Earn redeem desktop workflow.**~~ Implemented: the Action Plan item detail
    dialog now has a guarded Earn redeem card (preview, `CONFIRM_EARN_REDEEM`
    confirmation, result), mirroring the trade/OCO pattern.
@@ -246,9 +260,10 @@ source-asset choices, and small-capital limits developed for the original portfo
 4. Continue strengthening Assistant knowledge coverage (a real project knowledge/
    retrieval layer covering every visible control, not just navigation). Standalone
    read-only market intents are done as of 2026-07-20.
-5. Finish the remaining guarded Stage A workflow: first portfolio staged
-   deployment. (Earn redeem, manual HOLD challenge, and hard local-data
-   deletion are done as of 2026-07-20.)
+5. Remaining smaller Stage A items: inline wizard AI Q&A, full UI localization,
+   installed-model discovery polish. (Earn redeem, manual HOLD challenge,
+   hard local-data deletion, and first portfolio staged deployment are all
+   done as of 2026-07-20.)
 6. Only then begin Stage B packaging and public-default cleanup.
 
 Do not jump directly to installer work while core setup and guarded workflows still have

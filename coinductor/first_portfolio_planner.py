@@ -41,7 +41,7 @@ class FirstPortfolioPlanner:
             notes=self._notes(profile, deployable),
         )
 
-    def _allocation(self, style: str, funding_currency: str) -> tuple[dict[str, str], ...]:
+    def _allocation(self, style: str, funding_currency: str) -> tuple[dict[str, object], ...]:
         if style == "ACTIVE":
             weights = (("BTC", 35), ("ETH", 25), ("SOL", 20), ("BNB", 10), ("WLD", 10))
         elif style == "BALANCED":
@@ -52,6 +52,7 @@ class FirstPortfolioPlanner:
             {
                 "asset": asset,
                 "target": f"{weight}%",
+                "targetPct": weight,
                 "amount": f"{weight}% of converted {funding_currency}",
                 "role": self._role(asset),
             }

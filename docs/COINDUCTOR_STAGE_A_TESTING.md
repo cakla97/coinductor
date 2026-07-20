@@ -206,6 +206,31 @@ terminal.
   bankroll, or any other deterministic check — it must never guarantee a BUY.
 - Confirm the button/panel is hidden once the decision is no longer `HOLD`.
 
+## 10c. First Portfolio Deployment (Action Plan)
+
+- Only visible when the active profile's onboarding path is "Build my first
+  portfolio". Open Action Plan and confirm a "First portfolio deployment"
+  panel appears above the item list, listing every basket asset with its
+  target percentage and per-mode (Testnet/Mainnet) tranche progress.
+- Confirm the "Total USDC budget" field is empty by default and is never
+  pre-filled from the wizard's planned deposit amount — that number can be in
+  a different fiat currency with no real conversion, so treating it as a USDC
+  amount would be wrong. Only a manually typed value should be used.
+- Click "Deploy" for one asset. Confirm the dialog shows the asset, its target
+  percentage, a Testnet/Mainnet mode selector (default Testnet), and that
+  switching to Mainnet shows a warning that it also requires the Safety stage
+  to be `LIVE_ENABLED`.
+- Try "Validate only" first (no confirmation phrase required) and confirm it
+  reports a validation result without submitting an order.
+- Do not submit during a routine UI test. If you intentionally test it on
+  Testnet, confirm the submit button stays disabled until you type
+  `CONFIRM_TESTNET_ORDER` (or `CONFIRM_MAINNET_ORDER` on Mainnet) exactly, and
+  that a completed tranche is idempotent — running the same tranche again
+  reports it as already done rather than placing a second order.
+- Confirm every other guard (bankroll, stop-loss, kill switch/cooldown,
+  whitelist for that one symbol) can still block the tranche; only
+  market-timing consensus/RSI/trend is intentionally skipped for this flow.
+
 ## 11. AI Assistant
 
 - Open `AI Assistant`.

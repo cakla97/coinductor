@@ -31,6 +31,7 @@ def test_first_portfolio_planner_creates_balanced_starting_plan() -> None:
     assert "500 CZK" in plan.summary
     assert any(item["name"] == "Reserve" and item["value"] == "80 CZK" for item in plan.funding)
     assert any(item["asset"] == "BTC" and item["target"] == "40%" for item in plan.allocation)
+    assert any(item["asset"] == "BTC" and item["targetPct"] == 40 for item in plan.allocation)
     assert any(item["asset"] == "BTC" and item["amount"] == "40% of converted USDC" for item in plan.allocation)
     assert any(item["asset"] == "WLD" and item["role"] == "Growth" for item in plan.allocation)
     assert any(item["name"] == "Execution" and "nikdy nezadává objednávky" in item["detail"] for item in plan.notes)

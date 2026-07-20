@@ -122,7 +122,7 @@ class FirstPortfolioPlanSnapshot:
     available: bool
     summary: str
     funding: tuple[dict[str, str], ...]
-    allocation: tuple[dict[str, str], ...]
+    allocation: tuple[dict[str, object], ...]
     steps: tuple[dict[str, str], ...]
     notes: tuple[dict[str, str], ...]
 

@@ -109,7 +109,11 @@ class AgentRunner:
             live_quote_cap = Decimal(str(self.config.raw.get("live_confirm", {}).get("max_quote_amount_usdt", risk_decision.adjusted_quote_amount_usdt)))
             bankroll_required = min(risk_decision.adjusted_quote_amount_usdt, live_quote_cap) if risk_decision.approved else Decimal("0")
             bankroll_report = self.bankroll.analyze(balances, bankroll_required)
-            earn_redeem_plan = self.earn.plan_flexible_redeem(liquidity_decision, bankroll_report)
+            earn_redeem_plan = self.earn.plan_flexible_redeem(
+                liquidity_decision,
+                bankroll_report,
+                existing_intents=self.storage.get_existing_earn_redeem_intents(),
+            )
             grid_recommendation = self.grid.recommend(
                 snapshots=snapshots,
                 market_research=market_research_report,

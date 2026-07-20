@@ -4,6 +4,7 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from .binance_client import BinanceApiError, BinanceClient
 from .models import Balance, EarnRedeemPlan, LiquidityDecision, TradingBankrollReport
+from .order_journal import OrderIntentFactory
 
 
 class EarnLiquidityManager:
@@ -44,7 +45,12 @@ class EarnLiquidityManager:
     def _balance_for(self, balances: list[Balance], asset: str) -> Balance:
         return next((balance for balance in balances if balance.asset == asset), Balance(asset=asset, spot_free=Decimal("0")))
 
-    def plan_flexible_redeem(self, liquidity: LiquidityDecision, bankroll: TradingBankrollReport) -> EarnRedeemPlan:
+    def plan_flexible_redeem(
+        self,
+        liquidity: LiquidityDecision,
+        bankroll: TradingBankrollReport,
+        existing_intents: set[str] | None = None,
+    ) -> EarnRedeemPlan:
         if liquidity.redeem_amount <= 0 or liquidity.redeem_asset is None:
             return self._empty("No Flexible Earn redeem is needed for this run.")
 
@@ -62,23 +68,28 @@ class EarnLiquidityManager:
         if amount <= 0:
             return self._blocked(asset, Decimal("0"), "Auto redeem amount is zero after configured limits.")
 
+        intent_id = OrderIntentFactory(self.config).earn_redeem_intent_id(asset, amount)
+        if intent_id in (existing_intents or set()):
+            return self._blocked(asset, amount, f"Earn redeem intent {intent_id} was already submitted before.", intent_id=intent_id)
+
         try:
             position = self._select_position(asset, amount + reserve)
         except BinanceApiError as exc:
-            return self._blocked(asset, amount, str(exc))
+            return self._blocked(asset, amount, str(exc), intent_id=intent_id)
         if position is None:
-            return self._blocked(asset, amount, f"No redeemable Flexible Earn {asset} position can cover amount plus reserve.")
+            return self._blocked(asset, amount, f"No redeemable Flexible Earn {asset} position can cover amount plus reserve.", intent_id=intent_id)
 
         product_id = str(position.get("productId", ""))
         can_redeem = bool(position.get("canRedeem", True))
         redeem_type = str(earn.get("redeem_type", "FAST")).upper()
         if not product_id:
-            return self._blocked(asset, amount, "Flexible Earn position has no productId.")
+            return self._blocked(asset, amount, "Flexible Earn position has no productId.", intent_id=intent_id)
         if not can_redeem:
-            return self._blocked(asset, amount, f"Flexible Earn product {product_id} is not currently redeemable.")
+            return self._blocked(asset, amount, f"Flexible Earn product {product_id} is not currently redeemable.", intent_id=intent_id)
 
         if not self._submit_requested():
             return EarnRedeemPlan(
+                intent_id=intent_id,
                 enabled=True,
                 asset=asset,
                 amount=amount,
@@ -94,6 +105,7 @@ class EarnLiquidityManager:
         confirm = str(self.config.get("_runtime", {}).get("earn_redeem_confirm", ""))
         if confirm != "CONFIRM_EARN_REDEEM":
             return EarnRedeemPlan(
+                intent_id=intent_id,
                 enabled=True,
                 asset=asset,
                 amount=amount,
@@ -110,6 +122,7 @@ class EarnLiquidityManager:
             response = self.live_client.redeem_flexible_product(product_id, amount, redeem_type)
         except BinanceApiError as exc:
             return EarnRedeemPlan(
+                intent_id=intent_id,
                 enabled=True,
                 asset=asset,
                 amount=amount,
@@ -123,6 +136,7 @@ class EarnLiquidityManager:
             )
 
         return EarnRedeemPlan(
+            intent_id=intent_id,
             enabled=True,
             asset=asset,
             amount=amount,
@@ -151,10 +165,10 @@ class EarnLiquidityManager:
         return bool(self.config.get("_runtime", {}).get("earn_redeem_submit", False))
 
     def _empty(self, message: str) -> EarnRedeemPlan:
-        return EarnRedeemPlan(False, None, Decimal("0"), "NOT_NEEDED", "", "", False, False, "CONFIRM_EARN_REDEEM", message)
+        return EarnRedeemPlan("", False, None, Decimal("0"), "NOT_NEEDED", "", "", False, False, "CONFIRM_EARN_REDEEM", message)
 
-    def _blocked(self, asset: str, amount: Decimal, message: str) -> EarnRedeemPlan:
-        return EarnRedeemPlan(True, asset, self._money(amount), "BLOCKED", "", "", False, False, "CONFIRM_EARN_REDEEM", message)
+    def _blocked(self, asset: str, amount: Decimal, message: str, intent_id: str = "") -> EarnRedeemPlan:
+        return EarnRedeemPlan(intent_id, True, asset, self._money(amount), "BLOCKED", "", "", False, False, "CONFIRM_EARN_REDEEM", message)
 
     def _money(self, value: Decimal) -> Decimal:
         return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)

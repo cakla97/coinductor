@@ -321,6 +321,7 @@ class Storage:
             );
             create table if not exists earn_redeem_plans (
                 run_id integer,
+                intent_id text,
                 enabled integer,
                 asset text,
                 amount text,
@@ -434,6 +435,7 @@ class Storage:
         self._ensure_column("active_grid_evaluations", "take_profit_price", "text")
         self._ensure_column("active_grid_evaluations", "age_days", "text")
         self._ensure_column("ai_commentaries", "rebalancing_assessment", "text")
+        self._ensure_column("earn_redeem_plans", "intent_id", "text")
         self.connection.commit()
 
     def _ensure_column(self, table: str, column: str, definition: str) -> None:
@@ -1039,6 +1041,14 @@ class Storage:
             row["intent_id"]
             for row in self.connection.execute(
                 "select intent_id from oco_protection_orders where intent_id is not null and submitted = 1 and status not in ('SUBMIT_ERROR', 'SUBMIT_SKIPPED')"
+            )
+        }
+
+    def get_existing_earn_redeem_intents(self) -> set[str]:
+        return {
+            row["intent_id"]
+            for row in self.connection.execute(
+                "select intent_id from earn_redeem_plans where intent_id is not null and intent_id != '' and submitted = 1 and status not in ('SUBMIT_ERROR', 'SUBMIT_SKIPPED')"
             )
         }
 
@@ -1823,6 +1833,7 @@ class Storage:
             """
             insert into earn_redeem_plans (
                 run_id,
+                intent_id,
                 enabled,
                 asset,
                 amount,
@@ -1833,10 +1844,11 @@ class Storage:
                 submitted,
                 confirmation_required,
                 message
-            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 run_id,
+                plan.intent_id,
                 int(plan.enabled),
                 plan.asset,
                 str(plan.amount),

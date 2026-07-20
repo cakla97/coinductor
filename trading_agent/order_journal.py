@@ -25,6 +25,16 @@ class OrderIntentFactory:
         encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()[:24]
 
+    def earn_redeem_intent_id(self, asset: str, amount: Decimal) -> str:
+        payload = {
+            "window": self._window_value(),
+            "kind": "EARN_REDEEM",
+            "asset": asset,
+            "amount": str(amount),
+        }
+        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()[:24]
+
     def _window_value(self) -> str:
         window = str(self.config.get("paper", {}).get("idempotency_window", "daily")).lower()
         now = datetime.now()

@@ -191,6 +191,7 @@ class LiquidityDecision:
 
 @dataclass(frozen=True)
 class EarnRedeemPlan:
+    intent_id: str
     enabled: bool
     asset: str | None
     amount: Decimal

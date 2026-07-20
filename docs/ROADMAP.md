@@ -118,8 +118,10 @@ knows exchange terminology.
   plus a "Detect installed models" action that lists what the endpoint
   actually reports and lets the user pick a text/vision model from it)
 - provider presets for common OpenAI-compatible cloud endpoints
-- inline "ask AI about this step" help inside onboarding once a provider is
-  connected, with offline fallback when no provider is configured
+- inline "ask AI about this step" help inside onboarding - implemented ("Ask
+  about this step" on every wizard step, deterministic-first with an offline
+  fallback so it works even without a provider connected and never blocks
+  Back/Next)
 - project context pack that explains app concepts, reports, roles, risk gates,
   Binance workflows, and current feature limits to any connected assistant
 

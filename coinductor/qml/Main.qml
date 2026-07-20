@@ -814,7 +814,7 @@ ApplicationWindow {
                                                 Text { text: "Current AI provider"; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                                 Text { Layout.fillWidth: true; text: appController.aiProviderSummary; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                                                 Text { Layout.fillWidth: true; text: appController.aiProviderHealthDetail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
-                                                Text { Layout.fillWidth: true; text: "You can skip AI setup and add it later. Inline wizard Q&A is planned next."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                                Text { Layout.fillWidth: true; text: "You can skip AI setup and add it later. \"Ask about this step\" below works with or without a configured provider."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                             }
                                             Button {
                                                 text: appController.checkingAiProvider ? "Checking..." : "Check AI provider"
@@ -1433,6 +1433,56 @@ ApplicationWindow {
                                     }
                                 }
                             }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: wizardAskAiContent.implicitHeight + 28
+                    radius: 7
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        id: wizardAskAiContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 14
+                        spacing: 8
+                        Text { text: "Ask about this step"; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Uses your configured AI provider when available, with a deterministic offline fallback. This is read-only, never places orders or changes settings, and never blocks Back/Next."
+                            color: textSecondary
+                            font.pixelSize: 10
+                            wrapMode: Text.WordWrap
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            TextField {
+                                id: wizardAskAiInput
+                                Layout.fillWidth: true
+                                placeholderText: "e.g. How do I create a Binance API key?"
+                                onAccepted: {
+                                    if (text.trim().length > 0 && !appController.wizardAssistantBusy)
+                                        appController.askWizardAssistant(text, window.wizardSteps[window.wizardStep])
+                                }
+                            }
+                            Button {
+                                text: appController.wizardAssistantBusy ? "Asking..." : "Ask"
+                                enabled: !appController.wizardAssistantBusy && wizardAskAiInput.text.trim().length > 0
+                                onClicked: appController.askWizardAssistant(wizardAskAiInput.text, window.wizardSteps[window.wizardStep])
+                            }
+                        }
+                        Text {
+                            visible: appController.wizardAssistantAnswer.length > 0
+                            Layout.fillWidth: true
+                            text: appController.wizardAssistantAnswer
+                            color: textPrimary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
                         }
                     }
                 }

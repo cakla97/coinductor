@@ -55,6 +55,12 @@ terminal.
   clicking `Use as text`/`Use as vision` on a detected model fills the corresponding
   field. With Ollama stopped, confirm the same button reports a clear failure instead
   of silently doing nothing.
+- On any wizard step, use the `Ask about this step` box to ask a setup question,
+  e.g. "How do I create a Binance API key?" or "Co znamená automation level?".
+  Confirm an answer appears without leaving the wizard, and that `Back`/`Next`
+  stay clickable while the answer is loading and after it returns. Try this both
+  with and without a configured/reachable AI provider — an answer (deterministic
+  or a graceful offline fallback) should appear either way, never a crash.
 - Open `Local AI guide` and `Cloud AI guide` from the wizard. Confirm the guides
   open in a modal, links are clickable, and closing returns to the same wizard step.
 - In Binance API setup, follow the shown Binance API steps and paste the read-only

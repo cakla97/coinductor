@@ -527,6 +527,48 @@ def test_ui_knowledge_does_not_use_description_words_as_confident_match() -> Non
     assert answer is None
 
 
+def test_ui_knowledge_explains_how_to_create_binance_api_keys() -> None:
+    answer = UiKnowledgeService().answer("How do I create a Binance API key?")
+
+    assert answer is not None
+    assert "API Management" in answer
+    assert "Never enable withdrawals" in answer
+
+
+def test_ui_knowledge_explains_automation_level_in_czech() -> None:
+    answer = UiKnowledgeService().answer("Co znamená automation level?")
+
+    assert answer is not None
+    assert "Recommend-only" in answer
+    assert "risk engine" in answer.lower()
+
+
+def test_ui_knowledge_explains_first_vs_existing_portfolio_path() -> None:
+    answer = UiKnowledgeService().answer(
+        "What is the difference between existing portfolio and first portfolio?"
+    )
+
+    assert answer is not None
+    assert "Build my first portfolio" in answer
+    assert "First portfolio deployment" in answer
+
+
+def test_ui_knowledge_explains_local_ai_download_steps_in_czech() -> None:
+    answer = UiKnowledgeService().answer("Co si mám stáhnout pro lokální AI?")
+
+    assert answer is not None
+    assert "ollama.com" in answer
+    assert "Detect installed models" in answer
+
+
+def test_ui_knowledge_explains_testnet_purpose() -> None:
+    answer = UiKnowledgeService().answer("What is Testnet for?")
+
+    assert answer is not None
+    assert "virtual funds" in answer
+    assert "optional" in answer.lower()
+
+
 def test_contextual_next_step_offers_navigation_not_execution() -> None:
     context = {
         "context_page": "AI Assistant",

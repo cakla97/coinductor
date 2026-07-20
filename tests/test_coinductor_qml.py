@@ -154,3 +154,8 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert '"Detect installed models"' in qml
     assert "localAiModel.text = modelData" in qml
     assert "localAiVisionModel.text = modelData" in qml
+    assert "Ask about this step" in qml
+    assert "appController.askWizardAssistant(wizardAskAiInput.text, window.wizardSteps[window.wizardStep])" in qml
+    assert "appController.wizardAssistantBusy" in qml
+    assert "appController.wizardAssistantAnswer" in qml
+    assert "never blocks Back/Next" in qml

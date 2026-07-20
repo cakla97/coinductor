@@ -201,6 +201,57 @@ UI_KNOWLEDGE = (
         "Setup wizard znovu otevře průvodce lokálním nastavením burzy, typu portfolia, rozhodovacího profilu, AI a read-only Binance API. Opětovné projití neprovádí příkazy.",
     ),
     UiKnowledgeEntry(
+        "Wizard: creating Binance API keys",
+        "Setup wizard",
+        (
+            "create binance api key", "generate api key", "how do i get an api key",
+            "jak vytvorit api klic", "jak vytvořit api klíč", "jak ziskat api klic",
+        ),
+        "In Binance, open API Management under your account, create a new key, and label it. For the read-only key used in early setup, leave Enable Spot & Margin Trading off; Coinductor only needs read permissions to analyze your portfolio. A separate live-trading key with trading enabled is only needed later, once you deliberately choose to allow guarded live actions. Never enable withdrawals on any key used with Coinductor. Restrict the key to your IP address if your connection allows it, then paste the key/secret into the matching wizard field; Coinductor saves them to your local .env file only.",
+        "V Binance otevřete API Management ve svém účtu, vytvořte nový klíč a pojmenujte jej. Pro read-only klíč použitý v úvodním nastavení nechte Enable Spot & Margin Trading vypnuté; Coinductor pro analýzu portfolia potřebuje jen oprávnění ke čtení. Samostatný live-trading klíč s povoleným obchodováním je potřeba až později, pokud se vědomě rozhodnete povolit zabezpečené live akce. U žádného klíče používaného s Coinductorem nikdy nepovolujte výběry (withdrawals). Pokud to vaše připojení umožňuje, omezte klíč na vaši IP adresu a poté klíč/secret vložte do odpovídajícího pole ve wizardu; Coinductor je ukládá pouze do lokálního souboru .env.",
+    ),
+    UiKnowledgeEntry(
+        "Wizard: automation level meaning",
+        "Setup wizard",
+        (
+            "automation level", "recommend only", "guided automation", "uroven automatizace",
+            "úroveň automatizace", "co znamena automation level", "co znamená automation level",
+        ),
+        "Automation level controls how much Coinductor is allowed to prepare without a fresh manual review. Recommend-only means every run produces analysis and suggestions that you review and confirm manually; nothing guarded is pre-armed. Guided automation still requires your explicit typed confirmation for every money-moving action and the same Safety-stage gating, but assumes you plan to review results on a regular cadence rather than deciding fresh each time. Neither level lets AI place an order, redeem funds, or bypass the deterministic risk engine on its own.",
+        "Automation level určuje, kolik toho smí Coinductor připravit bez čerstvé ruční kontroly. Recommend-only znamená, že každý běh vytvoří analýzu a doporučení, která ručně zkontrolujete a potvrdíte; nic zabezpečeného není předem odjištěné. Guided automation stále vyžaduje váš explicitní psaný souhlas u každé peněžní akce a stejné hlídání Safety stage, ale počítá s tím, že výsledky budete kontrolovat v pravidelném rytmu místo rozhodování pokaždé od nuly. Ani jedna úroveň nedovolí AI samostatně zadat příkaz, vybrat prostředky z Earn ani obejít deterministický risk engine.",
+    ),
+    UiKnowledgeEntry(
+        "Wizard: existing portfolio vs first portfolio",
+        "Setup wizard",
+        (
+            "difference between existing portfolio and first portfolio",
+            "rozdil mezi existing portfolio a first portfolio",
+            "rozdil mezi existing a first portfolio",
+        ),
+        "Choose Existing portfolio if you already hold crypto on Binance and want Coinductor to analyze and manage what is already there. Choose Build my first portfolio if you are starting from little or no crypto; that path plans a staged, guarded initial basket purchase (see the Action Plan 'First portfolio deployment' panel) instead of assuming existing holdings. You can change this later by resetting onboarding in Settings; it does not affect exchange credentials or trading history.",
+        "Zvolte Existing portfolio, pokud už na Binance držíte kryptoměny a chcete, aby je Coinductor analyzoval a spravoval. Zvolte Build my first portfolio, pokud začínáte s malým množstvím nebo bez kryptoměn; tato cesta naplánuje postupný, zabezpečený nákup počátečního košíku (viz panel 'First portfolio deployment' na Action Plan) místo předpokladu existujících pozic. Volbu lze později změnit resetem onboardingu v Settings; nemá vliv na přístupové údaje k burze ani historii obchodování.",
+    ),
+    UiKnowledgeEntry(
+        "Wizard: what to download for local AI",
+        "Setup wizard",
+        (
+            "what should i download", "what do i install for local ai", "co si mam stahnout",
+            "co si mám stáhnout", "co nainstalovat pro lokalni ai", "co nainstalovat pro lokální ai",
+        ),
+        "For local AI, install Ollama from ollama.com, then pull a text model with 'ollama pull <model>' in a terminal, e.g. qwen3:14b for GPUs with about 16 GB VRAM, or a smaller tag such as qwen3:4b on more limited hardware. A vision model such as qwen3-vl:8b is optional and only needed if you want to attach screenshots to AI Assistant questions. Use Scan hardware in this step for a hardware-based suggestion, or Detect installed models once Ollama is running to see exactly which tags it already reports, then Save local AI and Check AI provider to verify the endpoint.",
+        "Pro lokální AI nainstalujte Ollamu z ollama.com a poté v terminálu stáhněte textový model příkazem 'ollama pull <model>', např. qwen3:14b pro GPU s cca 16 GB VRAM, nebo menší variantu jako qwen3:4b na slabším hardwaru. Vision model jako qwen3-vl:8b je volitelný a potřebný jen pokud chcete k dotazům do AI Assistant přikládat screenshoty. V tomto kroku použijte Scan hardware pro doporučení podle hardwaru, nebo po spuštění Ollamy Detect installed models pro zjištění, jaké tagy skutečně hlásí, a poté Save local AI a Check AI provider pro ověření endpointu.",
+    ),
+    UiKnowledgeEntry(
+        "Wizard: what is Spot Testnet for",
+        "Setup wizard",
+        (
+            "what is testnet for", "why use testnet", "k cemu je testnet", "k čemu je testnet",
+            "je testnet povinny", "je testnet povinný",
+        ),
+        "Binance Spot Testnet lets you rehearse guarded actions, including first-portfolio tranches, with virtual funds on Binance's own test exchange before ever touching real money. It is optional but recommended: a Testnet credential pair is separate from your real Binance account and never places a real order regardless of the app's Safety stage. Skipping it does not block setup; it only means your first guarded rehearsal happens on mainnet preview instead.",
+        "Binance Spot Testnet umožňuje si nanečisto vyzkoušet zabezpečené akce, včetně tranší prvního portfolia, s virtuálními prostředky na testovací burze Binance dřív, než sáhnete na skutečné peníze. Je volitelný, ale doporučený: pár přístupových údajů pro Testnet je oddělený od skutečného účtu Binance a nikdy nezadá skutečný příkaz bez ohledu na Safety stage aplikace. Přeskočení tohoto kroku nastavení nijak neblokuje; znamená jen, že první zabezpečenou zkoušku uděláte rovnou přes mainnet preview.",
+    ),
+    UiKnowledgeEntry(
         "Replay app tour",
         "Settings",
         ("replay app tour", "zopakovat tutorial", "zopakovat prohlidku"),
@@ -313,7 +364,7 @@ def _looks_like_explanation_request(query: str) -> bool:
             "summarize", "tell me about", "shrn", "relationship between", "how are",
             "why cant", "why can t", "cannot", "how can i", "how do i", "what should i do",
             "not working", "proc nemohu", "proc nemuzu", "co mam udelat", "jak mohu", "jak muzu",
-            "jak mam", "jak zprovoznit", "nejde mi", "nefunguje",
+            "jak mam", "jak zprovoznit", "nejde mi", "nefunguje", "co si mam",
         )
     )
 

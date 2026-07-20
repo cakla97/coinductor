@@ -179,8 +179,15 @@ checks and current generated state when the user asks for an actual portfolio de
    replacing the three separate hand-maintained alias lists (`AssistantIntentService`,
    `ContextualHelpService`, `UiKnowledgeService`) and paraphrase tests for every visible
    control beyond navigation — is still open.
-3. **Inline wizard AI.** The wizard still says inline Q&A is planned. Add contextual
-   ask-AI help that works with an offline deterministic fallback and never blocks setup.
+3. ~~**Inline wizard AI.**~~ Implemented: every wizard step has an "Ask about this
+   step" box above Back/Next, wired to `AppController.askWizardAssistant()`. It reuses
+   the same `ProviderBackedAssistant.respond()` pipeline as the AI Assistant page —
+   deterministic answers first (including five new `UiKnowledgeService` entries for
+   the most common onboarding questions: creating Binance API keys, automation level,
+   existing-vs-first-portfolio, local AI downloads, and Testnet purpose), then the
+   configured provider, then an offline fallback if the provider call fails or none is
+   configured. It runs on its own thread and state, entirely decoupled from wizard
+   navigation, so it can never block Back/Next.
 4. ~~**Standalone market questions.**~~ Implemented: `MarketDataAssistant`
    (`coinductor/assistant.py`) deterministically answers recognized asset/price
    questions (English and Czech) using a new `BinanceClient.get_symbol_market_snapshot`
@@ -266,10 +273,10 @@ source-asset choices, and small-capital limits developed for the original portfo
 4. Continue strengthening Assistant knowledge coverage (a real project knowledge/
    retrieval layer covering every visible control, not just navigation). Standalone
    read-only market intents are done as of 2026-07-20.
-5. Remaining smaller Stage A items: inline wizard AI Q&A and full UI
-   localization. (Earn redeem, manual HOLD challenge, hard local-data
-   deletion, first portfolio staged deployment, and installed-model
-   discovery are all done as of 2026-07-20.)
+5. Remaining smaller Stage A item: full UI localization. (Earn redeem, manual
+   HOLD challenge, hard local-data deletion, first portfolio staged
+   deployment, installed-model discovery, and inline wizard AI Q&A are all
+   done as of 2026-07-20.)
 6. Only then begin Stage B packaging and public-default cleanup.
 
 Do not jump directly to installer work while core setup and guarded workflows still have

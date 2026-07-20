@@ -238,6 +238,7 @@ class AppController(QObject):
     appTourChanged = Signal()
     localAiRecommendationChanged = Signal()
     localAiDiscoveryChanged = Signal()
+    wizardAssistantChanged = Signal()
     localDataResetChanged = Signal()
     firstPortfolioDeploymentChanged = Signal()
 
@@ -373,6 +374,9 @@ class AppController(QObject):
         self._assistant_conversation_id = uuid4().hex
         self._assistant_attachment: dict[str, str] = {}
         self._assistant_vision_available, self._assistant_vision_detail = AiProviderService().vision_support()
+        self._wizard_assistant_busy = False
+        self._wizard_assistant_question = ""
+        self._wizard_assistant_answer = ""
         self._app_tour_step = 0
         self._app_tour_visible = self._user_profile_snapshot.configured and not self._app_tour_service.is_completed()
         self._safety_service = SafetyService()
@@ -416,6 +420,8 @@ class AppController(QObject):
         self._ai_model_discovery_worker: AiModelDiscoveryWorker | None = None
         self._assistant_thread: QThread | None = None
         self._assistant_worker: AssistantWorker | None = None
+        self._wizard_assistant_thread: QThread | None = None
+        self._wizard_assistant_worker: AssistantWorker | None = None
         self._apply_snapshot()
 
     @Property(bool, notify=busyChanged)
@@ -525,6 +531,18 @@ class AppController(QObject):
     @Property(bool, notify=assistantChanged)
     def assistantBusy(self) -> bool:
         return self._assistant_busy
+
+    @Property(bool, notify=wizardAssistantChanged)
+    def wizardAssistantBusy(self) -> bool:
+        return self._wizard_assistant_busy
+
+    @Property(str, notify=wizardAssistantChanged)
+    def wizardAssistantQuestion(self) -> str:
+        return self._wizard_assistant_question
+
+    @Property(str, notify=wizardAssistantChanged)
+    def wizardAssistantAnswer(self) -> str:
+        return self._wizard_assistant_answer
 
     @Property("QVariantMap", notify=assistantChanged)
     def assistantPendingAction(self) -> dict[str, object]:
@@ -1296,6 +1314,45 @@ class AppController(QObject):
         self._ai_provider_health_detail = "Cloud AI settings were saved locally. Run the AI provider check before using it."
         self.refreshSetup()
         self.aiProviderChanged.emit()
+
+    @Slot(str, str)
+    def askWizardAssistant(self, question: str, step_name: str) -> None:
+        text = question.strip()
+        if not text or self._wizard_assistant_busy:
+            return
+        self._wizard_assistant_busy = True
+        self._wizard_assistant_question = text
+        self._wizard_assistant_answer = ""
+        self.wizardAssistantChanged.emit()
+
+        self._wizard_assistant_thread = QThread(self)
+        self._wizard_assistant_worker = AssistantWorker(
+            text,
+            self._snapshot,
+            {"context_page": f"Setup wizard: {step_name}" if step_name else "Setup wizard"},
+            (),
+            "",
+        )
+        self._wizard_assistant_worker.moveToThread(self._wizard_assistant_thread)
+        self._wizard_assistant_thread.started.connect(self._wizard_assistant_worker.run)
+        self._wizard_assistant_worker.completed.connect(self._on_wizard_assistant_completed)
+        self._wizard_assistant_worker.finished.connect(self._wizard_assistant_thread.quit)
+        self._wizard_assistant_worker.finished.connect(self._wizard_assistant_worker.deleteLater)
+        self._wizard_assistant_thread.finished.connect(self._wizard_assistant_thread.deleteLater)
+        self._wizard_assistant_thread.finished.connect(self._clear_wizard_assistant_worker)
+        self._wizard_assistant_thread.start()
+
+    @Slot(object)
+    def _on_wizard_assistant_completed(self, response) -> None:
+        self._wizard_assistant_answer = response.text
+        self.wizardAssistantChanged.emit()
+
+    @Slot()
+    def _clear_wizard_assistant_worker(self) -> None:
+        self._wizard_assistant_worker = None
+        self._wizard_assistant_thread = None
+        self._wizard_assistant_busy = False
+        self.wizardAssistantChanged.emit()
 
     @Slot(str)
     def askAssistant(self, question: str) -> None:

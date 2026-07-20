@@ -78,3 +78,28 @@ def test_desktop_options_enable_guarded_live_submit_only_when_requested() -> Non
     assert config["_runtime"]["mainnet_confirm"] == "CONFIRM_MAINNET_ORDER"
     assert config["_runtime"]["earn_redeem_submit"] is False
     assert config["_runtime"]["oco_protection_submit"] is False
+
+
+def test_desktop_options_enable_earn_redeem_submit_only_when_requested() -> None:
+    config = {
+        "app": {"mock_data": True},
+        "ai": {"commentary_enabled": False, "enabled": False},
+        "live_confirm": {"enabled": False},
+    }
+
+    CoinductorApplication()._apply_options(
+        config,
+        RunOptions(
+            data_mode="REAL",
+            ai_summary=True,
+            ai_proposals=True,
+            live_preview=True,
+            earn_redeem_submit=True,
+            earn_redeem_confirm="CONFIRM_EARN_REDEEM",
+        ),
+    )
+
+    assert config["_runtime"]["live_submit"] is False
+    assert config["_runtime"]["oco_protection_submit"] is False
+    assert config["_runtime"]["earn_redeem_submit"] is True
+    assert config["_runtime"]["earn_redeem_confirm"] == "CONFIRM_EARN_REDEEM"

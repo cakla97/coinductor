@@ -151,10 +151,9 @@ exists.
 
 ### A6. Desktop execution workflows
 
-- preview-first trade and OCO protection screens - implemented (Live Actions),
-  gated by safety stage and an exact confirmation phrase
-- Flexible Earn redeem preview/confirmation/result screen - not implemented yet;
-  the engine/CLI supports guarded redeem, the desktop has no UI for it
+- preview-first trade, OCO protection, and Flexible Earn redeem screens -
+  implemented (Live Actions / Action Plan item detail), all gated by safety
+  stage and their own exact confirmation phrase
 - human-readable guard failures - implemented for the trade/OCO flows
 - explicit confirmation phrases for submissions - implemented
 - manual Binance Grid/Rebalancing creation instructions and local registration -

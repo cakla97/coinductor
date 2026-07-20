@@ -35,6 +35,7 @@ class DesktopStore:
             active_strategies: tuple[dict[str, object], ...] = ()
             active_strategies_summary = "No active strategies are registered."
             next_review: dict[str, object] | None = None
+            earn_redeem: dict[str, object] | None = None
             has_ready_live_preview = False
             if latest is not None:
                 report_path = self._report_path(latest)
@@ -58,6 +59,7 @@ class DesktopStore:
                     str(latest["started_at"] or ""),
                     strategies,
                 )
+                earn_redeem = self._earn_redeem(connection, int(latest["id"]))
             history = self._history(connection)
             return DesktopSnapshot(
                 latest_result,
@@ -70,6 +72,7 @@ class DesktopStore:
                 active_strategies,
                 active_strategies_summary,
                 next_review,
+                earn_redeem,
             )
         finally:
             connection.close()
@@ -264,6 +267,53 @@ class DesktopStore:
             "confirmationRequired": str(row["confirmation_required"] or "CONFIRM_MAINNET_OCO"),
             "intentId": str(row["intent_id"] or ""),
             "orderListId": str(row["order_list_id"] or ""),
+        }
+
+    def _earn_redeem(self, connection: sqlite3.Connection, run_id: int) -> dict[str, object] | None:
+        if not self._table_exists(connection, "earn_redeem_plans"):
+            return None
+        if "intent_id" not in self._columns(connection, "earn_redeem_plans"):
+            return None
+        row = connection.execute(
+            """
+            select intent_id, enabled, asset, amount, status, product_id, redeem_type,
+                   submitted, confirmation_required, message
+            from earn_redeem_plans
+            where run_id = ?
+            order by rowid desc
+            limit 1
+            """,
+            (run_id,),
+        ).fetchone()
+        if row is None or not bool(row["enabled"]):
+            return None
+        status = str(row["status"] or "NOT_NEEDED").upper()
+        if status == "NOT_NEEDED":
+            return None
+        submitted = bool(row["submitted"])
+        if submitted or status == "SUBMITTED":
+            tone = "ready"
+            display_status = "Submitted"
+        elif status == "PREVIEW_READY":
+            tone = "ready"
+            display_status = "Ready"
+        else:
+            tone = "blocked"
+            display_status = "Blocked"
+        return {
+            "title": "Earn redeem",
+            "status": display_status,
+            "tone": tone,
+            "detail": str(row["message"] or "No Earn redeem detail was recorded."),
+            "parameters": (
+                {"label": "Asset", "value": str(row["asset"] or "")},
+                {"label": "Amount", "value": self._money(row["amount"])},
+                {"label": "Product", "value": str(row["product_id"] or "")},
+                {"label": "Redeem type", "value": str(row["redeem_type"] or "")},
+            ),
+            "canSubmitEarnRedeem": status == "PREVIEW_READY" and not submitted,
+            "confirmationRequired": str(row["confirmation_required"] or "CONFIRM_EARN_REDEEM"),
+            "intentId": str(row["intent_id"] or ""),
         }
 
     def _has_ready_live_preview(self, connection: sqlite3.Connection) -> bool:

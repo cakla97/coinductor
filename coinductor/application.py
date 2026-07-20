@@ -61,8 +61,8 @@ class CoinductorApplication:
             {
                 "live_submit": bool(options.live_submit),
                 "mainnet_confirm": options.live_confirm if options.live_submit else "",
-                "earn_redeem_submit": False,
-                "earn_redeem_confirm": "",
+                "earn_redeem_submit": bool(options.earn_redeem_submit),
+                "earn_redeem_confirm": options.earn_redeem_confirm if options.earn_redeem_submit else "",
                 "oco_protection_submit": bool(options.oco_submit),
                 "mainnet_oco_confirm": options.oco_confirm if options.oco_submit else "",
                 "testnet_confirm": "",

@@ -180,6 +180,17 @@ terminal.
   health status are shown, and that registration text is clear that Coinductor does
   not create or modify the Binance bot itself.
 
+## 10a. Earn Redeem (Action Plan)
+
+- After a real run where bankroll needs Flexible Earn funding, open the item
+  detail dialog for the "Earn redeem" card on Action Plan.
+- Confirm it shows asset, amount, product, and redeem type, and a status of
+  `Ready`, `Blocked`, or `Submitted` matching the engine's plan.
+- Do not submit during a routine UI test. If you intentionally test it, confirm
+  the dialog requires typing `CONFIRM_EARN_REDEEM` exactly and that the button
+  stays disabled until the safety stage is `LIVE_ENABLED`, the live-trading key
+  check is `Verified`, and a `Ready` preview exists.
+
 ## 11. AI Assistant
 
 - Open `AI Assistant`.
@@ -212,11 +223,9 @@ terminal.
 
 ## 14. Safety Expectations
 
-- Guarded mainnet BUY and OCO protection submission from the desktop UI require
-  `LIVE_ENABLED` safety stage AND the exact confirmation phrase; neither is
-  reachable by accident through normal navigation.
-- The desktop app currently has no Flexible Earn redeem UI (engine/CLI only) — see
-  `docs/AI_PROVIDER_HANDOFF.md` for current status.
+- Guarded mainnet BUY, OCO protection, and Earn redeem submission from the desktop
+  UI require `LIVE_ENABLED` safety stage AND their own exact confirmation phrase;
+  none are reachable by accident through normal navigation.
 - The desktop app must not withdraw funds; no UI path exists for this.
 - Mainnet preview remains controlled by safety stage.
 - Cloud AI is optional; if not configured, data should stay local.

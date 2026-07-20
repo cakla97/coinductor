@@ -1357,6 +1357,8 @@ class AppController(QObject):
         live_confirm: str = "",
         oco_submit: bool = False,
         oco_confirm: str = "",
+        earn_redeem_submit: bool = False,
+        earn_redeem_confirm: str = "",
     ) -> None:
         if self._busy:
             return
@@ -1376,6 +1378,8 @@ class AppController(QObject):
             live_confirm=live_confirm.strip(),
             oco_submit=oco_submit and self._safety_snapshot.allows_live_submit,
             oco_confirm=oco_confirm.strip(),
+            earn_redeem_submit=earn_redeem_submit and self._safety_snapshot.allows_live_submit,
+            earn_redeem_confirm=earn_redeem_confirm.strip(),
         )
         self._thread = QThread(self)
         self._worker = AnalysisWorker(options)
@@ -1547,6 +1551,33 @@ class AppController(QObject):
             completion_message="Guarded OCO protection run complete. Review the Action Plan.",
             oco_submit=True,
             oco_confirm=confirmation,
+        )
+
+    @Slot(str)
+    def submitGuardedEarnRedeem(self, confirmation: str) -> None:
+        if self._busy:
+            return
+        if not self._safety_snapshot.allows_live_submit:
+            self.notificationRequested.emit(
+                "Earn redeem submit is locked by the Safety stage. Promote it to LIVE_ENABLED only after preview review."
+            )
+            return
+        earn_redeem = self._snapshot.earn_redeem or {}
+        if not earn_redeem.get("canSubmitEarnRedeem"):
+            self.notificationRequested.emit("No READY Earn redeem preview is available for submission.")
+            return
+        if confirmation.strip() != "CONFIRM_EARN_REDEEM":
+            self.notificationRequested.emit("Confirmation text did not match CONFIRM_EARN_REDEEM.")
+            return
+        self._start_analysis(
+            "REAL",
+            True,
+            True,
+            True,
+            result_page=3,
+            completion_message="Guarded Earn redeem run complete. Review the Action Plan.",
+            earn_redeem_submit=True,
+            earn_redeem_confirm=confirmation,
         )
 
     @Slot()
@@ -2048,6 +2079,34 @@ class AppController(QObject):
                     and self.liveTradingKeyStatus == "PASS"
                     and self._live_trading_check_status == "Verified",
                     "submitLabel": "Confirm OCO protection",
+                    "submitBlockedReason": blocked_reason,
+                }
+            )
+            cards.append(card)
+
+        earn_redeem = self._snapshot.earn_redeem
+        if earn_redeem is not None:
+            card = dict(earn_redeem)
+            can_submit = bool(card.get("canSubmitEarnRedeem"))
+            if not can_submit:
+                blocked_reason = "The latest Earn redeem plan is not a submittable preview (it is blocked, skipped, or already submitted)."
+            elif not self._safety_snapshot.allows_live_submit:
+                blocked_reason = "Earn redeem submit is locked until the Safety stage is promoted to LIVE_ENABLED."
+            elif self.liveTradingKeyStatus != "PASS":
+                blocked_reason = "Live trading key is not configured or has not passed setup checks."
+            elif self._live_trading_check_status != "Verified":
+                blocked_reason = "Verify live-key permissions in Live Actions for this app session."
+            else:
+                blocked_reason = ""
+            card.update(
+                {
+                    "primaryLabel": "Review Earn redeem" if can_submit else "Show Earn redeem status",
+                    "actionCode": "REVIEW_EARN_REDEEM",
+                    "submitEnabled": can_submit
+                    and self._safety_snapshot.allows_live_submit
+                    and self.liveTradingKeyStatus == "PASS"
+                    and self._live_trading_check_status == "Verified",
+                    "submitLabel": "Confirm Earn redeem",
                     "submitBlockedReason": blocked_reason,
                 }
             )

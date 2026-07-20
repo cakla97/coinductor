@@ -140,6 +140,8 @@ checks and current generated state when the user asks for an actual portfolio de
   evaluation without execution authority.
 - Spot Grid and Rebalancing recommendations, exact manual parameters, local registration,
   lifecycle status, and periodic monitoring.
+- Desktop Flexible Earn redeem: preview, guarded confirmation (`CONFIRM_EARN_REDEEM`), and
+  result, surfaced as an Action Plan item alongside the trade and OCO protection cards.
 - PySide6/QML desktop shell with Overview, Live Actions, Portfolio, Action Plan, Active
   Strategies, Run History, AI Assistant, Help & Guides, and Settings.
 - First-run step-by-step wizard, existing/first-portfolio paths, decision profile, API
@@ -181,8 +183,9 @@ checks and current generated state when the user asks for an actual portfolio de
 5. **First portfolio execution path.** The planner exists, but deterministic allocation
    simulation, Testnet validation, staged mainnet previews, and confirmed initial basket
    deployment remain incomplete.
-6. **Earn redeem desktop workflow.** The engine/CLI has guarded Flexible Earn redeem
-   support; the desktop has no complete preview/confirmation/result flow for it.
+6. ~~**Earn redeem desktop workflow.**~~ Implemented: the Action Plan item detail
+   dialog now has a guarded Earn redeem card (preview, `CONFIRM_EARN_REDEEM`
+   confirmation, result), mirroring the trade/OCO pattern.
 7. **Manual trade override workflow.** Users requested a way to challenge HOLD, but any
    override must still pass symbol, bankroll, exposure, consensus/risk, stop-loss/OCO,
    idempotency, and confirmation gates. This is not a raw BUY button.
@@ -228,8 +231,9 @@ source-asset choices, and small-capital limits developed for the original portfo
 2. Update stale roadmap and Stage A testing documentation.
 3. Run a complete Stage A manual regression at default/minimum/large window sizes.
 4. Strengthen Assistant knowledge coverage and add standalone read-only market intents.
-5. Finish the remaining guarded Stage A workflows: Earn redeem, first portfolio staged
-   deployment, manual HOLD challenge, and hard local-data deletion.
+5. Finish the remaining guarded Stage A workflows: first portfolio staged
+   deployment, manual HOLD challenge, and hard local-data deletion. (Earn redeem
+   is done as of 2026-07-20.)
 6. Only then begin Stage B packaging and public-default cleanup.
 
 Do not jump directly to installer work while core setup and guarded workflows still have

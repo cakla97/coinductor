@@ -15,6 +15,8 @@ class RunOptions:
     live_confirm: str = ""
     oco_submit: bool = False
     oco_confirm: str = ""
+    earn_redeem_submit: bool = False
+    earn_redeem_confirm: str = ""
 
 
 @dataclass(frozen=True)
@@ -53,6 +55,7 @@ class DesktopSnapshot:
     active_strategies: tuple[dict[str, object], ...] = ()
     active_strategies_summary: str = "No active strategies are registered."
     next_review: dict[str, object] | None = None
+    earn_redeem: dict[str, object] | None = None
 
 
 @dataclass(frozen=True)

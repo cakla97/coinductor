@@ -62,6 +62,9 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.submitGuardedTrade" in qml
     assert "CONFIRM_MAINNET_OCO" in qml
     assert "appController.submitGuardedOco" in qml
+    assert "appController.submitGuardedEarnRedeem" in qml
+    assert "CONFIRM_EARN_REDEEM" in qml
+    assert "REVIEW_EARN_REDEEM" in qml
     assert "appController.checkBinanceLiveTrading" in qml
     assert "Enable mainnet preview" in qml
     assert "Arm guarded actions" in qml

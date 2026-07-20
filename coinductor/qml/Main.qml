@@ -4585,6 +4585,8 @@ ApplicationWindow {
                                 : "Live trade submission is separate from review. It stays locked unless the latest BUY preview, live key, safety stage, and confirmation text all pass.")
                             : activeActionPlanItem.actionCode === "REVIEW_OCO"
                                 ? "OCO protection is a separate SELL order pair. Submission requires a READY preview and its own explicit confirmation."
+                                : activeActionPlanItem.actionCode === "REVIEW_EARN_REDEEM"
+                                    ? "Earn redeem moves funds from Flexible Earn back to Spot so a trade can be funded. Submission requires a READY preview and its own explicit confirmation."
                                 : activeActionPlanItem.actionCode === "OPEN_ACTIVE_STRATEGIES"
                                     ? "Coinductor detected a lifecycle condition from locally registered parameters. Verify the real bot state in Binance before updating the local record."
                                 : "This dialog is review-only. Manual bot setup remains outside automatic desktop submission."
@@ -4597,7 +4599,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: liveTradeGuardContent.implicitHeight + 28
-                    visible: activeActionPlanItem.actionCode === "REVIEW_TRADE" || activeActionPlanItem.actionCode === "REVIEW_OCO"
+                    visible: activeActionPlanItem.actionCode === "REVIEW_TRADE" || activeActionPlanItem.actionCode === "REVIEW_OCO" || activeActionPlanItem.actionCode === "REVIEW_EARN_REDEEM"
                     radius: 7
                     color: panelRaised
                     border.color: activeActionPlanItem.submitEnabled === true ? accent : border
@@ -4607,7 +4609,9 @@ ApplicationWindow {
                         anchors.margins: 14
                         spacing: 8
                         Text {
-                            text: activeActionPlanItem.actionCode === "REVIEW_OCO" ? "Guarded position protection" : "Guarded live trade"
+                            text: activeActionPlanItem.actionCode === "REVIEW_OCO" ? "Guarded position protection"
+                                : activeActionPlanItem.actionCode === "REVIEW_EARN_REDEEM" ? "Guarded Earn redeem"
+                                : "Guarded live trade"
                             color: textPrimary
                             font.pixelSize: 15
                             font.bold: true
@@ -4617,7 +4621,9 @@ ApplicationWindow {
                             text: activeActionPlanItem.submitEnabled === true
                                 ? activeActionPlanItem.actionCode === "REVIEW_OCO"
                                     ? "This will run a fresh validation pass and submit the OCO pair only if the position protection preview is still ready."
-                                    : "This will run a fresh validation pass and submit only if the new mainnet preview is still ready."
+                                    : activeActionPlanItem.actionCode === "REVIEW_EARN_REDEEM"
+                                        ? "This will run a fresh validation pass and redeem from Flexible Earn only if the preview is still ready."
+                                        : "This will run a fresh validation pass and submit only if the new mainnet preview is still ready."
                                 : (activeActionPlanItem.submitBlockedReason || "Live submit is locked.")
                             color: activeActionPlanItem.submitEnabled === true ? textSecondary : warning
                             font.pixelSize: 12
@@ -4633,6 +4639,9 @@ ApplicationWindow {
                                     if (activeActionPlanItem.actionCode === "REVIEW_OCO") {
                                         ocoConfirmInput.text = ""
                                         ocoConfirmDialog.open()
+                                    } else if (activeActionPlanItem.actionCode === "REVIEW_EARN_REDEEM") {
+                                        earnRedeemConfirmInput.text = ""
+                                        earnRedeemConfirmDialog.open()
                                     } else {
                                         liveTradeConfirmInput.text = ""
                                         liveTradeConfirmDialog.open()
@@ -4847,6 +4856,65 @@ ApplicationWindow {
                     onClicked: {
                         appController.submitGuardedOco(ocoConfirmInput.text)
                         ocoConfirmDialog.close()
+                        actionPlanDetailDialog.close()
+                    }
+                }
+            }
+        }
+    }
+    Dialog {
+        id: earnRedeemConfirmDialog
+        title: "Confirm Earn redeem"
+        modal: true
+        anchors.centerIn: parent
+        width: Math.min(680, window.width - 120)
+        standardButtons: Dialog.NoButton
+
+        ColumnLayout {
+            width: earnRedeemConfirmDialog.width - 48
+            spacing: 14
+            Text {
+                Layout.fillWidth: true
+                text: "Coinductor will run a fresh guarded analysis and may redeem the previewed amount from Flexible Earn back to Spot, only if the preview remains ready. This does not place a trade by itself."
+                color: textSecondary
+                font.pixelSize: 13
+                wrapMode: Text.WordWrap
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: earnRedeemConfirmWarning.implicitHeight + 24
+                radius: 7
+                color: "#3a3020"
+                border.color: warning
+                Text {
+                    id: earnRedeemConfirmWarning
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    text: "Type CONFIRM_EARN_REDEEM exactly. Recheck the asset and amount before continuing."
+                    color: warning
+                    font.pixelSize: 12
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                }
+            }
+            TextField {
+                id: earnRedeemConfirmInput
+                Layout.fillWidth: true
+                placeholderText: "CONFIRM_EARN_REDEEM"
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                Item { Layout.fillWidth: true }
+                Button {
+                    text: "Cancel"
+                    onClicked: earnRedeemConfirmDialog.close()
+                }
+                Button {
+                    text: "Submit Earn redeem"
+                    enabled: earnRedeemConfirmInput.text === "CONFIRM_EARN_REDEEM" && activeActionPlanItem.submitEnabled === true && !appController.busy
+                    onClicked: {
+                        appController.submitGuardedEarnRedeem(earnRedeemConfirmInput.text)
+                        earnRedeemConfirmDialog.close()
                         actionPlanDetailDialog.close()
                     }
                 }

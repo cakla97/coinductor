@@ -84,6 +84,11 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
             run_id integer, run_again_in_hours integer, urgency text,
             reason text, triggers text
         );
+        create table earn_redeem_plans (
+            run_id integer, intent_id text, enabled integer, asset text, amount text,
+            status text, product_id text, redeem_type text, can_redeem integer,
+            submitted integer, confirmation_required text, message text
+        );
         """
     )
     connection.execute(
@@ -125,6 +130,10 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
         "insert into oco_protection_orders values (1, 'oco-live-1', 'BTCUSDC', 'SELL', 'READY', '0.001', '0.001', '0.001', '110000', '90000', '110', '90', 0, '', 'CONFIRM_MAINNET_OCO', 'SELL OCO protection preview is valid.', '')"
     )
     connection.execute("insert into live_orders values (1, 'PREVIEW_READY', 0)")
+    connection.execute(
+        "insert into earn_redeem_plans values "
+        "(1, 'earn-live-1', 1, 'USDC', '25.00', 'PREVIEW_READY', 'prod-1', 'FAST', 1, 0, 'CONFIRM_EARN_REDEEM', 'Flexible Earn redeem is ready but was not submitted.')"
+    )
     connection.execute(
         "insert into next_run_recommendations values (1, 24, 'NORMAL', ?, ?)",
         (
@@ -170,6 +179,37 @@ def test_desktop_store_prefers_latest_real_run_over_newer_mock(tmp_path) -> None
     assert snapshot.next_review["sourceRun"] == "1"
     assert snapshot.run_history[0]["dataMode"] == "MOCK"
     assert snapshot.run_history[1]["dataMode"] == "REAL"
+    assert snapshot.earn_redeem is not None
+    assert snapshot.earn_redeem["status"] == "Ready"
+    assert snapshot.earn_redeem["canSubmitEarnRedeem"] is True
+    assert snapshot.earn_redeem["parameters"][0]["value"] == "USDC"
+    assert snapshot.earn_redeem["parameters"][1]["value"] == "25.00 USDC"
+    assert snapshot.earn_redeem["confirmationRequired"] == "CONFIRM_EARN_REDEEM"
+
+
+def test_earn_redeem_not_needed_is_hidden_from_the_snapshot(tmp_path) -> None:
+    database = tmp_path / "agent.sqlite3"
+    connection = sqlite3.connect(database)
+    connection.row_factory = sqlite3.Row
+    connection.executescript(
+        """
+        create table earn_redeem_plans (
+            run_id integer, intent_id text, enabled integer, asset text, amount text,
+            status text, product_id text, redeem_type text, can_redeem integer,
+            submitted integer, confirmation_required text, message text
+        );
+        """
+    )
+    connection.execute(
+        "insert into earn_redeem_plans values "
+        "(1, '', 0, null, '0.00', 'NOT_NEEDED', '', '', 0, 0, 'CONFIRM_EARN_REDEEM', 'No Flexible Earn redeem is needed for this run.')"
+    )
+    connection.commit()
+
+    result = DesktopStore(database, tmp_path)._earn_redeem(connection, 1)
+
+    assert result is None
+    connection.close()
 
 
 def test_next_review_waits_for_market_conditions_without_manual_blocker(tmp_path) -> None:

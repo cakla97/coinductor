@@ -213,6 +213,9 @@ terminal.
 - Ask: `Explain the latest report.`
 - If no external AI provider is configured, confirm the offline fallback still answers
   using local project context.
+- Ask: `BTC price` (or `Jaká je aktuální cena ETH?`). Confirm this answers instantly
+  with current price/24h change from Binance's public API, without running a full
+  analysis and without needing any Binance API key configured.
 - Attach an image (file or clipboard paste) if a vision model is configured; confirm
   a clear message if no vision model is available instead of a silent failure.
 - If the assistant proposes a structured action (e.g. navigation, opening the report,

@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse
 
+from trading_agent.binance_client import BinanceApiError, BinanceClient
 from trading_agent.config import load_config
 from trading_agent.env import load_env_file
 
@@ -148,6 +149,8 @@ class AssistantIntentService:
         "aktivni strategie": (4, "Active Strategies"),
         "run history": (5, "Run History"),
         "historie behu": (5, "Run History"),
+        "ai assistant": (6, "AI Assistant"),
+        "asistent": (6, "AI Assistant"),
         "help": (7, "Help & Guides"),
         "navody": (7, "Help & Guides"),
         "settings": (8, "Settings"),
@@ -270,6 +273,102 @@ class AssistantIntentService:
         )
 
 
+class MarketDataAssistant:
+    """Deterministic, standalone market-data answers backed by Binance public endpoints.
+
+    This never runs a full analysis and never requires Binance API credentials
+    (public endpoints are unauthenticated). It only answers a narrow, recognized
+    question shape; anything else falls through to the next assistant layer.
+    """
+
+    _ASSET_ALIASES = {
+        "btc": "BTC",
+        "bitcoin": "BTC",
+        "eth": "ETH",
+        "ethereum": "ETH",
+        "ether": "ETH",
+        "wbeth": "WBETH",
+        "bnb": "BNB",
+        "binance coin": "BNB",
+        "sol": "SOL",
+        "solana": "SOL",
+        "wld": "WLD",
+        "worldcoin": "WLD",
+        "pepe": "PEPE",
+        "ada": "ADA",
+        "cardano": "ADA",
+        "doge": "DOGE",
+        "dogecoin": "DOGE",
+        "dot": "DOT",
+        "polkadot": "DOT",
+    }
+    _TRIGGER_WORDS = (
+        "price", "cena", "kolik stoji", "jak si vede", "how is",
+        "co dela", "trend", "kurz", "hodnota", "how much is",
+    )
+
+    def __init__(self, config_path: str = "config.example.toml"):
+        self.config_path = config_path
+
+    def answer(self, question: str, snapshot: DesktopSnapshot) -> AssistantResponse | None:
+        query = _normalize(question)
+        if not any(word in query for word in self._TRIGGER_WORDS):
+            return None
+        asset = self._match_asset(query)
+        if asset is None:
+            return None
+        czech = is_czech(question)
+        try:
+            symbol, quote, ticker = self._fetch(asset)
+        except Exception as exc:
+            return AssistantResponse(
+                f"Nepodařilo se načíst aktuální data pro {asset} z veřejného Binance API: {exc}"
+                if czech
+                else f"Could not fetch current data for {asset} from the Binance public API: {exc}"
+            )
+        last_price = str(ticker.get("lastPrice", "?"))
+        change_pct = str(ticker.get("priceChangePercent", "?"))
+        high = str(ticker.get("highPrice", "?"))
+        low = str(ticker.get("lowPrice", "?"))
+        if czech:
+            text = (
+                f"{asset} ({symbol}): aktuální cena {last_price} {quote}, změna za 24h {change_pct} %, "
+                f"rozpětí 24h {low} - {high} {quote}. Zdroj: veřejné Binance API, samostatný dotaz mimo "
+                f"plný běh. Toto není obchodní doporučení."
+            )
+        else:
+            text = (
+                f"{asset} ({symbol}): current price {last_price} {quote}, 24h change {change_pct}%, "
+                f"24h range {low} - {high} {quote}. Source: Binance public API, standalone lookup "
+                f"outside a full run. This is not a trade recommendation."
+            )
+        return AssistantResponse(text)
+
+    def _match_asset(self, query: str) -> str | None:
+        for alias, asset in sorted(self._ASSET_ALIASES.items(), key=lambda item: len(item[0]), reverse=True):
+            if re.search(rf"\b{re.escape(alias)}\b", query):
+                return asset
+        return None
+
+    def _fetch(self, asset: str) -> tuple[str, str, dict]:
+        load_env_file()
+        config = load_config(self.config_path).raw
+        client = BinanceClient(config)
+        quote_assets = [str(item).upper() for item in config.get("portfolio", {}).get("pricing_quote_assets", ["USDC", "USDT"])]
+        last_error: Exception | None = None
+        for quote in quote_assets:
+            if quote == asset:
+                continue
+            symbol = f"{asset}{quote}"
+            try:
+                ticker = client.get_symbol_market_snapshot(symbol)
+                return symbol, quote, ticker
+            except BinanceApiError as exc:
+                last_error = exc
+                continue
+        raise last_error or BinanceApiError(f"No tradable pair was found for {asset}.")
+
+
 class LocalHelpAssistant:
     def answer(self, question: str, snapshot: DesktopSnapshot) -> str:
         query = "".join(
@@ -359,6 +458,9 @@ class ProviderBackedAssistant:
         deterministic = AssistantIntentService().propose(question, snapshot)
         if deterministic is not None:
             return deterministic
+        market = MarketDataAssistant(self.config_path).answer(question, snapshot)
+        if market is not None:
+            return market
         contextual = ContextualHelpService().answer(question, app_context or {})
         if contextual is not None:
             proposal = ContextualHelpService().proposed_action(question, app_context or {})
@@ -401,7 +503,7 @@ class ProviderBackedAssistant:
                 f"Answer exclusively in {response_language}; do not mix languages except exact UI labels and technical identifiers.",
                 "Do not claim that you changed settings, placed orders, redeemed Earn, or created Binance bots.",
                 "Do not provide financial guarantees.",
-                "Do not invent live market prices. If asked for current prices and no market-data payload is present, explain that this milestone cannot fetch standalone live prices yet.",
+                "Do not invent live market prices. Standalone price questions for a recognized asset (e.g. 'BTC price') are already answered deterministically before reaching you; if you are still asked for a current price, say you cannot fetch it yourself and suggest asking about a specific tracked asset, e.g. 'ETH price'.",
                 "For documented UI behavior, answer directly from ui_component_catalog. Never hedge with likely, probably, may, or might.",
                 "If a component is absent from the catalog, say that its exact behavior is not in the supplied context instead of guessing.",
                 "If the user asks to change app state, explain that supported command intents require deterministic validation plus confirmation.",

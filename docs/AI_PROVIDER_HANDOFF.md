@@ -171,15 +171,23 @@ checks and current generated state when the user asks for an actual portfolio de
 1. **Synchronize documentation.** `docs/ROADMAP.md` and
    `docs/COINDUCTOR_STAGE_A_TESTING.md` contain stale claims (for example, product tour
    and desktop guarded submits are now implemented). Update them from code and tests.
-2. **AI Assistant reliability.** The structured UI catalog is safer than free-form Qwen,
-   but coverage is still finite and paraphrases can fall through to the model. Build a
-   maintainable project knowledge/retrieval layer, add broad paraphrase tests for every
-   visible control, and keep deterministic answers ahead of model guesses.
+2. **AI Assistant reliability - partially improved.** Fixed a real coverage gap: the
+   "AI Assistant" page itself had no navigation alias (`AssistantIntentService._PAGES`),
+   so it was unreachable by chat command. Added a parametrized test over every page
+   alias (English + Czech) plus a guard test that fails if a future edit silently drops
+   a page's coverage. The broader ask — a maintainable project knowledge/retrieval layer
+   replacing the three separate hand-maintained alias lists (`AssistantIntentService`,
+   `ContextualHelpService`, `UiKnowledgeService`) and paraphrase tests for every visible
+   control beyond navigation — is still open.
 3. **Inline wizard AI.** The wizard still says inline Q&A is planned. Add contextual
    ask-AI help that works with an offline deterministic fallback and never blocks setup.
-4. **Standalone market questions.** The Assistant currently refuses to invent live
-   prices and has no dedicated tool flow for “current BTC price” or a lightweight market
-   analysis independent of a full run. Add a deterministic Binance public-data intent.
+4. ~~**Standalone market questions.**~~ Implemented: `MarketDataAssistant`
+   (`coinductor/assistant.py`) deterministically answers recognized asset/price
+   questions (English and Czech) using a new `BinanceClient.get_symbol_market_snapshot`
+   public-endpoint call (no API key needed, no full run), trying each configured
+   `portfolio.pricing_quote_assets` pair in order. It runs ahead of the LLM in
+   `ProviderBackedAssistant.respond()`, consistent with "deterministic answers ahead of
+   model guesses."
 5. **First portfolio execution path.** The planner exists, but deterministic allocation
    simulation, Testnet validation, staged mainnet previews, and confirmed initial basket
    deployment remain incomplete.
@@ -235,7 +243,9 @@ source-asset choices, and small-capital limits developed for the original portfo
 1. Perform the dedicated vision-model manual test and fix any UI/runtime defects.
 2. Update stale roadmap and Stage A testing documentation.
 3. Run a complete Stage A manual regression at default/minimum/large window sizes.
-4. Strengthen Assistant knowledge coverage and add standalone read-only market intents.
+4. Continue strengthening Assistant knowledge coverage (a real project knowledge/
+   retrieval layer covering every visible control, not just navigation). Standalone
+   read-only market intents are done as of 2026-07-20.
 5. Finish the remaining guarded Stage A workflow: first portfolio staged
    deployment. (Earn redeem, manual HOLD challenge, and hard local-data
    deletion are done as of 2026-07-20.)

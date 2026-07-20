@@ -135,10 +135,12 @@ validated by deterministic code.
 - safe asset policy commands such as "classify BNB as GRID_CANDIDATE", with a
   confirmation preview before writing overrides - implemented
 - market-data questions backed by configured data providers, not model memory;
-  for example BTC price, recent trend, or symbol health - not implemented yet;
-  the assistant currently refuses rather than inventing a price
+  for example BTC price, recent trend, or symbol health - implemented
+  (`MarketDataAssistant`, a deterministic Binance public-endpoint lookup that
+  runs ahead of the LLM and needs no API key or full run)
 - standalone market analysis requests that do not run the full bot and do not
-  submit orders - not implemented yet
+  submit orders - implemented for a single-asset price/24h-change lookup;
+  broader standalone analysis (e.g. multi-symbol breadth) remains open
 - explicit refusal or escalation when a requested action would bypass risk gates,
   protected assets, stop-loss/OCO requirements, or live confirmation rules -
   implemented; the assistant can only ever emit a small allowlisted set of

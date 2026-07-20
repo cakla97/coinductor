@@ -141,6 +141,12 @@ class BinanceClient:
             raise BinanceApiError("Unexpected Binance 24h ticker response.")
         return payload
 
+    def get_symbol_market_snapshot(self, symbol: str) -> dict:
+        payload = self._public_get("/api/v3/ticker/24hr", {"symbol": symbol.upper()})
+        if not isinstance(payload, dict):
+            raise BinanceApiError(f"Unexpected Binance 24h ticker response for {symbol.upper()}.")
+        return payload
+
     def get_klines(self, symbol: str, interval: str, limit: int) -> list[list]:
         payload = self._public_get(
             "/api/v3/klines",

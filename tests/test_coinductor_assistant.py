@@ -1,14 +1,18 @@
 from decimal import Decimal
 import json
 
+import pytest
+
 from coinductor import assistant as assistant_module
 from coinductor.assistant import (
     AssistantIntentService,
     AssistantResponse,
     ContextualHelpService,
     LocalHelpAssistant,
+    MarketDataAssistant,
     ProviderBackedAssistant,
 )
+from trading_agent.binance_client import BinanceApiError
 from coinductor.controller import AppController
 from coinductor.models import ActionSummary, DesktopRunResult, DesktopSnapshot
 from coinductor.ui_knowledge import UiKnowledgeService
@@ -23,6 +27,114 @@ def test_local_assistant_answers_from_latest_snapshot() -> None:
     assert "Run 42 ended with HOLD" in assistant.answer("Co provedl posledni beh?", snapshot)
     assert "BTC 60.00%" in assistant.answer("Describe my portfolio", snapshot)
     assert "Grid is blocked" in assistant.answer("What about grid?", snapshot)
+
+
+def test_market_data_assistant_answers_a_recognized_asset_price_question(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    monkeypatch.setattr(
+        assistant_module.BinanceClient,
+        "get_symbol_market_snapshot",
+        lambda self, symbol: {
+            "lastPrice": "65000.00",
+            "priceChangePercent": "2.50",
+            "highPrice": "66000.00",
+            "lowPrice": "63000.00",
+        },
+    )
+    assistant = MarketDataAssistant("config.toml")
+
+    response = assistant.answer("What's the BTC price right now?", _snapshot())
+
+    assert response is not None
+    assert "BTC (BTCUSDC)" in response.text
+    assert "65000.00" in response.text
+    assert "not a trade recommendation" in response.text
+    assert response.proposed_action is None
+
+
+def test_market_data_assistant_answers_in_czech_for_a_czech_question(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    monkeypatch.setattr(
+        assistant_module.BinanceClient,
+        "get_symbol_market_snapshot",
+        lambda self, symbol: {
+            "lastPrice": "3200.00",
+            "priceChangePercent": "-1.10",
+            "highPrice": "3300.00",
+            "lowPrice": "3100.00",
+        },
+    )
+    assistant = MarketDataAssistant("config.toml")
+
+    response = assistant.answer("Jaká je aktuální cena ETH?", _snapshot())
+
+    assert response is not None
+    assert "aktuální cena" in response.text
+    assert "obchodní doporučení" in response.text
+
+
+def test_market_data_assistant_falls_back_to_the_next_quote_asset(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+
+    def fake_snapshot(self, symbol):
+        if symbol == "BTCUSDC":
+            raise BinanceApiError("Invalid symbol.")
+        return {"lastPrice": "65000.00", "priceChangePercent": "2.50", "highPrice": "66000.00", "lowPrice": "63000.00"}
+
+    monkeypatch.setattr(assistant_module.BinanceClient, "get_symbol_market_snapshot", fake_snapshot)
+    assistant = MarketDataAssistant("config.toml")
+
+    response = assistant.answer("BTC price", _snapshot())
+
+    assert response is not None
+    assert "BTCUSDT" in response.text
+
+
+def test_market_data_assistant_reports_an_error_when_every_quote_asset_fails(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+
+    def always_fails(self, symbol):
+        raise BinanceApiError("Invalid symbol.")
+
+    monkeypatch.setattr(assistant_module.BinanceClient, "get_symbol_market_snapshot", always_fails)
+    assistant = MarketDataAssistant("config.toml")
+
+    response = assistant.answer("BTC price", _snapshot())
+
+    assert response is not None
+    assert "Could not fetch current data" in response.text
+
+
+def test_market_data_assistant_ignores_questions_without_a_recognized_asset() -> None:
+    assistant = MarketDataAssistant()
+
+    assert assistant.answer("What is the price of eggs?", _snapshot()) is None
+
+
+def test_market_data_assistant_ignores_questions_without_a_price_trigger_word() -> None:
+    assistant = MarketDataAssistant()
+
+    assert assistant.answer("Tell me about BTC as an asset role.", _snapshot()) is None
+
+
+def test_respond_answers_market_questions_before_reaching_the_ai_provider(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    monkeypatch.setattr(
+        assistant_module.BinanceClient,
+        "get_symbol_market_snapshot",
+        lambda self, symbol: {"lastPrice": "65000.00", "priceChangePercent": "2.50", "highPrice": "66000.00", "lowPrice": "63000.00"},
+    )
+    assistant = ProviderBackedAssistant(config_path="config.toml", env_path=str(tmp_path / ".env"))
+
+    response = assistant.respond("BTC price", _snapshot())
+
+    assert "BTC (BTCUSDC)" in response.text
 
 
 def test_provider_backed_assistant_uses_chat_completions(tmp_path, monkeypatch) -> None:
@@ -185,6 +297,24 @@ def test_assistant_prepares_safe_navigation_without_calling_provider() -> None:
         "confirmLabel": "Open page",
         "page": 2,
     }
+
+
+@pytest.mark.parametrize("alias,page,label", [(alias, page, label) for alias, (page, label) in AssistantIntentService._PAGES.items()])
+def test_assistant_navigates_to_every_page_alias_in_english_and_czech(alias, page, label) -> None:
+    # Broad paraphrase coverage: every page alias (English and Czech) the assistant
+    # is supposed to recognize must actually resolve to the right page index.
+    response = ProviderBackedAssistant().respond(f"Open {alias}", _snapshot())
+
+    assert response.proposed_action is not None, f"'open {alias}' did not resolve to a NAVIGATE action"
+    assert response.proposed_action["type"] == "NAVIGATE"
+    assert response.proposed_action["page"] == page, f"alias {alias!r} resolved to page {response.proposed_action['page']}, expected {page} ({label})"
+
+
+def test_assistant_navigation_covers_every_sidebar_page() -> None:
+    # Guards against silently losing coverage for a whole page if _PAGES is edited.
+    covered_pages = {page for page, _label in AssistantIntentService._PAGES.values()}
+
+    assert covered_pages == {0, 1, 2, 3, 4, 5, 6, 7, 8}
 
 
 def test_assistant_prepares_read_only_analysis_but_blocks_live_trade() -> None:

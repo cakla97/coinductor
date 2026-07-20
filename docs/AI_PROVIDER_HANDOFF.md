@@ -192,10 +192,12 @@ checks and current generated state when the user asks for an actual portfolio de
    flows through the exact same `RiskEngine.evaluate()` as any AI proposal — consensus/RSI/
    trend/EMA200, bankroll, kill switch/cooldown, stop-loss, idempotency, and the existing
    `CONFIRM_MAINNET_ORDER` live-submit confirmation all still apply and can still reject it.
-8. **Hard local-data deletion.** Settings currently offers a detailed preview and
-   “Delete everything” selection, but the destructive button is deliberately disabled.
-   Implement guarded deletion with path containment, explicit selection, confirmation,
-   close/reopen handling for SQLite, and tests. Never delete outside the project root.
+8. ~~**Hard local-data deletion.**~~ Implemented: `LocalDataResetService.execute()`
+   deletes only the selected groups, resolves every path and refuses anything that
+   does not stay under the resolved project root (or resolves to the root itself),
+   and wraps each removal in try/except so a locked file is reported rather than
+   crashing the app. `executeLocalDataReset(codes, confirmation)` in the desktop
+   controller requires typed `DELETE` and is blocked while an analysis is running.
 9. **Full UI localization.** `en-US`, `es-ES`, `cs-CZ`, and `pt-BR` locale profiles exist
    for first-portfolio funding text, but most QML UI strings remain English.
 10. **Installed-model discovery.** Hardware recommendations and `/models` validation
@@ -234,9 +236,9 @@ source-asset choices, and small-capital limits developed for the original portfo
 2. Update stale roadmap and Stage A testing documentation.
 3. Run a complete Stage A manual regression at default/minimum/large window sizes.
 4. Strengthen Assistant knowledge coverage and add standalone read-only market intents.
-5. Finish the remaining guarded Stage A workflows: first portfolio staged
-   deployment and hard local-data deletion. (Earn redeem and manual HOLD
-   challenge are done as of 2026-07-20.)
+5. Finish the remaining guarded Stage A workflow: first portfolio staged
+   deployment. (Earn redeem, manual HOLD challenge, and hard local-data
+   deletion are done as of 2026-07-20.)
 6. Only then begin Stage B packaging and public-default cleanup.
 
 Do not jump directly to installer work while core setup and guarded workflows still have

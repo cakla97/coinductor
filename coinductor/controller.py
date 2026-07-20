@@ -168,6 +168,7 @@ class AppController(QObject):
     onboardingWizardChanged = Signal()
     appTourChanged = Signal()
     localAiRecommendationChanged = Signal()
+    localDataResetChanged = Signal()
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
@@ -526,11 +527,11 @@ class AppController(QObject):
     def guides(self) -> list[dict[str, str]]:
         return list(self._guides)
 
-    @Property(str, constant=True)
+    @Property(str, notify=localDataResetChanged)
     def localDataResetSummary(self) -> str:
         return self._local_data_reset_snapshot.summary
 
-    @Property("QVariantList", constant=True)
+    @Property("QVariantList", notify=localDataResetChanged)
     def localDataResetItems(self) -> list[dict[str, str]]:
         return list(self._local_data_reset_snapshot.items)
 
@@ -887,6 +888,27 @@ class AppController(QObject):
         self.firstPortfolioPlanChanged.emit()
         self.onboardingWizardChanged.emit()
         self.appTourChanged.emit()
+
+    @Slot("QVariantList", str, result=bool)
+    def executeLocalDataReset(self, codes, confirmation: str) -> bool:
+        if self._busy:
+            self.notificationRequested.emit("Wait for the current analysis to finish before deleting local data.")
+            return False
+        if confirmation.strip() != "DELETE":
+            self.notificationRequested.emit("Type DELETE exactly to confirm.")
+            return False
+        selected = [str(code) for code in codes]
+        if not selected:
+            self.notificationRequested.emit("Select at least one local data group first.")
+            return False
+        self._local_data_reset_snapshot = LocalDataResetService().execute(selected)
+        self.notificationRequested.emit(self._local_data_reset_snapshot.summary)
+        self.localDataResetChanged.emit()
+        self.refreshSetup()
+        self._snapshot = DesktopStore().load()
+        self._apply_snapshot()
+        self.dataChanged.emit()
+        return True
 
     @Slot(str, str, str, str, str, bool, bool, float, float)
     def saveGuidedProfile(

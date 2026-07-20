@@ -68,6 +68,8 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.challengeHold" in qml
     assert "appController.manualOverrideSymbols" in qml
     assert "Challenge this HOLD" in qml
+    assert "appController.executeLocalDataReset(codes, deleteConfirm.text)" in qml
+    assert "This permanently deletes the selected local files" in qml
     assert "appController.checkBinanceLiveTrading" in qml
     assert "Enable mainnet preview" in qml
     assert "Arm guarded actions" in qml

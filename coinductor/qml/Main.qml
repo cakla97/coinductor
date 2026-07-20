@@ -3464,7 +3464,7 @@ ApplicationWindow {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: "Reset onboarding only changes preferences. Delete local data is a separate preview for a full local reset and is not executed yet."
+                            text: "Reset onboarding only changes preferences. Delete local data permanently removes the local files you select; it never touches anything outside this project folder."
                             color: textSecondary
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
@@ -5225,7 +5225,8 @@ ApplicationWindow {
             }
             Label {
                 Layout.fillWidth: true
-                text: "Type DELETE to confirm. This dialog is preview-only in this build; actual deletion will be enabled in a separate guarded implementation step."
+                text: "This permanently deletes the selected local files. It cannot be undone. Type DELETE to confirm."
+                color: warning
                 wrapMode: Text.WordWrap
             }
             TextField {
@@ -5235,8 +5236,18 @@ ApplicationWindow {
             }
             Button {
                 Layout.fillWidth: true
-                text: deleteConfirm.text === "DELETE" ? "Preview only - deletion not enabled yet" : "Type DELETE to continue"
-                enabled: false
+                text: deleteConfirm.text === "DELETE" ? "Delete selected local data" : "Type DELETE to continue"
+                enabled: deleteConfirm.text === "DELETE" && !appController.busy
+                onClicked: {
+                    let codes = []
+                    for (let i = 0; i < localDataResetModel.count; i++) {
+                        let item = localDataResetModel.get(i)
+                        if (item.selected)
+                            codes.push(item.code)
+                    }
+                    if (appController.executeLocalDataReset(codes, deleteConfirm.text))
+                        localDataResetDialog.close()
+                }
             }
         }
     }

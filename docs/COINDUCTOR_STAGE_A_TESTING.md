@@ -119,10 +119,15 @@ terminal.
 - Open `Delete local data`.
 - Toggle `Delete everything`.
 - Confirm all groups are selected.
-- Type `DELETE`.
-- Confirm the current behavior of the destructive button (preview-only vs. guarded
-  execution — check the current `docs/AI_PROVIDER_HANDOFF.md` "Known incomplete
-  Stage A work" list for whether this has shipped yet in your checkout).
+- Type something other than `DELETE` and confirm the button stays disabled/refused.
+- **This step is destructive.** Only actually run it against data you are willing to
+  lose, or first back up `state/`, `work/`, `reports/`, and `.env`. Prefer testing
+  with a single low-stakes group (e.g. just `REPORTS`) rather than "Delete everything"
+  on a real profile.
+- Select a single group, type `DELETE`, and confirm only that group's files are
+  removed (check on disk) while everything else stays untouched.
+- Confirm the dialog's status column updates to "Not found yet" for the removed
+  group, and that deleting `PROFILE` brings back the setup wizard on next launch.
 
 ## 7. Binance Read-Only, Testnet, and Live-Trading Checks
 

@@ -12,7 +12,9 @@ bypass those controls.
 - PySide6/QML application shell
 - background analysis without freezing the UI
 - latest real-run dashboard and report access
-- Portfolio, Strategies, Run History, and offline help views
+- Overview, Live Actions, Portfolio, Action Plan, Active Strategies, Run History,
+  AI Assistant, Help & Guides, and Settings pages
+- first-run product tour covering all nine pages (see A2)
 
 ### A2. Settings and onboarding - in progress
 
@@ -54,13 +56,11 @@ Progression toward READ_ONLY_CONNECTED, TESTNET_READY, PREVIEW_ONLY, ARMED, and
 LIVE_ENABLED must be deliberate and backed by deterministic backend checks, not
 only hidden UI buttons.
 
-After the first successful entry into the main app, Coinductor should eventually
-offer a short product tour. The tour should highlight Overview, Portfolio,
-Strategies, Run History, AI Assistant, Settings/State, and the safety panel with
-Next, Back, Skip, and Done controls. It should run once per profile and remain
-available from Settings as "Run app tour again". This should be implemented after
-the main shell layout stabilizes, because the tour will depend on target UI
-positions.
+After the first successful entry into the main app, Coinductor offers a short
+product tour (implemented). It highlights all nine pages in sidebar order —
+Overview, Portfolio, Live Actions, Action Plan, Active Strategies, Run History,
+AI Assistant, Help & Guides, Settings — with Next, Back, and Skip controls. It runs
+once per profile and remains available from Settings as "Replay app tour".
 
 ### A3. Existing portfolio onboarding
 
@@ -126,19 +126,24 @@ policy, funding, or execution state must be represented as a structured intent
 validated by deterministic code.
 
 - read-only Q&A over project docs, latest report, portfolio roles, strategy state,
-  and setup status
+  and setup status - implemented via a deterministic intent catalog with an LLM
+  fallback; coverage is still finite and paraphrase testing is ongoing
 - report explainer for sections such as risk decision, capital sourcing, Grid,
-  Rebalancing, AI commentary, and recommended actions
+  Rebalancing, AI commentary, and recommended actions - implemented
 - app navigation help, including where to find settings, logs, reports, and
-  strategy registration screens
+  strategy registration screens - implemented
 - safe asset policy commands such as "classify BNB as GRID_CANDIDATE", with a
-  confirmation preview before writing overrides
+  confirmation preview before writing overrides - implemented
 - market-data questions backed by configured data providers, not model memory;
-  for example BTC price, recent trend, or symbol health
+  for example BTC price, recent trend, or symbol health - not implemented yet;
+  the assistant currently refuses rather than inventing a price
 - standalone market analysis requests that do not run the full bot and do not
-  submit orders
+  submit orders - not implemented yet
 - explicit refusal or escalation when a requested action would bypass risk gates,
-  protected assets, stop-loss/OCO requirements, or live confirmation rules
+  protected assets, stop-loss/OCO requirements, or live confirmation rules -
+  implemented; the assistant can only ever emit a small allowlisted set of
+  structured actions (navigate, open report, run read-only analysis, set asset
+  role), never a live/redeem/OCO action
 
 The first implementation should use a small allowlist of command intents. Broad
 natural-language automation comes later, after enough validation and UI review
@@ -146,12 +151,17 @@ exists.
 
 ### A6. Desktop execution workflows
 
-- preview-first trade, Earn redeem, and OCO protection screens
-- human-readable guard failures
-- explicit confirmation phrases for submissions
-- manual Binance Grid/Rebalancing creation instructions and local registration
+- preview-first trade and OCO protection screens - implemented (Live Actions),
+  gated by safety stage and an exact confirmation phrase
+- Flexible Earn redeem preview/confirmation/result screen - not implemented yet;
+  the engine/CLI supports guarded redeem, the desktop has no UI for it
+- human-readable guard failures - implemented for the trade/OCO flows
+- explicit confirmation phrases for submissions - implemented
+- manual Binance Grid/Rebalancing creation instructions and local registration -
+  implemented
 - guarded manual trade intent overrides that can challenge a HOLD signal but
-  still must pass funding, exposure, stop-loss, and kill-switch checks
+  still must pass funding, exposure, stop-loss, and kill-switch checks - not
+  implemented yet
 
 ## Stage B: Open-source Distribution
 

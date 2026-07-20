@@ -29,6 +29,7 @@ from .readiness_service import ReadinessService
 from .safety_service import SafetyService
 from .setup_service import SetupService
 from .strategy_registration import StrategyRegistrationService
+from .ui_strings import DEFAULT_LANGUAGE, UiStringsService
 from .user_profile_service import UserProfileService
 
 
@@ -239,6 +240,7 @@ class AppController(QObject):
     localAiRecommendationChanged = Signal()
     localAiDiscoveryChanged = Signal()
     wizardAssistantChanged = Signal()
+    wizardLanguageChanged = Signal()
     localDataResetChanged = Signal()
     firstPortfolioDeploymentChanged = Signal()
 
@@ -377,6 +379,7 @@ class AppController(QObject):
         self._wizard_assistant_busy = False
         self._wizard_assistant_question = ""
         self._wizard_assistant_answer = ""
+        self._wizard_language = DEFAULT_LANGUAGE
         self._app_tour_step = 0
         self._app_tour_visible = self._user_profile_snapshot.configured and not self._app_tour_service.is_completed()
         self._safety_service = SafetyService()
@@ -543,6 +546,22 @@ class AppController(QObject):
     @Property(str, notify=wizardAssistantChanged)
     def wizardAssistantAnswer(self) -> str:
         return self._wizard_assistant_answer
+
+    @Property(str, notify=wizardLanguageChanged)
+    def wizardLanguage(self) -> str:
+        return self._wizard_language
+
+    @Property("QVariantMap", notify=wizardLanguageChanged)
+    def wizardText(self) -> dict[str, str]:
+        return UiStringsService().wizard_text(self._wizard_language)
+
+    @Slot(str)
+    def setWizardLanguage(self, language: str) -> None:
+        normalized = language.strip().lower()
+        if normalized == self._wizard_language:
+            return
+        self._wizard_language = normalized
+        self.wizardLanguageChanged.emit()
 
     @Property("QVariantMap", notify=assistantChanged)
     def assistantPendingAction(self) -> dict[str, object]:

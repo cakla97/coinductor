@@ -1,0 +1,36 @@
+from coinductor.ui_strings import WIZARD_STRINGS, UiStringsService
+
+
+def test_every_wizard_string_has_english_and_czech() -> None:
+    for key, variants in WIZARD_STRINGS.items():
+        assert "en" in variants, f"{key} is missing an English translation"
+        assert "cs" in variants, f"{key} is missing a Czech translation"
+        assert variants["en"].strip(), f"{key} has an empty English translation"
+        assert variants["cs"].strip(), f"{key} has an empty Czech translation"
+
+
+def test_wizard_text_returns_english_by_default() -> None:
+    text = UiStringsService().wizard_text("en")
+
+    assert text["welcome_title"] == "Welcome to Coinductor"
+    assert text["back_button"] == "Back"
+
+
+def test_wizard_text_returns_czech_when_requested() -> None:
+    text = UiStringsService().wizard_text("cs")
+
+    assert text["welcome_title"] == "Vítejte v Coinductoru"
+    assert text["back_button"] == "Zpět"
+
+
+def test_wizard_text_falls_back_to_english_for_unknown_language() -> None:
+    text = UiStringsService().wizard_text("fr")
+
+    assert text["welcome_title"] == "Welcome to Coinductor"
+
+
+def test_wizard_text_covers_the_same_keys_for_every_language() -> None:
+    english_keys = set(UiStringsService().wizard_text("en"))
+    czech_keys = set(UiStringsService().wizard_text("cs"))
+
+    assert english_keys == czech_keys

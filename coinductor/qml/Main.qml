@@ -58,6 +58,16 @@ ApplicationWindow {
         }
         return 0
     }
+    function wizardStepLabels() {
+        return [
+            appController.wizardText.step_name_exchange,
+            appController.wizardText.step_name_portfolio,
+            appController.wizardText.step_name_profile,
+            appController.wizardText.step_name_ai,
+            appController.wizardText.step_name_binance_api,
+            appController.wizardText.step_name_review,
+        ]
+    }
     function firstPortfolioProgressCount(asset, mode) {
         var progress = appController.firstPortfolioDeploymentProgress
         var count = 0
@@ -312,17 +322,32 @@ ApplicationWindow {
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 3
-                        Text { text: "Welcome to Coinductor"; color: textPrimary; font.pixelSize: 28; font.bold: true }
+                        Text { text: appController.wizardText.welcome_title; color: textPrimary; font.pixelSize: 28; font.bold: true }
                         Text {
                             Layout.fillWidth: true
-                            text: "A short setup wizard prepares your local profile before the main portfolio manager opens."
+                            text: appController.wizardText.welcome_subtitle
                             color: textSecondary
                             font.pixelSize: 14
                             wrapMode: Text.WordWrap
                         }
                     }
+                    RowLayout {
+                        spacing: 4
+                        Button {
+                            text: "English"
+                            flat: appController.wizardLanguage !== "en"
+                            highlighted: appController.wizardLanguage === "en"
+                            onClicked: appController.setWizardLanguage("en")
+                        }
+                        Button {
+                            text: "Čeština"
+                            flat: appController.wizardLanguage !== "cs"
+                            highlighted: appController.wizardLanguage === "cs"
+                            onClicked: appController.setWizardLanguage("cs")
+                        }
+                    }
                     Button {
-                        text: "Enter app"
+                        text: appController.wizardText.enter_app_button
                         enabled: appController.userProfileConfigured
                         onClicked: appController.finishOnboardingWizard()
                     }
@@ -340,7 +365,7 @@ ApplicationWindow {
                         spacing: 12
                         Text {
                             Layout.fillWidth: true
-                            text: "Nothing in this wizard places orders or changes exchange settings. It only creates a local preference profile and shows what still needs to be verified."
+                            text: appController.wizardText.local_first_banner
                             color: textSecondary
                             font.pixelSize: 13
                             wrapMode: Text.WordWrap
@@ -353,7 +378,7 @@ ApplicationWindow {
                             border.color: accent
                             Text {
                                 anchors.centerIn: parent
-                                text: "Local-first"
+                                text: appController.wizardText.local_first_badge
                                 color: accent
                                 font.pixelSize: 11
                                 font.bold: true
@@ -381,13 +406,13 @@ ApplicationWindow {
                             spacing: 8
                             Text {
                                 Layout.fillWidth: true
-                                text: "Setup steps"
+                                text: appController.wizardText.setup_steps_title
                                 color: textPrimary
                                 font.pixelSize: 15
                                 font.bold: true
                             }
                             Repeater {
-                                model: window.wizardSteps
+                                model: window.wizardStepLabels()
                                 delegate: Rectangle {
                                     required property string modelData
                                     required property int index
@@ -435,7 +460,7 @@ ApplicationWindow {
                             Item { Layout.fillHeight: true }
                             Text {
                                 Layout.fillWidth: true
-                                text: "The wizard changes only local Coinductor settings until you explicitly run checks or analysis."
+                                text: appController.wizardText.setup_steps_hint
                                 color: textSecondary
                                 font.pixelSize: 10
                                 wrapMode: Text.WordWrap
@@ -462,10 +487,10 @@ ApplicationWindow {
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: 14
-                                    Text { text: "1. Choose exchange"; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                                    Text { text: appController.wizardText.step1_title; color: textPrimary; font.pixelSize: 22; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: "Coinductor needs to know where the portfolio lives before it can explain API permissions, funding, and safety checks."
+                                        text: appController.wizardText.step1_description
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
@@ -488,7 +513,7 @@ ApplicationWindow {
                                             anchors.margins: 16
                                             spacing: 8
                                             Text {
-                                                text: wizardExchange.currentValue === "BINANCE" ? "Binance is supported in this build" : "Coinbase is planned, not available yet"
+                                                text: wizardExchange.currentValue === "BINANCE" ? appController.wizardText.step1_binance_supported : appController.wizardText.step1_coinbase_planned
                                                 color: wizardExchange.currentValue === "BINANCE" ? accent : warning
                                                 font.pixelSize: 15
                                                 font.bold: true
@@ -496,15 +521,15 @@ ApplicationWindow {
                                             Text {
                                                 Layout.fillWidth: true
                                                 text: wizardExchange.currentValue === "BINANCE"
-                                                    ? "The wizard will guide you through Binance read-only API setup, optional AI configuration, and a safe local profile. Guarded live trading uses a separate key and separate confirmations, and stays locked until you explicitly progress the safety stage later in the app."
-                                                    : "The app is being designed so future exchanges can be added behind the same safety contract. Continue with Binance for now."
+                                                    ? appController.wizardText.step1_binance_detail
+                                                    : appController.wizardText.step1_coinbase_detail
                                                 color: textSecondary
                                                 font.pixelSize: 12
                                                 wrapMode: Text.WordWrap
                                             }
                                             Text {
                                                 Layout.fillWidth: true
-                                                text: "Manual setup covered later: account access, API key permissions, IP restrictions, read-only checks, and local privacy boundaries."
+                                                text: appController.wizardText.step1_manual_setup_note
                                                 color: textSecondary
                                                 font.pixelSize: 12
                                                 wrapMode: Text.WordWrap
@@ -523,7 +548,7 @@ ApplicationWindow {
                                             anchors.margins: 14
                                             spacing: 6
                                             Text {
-                                                text: appController.onboardingPath === "FIRST_PORTFOLIO" ? "First portfolio path selected" : "Existing portfolio path selected"
+                                                text: appController.onboardingPath === "FIRST_PORTFOLIO" ? appController.wizardText.step1_first_portfolio_selected : appController.wizardText.step1_existing_selected
                                                 color: accent
                                                 font.pixelSize: 14
                                                 font.bold: true
@@ -531,8 +556,8 @@ ApplicationWindow {
                                             Text {
                                                 Layout.fillWidth: true
                                                 text: appController.onboardingPath === "FIRST_PORTFOLIO"
-                                                    ? "The rest of the wizard will focus on a starting budget, reserve, initial basket, deposit guidance, and safe manual setup before any automation."
-                                                    : "The rest of the wizard will focus on read-only Binance access, portfolio inventory, asset classification, and guarded recommendations for assets you already hold."
+                                                    ? appController.wizardText.step1_first_portfolio_focus
+                                                    : appController.wizardText.step1_existing_focus
                                                 color: textSecondary
                                                 font.pixelSize: 12
                                                 wrapMode: Text.WordWrap
@@ -545,10 +570,10 @@ ApplicationWindow {
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: 14
-                                    Text { text: "2. Starting point"; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                                    Text { text: appController.wizardText.step2_title; color: textPrimary; font.pixelSize: 22; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: "This choice changes what Coinductor explains next: existing portfolio classification, or a first funding and basket plan."
+                                        text: appController.wizardText.step2_description
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
@@ -566,16 +591,16 @@ ApplicationWindow {
                                                 anchors.fill: parent
                                                 anchors.margins: 16
                                                 spacing: 8
-                                                Text { text: "I already have a portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                                Text { text: appController.wizardText.step2_existing_card_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                                                 Text {
                                                     Layout.fillWidth: true
-                                                    text: "Best if you already hold assets on Binance. Coinductor will inventory balances, classify assets, and explain which ones can or cannot be used."
+                                                    text: appController.wizardText.step2_existing_card_detail
                                                     color: textSecondary
                                                     font.pixelSize: 12
                                                     wrapMode: Text.WordWrap
                                                 }
                                                 Item { Layout.fillHeight: true }
-                                                Text { text: "Next: profile and read-only API"; color: accent; font.pixelSize: 12; font.bold: true }
+                                                Text { text: appController.wizardText.step2_existing_card_next; color: accent; font.pixelSize: 12; font.bold: true }
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
@@ -593,16 +618,16 @@ ApplicationWindow {
                                                 anchors.fill: parent
                                                 anchors.margins: 16
                                                 spacing: 8
-                                                Text { text: "Build my first portfolio"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                                Text { text: appController.wizardText.step2_first_card_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                                                 Text {
                                                     Layout.fillWidth: true
-                                                    text: "Best if you start from fiat or USDC. Coinductor will suggest a reserve, initial deployment, and manual setup steps before automation."
+                                                    text: appController.wizardText.step2_first_card_detail
                                                     color: textSecondary
                                                     font.pixelSize: 12
                                                     wrapMode: Text.WordWrap
                                                 }
                                                 Item { Layout.fillHeight: true }
-                                                Text { text: "Next: profile and first plan"; color: accent; font.pixelSize: 12; font.bold: true }
+                                                Text { text: appController.wizardText.step2_first_card_next; color: accent; font.pixelSize: 12; font.bold: true }
                                             }
                                             MouseArea {
                                                 anchors.fill: parent
@@ -617,10 +642,10 @@ ApplicationWindow {
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: 12
-                                    Text { text: "3. Decision profile"; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                                    Text { text: appController.wizardText.step3_title; color: textPrimary; font.pixelSize: 22; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: "This short profile tells Coinductor how cautious, active, and hands-on recommendations should be. It does not place orders."
+                                        text: appController.wizardText.step3_description
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
@@ -634,27 +659,27 @@ ApplicationWindow {
 
                                         ColumnLayout {
                                             Layout.fillWidth: true
-                                            Text { text: "Management style"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            Text { text: appController.wizardText.field_management_style; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardStyle; Layout.fillWidth: true; model: window.styleOptions; textRole: "label"; valueRole: "value"; currentIndex: 1; onActivated: window.markProfileEdited() }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
-                                            Text { text: "Automation"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            Text { text: appController.wizardText.field_automation; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardAutomation; Layout.fillWidth: true; model: window.automationOptions; textRole: "label"; valueRole: "value"; onActivated: window.markProfileEdited() }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
-                                            Text { text: "Review rhythm"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            Text { text: appController.wizardText.field_review_rhythm; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardCadence; Layout.fillWidth: true; model: window.cadenceOptions; textRole: "label"; valueRole: "value"; currentIndex: 1; onActivated: window.markProfileEdited() }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
-                                            Text { text: "Language / region"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            Text { text: appController.wizardText.field_language_region; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardLocale; Layout.fillWidth: true; model: ["en-US", "es-ES", "cs-CZ", "pt-BR"]; onActivated: window.markProfileEdited() }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
-                                            Text { text: "Operating currency"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            Text { text: appController.wizardText.field_operating_currency; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             Rectangle {
                                                 Layout.fillWidth: true
                                                 Layout.preferredHeight: 56
@@ -671,11 +696,11 @@ ApplicationWindow {
                                                     font.bold: true
                                                 }
                                             }
-                                            Text { Layout.fillWidth: true; text: "Coinductor currently plans bot funding and trading budgets around USDC. Regional fiat funding comes later."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; text: appController.wizardText.operating_currency_note; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
-                                            Text { text: appController.onboardingPath === "FIRST_PORTFOLIO" ? "Starting budget" : "Reference budget (optional)"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            Text { text: appController.onboardingPath === "FIRST_PORTFOLIO" ? appController.wizardText.field_starting_budget : appController.wizardText.field_reference_budget; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardBudget; Layout.fillWidth: true; model: window.budgetOptions; textRole: "label"; valueRole: "value"; onActivated: window.markProfileEdited() }
                                             Text { Layout.fillWidth: true; text: window.budgetHelp(wizardBudget.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                         }
@@ -686,19 +711,19 @@ ApplicationWindow {
                                         spacing: 12
                                         ColumnLayout {
                                             Layout.preferredWidth: 300
-                                            Text { text: "Drawdown comfort"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            Text { text: appController.wizardText.field_drawdown_comfort; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardDrawdown; Layout.fillWidth: true; model: window.drawdownOptions; textRole: "label"; valueRole: "value"; currentIndex: 1; onActivated: window.markProfileEdited() }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
-                                            CheckBox { id: wizardUseBots; text: "Use Binance bot recommendations"; checked: true; onClicked: window.markProfileEdited() }
+                                            CheckBox { id: wizardUseBots; text: appController.wizardText.checkbox_use_bots; checked: true; onClicked: window.markProfileEdited() }
                                             Text { Layout.fillWidth: true; text: window.botHelp(wizardUseBots.checked); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
                                             CheckBox {
                                                 id: wizardAllowSpot
-                                                text: "Allow guarded spot trades"
+                                                text: appController.wizardText.checkbox_allow_spot
                                                 checked: false
                                                 enabled: wizardAutomation.currentValue === "GUARDED_AUTOMATION"
                                                 onClicked: window.markProfileEdited()
@@ -716,11 +741,11 @@ ApplicationWindow {
                                             anchors.fill: parent
                                             anchors.margins: 12
                                             spacing: 5
-                                            Text { text: "Current selection"; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                                            Text { text: appController.wizardText.current_selection_title; color: textPrimary; font.pixelSize: 13; font.bold: true }
                                             Text {
                                                 Layout.fillWidth: true
                                                 visible: !window.profileChoicesEdited && !appController.userProfileConfigured
-                                                text: "Choose a profile option above to see what it changes. Nothing is saved until you press Save profile or Apply safe defaults."
+                                                text: appController.wizardText.current_selection_placeholder
                                                 color: textSecondary
                                                 font.pixelSize: 12
                                                 wrapMode: Text.WordWrap
@@ -734,9 +759,9 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         Item { Layout.fillWidth: true }
                                         Button {
-                                            text: "Apply safe defaults"
+                                            text: appController.wizardText.apply_safe_defaults_button
                                             ToolTip.visible: hovered
-                                            ToolTip.text: "Immediately saves a conservative local profile: recommendations only, no guarded spot trades, and beginner-friendly risk settings."
+                                            ToolTip.text: appController.wizardText.apply_safe_defaults_tooltip
                                             onClicked: {
                                                 appController.useSafeDefaultProfile()
                                                 window.profileChoicesEdited = true
@@ -744,9 +769,9 @@ ApplicationWindow {
                                             }
                                         }
                                         Button {
-                                            text: "Save profile"
+                                            text: appController.wizardText.save_profile_button
                                             ToolTip.visible: hovered
-                                            ToolTip.text: "Saves these profile choices locally. It does not connect to Binance or place orders."
+                                            ToolTip.text: appController.wizardText.save_profile_tooltip
                                             highlighted: true
                                             onClicked: {
                                                 appController.saveGuidedProfile(
@@ -767,7 +792,7 @@ ApplicationWindow {
                                     }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: appController.userProfileConfigured ? "Profile is saved. Continue to AI setup." : "Save a profile or use safe defaults before continuing."
+                                        text: appController.userProfileConfigured ? appController.wizardText.profile_saved_status : appController.wizardText.profile_not_saved_status
                                         color: appController.userProfileConfigured ? accent : warning
                                         font.pixelSize: 12
                                         font.bold: true
@@ -778,10 +803,10 @@ ApplicationWindow {
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: 10
-                                    Text { text: "4. AI assistant setup"; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                                    Text { text: appController.wizardText.step4_title; color: textPrimary; font.pixelSize: 22; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: "AI is optional. After a provider is connected, Coinductor can offer step-by-step wizard help, report summaries, and app Q&A without giving AI direct execution control."
+                                        text: appController.wizardText.step4_description
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
@@ -789,11 +814,11 @@ ApplicationWindow {
                                     RowLayout {
                                         Layout.fillWidth: true
                                         Button {
-                                            text: "Open local AI guide"
+                                            text: appController.wizardText.open_local_ai_guide_button
                                             onClicked: window.openGuide("local-ai")
                                         }
                                         Button {
-                                            text: "Open cloud AI guide"
+                                            text: appController.wizardText.open_cloud_ai_guide_button
                                             onClicked: window.openGuide("cloud-ai")
                                         }
                                         Item { Layout.fillWidth: true }
@@ -811,13 +836,13 @@ ApplicationWindow {
                                             ColumnLayout {
                                                 Layout.fillWidth: true
                                                 spacing: 5
-                                                Text { text: "Current AI provider"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                                Text { text: appController.wizardText.current_ai_provider_title; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                                 Text { Layout.fillWidth: true; text: appController.aiProviderSummary; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                                                 Text { Layout.fillWidth: true; text: appController.aiProviderHealthDetail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
-                                                Text { Layout.fillWidth: true; text: "You can skip AI setup and add it later. \"Ask about this step\" below works with or without a configured provider."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                                Text { Layout.fillWidth: true; text: appController.wizardText.ai_skip_hint; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                             }
                                             Button {
-                                                text: appController.checkingAiProvider ? "Checking..." : "Check AI provider"
+                                                text: appController.checkingAiProvider ? appController.wizardText.checking_status : appController.wizardText.check_ai_provider_button
                                                 enabled: !appController.checkingAiProvider
                                                 onClicked: appController.checkAiProvider()
                                             }
@@ -1090,10 +1115,10 @@ ApplicationWindow {
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: 10
-                                    Text { text: "5. Binance API and safety checks"; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                                    Text { text: appController.wizardText.step5_title; color: textPrimary; font.pixelSize: 22; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: "Coinductor needs read-only Binance API access for portfolio analysis. Trading permissions are separate and should only be added later when guarded workflows are ready."
+                                        text: appController.wizardText.step5_description
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
@@ -1101,7 +1126,7 @@ ApplicationWindow {
                                     RowLayout {
                                         Layout.fillWidth: true
                                         Button {
-                                            text: "Open Binance API guide"
+                                            text: appController.wizardText.open_binance_guide_button
                                             onClicked: window.openGuide("binance-api")
                                         }
                                         Item { Layout.fillWidth: true }
@@ -1134,13 +1159,13 @@ ApplicationWindow {
                                             anchors.fill: parent
                                             anchors.margins: 16
                                             spacing: 8
-                                            Text { text: "Connect read-only key to Coinductor"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                            Text { text: appController.wizardText.connect_readonly_title; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                             RowLayout {
                                                 Layout.fillWidth: true
                                                 TextField { id: binanceReadKey; Layout.fillWidth: true; placeholderText: "API Key" }
                                                 TextField { id: binanceReadSecret; Layout.fillWidth: true; placeholderText: "Secret Key"; echoMode: TextInput.Password }
                                                 Button {
-                                                    text: "Save key"
+                                                    text: appController.wizardText.save_key_button
                                                     enabled: binanceReadKey.text.trim().length > 0 && binanceReadSecret.text.trim().length > 0
                                                     onClicked: {
                                                         appController.saveBinanceReadOnlyCredentials(binanceReadKey.text, binanceReadSecret.text)
@@ -1149,13 +1174,13 @@ ApplicationWindow {
                                                     }
                                                 }
                                             }
-                                            Text { Layout.fillWidth: true; Layout.topMargin: 2; text: "The key is stored in the local .env file in this project folder. It is not sent anywhere by the wizard."; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                            Text { Layout.fillWidth: true; Layout.topMargin: 2; text: appController.wizardText.key_storage_note; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                         }
                                     }
                                     RowLayout {
                                         Layout.fillWidth: true
                                         Button {
-                                            text: appController.checkingConnection ? "Checking..." : "Check read-only access"
+                                            text: appController.checkingConnection ? appController.wizardText.checking_status : appController.wizardText.check_readonly_button
                                             enabled: !appController.checkingConnection
                                             onClicked: appController.checkBinanceReadOnly()
                                         }
@@ -1190,13 +1215,13 @@ ApplicationWindow {
                                             spacing: 8
                                             RowLayout {
                                                 Layout.fillWidth: true
-                                                Text { text: "Optional: practice on Spot Testnet"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                                Text { text: appController.wizardText.testnet_practice_title; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                                 Item { Layout.fillWidth: true }
-                                                Button { text: "Open Testnet guide"; onClicked: window.openGuide("binance-testnet") }
+                                                Button { text: appController.wizardText.open_testnet_guide_button; onClicked: window.openGuide("binance-testnet") }
                                             }
                                             Text {
                                                 Layout.fillWidth: true
-                                                text: "Spot Testnet uses virtual funds and a separate key from your real Binance account. Recommended before any real mainnet order, but not required to continue this wizard."
+                                                text: appController.wizardText.testnet_description
                                                 color: textSecondary
                                                 font.pixelSize: 12
                                                 wrapMode: Text.WordWrap
@@ -1207,7 +1232,7 @@ ApplicationWindow {
                                                 TextField { id: binanceTestnetKey; Layout.fillWidth: true; placeholderText: "Testnet API Key" }
                                                 TextField { id: binanceTestnetSecret; Layout.fillWidth: true; placeholderText: "Testnet Secret Key"; echoMode: TextInput.Password }
                                                 Button {
-                                                    text: "Save Testnet key"
+                                                    text: appController.wizardText.save_testnet_key_button
                                                     enabled: binanceTestnetKey.text.trim().length > 0 && binanceTestnetSecret.text.trim().length > 0
                                                     onClicked: {
                                                         appController.saveBinanceTestnetCredentials(binanceTestnetKey.text, binanceTestnetSecret.text)
@@ -1220,7 +1245,7 @@ ApplicationWindow {
                                                 Layout.fillWidth: true
                                                 spacing: 10
                                                 Button {
-                                                    text: appController.checkingTestnet ? "Checking..." : "Check Testnet access"
+                                                    text: appController.checkingTestnet ? appController.wizardText.checking_status : appController.wizardText.check_testnet_button
                                                     enabled: !appController.checkingTestnet
                                                     onClicked: appController.checkBinanceTestnet()
                                                 }
@@ -1257,13 +1282,13 @@ ApplicationWindow {
                                             spacing: 12
                                             Text {
                                                 Layout.fillWidth: true
-                                                text: "A separate live-trading key with IP restriction is used later, only when you are ready for guarded real orders."
+                                                text: appController.wizardText.live_trade_note
                                                 color: textSecondary
                                                 font.pixelSize: 12
                                                 wrapMode: Text.WordWrap
                                             }
                                             Button {
-                                                text: "Open live-trade guide"
+                                                text: appController.wizardText.open_live_trade_guide_button
                                                 onClicked: window.openGuide("binance-live-api")
                                             }
                                         }
@@ -1274,10 +1299,10 @@ ApplicationWindow {
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: 14
-                                    Text { text: "6. Review and enter Coinductor"; color: textPrimary; font.pixelSize: 22; font.bold: true }
+                                    Text { text: appController.wizardText.step6_title; color: textPrimary; font.pixelSize: 22; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: "The setup profile is saved locally. The main app will show your dashboard, portfolio roles, strategy recommendations, assistant, settings, and safety state."
+                                        text: appController.wizardText.step6_description
                                         color: textSecondary
                                         font.pixelSize: 13
                                         wrapMode: Text.WordWrap
@@ -1285,11 +1310,11 @@ ApplicationWindow {
                                     RowLayout {
                                         Layout.fillWidth: true
                                         Button {
-                                            text: "Open safety guide"
+                                            text: appController.wizardText.open_safety_guide_button
                                             onClicked: window.openGuide("safety-model")
                                         }
                                         Button {
-                                            text: "Open portfolio roles guide"
+                                            text: appController.wizardText.open_portfolio_roles_guide_button
                                             onClicked: window.openGuide("portfolio-roles")
                                         }
                                         Item { Layout.fillWidth: true }
@@ -1450,10 +1475,10 @@ ApplicationWindow {
                         anchors.top: parent.top
                         anchors.margins: 14
                         spacing: 8
-                        Text { text: "Ask about this step"; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                        Text { text: appController.wizardText.ask_ai_title; color: textPrimary; font.pixelSize: 13; font.bold: true }
                         Text {
                             Layout.fillWidth: true
-                            text: "Uses your configured AI provider when available, with a deterministic offline fallback. This is read-only, never places orders or changes settings, and never blocks Back/Next."
+                            text: appController.wizardText.ask_ai_description
                             color: textSecondary
                             font.pixelSize: 10
                             wrapMode: Text.WordWrap
@@ -1464,14 +1489,14 @@ ApplicationWindow {
                             TextField {
                                 id: wizardAskAiInput
                                 Layout.fillWidth: true
-                                placeholderText: "e.g. How do I create a Binance API key?"
+                                placeholderText: appController.wizardText.ask_ai_placeholder
                                 onAccepted: {
                                     if (text.trim().length > 0 && !appController.wizardAssistantBusy)
                                         appController.askWizardAssistant(text, window.wizardSteps[window.wizardStep])
                                 }
                             }
                             Button {
-                                text: appController.wizardAssistantBusy ? "Asking..." : "Ask"
+                                text: appController.wizardAssistantBusy ? appController.wizardText.ask_ai_asking_status : appController.wizardText.ask_ai_button
                                 enabled: !appController.wizardAssistantBusy && wizardAskAiInput.text.trim().length > 0
                                 onClicked: appController.askWizardAssistant(wizardAskAiInput.text, window.wizardSteps[window.wizardStep])
                             }
@@ -1492,20 +1517,20 @@ ApplicationWindow {
                     Layout.preferredHeight: 58
                     Layout.bottomMargin: 18
                     Button {
-                        text: "Back"
+                        text: appController.wizardText.back_button
                         enabled: window.wizardStep > 0
                         onClicked: window.wizardStep = Math.max(0, window.wizardStep - 1)
                     }
                     Text {
                         Layout.fillWidth: true
                         text: !window.canContinueWizard()
-                            ? (window.wizardStep === 0 ? "Choose Binance to continue." : window.wizardStep === 1 ? "Choose how you are starting." : "Save a profile before continuing.")
+                            ? (window.wizardStep === 0 ? appController.wizardText.warn_choose_binance : window.wizardStep === 1 ? appController.wizardText.warn_choose_starting : appController.wizardText.warn_save_profile)
                             : ""
                         color: warning
                         font.pixelSize: 12
                     }
                     Button {
-                        text: window.wizardStep === window.wizardSteps.length - 1 ? "Enter Coinductor" : "Next"
+                        text: window.wizardStep === window.wizardSteps.length - 1 ? appController.wizardText.enter_coinductor_button : appController.wizardText.next_button
                         highlighted: true
                         enabled: window.wizardStep === window.wizardSteps.length - 1 ? appController.userProfileConfigured : window.canContinueWizard()
                         onClicked: {

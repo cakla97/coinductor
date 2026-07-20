@@ -22,6 +22,12 @@ terminal.
 
 ## 2. First-Run Wizard
 
+- Click `Čeština` in the top-right of the wizard header. Confirm every step's
+  title, description, card/option labels, checkboxes, and buttons switch to
+  Czech, and that clicking `English` switches them back. The deep technical
+  panels (Local AI/Cloud AI provider fields, the numbered Manual Binance
+  steps, guide dialogs) are expected to stay in English for now — use
+  `Ask about this step` for a Czech explanation of those instead.
 - With no onboarding profile, the app opens into the setup wizard instead of the
   main dashboard.
 - Confirm the wizard is step-by-step: Exchange, Portfolio, Profile, AI, Binance API,

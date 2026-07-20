@@ -54,6 +54,19 @@ def test_controller_pastes_clipboard_image_as_local_attachment(tmp_path, monkeyp
     app.clipboard().clear()
 
 
+def test_controller_switches_wizard_text_language() -> None:
+    QGuiApplication.instance() or QGuiApplication([])
+    controller = AppController()
+
+    assert controller.wizardLanguage == "en"
+    assert controller.wizardText["welcome_title"] == "Welcome to Coinductor"
+
+    controller.setWizardLanguage("cs")
+
+    assert controller.wizardLanguage == "cs"
+    assert controller.wizardText["welcome_title"] == "Vítejte v Coinductoru"
+
+
 def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> None:
     qml_path = Path(__file__).parents[1] / "coinductor" / "qml" / "Main.qml"
     qml = qml_path.read_text(encoding="utf-8")
@@ -154,8 +167,11 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert '"Detect installed models"' in qml
     assert "localAiModel.text = modelData" in qml
     assert "localAiVisionModel.text = modelData" in qml
-    assert "Ask about this step" in qml
+    assert "appController.wizardText.ask_ai_title" in qml
     assert "appController.askWizardAssistant(wizardAskAiInput.text, window.wizardSteps[window.wizardStep])" in qml
     assert "appController.wizardAssistantBusy" in qml
     assert "appController.wizardAssistantAnswer" in qml
-    assert "never blocks Back/Next" in qml
+    assert "appController.wizardText.ask_ai_description" in qml
+    assert "appController.wizardText.welcome_title" in qml
+    assert "appController.setWizardLanguage(\"cs\")" in qml
+    assert "appController.wizardLanguage" in qml

@@ -64,3 +64,30 @@ class LiveTradingCheckService:
             "PASS",
             "Live key is reachable: Reading + Spot trading enabled, trusted-IP restriction active, forbidden permissions disabled",
         )
+
+
+class TestnetCheckService:
+    def __init__(
+        self,
+        config_path: str | Path = "config.example.toml",
+        env_path: str | Path = ".env",
+    ):
+        self.config_path = Path(config_path)
+        self.env_path = Path(env_path)
+
+    def check_binance_testnet(self) -> ConnectionCheckResult:
+        if not self.config_path.exists():
+            return ConnectionCheckResult("BLOCK", f"Missing config: {self.config_path}")
+        if not self.env_path.exists():
+            return ConnectionCheckResult("BLOCK", "Missing .env with Binance Spot Testnet keys")
+
+        try:
+            load_env_file(self.env_path)
+            config = load_config(self.config_path)
+            BinanceClient(config.raw, use_testnet=True).testnet_account_ping()
+        except BinanceApiError as exc:
+            return ConnectionCheckResult("BLOCK", str(exc))
+        except Exception as exc:
+            return ConnectionCheckResult("BLOCK", f"Testnet check failed: {exc}")
+
+        return ConnectionCheckResult("PASS", "Spot Testnet key is reachable. Virtual funds are ready for safe testing.")

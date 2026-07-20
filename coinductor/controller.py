@@ -12,7 +12,7 @@ from .app_tour_service import AppTourService
 from .assistant import AssistantResponse, ProviderBackedAssistant
 from .assistant_history import AssistantHistoryStore
 from .asset_policy_store import AssetPolicyStore
-from .connection_check import ConnectionCheckService, LiveTradingCheckService
+from .connection_check import ConnectionCheckService, LiveTradingCheckService, TestnetCheckService
 from .desktop_store import DesktopStore
 from .env_writer import EnvWriter
 from .first_portfolio_planner import FirstPortfolioPlanner
@@ -81,6 +81,21 @@ class LiveTradingCheckWorker(QObject):
             self.finished.emit()
 
 
+class TestnetCheckWorker(QObject):
+    completed = Signal(object)
+    failed = Signal(str)
+    finished = Signal()
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            self.completed.emit(TestnetCheckService().check_binance_testnet())
+        except Exception as exc:
+            self.failed.emit(str(exc))
+        finally:
+            self.finished.emit()
+
+
 class AiProviderHealthWorker(QObject):
     completed = Signal(object)
     failed = Signal(str)
@@ -141,6 +156,7 @@ class AppController(QObject):
     setupChanged = Signal()
     connectionChanged = Signal()
     liveTradingCheckChanged = Signal()
+    testnetCheckChanged = Signal()
     aiProviderChanged = Signal()
     userProfileChanged = Signal()
     safetyChanged = Signal()
@@ -191,6 +207,9 @@ class AppController(QObject):
         self._checking_live_trading = False
         self._live_trading_check_status = "Not checked"
         self._live_trading_check_detail = "Verify live-key permissions before arming guarded execution."
+        self._checking_testnet = False
+        self._testnet_check_status = "Not checked"
+        self._testnet_check_detail = "Optional but recommended: verify Spot Testnet access before any real mainnet action."
         self._checking_ai_provider = False
         self._assistant_busy = False
         self._ai_provider_health_status = "Not checked"
@@ -290,6 +309,8 @@ class AppController(QObject):
         self._connection_worker: ConnectionCheckWorker | None = None
         self._live_trading_check_thread: QThread | None = None
         self._live_trading_check_worker: LiveTradingCheckWorker | None = None
+        self._testnet_check_thread: QThread | None = None
+        self._testnet_check_worker: TestnetCheckWorker | None = None
         self._ai_provider_thread: QThread | None = None
         self._ai_provider_worker: AiProviderHealthWorker | None = None
         self._assistant_thread: QThread | None = None
@@ -514,6 +535,18 @@ class AppController(QObject):
     @Property(str, notify=liveTradingCheckChanged)
     def liveTradingCheckDetail(self) -> str:
         return self._live_trading_check_detail
+
+    @Property(bool, notify=testnetCheckChanged)
+    def checkingTestnet(self) -> bool:
+        return self._checking_testnet
+
+    @Property(str, notify=testnetCheckChanged)
+    def testnetCheckStatus(self) -> str:
+        return self._testnet_check_status
+
+    @Property(str, notify=testnetCheckChanged)
+    def testnetCheckDetail(self) -> str:
+        return self._testnet_check_detail
 
     @Property(bool, notify=dataChanged)
     def hasCompletedRealAnalysis(self) -> bool:
@@ -962,6 +995,40 @@ class AppController(QObject):
         self._live_trading_check_thread.finished.connect(self._live_trading_check_thread.deleteLater)
         self._live_trading_check_thread.finished.connect(self._clear_live_trading_check_worker)
         self._live_trading_check_thread.start()
+
+    @Slot(str, str)
+    def saveBinanceTestnetCredentials(self, api_key: str, api_secret: str) -> None:
+        EnvWriter().update(
+            {
+                "BINANCE_TESTNET_API_KEY": api_key,
+                "BINANCE_TESTNET_API_SECRET": api_secret,
+            }
+        )
+        self._testnet_check_status = "Not checked"
+        self._testnet_check_detail = "Testnet credentials were saved locally. Run the Testnet check to verify them."
+        self.refreshSetup()
+        self.testnetCheckChanged.emit()
+
+    @Slot()
+    def checkBinanceTestnet(self) -> None:
+        if self._checking_testnet:
+            return
+        self._checking_testnet = True
+        self._testnet_check_status = "Checking"
+        self._testnet_check_detail = "Checking Spot Testnet access with virtual funds..."
+        self.testnetCheckChanged.emit()
+
+        self._testnet_check_thread = QThread(self)
+        self._testnet_check_worker = TestnetCheckWorker()
+        self._testnet_check_worker.moveToThread(self._testnet_check_thread)
+        self._testnet_check_thread.started.connect(self._testnet_check_worker.run)
+        self._testnet_check_worker.completed.connect(self._on_testnet_check_completed)
+        self._testnet_check_worker.failed.connect(self._on_testnet_check_failed)
+        self._testnet_check_worker.finished.connect(self._testnet_check_thread.quit)
+        self._testnet_check_worker.finished.connect(self._testnet_check_worker.deleteLater)
+        self._testnet_check_thread.finished.connect(self._testnet_check_thread.deleteLater)
+        self._testnet_check_thread.finished.connect(self._clear_testnet_check_worker)
+        self._testnet_check_thread.start()
 
     @Slot(str, str)
     def promoteSafetyStage(self, target: str, confirmation: str) -> None:
@@ -1567,6 +1634,18 @@ class AppController(QObject):
         self.liveTradingCheckChanged.emit()
 
     @Slot(object)
+    def _on_testnet_check_completed(self, result: ConnectionCheckResult) -> None:
+        self._testnet_check_status = "Verified" if result.status == "PASS" else "Blocked"
+        self._testnet_check_detail = result.detail
+        self.testnetCheckChanged.emit()
+
+    @Slot(str)
+    def _on_testnet_check_failed(self, message: str) -> None:
+        self._testnet_check_status = "Blocked"
+        self._testnet_check_detail = message
+        self.testnetCheckChanged.emit()
+
+    @Slot(object)
     def _on_ai_provider_completed(self, result: AiProviderHealthResult) -> None:
         self._ai_provider_health_status = "Connected" if result.status == "PASS" else "Blocked"
         self._ai_provider_health_detail = result.detail
@@ -1614,6 +1693,13 @@ class AppController(QObject):
         self._live_trading_check_thread = None
         self._checking_live_trading = False
         self.liveTradingCheckChanged.emit()
+
+    @Slot()
+    def _clear_testnet_check_worker(self) -> None:
+        self._testnet_check_worker = None
+        self._testnet_check_thread = None
+        self._checking_testnet = False
+        self.testnetCheckChanged.emit()
 
     @Slot()
     def _clear_ai_provider_worker(self) -> None:

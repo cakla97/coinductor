@@ -18,16 +18,16 @@ class GuideService:
                 "section": "AI setup",
                 "title": "Local AI with Ollama",
                 "summary": "Private local assistant for project help, report summaries, and future wizard guidance.",
-                "body": "\n".join(
+                "body": "<br>".join(
                     [
                         "Use this path when you want Coinductor to stay local-first.",
                         "",
-                        "1. Open https://ollama.com/ and use the Download button to install Ollama for your operating system.",
+                        '1. Open <a href="https://ollama.com/">https://ollama.com/</a> and use the Download button to install Ollama for your operating system.',
                         "2. Pick a model that fits your hardware. Use Coinductor's Scan hardware button in the AI setup step for a local recommendation. The scan is local: it reads RAM and GPU/VRAM from OS tools and does not upload hardware details.",
-                        "3. On https://ollama.com/search, search for the text model recommended in step 2. Pull that exact model, for example qwen3:8b on smaller systems or qwen3:14b on stronger GPUs.",
+                        '3. On <a href="https://ollama.com/search">https://ollama.com/search</a>, search for the text model recommended in step 2. Pull that exact model. On smaller systems, open a terminal and run: ollama pull qwen3:8b. On stronger GPUs, run: ollama pull qwen3:14b.',
                         "4. Keep Ollama running while Coinductor uses AI features. On Windows this usually means the Ollama icon remains visible in the system tray.",
                         "5. In Coinductor, set the local endpoint to http://127.0.0.1:11434/v1 and enter that tag in Text model.",
-                        "6. Optional image support: open https://ollama.com/library/qwen3-vl, pull a suitable Qwen3-VL tag, and enter it in Vision model. Coinductor keeps the text model for normal messages and routes only image messages to this model.",
+                        '6. Optional image support: open <a href="https://ollama.com/library/qwen3-vl">https://ollama.com/library/qwen3-vl</a>, pull a suitable Qwen3-VL tag (for example: ollama pull qwen3-vl:8b), and enter it in Vision model. Coinductor keeps the text model for normal messages and routes only image messages to this model.',
                         "7. Save the settings and run Check AI provider. It must report the text model as ready and, when configured, the vision model as ready.",
                         "",
                         "Model quality note: for portfolio commentary and market reasoning, 14B-class models are the preferred minimum when hardware supports them. Smaller models may still answer basic app questions, but they are more likely to miss context or produce weak recommendations.",
@@ -46,14 +46,14 @@ class GuideService:
                 "section": "AI setup",
                 "title": "Cloud AI API",
                 "summary": "Optional higher-quality AI path with separate API billing and external data processing.",
-                "body": "\n".join(
+                "body": "<br>".join(
                     [
                         "Cloud AI is optional and should be treated as an advanced alternative.",
                         "",
                         "Pricing warning: Chat subscriptions and API usage are usually separate products with separate pricing. ChatGPT Plus/Pro, Claude plans, or Gemini subscriptions do not automatically mean API calls from Coinductor are included.",
                         "",
                         "OpenAI example:",
-                        "1. Open https://platform.openai.com/ and go to API Keys.",
+                        '1. Open <a href="https://platform.openai.com/">https://platform.openai.com/</a> and go to API Keys.',
                         "2. Add billing/limits in the provider dashboard if required.",
                         "3. In Coinductor, use https://api.openai.com/v1 as the endpoint.",
                         "4. Enter the model name you want to use.",
@@ -72,7 +72,7 @@ class GuideService:
                 "section": "Binance",
                 "title": "Binance read-only API",
                 "summary": "Create a safe read-only Binance API key for portfolio inventory and analysis.",
-                "body": "\n".join(
+                "body": "<br>".join(
                     [
                         "Coinductor starts with read-only access. This lets it inspect portfolio balances and status without changing anything on the exchange.",
                         "",
@@ -98,7 +98,7 @@ class GuideService:
                 "section": "Binance",
                 "title": "Binance live trading API",
                 "summary": "Create a separate Binance API key for guarded Spot trading workflows after read-only setup is trusted.",
-                "body": "\n".join(
+                "body": "<br>".join(
                     [
                         "Use this only after read-only access, reports, and preview workflows make sense to you. This key is for guarded Spot trading workflows; it should never allow withdrawals.",
                         "",
@@ -108,7 +108,7 @@ class GuideService:
                         "4. Complete two-factor verification and copy both the API Key and Secret Key immediately.",
                         "5. Open Edit restrictions for this new key.",
                         "6. In IP access restrictions, choose Restrict access to trusted IPs only first. Binance may keep trading permissions unavailable until trusted-IP restriction is configured.",
-                        "7. Add the public IP address of the machine or server that will run Coinductor. You can check it with a browser page such as https://ifconfig.me/ or https://whatismyipaddress.com/.",
+                        '7. Add the public IP address of the machine or server that will run Coinductor. You can check it with a browser page such as <a href="https://ifconfig.me/">https://ifconfig.me/</a> or <a href="https://whatismyipaddress.com/">https://whatismyipaddress.com/</a>.',
                         "8. If your IP changes after router restart or from day to day, treat it as dynamic. Dynamic-IP users should keep live execution locked, update the whitelist manually when needed, or later use a trusted always-on host/VPS with a stable public IP.",
                         "9. After trusted IP access is configured, enable Reading and Enable Spot & Margin & Stock Trading. Do not enable Futures, Margin Loan/Repay/Transfer, Universal Transfer, Prediction Trading, or Withdrawals.",
                         "10. Paste the live trading key into Coinductor Live Actions. Live submit remains locked until a separate safety stage allows it.",
@@ -123,11 +123,31 @@ class GuideService:
                 ],
             },
             {
+                "id": "binance-testnet",
+                "section": "Binance",
+                "title": "Binance Spot Testnet (practice with virtual funds)",
+                "summary": "Create a separate Testnet key so trade logic can be exercised with virtual funds before any real money is involved.",
+                "body": "<br>".join(
+                    [
+                        "Spot Testnet is a separate Binance environment with virtual funds. It uses its own account and its own API keys; it is not connected to your real Binance balance in any way.",
+                        "Use it to see how Coinductor previews and (with explicit confirmation) submits orders before ever touching a real key.",
+                        "",
+                        '1. Open <a href="https://testnet.binance.vision/">https://testnet.binance.vision/</a> and log in with a GitHub account (Testnet uses GitHub for login, not your normal Binance account).',
+                        "2. Generate a Testnet API Key and Secret Key from that page.",
+                        "3. Paste both values into the Spot Testnet panel below (or in Settings) and press Save Testnet key. They are stored in the local .env file, separate from your read-only and live-trading keys.",
+                        "4. Press Check Testnet access to confirm the key can reach the Testnet account.",
+                        "5. Testnet orders can also be exercised from a terminal for more control, for example: python -m trading_agent testnet-market-buy --config config.example.toml --symbol BTCUSDT --quote-amount 10. See README.md for the full list of Testnet CLI commands.",
+                        "",
+                        "Testnet is optional but recommended before any real mainnet order: it costs nothing, risks nothing, and exercises the same order-validation and confirmation-string logic used for real trading.",
+                    ]
+                ),
+            },
+            {
                 "id": "safety-model",
                 "section": "Safety",
                 "title": "Safety model",
                 "summary": "How Coinductor separates recommendations, previews, guarded actions, and live execution.",
-                "body": "\n".join(
+                "body": "<br>".join(
                     [
                         "Coinductor is designed so AI can help explain and rank bounded options, while deterministic code owns limits and execution gates.",
                         "",
@@ -147,7 +167,7 @@ class GuideService:
                 "section": "Portfolio",
                 "title": "Portfolio roles",
                 "summary": "Understand protected assets, trading assets, funding sources, and manual overrides.",
-                "body": "\n".join(
+                "body": "<br>".join(
                     [
                         "Portfolio roles tell Coinductor what an asset is allowed to do.",
                         "",

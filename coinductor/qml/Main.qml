@@ -162,6 +162,8 @@ ApplicationWindow {
     }
 
     function budgetHelp(value) {
+        if (appController.onboardingPath !== "FIRST_PORTFOLIO")
+            return "Optional context only: your existing Binance holdings define what Coinductor manages, not this number. Leave it on Auto unless you plan to add fresh capital."
         if (value === 0)
             return "Auto means Coinductor will not assume fresh capital. It will use discovered balances and conservative defaults until real funding is known."
         return "Starting budget is the approximate operating capital Coinductor uses for first-portfolio planning and funding recommendations."
@@ -220,16 +222,26 @@ ApplicationWindow {
         wizardStep = Math.min(wizardStep + 1, wizardSteps.length - 1)
     }
 
-    function wizardPanelHeight() {
+    function wizardStepContentHeight() {
         if (wizardStep === 2)
             return 720
         if (wizardStep === 3)
             return 840
         if (wizardStep === 4)
-            return 660
-        if (wizardStep === 5)
-            return 660
-        return 560
+            return 900
+        if (wizardStep === 5) {
+            var exchangeSteps = 64 + appController.exchangeOnboardingSteps.length * 34
+            var basket = appController.onboardingPath === "FIRST_PORTFOLIO"
+                ? 140 + appController.firstPortfolioAllocation.length * 28 + appController.firstPortfolioSteps.length * 34
+                : 0
+            return 700 + exchangeSteps + basket
+        }
+        return 640
+    }
+
+    function openWizardAtStep(stepIndex) {
+        wizardStep = stepIndex
+        appController.openOnboardingWizard()
     }
 
     Item {
@@ -323,7 +335,7 @@ ApplicationWindow {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.preferredHeight: Math.max(window.wizardStep === 3 ? 760 : 640, window.height - 190)
+                    Layout.preferredHeight: Math.max(window.wizardStepContentHeight(), window.height - 190)
                     Layout.minimumHeight: 420
                     spacing: 16
 
@@ -454,7 +466,7 @@ ApplicationWindow {
                                             Text {
                                                 Layout.fillWidth: true
                                                 text: wizardExchange.currentValue === "BINANCE"
-                                                    ? "The wizard will guide you through Binance read-only API setup, optional AI configuration, and a safe local profile. Trading permissions remain outside the desktop UI until explicit guarded workflows are ready."
+                                                    ? "The wizard will guide you through Binance read-only API setup, optional AI configuration, and a safe local profile. Guarded live trading uses a separate key and separate confirmations, and stays locked until you explicitly progress the safety stage later in the app."
                                                     : "The app is being designed so future exchanges can be added behind the same safety contract. Continue with Binance for now."
                                                 color: textSecondary
                                                 font.pixelSize: 12
@@ -633,7 +645,7 @@ ApplicationWindow {
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
-                                            Text { text: "Starting budget"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                            Text { text: appController.onboardingPath === "FIRST_PORTFOLIO" ? "Starting budget" : "Reference budget (optional)"; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardBudget; Layout.fillWidth: true; model: window.budgetOptions; textRole: "label"; valueRole: "value"; onActivated: window.markProfileEdited() }
                                             Text { Layout.fillWidth: true; text: window.budgetHelp(wizardBudget.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
                                         }
@@ -930,7 +942,21 @@ ApplicationWindow {
                                                     font.pixelSize: 11
                                                     wrapMode: Text.WordWrap
                                                 }
-                                                Text { Layout.fillWidth: true; text: "OpenAI example: create an API key in OpenAI Platform > API keys, then use https://api.openai.com/v1 and your chosen model. A ChatGPT subscription is separate from API usage."; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: 'OpenAI example: create an API key in <a href="https://platform.openai.com/">OpenAI Platform &gt; API keys</a>, then use https://api.openai.com/v1 and your chosen model. A ChatGPT subscription is separate from API usage.'
+                                                    textFormat: Text.RichText
+                                                    linkColor: accent
+                                                    color: textSecondary
+                                                    font.pixelSize: 11
+                                                    wrapMode: Text.WordWrap
+                                                    onLinkActivated: (link) => Qt.openUrlExternally(link)
+                                                    MouseArea {
+                                                        anchors.fill: parent
+                                                        acceptedButtons: Qt.NoButton
+                                                        cursorShape: parent.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                                    }
+                                                }
                                                 RowLayout {
                                                     Layout.fillWidth: true
                                                     spacing: 8
@@ -1049,6 +1075,96 @@ ApplicationWindow {
                                         }
                                     }
                                     Text { Layout.fillWidth: true; text: appController.binanceConnectionDetail; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 232
+                                        radius: 7
+                                        color: panelRaised
+                                        border.color: border
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 16
+                                            spacing: 8
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                Text { text: "Optional: practice on Spot Testnet"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                                Item { Layout.fillWidth: true }
+                                                Button { text: "Open Testnet guide"; onClicked: window.openGuide("binance-testnet") }
+                                            }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: "Spot Testnet uses virtual funds and a separate key from your real Binance account. Recommended before any real mainnet order, but not required to continue this wizard."
+                                                color: textSecondary
+                                                font.pixelSize: 12
+                                                wrapMode: Text.WordWrap
+                                            }
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 8
+                                                TextField { id: binanceTestnetKey; Layout.fillWidth: true; placeholderText: "Testnet API Key" }
+                                                TextField { id: binanceTestnetSecret; Layout.fillWidth: true; placeholderText: "Testnet Secret Key"; echoMode: TextInput.Password }
+                                                Button {
+                                                    text: "Save Testnet key"
+                                                    enabled: binanceTestnetKey.text.trim().length > 0 && binanceTestnetSecret.text.trim().length > 0
+                                                    onClicked: {
+                                                        appController.saveBinanceTestnetCredentials(binanceTestnetKey.text, binanceTestnetSecret.text)
+                                                        binanceTestnetSecret.text = ""
+                                                        window.showToast("Testnet key saved")
+                                                    }
+                                                }
+                                            }
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 10
+                                                Button {
+                                                    text: appController.checkingTestnet ? "Checking..." : "Check Testnet access"
+                                                    enabled: !appController.checkingTestnet
+                                                    onClicked: appController.checkBinanceTestnet()
+                                                }
+                                                Rectangle {
+                                                    Layout.preferredWidth: 120
+                                                    Layout.preferredHeight: 32
+                                                    radius: 5
+                                                    color: appController.testnetCheckStatus === "Verified" ? "#17372d"
+                                                        : appController.testnetCheckStatus === "Blocked" ? "#3a2226" : panel
+                                                    border.color: appController.testnetCheckStatus === "Verified" ? accent
+                                                        : appController.testnetCheckStatus === "Blocked" ? "#ee6b6e" : border
+                                                    Text {
+                                                        anchors.centerIn: parent
+                                                        text: appController.testnetCheckStatus
+                                                        color: appController.testnetCheckStatus === "Verified" ? accent
+                                                            : appController.testnetCheckStatus === "Blocked" ? "#ee6b6e" : textSecondary
+                                                        font.pixelSize: 11
+                                                        font.bold: true
+                                                    }
+                                                }
+                                            }
+                                            Text { Layout.fillWidth: true; text: appController.testnetCheckDetail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                        }
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 72
+                                        radius: 7
+                                        color: panelRaised
+                                        border.color: border
+                                        RowLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 14
+                                            spacing: 12
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: "A separate live-trading key with IP restriction is used later, only when you are ready for guarded real orders."
+                                                color: textSecondary
+                                                font.pixelSize: 12
+                                                wrapMode: Text.WordWrap
+                                            }
+                                            Button {
+                                                text: "Open live-trade guide"
+                                                onClicked: window.openGuide("binance-live-api")
+                                            }
+                                        }
+                                    }
                                     Item { Layout.fillHeight: true }
                                 }
 
@@ -1106,6 +1222,84 @@ ApplicationWindow {
                                                     height: 26
                                                     Text { Layout.preferredWidth: 120; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                                     Text { Layout.preferredWidth: 110; text: modelData.value; color: accent; font.pixelSize: 11; font.bold: true }
+                                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 64 + appController.exchangeOnboardingSteps.length * 34
+                                        radius: 7
+                                        color: panelRaised
+                                        border.color: border
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 16
+                                            spacing: 6
+                                            Text { text: "Next steps outside Coinductor"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                            ListView {
+                                                Layout.fillWidth: true
+                                                Layout.fillHeight: true
+                                                interactive: false
+                                                spacing: 4
+                                                model: appController.exchangeOnboardingSteps
+                                                delegate: RowLayout {
+                                                    required property var modelData
+                                                    width: ListView.view.width
+                                                    height: 26
+                                                    Text { Layout.preferredWidth: 130; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                                    Text { Layout.preferredWidth: 100; text: modelData.value; color: accent; font.pixelSize: 11; font.bold: true }
+                                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: 140 + appController.firstPortfolioAllocation.length * 28 + appController.firstPortfolioSteps.length * 34
+                                        radius: 7
+                                        color: panelRaised
+                                        border.color: border
+                                        visible: appController.onboardingPath === "FIRST_PORTFOLIO"
+                                        ColumnLayout {
+                                            anchors.fill: parent
+                                            anchors.margins: 16
+                                            spacing: 8
+                                            Text { text: "Suggested first basket (manual purchase)"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: "Weights match your chosen management style. Buying is always manual on Binance; Coinductor never places this order for you."
+                                                color: textSecondary
+                                                font.pixelSize: 11
+                                                wrapMode: Text.WordWrap
+                                            }
+                                            ListView {
+                                                Layout.fillWidth: true
+                                                Layout.preferredHeight: appController.firstPortfolioAllocation.length * 26
+                                                interactive: false
+                                                spacing: 2
+                                                model: appController.firstPortfolioAllocation
+                                                delegate: RowLayout {
+                                                    required property var modelData
+                                                    width: ListView.view.width
+                                                    height: 24
+                                                    Text { Layout.preferredWidth: 60; text: modelData.asset; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                                    Text { Layout.preferredWidth: 60; text: modelData.target; color: accent; font.pixelSize: 11; font.bold: true }
+                                                    Text { Layout.fillWidth: true; text: modelData.role; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                                }
+                                            }
+                                            ListView {
+                                                Layout.fillWidth: true
+                                                Layout.preferredHeight: appController.firstPortfolioSteps.length * 30
+                                                interactive: false
+                                                spacing: 4
+                                                model: appController.firstPortfolioSteps
+                                                delegate: RowLayout {
+                                                    required property var modelData
+                                                    width: ListView.view.width
+                                                    height: 28
+                                                    Text { Layout.preferredWidth: 110; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                                     Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
                                                 }
                                             }
@@ -1316,6 +1510,51 @@ ApplicationWindow {
                 y: 28
                 width: Math.max(window.width - 288, 692)
                 spacing: 18
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: finishSetupBannerColumn.implicitHeight + 28
+                    visible: appController.userProfileConfigured
+                        && (appController.binanceConnectionStatus !== "Connected" || appController.aiProviderBaseUrl.length === 0)
+                    radius: 8
+                    color: "#3a3020"
+                    border.color: warning
+                    ColumnLayout {
+                        id: finishSetupBannerColumn
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 14
+                        spacing: 8
+                        Text { text: "Finish setup"; color: warning; font.pixelSize: 14; font.bold: true }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            visible: appController.binanceConnectionStatus !== "Connected"
+                            spacing: 12
+                            Text {
+                                Layout.fillWidth: true
+                                text: "Binance read-only access is not connected yet. Portfolio analysis needs it to show real data instead of examples."
+                                color: textPrimary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                            }
+                            Button { text: "Complete Binance setup"; onClicked: window.openWizardAtStep(4) }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            visible: appController.aiProviderBaseUrl.length === 0
+                            spacing: 12
+                            Text {
+                                Layout.fillWidth: true
+                                text: "AI assistant is not configured yet. This step is optional; Coinductor works without it."
+                                color: textSecondary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                            }
+                            Button { text: "Set up AI (optional)"; onClicked: window.openWizardAtStep(3) }
+                        }
+                    }
+                }
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -4621,10 +4860,18 @@ ApplicationWindow {
                 Text {
                     Layout.fillWidth: true
                     text: activeGuide.body || ""
+                    textFormat: Text.RichText
+                    linkColor: accent
                     color: textPrimary
                     font.pixelSize: 13
                     lineHeight: 1.18
                     wrapMode: Text.WordWrap
+                    onLinkActivated: (link) => Qt.openUrlExternally(link)
+                    MouseArea {
+                        anchors.fill: parent
+                        acceptedButtons: Qt.NoButton
+                        cursorShape: parent.hoveredLink ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    }
                 }
                 Repeater {
                     model: activeGuide.images || []

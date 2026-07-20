@@ -91,11 +91,12 @@ class TestnetExecutor:
             summary=f"{action} Spot Testnet {proposal.action} order for {proposal.symbol}: {result.status}.",
         )
 
-    def validate_market_buy(self, symbol: str, quote_amount_usdt: Decimal, rules: SymbolRules | None = None) -> OrderValidation:
+    def validate_market_buy(self, symbol: str, quote_amount_usdt: Decimal, rules: SymbolRules | None = None, require_whitelist: bool = True) -> OrderValidation:
         rules = rules or self.client.get_symbol_rules(symbol)
-        allowed = {item.upper() for item in self.config.get("strategy", {}).get("allowed_symbols", [])}
-        if rules.symbol.upper() not in allowed:
-            return OrderValidation(False, f"{rules.symbol} is not in strategy.allowed_symbols.", Decimal("0"))
+        if require_whitelist:
+            allowed = {item.upper() for item in self.config.get("strategy", {}).get("allowed_symbols", [])}
+            if rules.symbol.upper() not in allowed:
+                return OrderValidation(False, f"{rules.symbol} is not in strategy.allowed_symbols.", Decimal("0"))
         if rules.status != "TRADING":
             return OrderValidation(False, f"{rules.symbol} status is {rules.status}, not TRADING.", Decimal("0"))
         if rules.quote_asset != "USDT":

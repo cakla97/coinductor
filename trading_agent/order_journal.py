@@ -25,6 +25,19 @@ class OrderIntentFactory:
         encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()[:24]
 
+    def first_portfolio_intent_id(self, asset: str, mode: str, tranche_index: int) -> str:
+        # Deliberately NOT windowed by day: each tranche is a one-time deployment
+        # step, not a daily-repeating decision, so it must stay idempotent forever
+        # regardless of which day the user confirms it on.
+        payload = {
+            "kind": "FIRST_PORTFOLIO",
+            "asset": asset,
+            "mode": mode,
+            "tranche_index": tranche_index,
+        }
+        encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()[:24]
+
     def earn_redeem_intent_id(self, asset: str, amount: Decimal) -> str:
         payload = {
             "window": self._window_value(),

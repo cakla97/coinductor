@@ -188,6 +188,119 @@ def test_consensus_rejects_buy_outside_risk_on() -> None:
     assert "Consensus gate" in decision.reason
 
 
+def test_skip_consensus_lets_a_risk_off_proposal_through() -> None:
+    # First-portfolio basket deployment intentionally skips market-timing checks
+    # (it is establishing a pre-approved template, not chasing a trade setup).
+    state = LiveRiskState(
+        enabled=True,
+        loss_basis_quote=Decimal("12"),
+        trades_today=0,
+        daily_realized_pnl_quote=Decimal("0"),
+        weekly_realized_pnl_quote=Decimal("0"),
+        daily_loss_pct=Decimal("0"),
+        weekly_loss_pct=Decimal("0"),
+        consecutive_losses=0,
+        last_loss_at=None,
+        hours_since_last_loss=None,
+        cooldown_active=False,
+        daily_limit_reached=False,
+        weekly_limit_reached=False,
+        consecutive_loss_limit_reached=False,
+        kill_switch_active=False,
+        summary="clear",
+    )
+    snapshot = _risk_on_snapshot()
+    risk_off_snapshot = MarketSnapshot(
+        symbol=snapshot.symbol,
+        price=snapshot.price,
+        ema20=snapshot.ema20,
+        ema50=snapshot.ema50,
+        ema200=snapshot.ema200,
+        rsi14=snapshot.rsi14,
+        atr14=snapshot.atr14,
+        volume_trend=snapshot.volume_trend,
+        trend_regime="RISK_OFF",
+    )
+
+    decision = RiskEngine(_config()).evaluate(_buy_proposal(), state, [risk_off_snapshot], skip_consensus=True)
+
+    assert decision.approved is True
+    assert "intentionally skipped" in decision.reason
+
+
+def test_skip_consensus_still_enforces_every_other_guard() -> None:
+    # skip_consensus must only bypass the market-timing check, nothing else:
+    # kill switch, whitelist, stop-loss requirement, and confidence floor all
+    # still have to hold for a first-portfolio tranche to be approved.
+    kill_switch_state = LiveRiskState(
+        enabled=True,
+        loss_basis_quote=Decimal("12"),
+        trades_today=0,
+        daily_realized_pnl_quote=Decimal("0"),
+        weekly_realized_pnl_quote=Decimal("0"),
+        daily_loss_pct=Decimal("0"),
+        weekly_loss_pct=Decimal("0"),
+        consecutive_losses=0,
+        last_loss_at=None,
+        hours_since_last_loss=None,
+        cooldown_active=False,
+        daily_limit_reached=True,
+        weekly_limit_reached=False,
+        consecutive_loss_limit_reached=False,
+        kill_switch_active=True,
+        summary="blocked",
+    )
+
+    decision = RiskEngine(_config()).evaluate(
+        _buy_proposal(), kill_switch_state, [_risk_on_snapshot()], skip_consensus=True
+    )
+
+    assert decision.approved is False
+    assert "kill switch" in decision.reason
+
+
+def test_allowed_symbols_override_lets_a_non_strategy_symbol_through() -> None:
+    # First-portfolio basket assets (e.g. BNB, SOL) are not necessarily in
+    # strategy.allowed_symbols, which is specifically the tactical-trading
+    # universe. The caller can substitute a different explicit whitelist.
+    state = LiveRiskState(
+        enabled=True,
+        loss_basis_quote=Decimal("12"),
+        trades_today=0,
+        daily_realized_pnl_quote=Decimal("0"),
+        weekly_realized_pnl_quote=Decimal("0"),
+        daily_loss_pct=Decimal("0"),
+        weekly_loss_pct=Decimal("0"),
+        consecutive_losses=0,
+        last_loss_at=None,
+        hours_since_last_loss=None,
+        cooldown_active=False,
+        daily_limit_reached=False,
+        weekly_limit_reached=False,
+        consecutive_loss_limit_reached=False,
+        kill_switch_active=False,
+        summary="clear",
+    )
+    proposal = TradeProposal(
+        symbol="BNBUSDC",
+        action="BUY",
+        confidence=Decimal("1"),
+        quote_amount_usdt=Decimal("10"),
+        stop_loss_pct=Decimal("1.5"),
+        take_profit_pct=Decimal("3"),
+        reason="First portfolio basket.",
+    )
+
+    without_override = RiskEngine(_config()).evaluate(proposal, state, [], skip_consensus=True)
+    with_override = RiskEngine(_config()).evaluate(
+        proposal, state, [], skip_consensus=True, allowed_symbols={"BNBUSDC"}
+    )
+
+    assert without_override.approved is False
+    assert "not whitelisted" in without_override.reason
+    assert with_override.approved is True
+
+
 def test_consensus_approves_valid_buy() -> None:
     state = LiveRiskState(
         enabled=True,

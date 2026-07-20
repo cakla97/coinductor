@@ -776,3 +776,22 @@ class AgentRunResult:
     run_id: int
     status: str
     report_path: str
+
+
+@dataclass(frozen=True)
+class FirstPortfolioTrancheResult:
+    intent_id: str
+    mode: str
+    asset: str
+    symbol: str
+    tranche_index: int
+    tranches_total: int
+    quote_amount: Decimal
+    status: str
+    validation_summary: str
+    confirmation_required: str
+    submitted: bool = False
+    order_id: str = ""
+    executed_quantity: Decimal = Decimal("0")
+    cumulative_quote_qty: Decimal = Decimal("0")
+    message: str = ""

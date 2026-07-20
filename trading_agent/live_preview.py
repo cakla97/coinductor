@@ -19,6 +19,7 @@ class LivePreviewExecutor:
         risk_decision: RiskDecision,
         bankroll: TradingBankrollReport | None = None,
         existing_intents: set[str] | None = None,
+        require_whitelist: bool = True,
     ) -> LivePreviewReport:
         live_config = self.config.get("live_confirm", {})
         enabled = bool(live_config.get("enabled", False))
@@ -62,7 +63,7 @@ class LivePreviewExecutor:
         try:
             rules = self.client.get_symbol_rules(proposal.symbol)
             available_quote = self.client.get_spot_free_balance(quote_asset)
-            validation = self._validate_market_buy(proposal.symbol, quote_amount, rules, available_quote, quote_asset)
+            validation = self._validate_market_buy(proposal.symbol, quote_amount, rules, available_quote, quote_asset, require_whitelist)
             bankroll_validation = self._validate_bankroll(bankroll)
             if bankroll_validation:
                 validation = bankroll_validation
@@ -145,10 +146,11 @@ class LivePreviewExecutor:
             return "Live trading key must not reuse the read-only key."
         return None
 
-    def _validate_market_buy(self, symbol: str, quote_amount: Decimal, rules: SymbolRules, available_quote: Decimal, quote_asset: str) -> str:
-        allowed = {str(item).upper() for item in self.config.get("strategy", {}).get("allowed_symbols", [])}
-        if symbol.upper() not in allowed:
-            return f"{symbol} is not in strategy.allowed_symbols."
+    def _validate_market_buy(self, symbol: str, quote_amount: Decimal, rules: SymbolRules, available_quote: Decimal, quote_asset: str, require_whitelist: bool = True) -> str:
+        if require_whitelist:
+            allowed = {str(item).upper() for item in self.config.get("strategy", {}).get("allowed_symbols", [])}
+            if symbol.upper() not in allowed:
+                return f"{symbol} is not in strategy.allowed_symbols."
         if rules.status != "TRADING":
             return f"{symbol} status is {rules.status}, not TRADING."
         if rules.quote_asset != quote_asset:

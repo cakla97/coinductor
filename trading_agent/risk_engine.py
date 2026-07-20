@@ -14,9 +14,17 @@ class RiskEngine:
         proposal: TradeProposal,
         risk_state: LiveRiskState,
         snapshots: list[MarketSnapshot],
+        skip_consensus: bool = False,
+        allowed_symbols: set[str] | None = None,
     ) -> RiskDecision:
         risk = self.config["risk"]
-        allowed_symbols = set(self.config["strategy"]["allowed_symbols"])
+        # allowed_symbols lets a caller substitute a different, still-enforced
+        # whitelist (e.g. a first-portfolio template's basket) instead of
+        # strategy.allowed_symbols, which is specifically the tactical-trading
+        # universe and may not include every basket asset. The symbol still has
+        # to be in *some* explicit whitelist; this never disables the check.
+        if allowed_symbols is None:
+            allowed_symbols = set(self.config["strategy"]["allowed_symbols"])
 
         if proposal.symbol not in allowed_symbols:
             return RiskDecision(False, f"Symbol {proposal.symbol} is not whitelisted.", Decimal("0"))
@@ -36,15 +44,22 @@ class RiskEngine:
             return RiskDecision(False, "Daily loss limit reached.", Decimal("0"))
         if risk_state.weekly_loss_pct >= Decimal(str(risk["max_weekly_loss_pct"])):
             return RiskDecision(False, "Weekly loss limit reached.", Decimal("0"))
-        consensus_reason = self._consensus_rejection(proposal, snapshots)
-        if consensus_reason is not None:
-            return RiskDecision(False, consensus_reason, Decimal("0"))
+        if not skip_consensus:
+            consensus_reason = self._consensus_rejection(proposal, snapshots)
+            if consensus_reason is not None:
+                return RiskDecision(False, consensus_reason, Decimal("0"))
         if self.config["orders"]["require_stop_loss"] and proposal.stop_loss_pct <= 0:
             return RiskDecision(False, "Stop loss is required.", Decimal("0"))
 
         max_redeem = Decimal(str(self.config["earn"]["max_redeem_per_run_usdt"]))
         adjusted = min(proposal.quote_amount_usdt, max_redeem)
-        return RiskDecision(True, "Proposal approved by live risk state and deterministic market consensus.", adjusted)
+        reason = (
+            "Proposal approved by live risk state and deterministic market consensus."
+            if not skip_consensus
+            else "Proposal approved by live risk state. Consensus/market-timing checks were intentionally "
+            "skipped for this initial portfolio deployment tranche; all other deterministic limits still applied."
+        )
+        return RiskDecision(True, reason, adjusted)
 
     def _consensus_rejection(
         self,

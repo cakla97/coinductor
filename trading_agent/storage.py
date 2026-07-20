@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluation, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, FirstPortfolioTrancheResult, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluation, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Storage:
@@ -331,6 +331,24 @@ class Storage:
                 can_redeem integer,
                 submitted integer,
                 confirmation_required text,
+                message text
+            );
+            create table if not exists first_portfolio_tranches (
+                run_id integer,
+                intent_id text,
+                mode text,
+                asset text,
+                symbol text,
+                tranche_index integer,
+                tranches_total integer,
+                quote_amount text,
+                status text,
+                validation_summary text,
+                confirmation_required text,
+                submitted integer,
+                order_id text,
+                executed_quantity text,
+                cumulative_quote_qty text,
                 message text
             );
             create table if not exists next_run_recommendations (
@@ -1051,6 +1069,49 @@ class Storage:
                 "select intent_id from earn_redeem_plans where intent_id is not null and intent_id != '' and submitted = 1 and status not in ('SUBMIT_ERROR', 'SUBMIT_SKIPPED')"
             )
         }
+
+    def get_existing_first_portfolio_intents(self, mode: str) -> set[str]:
+        return {
+            row["intent_id"]
+            for row in self.connection.execute(
+                "select intent_id from first_portfolio_tranches "
+                "where mode = ? and intent_id is not null and intent_id != '' "
+                "and submitted = 1 and status not in ('SUBMIT_ERROR', 'SUBMIT_SKIPPED')",
+                (mode,),
+            )
+        }
+
+    def get_first_portfolio_progress(self) -> list[dict[str, object]]:
+        rows = self.connection.execute(
+            """
+            select run_id, intent_id, mode, asset, symbol, tranche_index, tranches_total,
+                   quote_amount, status, submitted, order_id, message
+            from first_portfolio_tranches
+            order by run_id desc, rowid desc
+            """
+        ).fetchall()
+        seen: set[tuple[str, str, int]] = set()
+        progress: list[dict[str, object]] = []
+        for row in rows:
+            key = (str(row["asset"]), str(row["mode"]), int(row["tranche_index"]))
+            if key in seen:
+                continue
+            seen.add(key)
+            progress.append(
+                {
+                    "asset": str(row["asset"]),
+                    "symbol": str(row["symbol"]),
+                    "mode": str(row["mode"]),
+                    "trancheIndex": int(row["tranche_index"]),
+                    "tranchesTotal": int(row["tranches_total"]),
+                    "quoteAmount": str(row["quote_amount"]),
+                    "status": str(row["status"]),
+                    "submitted": bool(row["submitted"]),
+                    "orderId": str(row["order_id"] or ""),
+                    "message": str(row["message"] or ""),
+                }
+            )
+        return progress
 
     def get_submitted_oco_records(self) -> list[dict[str, str]]:
         rows = self.connection.execute(
@@ -1859,6 +1920,49 @@ class Storage:
                 int(plan.submitted),
                 plan.confirmation_required,
                 plan.message,
+            ),
+        )
+        self.connection.commit()
+
+    def save_first_portfolio_tranche(self, run_id: int, result: FirstPortfolioTrancheResult) -> None:
+        self.connection.execute(
+            """
+            insert into first_portfolio_tranches (
+                run_id,
+                intent_id,
+                mode,
+                asset,
+                symbol,
+                tranche_index,
+                tranches_total,
+                quote_amount,
+                status,
+                validation_summary,
+                confirmation_required,
+                submitted,
+                order_id,
+                executed_quantity,
+                cumulative_quote_qty,
+                message
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                result.intent_id,
+                result.mode,
+                result.asset,
+                result.symbol,
+                result.tranche_index,
+                result.tranches_total,
+                str(result.quote_amount),
+                result.status,
+                result.validation_summary,
+                result.confirmation_required,
+                int(result.submitted),
+                result.order_id,
+                str(result.executed_quantity),
+                str(result.cumulative_quote_qty),
+                result.message,
             ),
         )
         self.connection.commit()

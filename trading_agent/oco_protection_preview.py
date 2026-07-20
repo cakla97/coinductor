@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from decimal import Decimal, ROUND_DOWN
+from decimal import Decimal, ROUND_CEILING, ROUND_DOWN
 
 from .binance_client import BinanceApiError, BinanceClient
 from .models import Balance, LivePositionSummary, OcoProtectionPreviewItem, OcoProtectionPreviewReport
@@ -42,7 +41,7 @@ class OcoProtectionPreviewBuilder:
         available_base = self._balance_for_asset(rules.base_asset, balances)
         adjusted_quantity = self._round_step(min(position.quantity, available_base), rules.step_size)
         take_profit = self._round_price(position.take_profit_price, rules.tick_size)
-        stop_loss = self._round_price(position.stop_loss_price, rules.tick_size)
+        stop_loss = self._round_price(position.stop_loss_price, rules.tick_size, rounding=ROUND_CEILING)
         estimated_take_profit_quote = adjusted_quantity * take_profit
         estimated_stop_quote = adjusted_quantity * stop_loss
 
@@ -138,9 +137,9 @@ class OcoProtectionPreviewBuilder:
         if str(self.config.get("_runtime", {}).get("mainnet_oco_confirm", "")) != "CONFIRM_MAINNET_OCO":
             return self._replace_item(item, status="SUBMIT_SKIPPED", message="OCO submit requested but confirmation string did not match CONFIRM_MAINNET_OCO.")
 
-        list_client_id = self._client_order_id("OCOL", item.symbol, item.intent_id)
-        above_client_id = self._client_order_id("OCOT", item.symbol, item.intent_id)
-        below_client_id = self._client_order_id("OCOS", item.symbol, item.intent_id)
+        list_client_id = self._client_order_id("OCOL", item.intent_id)
+        above_client_id = self._client_order_id("OCOT", item.intent_id)
+        below_client_id = self._client_order_id("OCOS", item.intent_id)
         try:
             response = self.live_client.submit_sell_oco_protection(
                 symbol=item.symbol,
@@ -165,9 +164,8 @@ class OcoProtectionPreviewBuilder:
         data = item.__dict__ | changes
         return OcoProtectionPreviewItem(**data)
 
-    def _client_order_id(self, prefix: str, symbol: str, intent_id: str) -> str:
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-        return f"{prefix}{symbol.upper()[:6]}{intent_id[-8:]}{timestamp[-10:]}"[:36]
+    def _client_order_id(self, prefix: str, intent_id: str) -> str:
+        return f"{prefix}{intent_id}"[:36]
 
     def _balance_for_asset(self, asset: str, balances: list[Balance]) -> Decimal:
         wanted = asset.upper()
@@ -181,7 +179,7 @@ class OcoProtectionPreviewBuilder:
             return quantity
         return (quantity / step_size).to_integral_value(rounding=ROUND_DOWN) * step_size
 
-    def _round_price(self, price: Decimal, tick_size: Decimal) -> Decimal:
+    def _round_price(self, price: Decimal, tick_size: Decimal, rounding: str = ROUND_DOWN) -> Decimal:
         if tick_size <= 0:
             return price
-        return (price / tick_size).to_integral_value(rounding=ROUND_DOWN) * tick_size
+        return (price / tick_size).to_integral_value(rounding=rounding) * tick_size

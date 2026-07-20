@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from decimal import Decimal, ROUND_CEILING
-from datetime import datetime, timezone
 
 from .binance_client import BinanceApiError, BinanceClient
 from .models import LiveOrderPreview, LivePreviewReport, RiskDecision, SymbolRules, TradeProposal, TradingBankrollReport
@@ -230,5 +229,4 @@ class LivePreviewExecutor:
         }
 
     def _client_order_id(self, symbol: str, intent_id: str) -> str:
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-        return f"BTAL{symbol.upper()[:6]}{intent_id[:8]}{timestamp[-12:]}"
+        return f"BTAL{symbol.upper()[:6]}{intent_id}"[:36]

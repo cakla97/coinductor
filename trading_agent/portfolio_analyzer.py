@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal, ROUND_HALF_UP
 
+from .decimal_utils import money
 from .models import Balance, PortfolioAnalysis, PortfolioAssetValuation
 
 
@@ -146,7 +147,7 @@ class PortfolioAnalyzer:
         return part / total * Decimal("100")
 
     def _money(self, value: Decimal) -> Decimal:
-        return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return money(value)
 
     def _percent(self, value: Decimal | None) -> Decimal:
         if value is None:

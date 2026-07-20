@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 
+from .decimal_utils import money
 from .models import DustConversionItem, DustConversionPlan, PortfolioAnalysis
 
 
@@ -61,4 +62,4 @@ class DustSourcingAdvisor:
         )
 
     def _money(self, value: Decimal) -> Decimal:
-        return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return money(value)

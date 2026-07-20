@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_DOWN
+from decimal import Decimal
 
 from .binance_client import BinanceApiError, BinanceClient
+from .decimal_utils import floor_to_step
 from .models import Balance, LiveExitPreviewItem, LiveExitPreviewReport, LivePositionSummary
 
 
@@ -110,6 +111,4 @@ class LiveExitPreviewBuilder:
         return Decimal("0")
 
     def _round_step(self, quantity: Decimal, step_size: Decimal) -> Decimal:
-        if step_size <= 0:
-            return quantity
-        return (quantity / step_size).to_integral_value(rounding=ROUND_DOWN) * step_size
+        return floor_to_step(quantity, step_size)

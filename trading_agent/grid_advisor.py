@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 
+from .decimal_utils import money
 from .models import (
     ActiveStrategiesReport,
     GridCandidateAssessment,
@@ -312,7 +313,7 @@ class GridBotAdvisor:
         )
 
     def _money(self, value: Decimal) -> Decimal:
-        return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return money(value)
 
     def _one_decimal(self, value: Decimal) -> Decimal:
         return value.quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)

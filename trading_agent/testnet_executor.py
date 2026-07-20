@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_DOWN
+from decimal import Decimal
 import json
 
 from .binance_client import BinanceApiError, BinanceClient
+from .decimal_utils import floor_to_step
 from .models import OrderValidation, RiskDecision, SymbolRules, TestnetExecutedOrder, TestnetExecutionReport, TestnetOrderRequest, TestnetOrderResult, TradeProposal
 from .order_journal import OrderIntentFactory
 
@@ -222,7 +223,4 @@ class TestnetExecutor:
         )
 
     def _floor_to_step(self, value: Decimal, step: Decimal) -> Decimal:
-        if step <= 0:
-            return value
-        units = (value / step).to_integral_value(rounding=ROUND_DOWN)
-        return units * step
+        return floor_to_step(value, step)

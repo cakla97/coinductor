@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal, ROUND_CEILING, ROUND_DOWN
 
 from .binance_client import BinanceApiError, BinanceClient
+from .decimal_utils import floor_to_step
 from .models import Balance, LivePositionSummary, OcoProtectionPreviewItem, OcoProtectionPreviewReport
 
 
@@ -175,9 +176,7 @@ class OcoProtectionPreviewBuilder:
         return Decimal("0")
 
     def _round_step(self, quantity: Decimal, step_size: Decimal) -> Decimal:
-        if step_size <= 0:
-            return quantity
-        return (quantity / step_size).to_integral_value(rounding=ROUND_DOWN) * step_size
+        return floor_to_step(quantity, step_size)
 
     def _round_price(self, price: Decimal, tick_size: Decimal, rounding: str = ROUND_DOWN) -> Decimal:
         if tick_size <= 0:

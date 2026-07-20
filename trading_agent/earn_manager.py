@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 
 from .binance_client import BinanceApiError, BinanceClient
+from .decimal_utils import money
 from .models import Balance, EarnRedeemPlan, LiquidityDecision, TradingBankrollReport
 from .order_journal import OrderIntentFactory
 
@@ -171,4 +172,4 @@ class EarnLiquidityManager:
         return EarnRedeemPlan(intent_id, True, asset, self._money(amount), "BLOCKED", "", "", False, False, "CONFIRM_EARN_REDEEM", message)
 
     def _money(self, value: Decimal) -> Decimal:
-        return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return money(value)

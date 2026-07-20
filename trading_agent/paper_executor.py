@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 
+from .decimal_utils import money
 from .models import MarketSnapshot, PaperExecutionReport, PaperOrder, RiskDecision, TradeProposal
 from .order_journal import OrderIntentFactory
 
@@ -67,7 +68,7 @@ class PaperExecutor:
         )
 
     def _money(self, value: Decimal) -> Decimal:
-        return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+        return money(value)
 
     def _price(self, value: Decimal) -> Decimal:
         return value.quantize(Decimal("0.00000001"), rounding=ROUND_HALF_UP)

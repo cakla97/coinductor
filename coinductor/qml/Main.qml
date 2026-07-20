@@ -4651,6 +4651,46 @@ ApplicationWindow {
                         }
                     }
                 }
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: challengeHoldContent.implicitHeight + 28
+                    visible: activeActionPlanItem.actionCode === "REVIEW_TRADE" && activeActionPlanItem.status === "HOLD"
+                    radius: 7
+                    color: panelRaised
+                    border.color: border
+                    ColumnLayout {
+                        id: challengeHoldContent
+                        anchors.fill: parent
+                        anchors.margins: 14
+                        spacing: 8
+                        Text { text: "Challenge this HOLD"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Request a BUY evaluation for a specific allowed symbol instead of accepting HOLD. This does not bypass any check: bankroll, exposure, consensus/RSI/trend, stop-loss, and live-submit confirmation all still apply and can still reject it."
+                            color: textSecondary
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            ComboBox {
+                                id: challengeHoldSymbol
+                                Layout.preferredWidth: 200
+                                model: appController.manualOverrideSymbols
+                            }
+                            Button {
+                                text: appController.busy ? "Running..." : "Challenge HOLD"
+                                enabled: !appController.busy && appController.manualOverrideSymbols.length > 0
+                                onClicked: {
+                                    appController.challengeHold(challengeHoldSymbol.currentText)
+                                    actionPlanDetailDialog.close()
+                                }
+                            }
+                            Item { Layout.fillWidth: true }
+                        }
+                    }
+                }
                 RowLayout {
                     Layout.fillWidth: true
                     visible: activeActionPlanItem.actionCode === "OPEN_ACTIVE_STRATEGIES"

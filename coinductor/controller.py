@@ -6,6 +6,8 @@ from uuid import uuid4
 from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication, QImageReader
 
+from trading_agent.config import load_config
+
 from .ai_provider import AiProviderService
 from .application import CoinductorApplication
 from .app_tour_service import AppTourService
@@ -312,6 +314,10 @@ class AppController(QObject):
             self._user_profile_service.current_profile("EXISTING_PORTFOLIO")
         )
         self._guides = GuideService().list_guides()
+        try:
+            self._manual_override_symbols = load_config("config.example.toml").allowed_symbols
+        except Exception:
+            self._manual_override_symbols = []
         self._local_data_reset_snapshot = LocalDataResetService().preview()
         self._asset_policy_store = AssetPolicyStore()
         self._asset_role_overrides = self._asset_policy_store.load()
@@ -410,6 +416,10 @@ class AppController(QObject):
     @Property("QVariantList", constant=True)
     def rebalancingRegistrationAssets(self) -> list[str]:
         return list(self._strategy_registration_service.rebalancing_assets())
+
+    @Property("QVariantList", constant=True)
+    def manualOverrideSymbols(self) -> list[str]:
+        return list(self._manual_override_symbols)
 
     @Property("QVariantMap", notify=dataChanged)
     def latestGridRegistrationSuggestion(self) -> dict[str, object]:
@@ -1344,6 +1354,27 @@ class AppController(QObject):
             completion_message="Bot plan ready. Review the Action Plan.",
         )
 
+    @Slot(str)
+    def challengeHold(self, symbol: str) -> None:
+        if self._busy:
+            return
+        if self._decision != "HOLD":
+            self.notificationRequested.emit("Manual override is only available when the current decision is HOLD.")
+            return
+        normalized = symbol.strip().upper()
+        if normalized not in self._manual_override_symbols:
+            self.notificationRequested.emit(f"{normalized} is not in the allowed trading symbols.")
+            return
+        self._start_analysis(
+            "REAL",
+            True,
+            True,
+            True,
+            result_page=3,
+            completion_message=f"Manual override evaluated for {normalized}. Review the Action Plan.",
+            manual_override_symbol=normalized,
+        )
+
     def _start_analysis(
         self,
         data_mode: str,
@@ -1359,6 +1390,7 @@ class AppController(QObject):
         oco_confirm: str = "",
         earn_redeem_submit: bool = False,
         earn_redeem_confirm: str = "",
+        manual_override_symbol: str = "",
     ) -> None:
         if self._busy:
             return
@@ -1380,6 +1412,7 @@ class AppController(QObject):
             oco_confirm=oco_confirm.strip(),
             earn_redeem_submit=earn_redeem_submit and self._safety_snapshot.allows_live_submit,
             earn_redeem_confirm=earn_redeem_confirm.strip(),
+            manual_override_symbol=manual_override_symbol.strip(),
         )
         self._thread = QThread(self)
         self._worker = AnalysisWorker(options)

@@ -1,7 +1,16 @@
 from decimal import Decimal
 
 from trading_agent.ai_analyst import AiAnalyst
-from trading_agent.models import AiDecisionMemory, MarketSnapshot, RebalancingBotAsset, RebalancingBotRecommendation
+from trading_agent.models import (
+    AiDecisionMemory,
+    LivePositionCycle,
+    LivePositionSummary,
+    LiveRiskState,
+    MarketSnapshot,
+    RebalancingBotAsset,
+    RebalancingBotRecommendation,
+)
+from trading_agent.risk_engine import RiskEngine
 
 
 def _config() -> dict:
@@ -105,6 +114,116 @@ def test_small_memory_sample_is_withheld_from_trade_ranking() -> None:
     assert payload["pattern_inference_allowed"] is False
     assert payload["recent_closed_cycles"] == []
     assert "withheld from trade ranking" in payload["summary"]
+
+
+def test_manual_override_builds_a_buy_proposal_for_an_allowed_symbol() -> None:
+    analyst = AiAnalyst(_config())
+
+    proposal = analyst.propose_manual_override("ethusdc", _snapshots())
+
+    assert proposal.action == "BUY"
+    assert proposal.symbol == "ETHUSDC"
+    assert proposal.confidence == Decimal("1")
+    assert proposal.quote_amount_usdt == Decimal("25")
+    assert proposal.stop_loss_pct == Decimal("1.5")
+    assert proposal.take_profit_pct == Decimal("3.0")
+    assert "Manual override" in proposal.reason
+
+
+def test_manual_override_refuses_a_symbol_outside_the_whitelist() -> None:
+    analyst = AiAnalyst(_config())
+
+    proposal = analyst.propose_manual_override("DOGEUSDC", _snapshots())
+
+    assert proposal.action == "HOLD"
+    assert proposal.quote_amount_usdt == Decimal("0")
+    assert "not in strategy.allowed_symbols" in proposal.reason
+
+
+def test_manual_override_is_blocked_while_a_live_position_is_open() -> None:
+    analyst = AiAnalyst(_config())
+    open_position = LivePositionCycle(
+        intent_id="abc123",
+        symbol="BTCUSDC",
+        buy_order_id="1",
+        sell_order_id=None,
+        buy_quote=Decimal("500"),
+        sell_quote=None,
+        quantity=Decimal("0.01"),
+        entry_price=Decimal("50000"),
+        current_price=Decimal("51000"),
+        current_value=Decimal("510"),
+        pnl_quote=Decimal("10"),
+        pnl_pct=Decimal("2"),
+        stop_loss_price=Decimal("47500"),
+        take_profit_price=Decimal("54000"),
+        status="OPEN",
+        exit_preview_status="MONITORING",
+        exit_preview_reason="",
+    )
+    live_positions = LivePositionSummary(
+        enabled=True,
+        open_positions=(open_position,),
+        closed_positions=(),
+        total_realized_pnl_quote=Decimal("0"),
+        summary="",
+    )
+
+    proposal = analyst.propose_manual_override("ETHUSDC", _snapshots(), live_positions=live_positions)
+
+    assert proposal.action == "HOLD"
+    assert "Open live position guard" in proposal.reason
+
+
+def test_manual_override_proposal_still_fails_the_consensus_gate() -> None:
+    # This is the core safety guarantee: a manual override is not a raw BUY button.
+    # It still has to pass the same deterministic consensus/risk checks as any
+    # AI-proposed trade.
+    config = _config()
+    config["risk"] = {"min_ai_confidence": "0", "max_trades_per_day": 10, "max_daily_loss_pct": "5", "max_weekly_loss_pct": "10"}
+    config["orders"] = {**config["orders"], "require_stop_loss": True}
+    config["consensus"] = {"enabled": True, "require_risk_on": True, "min_rsi14": "45", "max_rsi14": "68"}
+    analyst = AiAnalyst(config)
+    risk_engine = RiskEngine(config)
+    risk_state = LiveRiskState(
+        enabled=True,
+        loss_basis_quote=Decimal("100"),
+        trades_today=0,
+        daily_realized_pnl_quote=Decimal("0"),
+        weekly_realized_pnl_quote=Decimal("0"),
+        daily_loss_pct=Decimal("0"),
+        weekly_loss_pct=Decimal("0"),
+        consecutive_losses=0,
+        last_loss_at=None,
+        hours_since_last_loss=None,
+        cooldown_active=False,
+        daily_limit_reached=False,
+        weekly_limit_reached=False,
+        consecutive_loss_limit_reached=False,
+        kill_switch_active=False,
+        summary="clear",
+    )
+    overbought_snapshot = [
+        MarketSnapshot(
+            symbol="BTCUSDC",
+            price=Decimal("65000"),
+            ema20=Decimal("64000"),
+            ema50=Decimal("63000"),
+            ema200=Decimal("60000"),
+            rsi14=Decimal("90"),  # far outside the 45-68 consensus band
+            atr14=Decimal("1000"),
+            volume_trend="rising",
+            trend_regime="RISK_ON",
+        )
+    ]
+
+    proposal = analyst.propose_manual_override("BTCUSDC", overbought_snapshot)
+    decision = risk_engine.evaluate(proposal=proposal, risk_state=risk_state, snapshots=overbought_snapshot)
+
+    assert proposal.action == "BUY"  # the override itself was accepted as a candidate...
+    assert decision.approved is False  # ...but the deterministic risk engine still rejects it
+    assert "Consensus gate" in decision.reason
+    assert "RSI14" in decision.reason
 
 
 def test_rebalancing_payload_preserves_deterministic_blocker() -> None:

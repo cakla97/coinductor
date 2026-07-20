@@ -85,12 +85,20 @@ class AgentRunner:
             oco_status_report = self.oco_status.sync(run_id)
             decision_memory = self.storage.get_ai_decision_memory(self.config.raw)
             pre_trade_live_positions = self.storage.get_live_position_summary(snapshots, self.config.raw)
-            proposal = self.ai.propose_trade(
-                snapshots,
-                live_positions=pre_trade_live_positions,
-                decision_memory=decision_memory,
-                market_research=market_research_report,
-            )
+            manual_override_symbol = str(self.config.raw.get("_runtime", {}).get("manual_override_symbol", "")).strip()
+            if manual_override_symbol:
+                proposal = self.ai.propose_manual_override(
+                    manual_override_symbol,
+                    snapshots,
+                    live_positions=pre_trade_live_positions,
+                )
+            else:
+                proposal = self.ai.propose_trade(
+                    snapshots,
+                    live_positions=pre_trade_live_positions,
+                    decision_memory=decision_memory,
+                    market_research=market_research_report,
+                )
             risk_state = self.storage.get_live_risk_state(run_id, self.config.raw)
             risk_decision = self.risk.evaluate(
                 proposal=proposal,

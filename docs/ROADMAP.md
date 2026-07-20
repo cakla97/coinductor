@@ -159,8 +159,11 @@ exists.
 - manual Binance Grid/Rebalancing creation instructions and local registration -
   implemented
 - guarded manual trade intent overrides that can challenge a HOLD signal but
-  still must pass funding, exposure, stop-loss, and kill-switch checks - not
-  implemented yet
+  still must pass funding, exposure, stop-loss, and kill-switch checks -
+  implemented ("Challenge HOLD" on the Action Plan trade card lets the user
+  request a BUY evaluation for one allowed symbol; the deterministic risk
+  engine still independently evaluates consensus/RSI/trend, bankroll, stop-loss,
+  and live-submit confirmation, and can still reject it)
 
 ## Stage B: Open-source Distribution
 

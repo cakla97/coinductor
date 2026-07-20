@@ -191,6 +191,16 @@ terminal.
   stays disabled until the safety stage is `LIVE_ENABLED`, the live-trading key
   check is `Verified`, and a `Ready` preview exists.
 
+## 10b. Challenge HOLD (Action Plan)
+
+- After a real run that returned `HOLD`, open the trade item's detail dialog on
+  Action Plan and confirm a "Challenge this HOLD" panel appears with a symbol
+  picker (from `strategy.allowed_symbols`) and a "Challenge HOLD" button.
+- Pick a symbol and run it. Confirm this always runs a fresh REAL analysis and
+  that the result can still be `HOLD`/blocked if the symbol fails consensus,
+  bankroll, or any other deterministic check — it must never guarantee a BUY.
+- Confirm the button/panel is hidden once the decision is no longer `HOLD`.
+
 ## 11. AI Assistant
 
 - Open `AI Assistant`.

@@ -63,6 +63,7 @@ class CoinductorApplication:
                 "mainnet_confirm": options.live_confirm if options.live_submit else "",
                 "earn_redeem_submit": bool(options.earn_redeem_submit),
                 "earn_redeem_confirm": options.earn_redeem_confirm if options.earn_redeem_submit else "",
+                "manual_override_symbol": options.manual_override_symbol.strip().upper(),
                 "oco_protection_submit": bool(options.oco_submit),
                 "mainnet_oco_confirm": options.oco_confirm if options.oco_submit else "",
                 "testnet_confirm": "",

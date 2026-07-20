@@ -41,6 +41,36 @@ class AiAnalyst:
                 reason=f"Local AI proposal failed ({exc}); {fallback.reason}",
             )
 
+    def propose_manual_override(
+        self,
+        symbol: str,
+        snapshots: list[MarketSnapshot],
+        live_positions: LivePositionSummary | None = None,
+    ) -> TradeProposal:
+        if self._open_live_position_blocks_buy(live_positions):
+            return self._hold_proposal(
+                snapshots,
+                "Open live position guard: an existing live position is being monitored, so no new BUY is "
+                "proposed, including manual overrides.",
+            )
+        allowed_symbols = [str(item).upper() for item in self.config.get("strategy", {}).get("allowed_symbols", [])]
+        normalized = symbol.strip().upper()
+        if normalized not in allowed_symbols:
+            return self._hold_proposal(
+                snapshots,
+                f"Manual override requested {normalized}, which is not in strategy.allowed_symbols.",
+            )
+        orders = self.config["orders"]
+        return TradeProposal(
+            symbol=normalized,
+            action="BUY",
+            confidence=Decimal("1"),
+            quote_amount_usdt=Decimal(str(self.config["strategy"]["quote_amount_usdt"])),
+            stop_loss_pct=Decimal(str(orders["default_stop_loss_pct"])),
+            take_profit_pct=Decimal(str(orders["default_take_profit_pct"])),
+            reason=f"Manual override: user requested a BUY evaluation for {normalized} instead of accepting HOLD.",
+        )
+
     def comment_on_portfolio(
         self,
         portfolio: PortfolioAnalysis,

@@ -103,3 +103,36 @@ def test_desktop_options_enable_earn_redeem_submit_only_when_requested() -> None
     assert config["_runtime"]["oco_protection_submit"] is False
     assert config["_runtime"]["earn_redeem_submit"] is True
     assert config["_runtime"]["earn_redeem_confirm"] == "CONFIRM_EARN_REDEEM"
+
+
+def test_desktop_options_pass_through_manual_override_symbol() -> None:
+    config = {
+        "app": {"mock_data": True},
+        "ai": {"commentary_enabled": False, "enabled": False},
+        "live_confirm": {"enabled": False},
+    }
+
+    CoinductorApplication()._apply_options(
+        config,
+        RunOptions(
+            data_mode="REAL",
+            ai_summary=True,
+            ai_proposals=True,
+            live_preview=True,
+            manual_override_symbol="ethusdc",
+        ),
+    )
+
+    assert config["_runtime"]["manual_override_symbol"] == "ETHUSDC"
+
+
+def test_desktop_options_default_to_no_manual_override() -> None:
+    config = {
+        "app": {"mock_data": True},
+        "ai": {"commentary_enabled": False, "enabled": False},
+        "live_confirm": {"enabled": False},
+    }
+
+    CoinductorApplication()._apply_options(config, RunOptions(data_mode="REAL"))
+
+    assert config["_runtime"]["manual_override_symbol"] == ""

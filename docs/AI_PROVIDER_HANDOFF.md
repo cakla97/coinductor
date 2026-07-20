@@ -222,9 +222,15 @@ checks and current generated state when the user asks for an actual portfolio de
    controller requires typed `DELETE` and is blocked while an analysis is running.
 9. **Full UI localization.** `en-US`, `es-ES`, `cs-CZ`, and `pt-BR` locale profiles exist
    for first-portfolio funding text, but most QML UI strings remain English.
-10. **Installed-model discovery.** Hardware recommendations and `/models` validation
-    exist, but the wizard does not yet offer a polished “detect installed Ollama models
-    and select one” flow.
+10. ~~**Installed-model discovery.**~~ Implemented: `AiProviderService.discover_models()`
+    calls the configured endpoint's `/models` route (the same OpenAI-compatible route
+    `health_check()` already uses) and returns the model IDs it actually reports. The
+    wizard's "Local AI with Ollama" panel (also reachable from Settings via "Configure
+    AI models") has a "Detect installed models" button next to "Scan hardware"; each
+    detected model gets "Use as text"/"Use as vision" buttons that fill the model
+    fields, replacing free-typed guesses with the endpoint's own list. Hardware-based
+    recommendations remain unchanged and complementary — hardware fit vs. what is
+    actually installed are different questions.
 11. **Profiles/accounts.** Multiple Coinductor profiles/Binance accounts are a planned
     nice-to-have, not implemented. Current state and `.env` are single-profile.
 12. **Credential storage.** Wizard-managed `.env` is easier than manual editing but is
@@ -260,10 +266,10 @@ source-asset choices, and small-capital limits developed for the original portfo
 4. Continue strengthening Assistant knowledge coverage (a real project knowledge/
    retrieval layer covering every visible control, not just navigation). Standalone
    read-only market intents are done as of 2026-07-20.
-5. Remaining smaller Stage A items: inline wizard AI Q&A, full UI localization,
-   installed-model discovery polish. (Earn redeem, manual HOLD challenge,
-   hard local-data deletion, and first portfolio staged deployment are all
-   done as of 2026-07-20.)
+5. Remaining smaller Stage A items: inline wizard AI Q&A and full UI
+   localization. (Earn redeem, manual HOLD challenge, hard local-data
+   deletion, first portfolio staged deployment, and installed-model
+   discovery are all done as of 2026-07-20.)
 6. Only then begin Stage B packaging and public-default cleanup.
 
 Do not jump directly to installer work while core setup and guarded workflows still have

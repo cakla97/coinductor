@@ -162,6 +162,26 @@ class AiProviderHealthWorker(QObject):
             self.finished.emit()
 
 
+class AiModelDiscoveryWorker(QObject):
+    completed = Signal(object)
+    failed = Signal(str)
+    finished = Signal()
+
+    def __init__(self, base_url: str, api_key: str = ""):
+        super().__init__()
+        self.base_url = base_url
+        self.api_key = api_key
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            self.completed.emit(AiProviderService().discover_models(self.base_url, self.api_key))
+        except Exception as exc:
+            self.failed.emit(str(exc))
+        finally:
+            self.finished.emit()
+
+
 class AssistantWorker(QObject):
     completed = Signal(object)
     finished = Signal()
@@ -217,6 +237,7 @@ class AppController(QObject):
     onboardingWizardChanged = Signal()
     appTourChanged = Signal()
     localAiRecommendationChanged = Signal()
+    localAiDiscoveryChanged = Signal()
     localDataResetChanged = Signal()
     firstPortfolioDeploymentChanged = Signal()
 
@@ -269,6 +290,10 @@ class AppController(QObject):
         self._ai_provider_health_detail = "Run an AI provider check after configuring LLM_BASE_URL and LLM_MODEL."
         self._local_ai_hardware_summary = "Hardware has not been scanned yet."
         self._local_ai_model_recommendations: list[dict[str, str]] = []
+        self._discovering_ai_models = False
+        self._local_ai_discovery_status = "Not checked"
+        self._local_ai_discovery_detail = "Detect which models the endpoint currently reports as installed."
+        self._local_ai_discovered_models: list[str] = []
         self._snapshot = DesktopStore().load()
         self._setup_snapshot = SetupService().inspect()
         self._ai_provider_snapshot = AiProviderService().inspect()
@@ -387,6 +412,8 @@ class AppController(QObject):
         self._first_portfolio_tranche_worker: FirstPortfolioTrancheWorker | None = None
         self._ai_provider_thread: QThread | None = None
         self._ai_provider_worker: AiProviderHealthWorker | None = None
+        self._ai_model_discovery_thread: QThread | None = None
+        self._ai_model_discovery_worker: AiModelDiscoveryWorker | None = None
         self._assistant_thread: QThread | None = None
         self._assistant_worker: AssistantWorker | None = None
         self._apply_snapshot()
@@ -677,6 +704,22 @@ class AppController(QObject):
     @Property("QVariantList", notify=localAiRecommendationChanged)
     def localAiModelRecommendations(self) -> list[dict[str, str]]:
         return list(self._local_ai_model_recommendations)
+
+    @Property(bool, notify=localAiDiscoveryChanged)
+    def discoveringAiModels(self) -> bool:
+        return self._discovering_ai_models
+
+    @Property(str, notify=localAiDiscoveryChanged)
+    def localAiDiscoveryStatus(self) -> str:
+        return self._local_ai_discovery_status
+
+    @Property(str, notify=localAiDiscoveryChanged)
+    def localAiDiscoveryDetail(self) -> str:
+        return self._local_ai_discovery_detail
+
+    @Property("QVariantList", notify=localAiDiscoveryChanged)
+    def localAiDiscoveredModels(self) -> list[str]:
+        return list(self._local_ai_discovered_models)
 
     @Property(str, notify=userProfileChanged)
     def userProfileSummary(self) -> str:
@@ -1051,6 +1094,49 @@ class AppController(QObject):
             for item in snapshot.recommendations
         ]
         self.localAiRecommendationChanged.emit()
+
+    @Slot(str)
+    def discoverLocalAiModels(self, base_url: str) -> None:
+        if self._discovering_ai_models:
+            return
+        if not base_url.strip():
+            self.notificationRequested.emit("Enter the endpoint URL before detecting models.")
+            return
+        self._discovering_ai_models = True
+        self._local_ai_discovery_status = "Checking"
+        self._local_ai_discovery_detail = "Asking the endpoint which models are installed..."
+        self.localAiDiscoveryChanged.emit()
+
+        self._ai_model_discovery_thread = QThread(self)
+        self._ai_model_discovery_worker = AiModelDiscoveryWorker(base_url)
+        self._ai_model_discovery_worker.moveToThread(self._ai_model_discovery_thread)
+        self._ai_model_discovery_thread.started.connect(self._ai_model_discovery_worker.run)
+        self._ai_model_discovery_worker.completed.connect(self._on_ai_model_discovery_completed)
+        self._ai_model_discovery_worker.failed.connect(self._on_ai_model_discovery_failed)
+        self._ai_model_discovery_worker.finished.connect(self._ai_model_discovery_thread.quit)
+        self._ai_model_discovery_worker.finished.connect(self._ai_model_discovery_worker.deleteLater)
+        self._ai_model_discovery_thread.finished.connect(self._ai_model_discovery_thread.deleteLater)
+        self._ai_model_discovery_thread.finished.connect(self._clear_ai_model_discovery_worker)
+        self._ai_model_discovery_thread.start()
+
+    @Slot(object)
+    def _on_ai_model_discovery_completed(self, result) -> None:
+        self._local_ai_discovery_status = result.status
+        self._local_ai_discovery_detail = result.detail
+        self._local_ai_discovered_models = list(result.models)
+        self.localAiDiscoveryChanged.emit()
+
+    @Slot(str)
+    def _on_ai_model_discovery_failed(self, message: str) -> None:
+        self._local_ai_discovery_status = "BLOCK"
+        self._local_ai_discovery_detail = message
+        self.localAiDiscoveryChanged.emit()
+
+    @Slot()
+    def _clear_ai_model_discovery_worker(self) -> None:
+        self._ai_model_discovery_worker = None
+        self._ai_model_discovery_thread = None
+        self._discovering_ai_models = False
 
     @Slot(str, str)
     def saveBinanceReadOnlyCredentials(self, api_key: str, api_secret: str) -> None:

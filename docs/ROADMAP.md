@@ -114,7 +114,9 @@ knows exchange terminology.
 - clear disclosure of which data leaves the computer
 - provider health checks, timeouts, and deterministic fallback
 - Ollama helper flow: install link, model recommendation by hardware tier, and
-  optional local model discovery
+  optional local model discovery - implemented (hardware-tier recommendations
+  plus a "Detect installed models" action that lists what the endpoint
+  actually reports and lets the user pick a text/vision model from it)
 - provider presets for common OpenAI-compatible cloud endpoints
 - inline "ask AI about this step" help inside onboarding once a provider is
   connected, with offline fallback when no provider is configured

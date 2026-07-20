@@ -127,6 +127,58 @@ def test_ai_provider_health_blocks_missing_endpoint(tmp_path, monkeypatch) -> No
     assert "LLM_BASE_URL" in result.detail
 
 
+def test_discover_models_lists_sorted_ids_reported_by_the_endpoint(monkeypatch) -> None:
+    called_urls: list[str] = []
+
+    class MultiModelResponse(FakeResponse):
+        def read(self) -> bytes:
+            return b'{"data": [{"id": "qwen3:14b"}, {"id": "qwen3-vl:8b"}, {"id": ""}]}'
+
+    def fake_urlopen(request, timeout):
+        called_urls.append(request.full_url)
+        return MultiModelResponse()
+
+    monkeypatch.setattr(ai_provider.urllib.request, "urlopen", fake_urlopen)
+
+    result = AiProviderService().discover_models("http://127.0.0.1:11434/v1")
+
+    assert result.status == "PASS"
+    assert result.models == ("qwen3-vl:8b", "qwen3:14b")
+    assert called_urls == ["http://127.0.0.1:11434/v1/models"]
+
+
+def test_discover_models_blocks_on_empty_base_url() -> None:
+    result = AiProviderService().discover_models("")
+
+    assert result.status == "BLOCK"
+    assert "endpoint" in result.detail.lower()
+
+
+def test_discover_models_blocks_when_endpoint_reports_no_models(monkeypatch) -> None:
+    class EmptyResponse(FakeResponse):
+        def read(self) -> bytes:
+            return b'{"data": []}'
+
+    monkeypatch.setattr(ai_provider.urllib.request, "urlopen", lambda request, timeout: EmptyResponse())
+
+    result = AiProviderService().discover_models("http://127.0.0.1:11434/v1")
+
+    assert result.status == "BLOCK"
+    assert "no installed models" in result.detail
+
+
+def test_discover_models_blocks_and_redacts_url_on_connection_failure(monkeypatch) -> None:
+    def fake_urlopen(request, timeout):
+        raise OSError("connection refused")
+
+    monkeypatch.setattr(ai_provider.urllib.request, "urlopen", fake_urlopen)
+
+    result = AiProviderService().discover_models("http://127.0.0.1:11434/v1")
+
+    assert result.status == "BLOCK"
+    assert "connection refused" in result.detail
+
+
 def test_vision_model_detection_is_conservative() -> None:
     assert supports_vision_model("qwen3:14b") is False
     assert supports_vision_model("qwen3-vl:8b") is True

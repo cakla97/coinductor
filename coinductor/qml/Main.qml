@@ -831,8 +831,8 @@ ApplicationWindow {
                                         rowSpacing: 12
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 760 : 690) : 460
-                                            Layout.minimumHeight: appController.localAiModelRecommendations.length > 0 ? 660 : 430
+                                            Layout.preferredHeight: (appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 760 : 690) : 460) + (appController.localAiDiscoveredModels.length > 0 ? 50 + Math.min(appController.localAiDiscoveredModels.length, 4) * 40 : (appController.discoveringAiModels || appController.localAiDiscoveryStatus === "BLOCK" ? 90 : 0))
+                                            Layout.minimumHeight: (appController.localAiModelRecommendations.length > 0 ? 660 : 430) + (appController.localAiDiscoveredModels.length > 0 || appController.discoveringAiModels || appController.localAiDiscoveryStatus === "BLOCK" ? 90 : 0)
                                             radius: 7
                                             color: panelRaised
                                             border.color: border
@@ -890,6 +890,11 @@ ApplicationWindow {
                                                         text: "Scan hardware"
                                                         onClicked: appController.scanLocalAiHardware()
                                                     }
+                                                    Button {
+                                                        text: appController.discoveringAiModels ? "Detecting..." : "Detect installed models"
+                                                        enabled: !appController.discoveringAiModels
+                                                        onClicked: appController.discoverLocalAiModels(localAiBaseUrl.text)
+                                                    }
                                                     Item { Layout.fillWidth: true }
                                                 }
                                                 Text {
@@ -900,6 +905,74 @@ ApplicationWindow {
                                                     wrapMode: Text.WordWrap
                                                 }
                                                 Text { Layout.fillWidth: true; text: appController.localAiHardwareSummary; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                                Rectangle {
+                                                    visible: appController.localAiDiscoveredModels.length > 0 || appController.discoveringAiModels || appController.localAiDiscoveryStatus === "BLOCK"
+                                                    Layout.fillWidth: true
+                                                    Layout.bottomMargin: 10
+                                                    Layout.minimumHeight: 90
+                                                    Layout.preferredHeight: appController.localAiDiscoveredModels.length > 0 ? 60 + Math.min(appController.localAiDiscoveredModels.length, 4) * 40 : 90
+                                                    radius: 6
+                                                    color: "#10161d"
+                                                    border.color: border
+                                                    clip: true
+                                                    ColumnLayout {
+                                                        anchors.fill: parent
+                                                        anchors.margins: 10
+                                                        spacing: 6
+                                                        RowLayout {
+                                                            Layout.fillWidth: true
+                                                            Text { text: "Installed models detected"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                                            Item { Layout.fillWidth: true }
+                                                            Text { text: appController.localAiDiscoveredModels.length > 4 ? "Scroll for all" : ""; color: textSecondary; font.pixelSize: 10 }
+                                                        }
+                                                        Text {
+                                                            visible: appController.localAiDiscoveredModels.length === 0
+                                                            Layout.fillWidth: true
+                                                            text: appController.localAiDiscoveryDetail
+                                                            color: appController.localAiDiscoveryStatus === "BLOCK" ? warning : textSecondary
+                                                            font.pixelSize: 10
+                                                            wrapMode: Text.WordWrap
+                                                        }
+                                                        ListView {
+                                                            visible: appController.localAiDiscoveredModels.length > 0
+                                                            Layout.fillWidth: true
+                                                            Layout.fillHeight: true
+                                                            clip: true
+                                                            interactive: true
+                                                            boundsBehavior: Flickable.StopAtBounds
+                                                            spacing: 6
+                                                            model: appController.localAiDiscoveredModels
+                                                            ScrollBar.vertical: ScrollBar { policy: appController.localAiDiscoveredModels.length > 4 ? ScrollBar.AlwaysOn : ScrollBar.AsNeeded }
+                                                            delegate: Rectangle {
+                                                                required property string modelData
+                                                                width: ListView.view.width - 12
+                                                                height: 34
+                                                                radius: 5
+                                                                color: "#141a21"
+                                                                border.color: border
+                                                                RowLayout {
+                                                                    anchors.fill: parent
+                                                                    anchors.leftMargin: 10
+                                                                    anchors.rightMargin: 6
+                                                                    spacing: 6
+                                                                    Text { Layout.fillWidth: true; text: modelData; color: accent; font.pixelSize: 11; elide: Text.ElideRight }
+                                                                    Button {
+                                                                        text: "Use as text"
+                                                                        font.pixelSize: 9
+                                                                        implicitHeight: 24
+                                                                        onClicked: localAiModel.text = modelData
+                                                                    }
+                                                                    Button {
+                                                                        text: "Use as vision"
+                                                                        font.pixelSize: 9
+                                                                        implicitHeight: 24
+                                                                        onClicked: localAiVisionModel.text = modelData
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
                                                 Rectangle {
                                                     visible: appController.localAiModelRecommendations.length > 0
                                                     Layout.fillWidth: true

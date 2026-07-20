@@ -50,6 +50,11 @@ terminal.
   `Check AI provider`.
 - In AI setup, click `Scan hardware` and confirm Coinductor shows a local hardware
   summary and ranked Ollama model suggestions.
+- With Ollama running locally, click `Detect installed models`. Confirm it lists the
+  models the endpoint actually reports (not just hardware-based guesses), and that
+  clicking `Use as text`/`Use as vision` on a detected model fills the corresponding
+  field. With Ollama stopped, confirm the same button reports a clear failure instead
+  of silently doing nothing.
 - Open `Local AI guide` and `Cloud AI guide` from the wizard. Confirm the guides
   open in a modal, links are clickable, and closing returns to the same wizard step.
 - In Binance API setup, follow the shown Binance API steps and paste the read-only

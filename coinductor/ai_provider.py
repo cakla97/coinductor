@@ -8,7 +8,7 @@ import urllib.request
 from trading_agent.config import load_config
 from trading_agent.env import load_env_file
 
-from .models import AiProviderHealthResult, AiProviderSnapshot
+from .models import AiModelDiscoveryResult, AiProviderHealthResult, AiProviderSnapshot
 
 
 class AiProviderService:
@@ -155,6 +155,40 @@ class AiProviderService:
         return AiProviderHealthResult(
             "PASS",
             f"Endpoint reachable; {model_count} model(s) reported. Text model ready: {text_model}.{vision_detail}",
+        )
+
+    def discover_models(self, base_url: str, api_key: str = "") -> AiModelDiscoveryResult:
+        normalized_url = base_url.strip().rstrip("/")
+        if not normalized_url:
+            return AiModelDiscoveryResult("BLOCK", "Enter the endpoint URL before detecting models.")
+
+        headers: dict[str, str] = {}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        request = urllib.request.Request(f"{normalized_url}/models", headers=headers, method="GET")
+        try:
+            with urllib.request.urlopen(request, timeout=10) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except Exception as exc:
+            return AiModelDiscoveryResult("BLOCK", f"Could not reach {self._redact_url(normalized_url)}: {exc}")
+
+        entries = payload.get("data", []) if isinstance(payload, dict) else []
+        model_ids = sorted(
+            {
+                str(item.get("id", "")).strip()
+                for item in entries
+                if isinstance(item, dict) and str(item.get("id", "")).strip()
+            }
+        )
+        if not model_ids:
+            return AiModelDiscoveryResult(
+                "BLOCK",
+                f"{self._redact_url(normalized_url)} responded, but reported no installed models.",
+            )
+        return AiModelDiscoveryResult(
+            "PASS",
+            f"{len(model_ids)} model(s) reported by {self._redact_url(normalized_url)}.",
+            tuple(model_ids),
         )
 
     def vision_support(self) -> tuple[bool, str]:

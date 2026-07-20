@@ -149,3 +149,8 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "id: firstPortfolioBudgetInput" in qml
     assert "id: firstPortfolioDeployDialog" in qml
     assert "Enter the real USDC amount you intend to deploy here" in qml
+    assert "appController.discoverLocalAiModels(localAiBaseUrl.text)" in qml
+    assert "appController.localAiDiscoveredModels" in qml
+    assert '"Detect installed models"' in qml
+    assert "localAiModel.text = modelData" in qml
+    assert "localAiVisionModel.text = modelData" in qml

@@ -90,6 +90,13 @@ class AiProviderHealthResult:
 
 
 @dataclass(frozen=True)
+class AiModelDiscoveryResult:
+    status: str
+    detail: str
+    models: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
 class UserProfileSnapshot:
     configured: bool
     summary: str

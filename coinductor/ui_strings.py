@@ -969,6 +969,18 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Send",
         "cs": "Odeslat",
     },
+    "help_guides_title": {
+        "en": "Help & Guides",
+        "cs": "Nápověda a návody",
+    },
+    "help_guides_subtitle": {
+        "en": "Step-by-step local guides for setup, safety, AI providers, Binance API access, and portfolio roles.",
+        "cs": "Lokální návody krok za krokem pro nastavení, zabezpečení, poskytovatele AI, přístup k Binance API a role portfolia.",
+    },
+    "open_guide_button": {
+        "en": "Open guide",
+        "cs": "Otevřít návod",
+    },
 }
 
 

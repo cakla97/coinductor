@@ -3015,10 +3015,10 @@ ApplicationWindow {
                 width: Math.max(window.width - 288, 692)
                 spacing: 18
 
-                Text { text: "Help & Guides"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { text: appController.appText.help_guides_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
                 Text {
                     Layout.fillWidth: true
-                    text: "Step-by-step local guides for setup, safety, AI providers, Binance API access, and portfolio roles."
+                    text: appController.appText.help_guides_subtitle
                     color: textSecondary
                     font.pixelSize: 13
                     wrapMode: Text.WordWrap
@@ -3063,7 +3063,7 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                 }
                                 Button {
-                                    text: "Open guide"
+                                    text: appController.appText.open_guide_button
                                     onClicked: window.openGuide(modelData.id)
                                 }
                             }

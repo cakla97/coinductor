@@ -216,6 +216,8 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.assistant_input_placeholder" in qml
     assert "appController.appText.assistant_send_button" in qml
     assert "appController.appText.assistant_vision_available_note" in qml
+    assert "appController.appText.help_guides_title" in qml
+    assert "appController.appText.open_guide_button" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

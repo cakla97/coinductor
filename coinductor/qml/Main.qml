@@ -1757,8 +1757,8 @@ ApplicationWindow {
                     Layout.preferredHeight: finishSetupBannerColumn.implicitHeight + 28
                     visible: appController.userProfileConfigured
                         && (appController.binanceConnectionStatus !== "Connected" || appController.aiProviderBaseUrl.length === 0)
-                    radius: 8
-                    color: "#3a3020"
+                    radius: radiusLg
+                    color: warningSoft
                     border.color: warning
                     ColumnLayout {
                         id: finishSetupBannerColumn
@@ -1812,6 +1812,7 @@ ApplicationWindow {
                     Button {
                         text: appController.busy ? appController.appText.running_status : appController.appText.overview_run_analysis_button
                         enabled: !appController.busy
+                        highlighted: true
                         onClicked: runDialog.open()
                     }
                 }
@@ -1819,7 +1820,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: overviewSafetyContent.implicitHeight + 32
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: appController.safetyAllowsLiveSubmit ? accent
                         : appController.safetyAllowsLivePreview ? warning : border
@@ -1848,19 +1849,10 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                 }
                             }
-                            Rectangle {
-                                Layout.preferredWidth: 126
-                                Layout.preferredHeight: 30
-                                radius: 5
-                                color: appController.safetyAllowsLiveSubmit ? "#17372d" : appController.safetyAllowsLivePreview ? "#3a3020" : panelRaised
-                                border.color: appController.safetyAllowsLiveSubmit ? accent : appController.safetyAllowsLivePreview ? warning : border
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: appController.safetyStage
-                                    color: appController.safetyAllowsLiveSubmit ? accent : appController.safetyAllowsLivePreview ? warning : textSecondary
-                                    font.pixelSize: 10
-                                    font.bold: true
-                                }
+                            StatusPill {
+                                Layout.alignment: Qt.AlignVCenter
+                                label: appController.safetyStage
+                                tone: appController.safetyAllowsLiveSubmit ? "success" : appController.safetyAllowsLivePreview ? "warning" : "neutral"
                             }
                             Button {
                                 text: appController.safetyStageCode === "SETUP" && !appController.hasCompletedRealAnalysis
@@ -1912,7 +1904,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 148
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     ColumnLayout {
@@ -1923,19 +1915,9 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Text { text: appController.appText.overview_latest_decision_title; color: textSecondary; font.pixelSize: 12; font.bold: true }
                             Item { Layout.fillWidth: true }
-                            Rectangle {
-                                width: decisionText.implicitWidth + 22
-                                height: 28
-                                radius: 5
-                                color: appController.decision === "HOLD" ? "#3a3020" : "#17372d"
-                                Text {
-                                    id: decisionText
-                                    anchors.centerIn: parent
-                                    text: appController.decision
-                                    color: appController.decision === "HOLD" ? warning : accent
-                                    font.pixelSize: 12
-                                    font.bold: true
-                                }
+                            StatusPill {
+                                label: appController.decision
+                                tone: appController.decision === "HOLD" ? "warning" : "success"
                                 MouseArea {
                                     anchors.fill: parent
                                     hoverEnabled: true
@@ -1969,7 +1951,7 @@ ApplicationWindow {
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.preferredHeight: 280
-                        radius: 7
+                        radius: radiusMd
                         color: panel
                         border.color: border
                         ColumnLayout {
@@ -1986,7 +1968,7 @@ ApplicationWindow {
                                     required property var modelData
                                     width: ListView.view.width
                                     height: actionColumn.implicitHeight + 20
-                                    radius: 5
+                                    radius: radiusSm
                                     color: panelRaised
                                     Column {
                                         id: actionColumn
@@ -2019,7 +2001,7 @@ ApplicationWindow {
                     Rectangle {
                         Layout.preferredWidth: 360
                         Layout.preferredHeight: 280
-                        radius: 7
+                        radius: radiusMd
                         color: panel
                         border.color: border
                         ColumnLayout {

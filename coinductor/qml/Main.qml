@@ -126,17 +126,17 @@ ApplicationWindow {
 
     function safetyNextActionLabel() {
         if (appController.safetyStageCode === "SETUP")
-            return appController.hasCompletedRealAnalysis ? "Enable preview" : "Run read-only analysis"
+            return appController.hasCompletedRealAnalysis ? appController.appText.safety_next_action_enable_preview : appController.appText.safety_next_action_run_analysis
         if (appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview)
-            return "Prepare trade preview"
+            return appController.appText.safety_next_action_prepare_preview
         if ((appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED")
                 && appController.liveTradingCheckStatus !== "Verified")
-            return "Verify live API permissions"
+            return appController.appText.safety_next_action_verify_api
         if (appController.safetyStageCode === "PREVIEW_ONLY")
-            return "Arm guarded actions"
+            return appController.appText.safety_next_action_arm
         if (appController.safetyStageCode === "ARMED")
-            return "Enable live submit"
-        return "Open Action Plan"
+            return appController.appText.safety_next_action_enable_submit
+        return appController.appText.safety_next_action_open_action_plan
     }
 
     function runSafetyNextAction() {
@@ -3086,23 +3086,23 @@ ApplicationWindow {
                 width: Math.max(window.width - 288, 692)
                 columns: 1
                 rowSpacing: 18
-                Text { Layout.row: 0; text: "Live Actions"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { Layout.row: 0; text: appController.appText.live_actions_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
                 RowLayout {
                     Layout.row: 1
                     Layout.fillWidth: true
                     Text {
                         Layout.fillWidth: true
-                        text: "Prepare guarded previews and manage live trading safety gates. Results open in Action Plan after each run."
+                        text: appController.appText.live_actions_subtitle
                         color: textSecondary
                         font.pixelSize: 13
                         wrapMode: Text.WordWrap
                     }
                     Button {
-                        text: "Open live API guide"
+                        text: appController.appText.open_live_api_guide_button
                         onClicked: window.openGuide("binance-live-api")
                     }
                     Button {
-                        text: "Refresh checks"
+                        text: appController.appText.refresh_checks_button
                         onClicked: appController.refreshSetup()
                     }
                 }
@@ -3123,10 +3123,10 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 5
-                                Text { text: "Guarded Action Center"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text { text: appController.appText.guarded_action_center_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
-                                    text: "Choose what kind of output you want. Coinductor runs the required analysis, then opens Action Plan with an updated summary."
+                                    text: appController.appText.guarded_action_center_description
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
@@ -3155,17 +3155,17 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 8
-                                Text { text: "Trade preview"; color: textPrimary; font.pixelSize: 14; font.bold: true }
+                                Text { text: appController.appText.trade_preview_title; color: textPrimary; font.pixelSize: 14; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 54
-                                    text: "Prepare a guarded trade recommendation and open Action Plan with the latest decision."
+                                    text: appController.appText.trade_preview_description
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
                                 }
                                 Button {
-                                    text: appController.busy ? "Running..." : "Prepare trade preview"
+                                    text: appController.busy ? appController.appText.running_status : appController.appText.prepare_trade_preview_button
                                     enabled: !appController.busy
                                     onClicked: appController.prepareTradePreview()
                                 }
@@ -3173,17 +3173,17 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 8
-                                Text { text: "Bot plan"; color: textPrimary; font.pixelSize: 14; font.bold: true }
+                                Text { text: appController.appText.bot_plan_title; color: textPrimary; font.pixelSize: 14; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 54
-                                    text: "Refresh Grid and Rebalancing recommendations and open Action Plan with setup details."
+                                    text: appController.appText.bot_plan_description
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
                                 }
                                 Button {
-                                    text: appController.busy ? "Running..." : "Prepare bot plan"
+                                    text: appController.busy ? appController.appText.running_status : appController.appText.prepare_bot_plan_button
                                     enabled: !appController.busy
                                     onClicked: appController.prepareBotPlan()
                                 }
@@ -3191,17 +3191,17 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 8
-                                Text { text: "Custom analysis"; color: textPrimary; font.pixelSize: 14; font.bold: true }
+                                Text { text: appController.appText.custom_analysis_title; color: textPrimary; font.pixelSize: 14; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 54
-                                    text: "Open the same configurable run dialog used by Overview when you want custom parameters."
+                                    text: appController.appText.custom_analysis_description
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
                                 }
                                 Button {
-                                    text: "Open run dialog"
+                                    text: appController.appText.open_run_dialog_button
                                     enabled: !appController.busy
                                     onClicked: runDialog.open()
                                 }
@@ -3210,8 +3210,8 @@ ApplicationWindow {
                         Text {
                             Layout.fillWidth: true
                             text: appController.safetyAllowsLiveSubmit
-                                ? "Guarded submission is available only inside a READY Action Plan item and still requires a fresh validation plus per-action confirmation."
-                                : "Analysis and recommendations do not submit orders. Live actions remain locked by the current Safety stage."
+                                ? appController.appText.guarded_submission_available_note
+                                : appController.appText.guarded_submission_locked_note
                             color: warning
                             font.pixelSize: 12
                             font.bold: true
@@ -3234,7 +3234,7 @@ ApplicationWindow {
                         spacing: 12
                         RowLayout {
                             Layout.fillWidth: true
-                            Text { Layout.fillWidth: true; text: "Safety stage"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            Text { Layout.fillWidth: true; text: appController.appText.safety_stage_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                             Text { text: appController.safetyStage; color: appController.safetyAllowsLiveSubmit ? accent : warning; font.pixelSize: 12; font.bold: true }
                         }
                         Text { Layout.fillWidth: true; text: appController.safetyDetail; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
@@ -3252,11 +3252,11 @@ ApplicationWindow {
                                 ColumnLayout {
                                     Layout.fillWidth: true
                                     spacing: 4
-                                    Text { text: "Live API"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                    Text { text: appController.appText.live_api_title; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: (appController.liveTradingKeyStatus === "PASS" ? "Credentials configured" : "Credentials not configured")
-                                            + "  |  " + (appController.liveTradingCheckStatus === "Verified" ? "Permissions verified this session" : "Permissions not verified this session")
+                                        text: (appController.liveTradingKeyStatus === "PASS" ? appController.appText.live_api_credentials_configured : appController.appText.live_api_credentials_not_configured)
+                                            + "  |  " + (appController.liveTradingCheckStatus === "Verified" ? appController.appText.live_api_permissions_verified : appController.appText.live_api_permissions_not_verified)
                                         color: textSecondary
                                         font.pixelSize: 11
                                         wrapMode: Text.WordWrap
@@ -3277,11 +3277,11 @@ ApplicationWindow {
                                     }
                                 }
                                 Button {
-                                    text: "Manage live API"
+                                    text: appController.appText.manage_live_api_button
                                     onClicked: liveApiManagerDialog.open()
                                 }
                                 Button {
-                                    text: appController.checkingLiveTrading ? "Verifying..." : "Verify permissions"
+                                    text: appController.checkingLiveTrading ? appController.appText.verifying_status : appController.appText.verify_permissions_button
                                     enabled: appController.liveTradingKeyStatus === "PASS" && !appController.checkingLiveTrading
                                     onClicked: appController.checkBinanceLiveTrading()
                                 }
@@ -3290,12 +3290,12 @@ ApplicationWindow {
                         Text {
                             Layout.fillWidth: true
                             text: appController.safetyStageCode === "SETUP" && !appController.hasCompletedRealAnalysis
-                                ? "Next prerequisite: complete a real read-only analysis."
+                                ? appController.appText.prerequisite_analysis
                                 : appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview
-                                    ? "Next prerequisite: prepare and review a ready trade preview. Hold and blocked results do not unlock arming."
+                                    ? appController.appText.prerequisite_preview
                                     : (appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED") && appController.liveTradingCheckStatus !== "Verified"
-                                        ? "Next prerequisite: verify the live API permissions for this app session."
-                                        : "All prerequisites for the next Safety stage are available."
+                                        ? appController.appText.prerequisite_verify_api
+                                        : appController.appText.prerequisite_all_available
                             color: warning
                             font.pixelSize: 11
                             font.bold: true
@@ -3305,7 +3305,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Text {
                                 Layout.fillWidth: true
-                                text: "Recommended next step"
+                                text: appController.appText.recommended_next_step_label
                                 color: textSecondary
                                 font.pixelSize: 11
                                 font.bold: true
@@ -3325,24 +3325,24 @@ ApplicationWindow {
                                 Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: panelRaised; border.color: appController.safetyAllowsLivePreview ? accent : border
                                 Column {
                                     anchors.fill: parent; anchors.margins: 10; spacing: 4
-                                    Text { text: "1. Preview"; color: textPrimary; font.bold: true }
-                                    Text { width: parent.width; text: "Mainnet validation without submit"; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                    Text { text: appController.appText.safety_step1_title; color: textPrimary; font.bold: true }
+                                    Text { width: parent.width; text: appController.appText.safety_step1_detail; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                 }
                             }
                             Rectangle {
                                 Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: panelRaised; border.color: appController.safetyStageCode === "ARMED" || appController.safetyAllowsLiveSubmit ? accent : border
                                 Column {
                                     anchors.fill: parent; anchors.margins: 10; spacing: 4
-                                    Text { text: "2. Armed"; color: textPrimary; font.bold: true }
-                                    Text { width: parent.width; text: "Verified key, submit still locked"; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                    Text { text: appController.appText.safety_step2_title; color: textPrimary; font.bold: true }
+                                    Text { width: parent.width; text: appController.appText.safety_step2_detail; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                 }
                             }
                             Rectangle {
                                 Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: panelRaised; border.color: appController.safetyAllowsLiveSubmit ? accent : border
                                 Column {
                                     anchors.fill: parent; anchors.margins: 10; spacing: 4
-                                    Text { text: "3. Live enabled"; color: textPrimary; font.bold: true }
-                                    Text { width: parent.width; text: "Guarded submit can be confirmed"; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
+                                    Text { text: appController.appText.safety_step3_title; color: textPrimary; font.bold: true }
+                                    Text { width: parent.width; text: appController.appText.safety_step3_detail; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                 }
                             }
                         }
@@ -3350,30 +3350,30 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             spacing: 10
                             Button {
-                                text: "Enable preview"
+                                text: appController.appText.safety_enable_preview_button
                                 enabled: appController.safetyStageCode === "SETUP" && appController.hasCompletedRealAnalysis
                                 onClicked: window.openSafetyStageConfirmation("PREVIEW_ONLY", "Enable mainnet preview")
                             }
                             Button {
-                                text: "Arm guarded actions"
+                                text: appController.appText.safety_arm_button
                                 enabled: appController.safetyStageCode === "PREVIEW_ONLY"
                                     && appController.hasReadyLivePreview
                                     && appController.liveTradingCheckStatus === "Verified"
                                 onClicked: window.openSafetyStageConfirmation("ARMED", "Arm guarded actions")
                             }
                             Button {
-                                text: "Enable live submit"
+                                text: appController.appText.safety_enable_submit_button
                                 enabled: appController.safetyStageCode === "ARMED" && appController.liveTradingCheckStatus === "Verified"
                                 onClicked: window.openSafetyStageConfirmation("LIVE_ENABLED", "Enable guarded live submit")
                             }
                             Item { Layout.fillWidth: true }
                             Button {
-                                text: "Lock live submit"
+                                text: appController.appText.safety_lock_button
                                 enabled: appController.safetyStageCode === "ARMED" || appController.safetyAllowsLiveSubmit
                                 onClicked: appController.lockLiveSubmit()
                             }
                         }
-                        Text { Layout.fillWidth: true; text: "Stage changes are local safety controls and never place an order. Every live trade or OCO protection still needs its own confirmation. If your public IP is dynamic, keep live execution locked unless the Binance whitelist is current."; color: warning; font.pixelSize: 11; font.bold: true; wrapMode: Text.WordWrap }
+                        Text { Layout.fillWidth: true; text: appController.appText.safety_stage_disclaimer; color: warning; font.pixelSize: 11; font.bold: true; wrapMode: Text.WordWrap }
                     }
                 }
                 Item { Layout.row: 4; Layout.fillWidth: true; Layout.preferredHeight: 44 }

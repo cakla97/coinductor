@@ -537,6 +537,202 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Policy for {asset} changed to {role}",
         "cs": "Politika pro {asset} změněna na {role}",
     },
+    "refresh_checks_button": {
+        "en": "Refresh checks",
+        "cs": "Obnovit kontroly",
+    },
+    "live_actions_title": {
+        "en": "Live Actions",
+        "cs": "Live Actions",
+    },
+    "live_actions_subtitle": {
+        "en": "Prepare guarded previews and manage live trading safety gates. Results open in Action Plan after each run.",
+        "cs": "Připravte zabezpečené náhledy a spravujte bezpečnostní brány pro live obchodování. Výsledky se po každém běhu otevřou v Action Plan.",
+    },
+    "open_live_api_guide_button": {
+        "en": "Open live API guide",
+        "cs": "Otevřít návod na live API",
+    },
+    "guarded_action_center_title": {
+        "en": "Guarded Action Center",
+        "cs": "Centrum zabezpečených akcí",
+    },
+    "guarded_action_center_description": {
+        "en": "Choose what kind of output you want. Coinductor runs the required analysis, then opens Action Plan with an updated summary.",
+        "cs": "Vyberte, jaký výstup chcete. Coinductor spustí potřebnou analýzu a poté otevře Action Plan s aktualizovaným shrnutím.",
+    },
+    "trade_preview_title": {
+        "en": "Trade preview",
+        "cs": "Náhled obchodu",
+    },
+    "trade_preview_description": {
+        "en": "Prepare a guarded trade recommendation and open Action Plan with the latest decision.",
+        "cs": "Připravte zabezpečené obchodní doporučení a otevřete Action Plan s posledním rozhodnutím.",
+    },
+    "prepare_trade_preview_button": {
+        "en": "Prepare trade preview",
+        "cs": "Připravit náhled obchodu",
+    },
+    "bot_plan_title": {
+        "en": "Bot plan",
+        "cs": "Plán bota",
+    },
+    "bot_plan_description": {
+        "en": "Refresh Grid and Rebalancing recommendations and open Action Plan with setup details.",
+        "cs": "Aktualizujte doporučení pro Grid a Rebalancing a otevřete Action Plan s detaily nastavení.",
+    },
+    "prepare_bot_plan_button": {
+        "en": "Prepare bot plan",
+        "cs": "Připravit plán bota",
+    },
+    "custom_analysis_title": {
+        "en": "Custom analysis",
+        "cs": "Vlastní analýza",
+    },
+    "custom_analysis_description": {
+        "en": "Open the same configurable run dialog used by Overview when you want custom parameters.",
+        "cs": "Otevřete stejné konfigurovatelné dialogové okno pro spuštění jako na Overview, pokud chcete vlastní parametry.",
+    },
+    "open_run_dialog_button": {
+        "en": "Open run dialog",
+        "cs": "Otevřít dialog spuštění",
+    },
+    "guarded_submission_available_note": {
+        "en": "Guarded submission is available only inside a READY Action Plan item and still requires a fresh validation plus per-action confirmation.",
+        "cs": "Zabezpečené odeslání je dostupné pouze uvnitř položky Action Plan se stavem READY a stále vyžaduje čerstvou validaci a potvrzení pro danou akci.",
+    },
+    "guarded_submission_locked_note": {
+        "en": "Analysis and recommendations do not submit orders. Live actions remain locked by the current Safety stage.",
+        "cs": "Analýza a doporučení nezadávají příkazy. Live akce zůstávají uzamčené aktuálním Safety stage.",
+    },
+    "safety_stage_title": {
+        "en": "Safety stage",
+        "cs": "Bezpečnostní stupeň",
+    },
+    "live_api_title": {
+        "en": "Live API",
+        "cs": "Live API",
+    },
+    "live_api_credentials_configured": {
+        "en": "Credentials configured",
+        "cs": "Přístupové údaje nastaveny",
+    },
+    "live_api_credentials_not_configured": {
+        "en": "Credentials not configured",
+        "cs": "Přístupové údaje nejsou nastaveny",
+    },
+    "live_api_permissions_verified": {
+        "en": "Permissions verified this session",
+        "cs": "Oprávnění ověřena v této relaci",
+    },
+    "live_api_permissions_not_verified": {
+        "en": "Permissions not verified this session",
+        "cs": "Oprávnění v této relaci neověřena",
+    },
+    "manage_live_api_button": {
+        "en": "Manage live API",
+        "cs": "Spravovat live API",
+    },
+    "verify_permissions_button": {
+        "en": "Verify permissions",
+        "cs": "Ověřit oprávnění",
+    },
+    "verifying_status": {
+        "en": "Verifying...",
+        "cs": "Ověřuji...",
+    },
+    "prerequisite_analysis": {
+        "en": "Next prerequisite: complete a real read-only analysis.",
+        "cs": "Další předpoklad: dokončit skutečnou read-only analýzu.",
+    },
+    "prerequisite_preview": {
+        "en": "Next prerequisite: prepare and review a ready trade preview. Hold and blocked results do not unlock arming.",
+        "cs": "Další předpoklad: připravit a zkontrolovat připravený náhled obchodu. Výsledky HOLD a blocked odjištění neodemknou.",
+    },
+    "prerequisite_verify_api": {
+        "en": "Next prerequisite: verify the live API permissions for this app session.",
+        "cs": "Další předpoklad: ověřit oprávnění live API pro tuto relaci aplikace.",
+    },
+    "prerequisite_all_available": {
+        "en": "All prerequisites for the next Safety stage are available.",
+        "cs": "Všechny předpoklady pro další Safety stage jsou splněny.",
+    },
+    "recommended_next_step_label": {
+        "en": "Recommended next step",
+        "cs": "Doporučený další krok",
+    },
+    "safety_next_action_enable_preview": {
+        "en": "Enable preview",
+        "cs": "Povolit náhled",
+    },
+    "safety_next_action_run_analysis": {
+        "en": "Run read-only analysis",
+        "cs": "Spustit read-only analýzu",
+    },
+    "safety_next_action_prepare_preview": {
+        "en": "Prepare trade preview",
+        "cs": "Připravit náhled obchodu",
+    },
+    "safety_next_action_verify_api": {
+        "en": "Verify live API permissions",
+        "cs": "Ověřit oprávnění live API",
+    },
+    "safety_next_action_arm": {
+        "en": "Arm guarded actions",
+        "cs": "Odjistit zabezpečené akce",
+    },
+    "safety_next_action_enable_submit": {
+        "en": "Enable live submit",
+        "cs": "Povolit live odeslání",
+    },
+    "safety_next_action_open_action_plan": {
+        "en": "Open Action Plan",
+        "cs": "Otevřít Action Plan",
+    },
+    "safety_step1_title": {
+        "en": "1. Preview",
+        "cs": "1. Náhled",
+    },
+    "safety_step1_detail": {
+        "en": "Mainnet validation without submit",
+        "cs": "Validace na mainnetu bez odeslání",
+    },
+    "safety_step2_title": {
+        "en": "2. Armed",
+        "cs": "2. Odjištěno",
+    },
+    "safety_step2_detail": {
+        "en": "Verified key, submit still locked",
+        "cs": "Ověřený klíč, odeslání stále uzamčeno",
+    },
+    "safety_step3_title": {
+        "en": "3. Live enabled",
+        "cs": "3. Live povoleno",
+    },
+    "safety_step3_detail": {
+        "en": "Guarded submit can be confirmed",
+        "cs": "Zabezpečené odeslání lze potvrdit",
+    },
+    "safety_enable_preview_button": {
+        "en": "Enable preview",
+        "cs": "Povolit náhled",
+    },
+    "safety_arm_button": {
+        "en": "Arm guarded actions",
+        "cs": "Odjistit zabezpečené akce",
+    },
+    "safety_enable_submit_button": {
+        "en": "Enable live submit",
+        "cs": "Povolit live odeslání",
+    },
+    "safety_lock_button": {
+        "en": "Lock live submit",
+        "cs": "Uzamknout live odeslání",
+    },
+    "safety_stage_disclaimer": {
+        "en": "Stage changes are local safety controls and never place an order. Every live trade or OCO protection still needs its own confirmation. If your public IP is dynamic, keep live execution locked unless the Binance whitelist is current.",
+        "cs": "Změny stupně jsou lokální bezpečnostní ovládací prvky a nikdy nezadávají příkaz. Každý live obchod nebo OCO ochrana stále vyžaduje vlastní potvrzení. Pokud máte dynamickou veřejnou IP adresu, nechte live provádění uzamčené, dokud není whitelist na Binance aktuální.",
+    },
 }
 
 

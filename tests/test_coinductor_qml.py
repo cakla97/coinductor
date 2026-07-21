@@ -109,7 +109,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "liveApiManagerDialog.open()" in qml
     assert "rightPadding: 18" in qml
     assert "Credentials & Safety" not in qml
-    assert "Permissions verified this session" in qml
+    assert "appController.appText.live_api_permissions_verified" in qml
     assert "Last live trade" in qml
     assert "activeActionPlanItem.liveLifecycle.lifecycleSteps" in qml
     assert "contentHeight: actionPlanPageContent.implicitHeight + 72" in qml
@@ -193,6 +193,13 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.portfolio_title" in qml
     assert "appController.appText.portfolio_col_liquidity" in qml
     assert "appController.appText.portfolio_policy_changed_toast.replace" in qml
+    assert "appController.appText.live_actions_title" in qml
+    assert "appController.appText.safety_stage_disclaimer" in qml
+    assert "appController.appText.safety_next_action_enable_preview" in qml
+    assert 'openSafetyStageConfirmation("PREVIEW_ONLY", "Enable mainnet preview")' in qml
+    assert 'openSafetyStageConfirmation("ARMED", "Arm guarded actions")' in qml
+    assert 'openSafetyStageConfirmation("LIVE_ENABLED", "Enable guarded live submit")' in qml
+    assert "text: appController.appText.safety_arm_button" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

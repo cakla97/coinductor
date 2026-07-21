@@ -2073,7 +2073,7 @@ ApplicationWindow {
                     Layout.preferredHeight: 42
                     color: panelRaised
                     border.color: border
-                    radius: 6
+                    radius: radiusSm
                     RowLayout {
                         anchors.fill: parent
                         anchors.leftMargin: 14
@@ -2097,7 +2097,7 @@ ApplicationWindow {
                         required property var modelData
                         width: ListView.view.width
                         height: 76
-                        radius: 6
+                        radius: radiusSm
                         color: panel
                         border.color: border
                         RowLayout {
@@ -3147,7 +3147,7 @@ ApplicationWindow {
                     Layout.row: 3
                     Layout.fillWidth: true
                     Layout.preferredHeight: 330
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     ColumnLayout {
@@ -3168,19 +3168,10 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                 }
                             }
-                            Rectangle {
-                                Layout.preferredWidth: 118
-                                Layout.preferredHeight: 30
-                                radius: 5
-                                color: "#3a3020"
-                                border.color: warning
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: appController.safetyStage
-                                    color: appController.safetyAllowsLiveSubmit ? accent : warning
-                                    font.pixelSize: 10
-                                    font.bold: true
-                                }
+                            StatusPill {
+                                Layout.alignment: Qt.AlignVCenter
+                                label: appController.safetyStage
+                                tone: appController.safetyAllowsLiveSubmit ? "success" : "warning"
                             }
                         }
                         GridLayout {
@@ -3260,7 +3251,7 @@ ApplicationWindow {
                     Layout.row: 2
                     Layout.fillWidth: true
                     Layout.preferredHeight: safetyStageContent.implicitHeight + 36
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: appController.safetyAllowsLiveSubmit ? accent : border
                     ColumnLayout {
@@ -3277,7 +3268,7 @@ ApplicationWindow {
                         Rectangle {
                             Layout.fillWidth: true
                             Layout.preferredHeight: liveApiSummaryContent.implicitHeight + 24
-                            radius: 6
+                            radius: radiusSm
                             color: panelRaised
                             border.color: appController.liveTradingCheckStatus === "Verified" ? accent : border
                             RowLayout {
@@ -3298,19 +3289,10 @@ ApplicationWindow {
                                         wrapMode: Text.WordWrap
                                     }
                                 }
-                                Rectangle {
-                                    Layout.preferredWidth: 92
-                                    Layout.preferredHeight: 28
-                                    radius: 5
-                                    color: appController.liveTradingCheckStatus === "Verified" ? "#17372d" : "#3a3020"
-                                    border.color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: appController.liveTradingCheckStatus === "Verified" ? "VERIFIED" : appController.liveTradingKeyStatus === "PASS" ? "CONFIGURED" : "LOCKED"
-                                        color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
-                                        font.pixelSize: 10
-                                        font.bold: true
-                                    }
+                                StatusPill {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    label: appController.liveTradingCheckStatus === "Verified" ? "VERIFIED" : appController.liveTradingKeyStatus === "PASS" ? "CONFIGURED" : "LOCKED"
+                                    tone: appController.liveTradingCheckStatus === "Verified" ? "success" : "warning"
                                 }
                                 Button {
                                     text: appController.appText.manage_live_api_button
@@ -3358,7 +3340,7 @@ ApplicationWindow {
                             columns: 3
                             columnSpacing: 12
                             Rectangle {
-                                Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: panelRaised; border.color: appController.safetyAllowsLivePreview ? accent : border
+                                Layout.fillWidth: true; Layout.preferredHeight: 72; radius: radiusSm; color: panelRaised; border.color: appController.safetyAllowsLivePreview ? accent : border
                                 Column {
                                     anchors.fill: parent; anchors.margins: 10; spacing: 4
                                     Text { text: appController.appText.safety_step1_title; color: textPrimary; font.bold: true }
@@ -3366,7 +3348,7 @@ ApplicationWindow {
                                 }
                             }
                             Rectangle {
-                                Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: panelRaised; border.color: appController.safetyStageCode === "ARMED" || appController.safetyAllowsLiveSubmit ? accent : border
+                                Layout.fillWidth: true; Layout.preferredHeight: 72; radius: radiusSm; color: panelRaised; border.color: appController.safetyStageCode === "ARMED" || appController.safetyAllowsLiveSubmit ? accent : border
                                 Column {
                                     anchors.fill: parent; anchors.margins: 10; spacing: 4
                                     Text { text: appController.appText.safety_step2_title; color: textPrimary; font.bold: true }
@@ -3374,7 +3356,7 @@ ApplicationWindow {
                                 }
                             }
                             Rectangle {
-                                Layout.fillWidth: true; Layout.preferredHeight: 72; radius: 6; color: panelRaised; border.color: appController.safetyAllowsLiveSubmit ? accent : border
+                                Layout.fillWidth: true; Layout.preferredHeight: 72; radius: radiusSm; color: panelRaised; border.color: appController.safetyAllowsLiveSubmit ? accent : border
                                 Column {
                                     anchors.fill: parent; anchors.margins: 10; spacing: 4
                                     Text { text: appController.appText.safety_step3_title; color: textPrimary; font.bold: true }
@@ -3382,7 +3364,7 @@ ApplicationWindow {
                                 }
                             }
                         }
-                        RowLayout {
+                        Flow {
                             Layout.fillWidth: true
                             spacing: 10
                             Button {
@@ -3402,7 +3384,6 @@ ApplicationWindow {
                                 enabled: appController.safetyStageCode === "ARMED" && appController.liveTradingCheckStatus === "Verified"
                                 onClicked: window.openSafetyStageConfirmation("LIVE_ENABLED", "Enable guarded live submit")
                             }
-                            Item { Layout.fillWidth: true }
                             Button {
                                 text: appController.appText.safety_lock_button
                                 enabled: appController.safetyStageCode === "ARMED" || appController.safetyAllowsLiveSubmit

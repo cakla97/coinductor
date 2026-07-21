@@ -52,6 +52,14 @@ def test_app_text_submit_for_real_keeps_confirmation_token_intact() -> None:
     assert "CONFIRM_MAINNET_ORDER" in rendered
 
 
+def test_app_text_translates_sidebar_navigation_labels() -> None:
+    text = UiStringsService().app_text("cs")
+
+    assert text["nav_overview"] == "Přehled"
+    assert text["nav_active_strategies"] == "Aktivní strategie"
+    assert text["nav_settings"] == "Nastavení"
+
+
 def test_app_text_falls_back_to_english_for_unknown_language() -> None:
     text = UiStringsService().app_text("fr")
 

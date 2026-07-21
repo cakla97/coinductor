@@ -254,6 +254,12 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.type_delete_to_continue_button" in qml
     assert "appController.appText.start_analysis_button" in qml
     assert "appController.appText.mainnet_preview_locked_checkbox" in qml
+    assert "appController.wizardText.next_steps_outside_title" in qml
+    assert "appController.wizardText.suggested_first_basket_description" in qml
+    assert "appController.appText.app_title" in qml
+    assert "appController.appText.safety_summary_live_guarded" in qml
+    assert "window.navLabelFor(modelData.page)" in qml
+    assert "appController.appText.nav_active_strategies" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

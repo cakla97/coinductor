@@ -354,6 +354,18 @@ WIZARD_STRINGS: dict[str, dict[str, str]] = {
         "en": "Save a profile before continuing.",
         "cs": "Před pokračováním uložte profil.",
     },
+    "next_steps_outside_title": {
+        "en": "Next steps outside Coinductor",
+        "cs": "Další kroky mimo Coinductor",
+    },
+    "suggested_first_basket_title": {
+        "en": "Suggested first basket (manual purchase)",
+        "cs": "Navrhovaný první košík (ruční nákup)",
+    },
+    "suggested_first_basket_description": {
+        "en": "Weights match your chosen management style. Buying is always manual on Binance; Coinductor never places this order for you.",
+        "cs": "Váhy odpovídají vámi zvolenému stylu správy. Nákup je vždy ruční na Binance; Coinductor tento příkaz za vás nikdy nezadává.",
+    },
 }
 
 APP_STRINGS: dict[str, dict[str, str]] = {
@@ -1577,6 +1589,43 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Start analysis",
         "cs": "Spustit analýzu",
     },
+    "app_title": {
+        "en": "Coinductor",
+        "cs": "Coinductor",
+    },
+    "app_tagline": {
+        "en": "Portfolio automation",
+        "cs": "Automatizace portfolia",
+    },
+    "sidebar_safety_caption": {
+        "en": "SAFETY",
+        "cs": "SAFETY",
+    },
+    "sidebar_binance_caption": {
+        "en": "BINANCE",
+        "cs": "BINANCE",
+    },
+    "safety_summary_live_guarded": {
+        "en": "Live guarded",
+        "cs": "Live zabezpečeno",
+    },
+    "safety_summary_preview_only": {
+        "en": "Preview only",
+        "cs": "Pouze náhled",
+    },
+    "safety_summary_no_exchange_changes": {
+        "en": "No exchange changes",
+        "cs": "Žádné změny na burze",
+    },
+    "nav_overview": {"en": "Overview", "cs": "Přehled"},
+    "nav_portfolio": {"en": "Portfolio", "cs": "Portfolio"},
+    "nav_live_actions": {"en": "Live Actions", "cs": "Live Actions"},
+    "nav_action_plan": {"en": "Action Plan", "cs": "Action Plan"},
+    "nav_active_strategies": {"en": "Active Strategies", "cs": "Aktivní strategie"},
+    "nav_run_history": {"en": "Run History", "cs": "Historie běhů"},
+    "nav_ai_assistant": {"en": "AI Assistant", "cs": "AI Assistant"},
+    "nav_help_guides": {"en": "Help & Guides", "cs": "Nápověda a návody"},
+    "nav_settings": {"en": "Settings", "cs": "Nastavení"},
 }
 
 

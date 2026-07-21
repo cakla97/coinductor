@@ -58,6 +58,20 @@ ApplicationWindow {
         }
         return 0
     }
+    function navLabelFor(page) {
+        var labels = {
+            0: appController.appText.nav_overview,
+            2: appController.appText.nav_portfolio,
+            1: appController.appText.nav_live_actions,
+            3: appController.appText.nav_action_plan,
+            4: appController.appText.nav_active_strategies,
+            5: appController.appText.nav_run_history,
+            6: appController.appText.nav_ai_assistant,
+            7: appController.appText.nav_help_guides,
+            8: appController.appText.nav_settings,
+        }
+        return labels[page] || ""
+    }
     function wizardStepLabels() {
         return [
             appController.wizardText.step_name_exchange,
@@ -1365,7 +1379,7 @@ ApplicationWindow {
                                             anchors.fill: parent
                                             anchors.margins: 16
                                             spacing: 6
-                                            Text { text: "Next steps outside Coinductor"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                            Text { text: appController.wizardText.next_steps_outside_title; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                             ListView {
                                                 Layout.fillWidth: true
                                                 Layout.fillHeight: true
@@ -1394,10 +1408,10 @@ ApplicationWindow {
                                             anchors.fill: parent
                                             anchors.margins: 16
                                             spacing: 8
-                                            Text { text: "Suggested first basket (manual purchase)"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                            Text { text: appController.wizardText.suggested_first_basket_title; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                             Text {
                                                 Layout.fillWidth: true
-                                                text: "Weights match your chosen management style. Buying is always manual on Binance; Coinductor never places this order for you."
+                                                text: appController.wizardText.suggested_first_basket_description
                                                 color: textSecondary
                                                 font.pixelSize: 11
                                                 wrapMode: Text.WordWrap
@@ -1589,8 +1603,8 @@ ApplicationWindow {
                         }
                     }
                     Column {
-                        Text { text: "Coinductor"; color: textPrimary; font.pixelSize: 19; font.bold: true }
-                        Text { text: "Portfolio automation"; color: textSecondary; font.pixelSize: 11 }
+                        Text { text: appController.appText.app_title; color: textPrimary; font.pixelSize: 19; font.bold: true }
+                        Text { text: appController.appText.app_tagline; color: textSecondary; font.pixelSize: 11 }
                     }
                 }
 
@@ -1609,7 +1623,7 @@ ApplicationWindow {
                             anchors.verticalCenter: parent.verticalCenter
                             anchors.left: parent.left
                             anchors.leftMargin: 14
-                            text: modelData.label
+                            text: window.navLabelFor(modelData.page)
                             color: appController.currentPage === modelData.page ? textPrimary : textSecondary
                             font.pixelSize: 14
                         }
@@ -1634,7 +1648,7 @@ ApplicationWindow {
                         anchors.fill: parent
                         anchors.margins: 12
                         spacing: 6
-                        Text { text: "SAFETY"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { text: appController.appText.sidebar_safety_caption; color: textSecondary; font.pixelSize: 10; font.bold: true }
                         Row {
                             spacing: 8
                             Rectangle {
@@ -1649,7 +1663,7 @@ ApplicationWindow {
                         }
                         Text {
                             width: parent.width
-                            text: appController.safetyAllowsLiveSubmit ? "Live guarded" : appController.safetyAllowsLivePreview ? "Preview only" : "No exchange changes"
+                            text: appController.safetyAllowsLiveSubmit ? appController.appText.safety_summary_live_guarded : appController.safetyAllowsLivePreview ? appController.appText.safety_summary_preview_only : appController.appText.safety_summary_no_exchange_changes
                             color: textSecondary
                             font.pixelSize: 10
                             elide: Text.ElideRight
@@ -1667,7 +1681,7 @@ ApplicationWindow {
                         anchors.fill: parent
                         anchors.margins: 12
                         spacing: 6
-                        Text { text: "BINANCE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { text: appController.appText.sidebar_binance_caption; color: textSecondary; font.pixelSize: 10; font.bold: true }
                         Row {
                             spacing: 8
                             Rectangle {

@@ -147,7 +147,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.nextAppTourStep()" in qml
     assert "appController.previousAppTourStep()" in qml
     assert "appController.skipAppTour()" in qml
-    assert 'text: "Replay app tour"' in qml
+    assert "text: appController.appText.replay_app_tour_button" in qml
     assert "safetyPhraseRow.implicitHeight + 24" in qml
     assert 'safetyAllowsLiveSubmit ? "#ee6b6e"' not in qml
     assert "text: appController.appText.assistant_attach_image_button" in qml
@@ -162,7 +162,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "id: localAiVisionModel" in qml
     assert "appController.aiVisionModel" in qml
     assert "appController.saveLocalAiProvider(localAiBaseUrl.text, localAiModel.text, localAiVisionModel.text)" in qml
-    assert 'text: "Configure AI models"' in qml
+    assert "text: appController.appText.configure_ai_models_button" in qml
     assert "id: cloudAiVisionModel" in qml
     assert "appController.saveCloudAiProvider(cloudAiBaseUrl.text, cloudAiModel.text, cloudAiVisionModel.text, cloudAiKey.text)" in qml
     assert "appController.appText.first_portfolio_deployment_title" in qml
@@ -218,6 +218,10 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.assistant_vision_available_note" in qml
     assert "appController.appText.help_guides_title" in qml
     assert "appController.appText.open_guide_button" in qml
+    assert "appController.appText.settings_title" in qml
+    assert "appController.appText.privacy_data_note" in qml
+    assert "appController.appText.safety_baseline_title" in qml
+    assert "appController.appText.safety_stage_prefix" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

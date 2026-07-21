@@ -981,6 +981,102 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Open guide",
         "cs": "Otevřít návod",
     },
+    "settings_title": {
+        "en": "Settings",
+        "cs": "Nastavení",
+    },
+    "settings_subtitle": {
+        "en": "Manage local configuration, privacy controls, and readiness checks.",
+        "cs": "Spravujte lokální konfiguraci, ovládání soukromí a kontroly připravenosti.",
+    },
+    "setup_wizard_button": {
+        "en": "Setup wizard",
+        "cs": "Průvodce nastavením",
+    },
+    "replay_app_tour_button": {
+        "en": "Replay app tour",
+        "cs": "Zopakovat prohlídku aplikace",
+    },
+    "settings_checking_status": {
+        "en": "Checking...",
+        "cs": "Kontroluji...",
+    },
+    "binance_readonly_connection_title": {
+        "en": "Binance read-only connection",
+        "cs": "Read-only připojení k Binance",
+    },
+    "check_readonly_access_button": {
+        "en": "Check read-only access",
+        "cs": "Zkontrolovat read-only přístup",
+    },
+    "settings_ai_provider_title": {
+        "en": "AI provider",
+        "cs": "Poskytovatel AI",
+    },
+    "settings_check_ai_provider_button": {
+        "en": "Check AI provider",
+        "cs": "Zkontrolovat poskytovatele AI",
+    },
+    "configure_ai_models_button": {
+        "en": "Configure AI models",
+        "cs": "Nastavit modely AI",
+    },
+    "onboarding_profile_title": {
+        "en": "Onboarding profile",
+        "cs": "Onboarding profil",
+    },
+    "open_wizard_button": {
+        "en": "Open wizard",
+        "cs": "Otevřít průvodce",
+    },
+    "use_safe_defaults_button": {
+        "en": "Use safe defaults",
+        "cs": "Použít bezpečné výchozí hodnoty",
+    },
+    "privacy_data_title": {
+        "en": "Privacy & Data",
+        "cs": "Soukromí a data",
+    },
+    "privacy_data_description": {
+        "en": "Coinductor is local-first: it reads only what is needed for portfolio management and keeps project data on this computer unless you opt into an external AI provider.",
+        "cs": "Coinductor je navržen lokálně: čte pouze to, co je potřeba pro správu portfolia, a data projektu ponechává na tomto počítači, dokud se sami nerozhodnete pro externího poskytovatele AI.",
+    },
+    "reset_onboarding_button": {
+        "en": "Reset onboarding",
+        "cs": "Resetovat onboarding",
+    },
+    "delete_local_data_button": {
+        "en": "Delete local data",
+        "cs": "Smazat lokální data",
+    },
+    "privacy_data_note": {
+        "en": "Reset onboarding only changes preferences. Delete local data permanently removes the local files you select; it never touches anything outside this project folder.",
+        "cs": "Reset onboardingu mění pouze preference. Delete local data trvale odstraní vybrané lokální soubory; nikdy se nedotkne ničeho mimo tuto složku projektu.",
+    },
+    "system_readiness_title": {
+        "en": "System readiness",
+        "cs": "Připravenost systému",
+    },
+    "safety_baseline_title": {
+        "en": "Safety baseline",
+        "cs": "Základní zabezpečení",
+    },
+    "safety_baseline_secrets_note": {
+        "en": "Checks only report whether secrets exist; they never display or transmit them.",
+        "cs": "Kontroly pouze ohlásí, zda přístupové údaje existují; nikdy je nezobrazí ani neodešlou.",
+    },
+    "safety_baseline_path_note": {
+        "en": "Selecting an onboarding path does not place orders or change configuration.",
+        "cs": "Výběr cesty onboardingu nezadává příkazy ani nemění konfiguraci.",
+    },
+    "safety_baseline_live_note": {
+        "en": "Live execution retains separate preview, limits, and explicit confirmation gates.",
+        "cs": "Live provádění si zachovává samostatný náhled, limity a explicitní potvrzovací brány.",
+    },
+    "safety_stage_prefix": {
+        "en": "Stage:",
+        "cs": "Stupeň:",
+    },
 }
 
 

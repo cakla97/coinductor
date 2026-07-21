@@ -3391,25 +3391,25 @@ ApplicationWindow {
                 y: 28
                 width: Math.max(window.width - 288, 692)
                 spacing: 18
-                Text { text: "Settings"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { text: appController.appText.settings_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
                         Layout.fillWidth: true
-                        text: "Manage local configuration, privacy controls, and readiness checks."
+                        text: appController.appText.settings_subtitle
                         color: textSecondary
                         font.pixelSize: 13
                     }
                     Button {
-                        text: "Setup wizard"
+                        text: appController.appText.setup_wizard_button
                         onClicked: appController.openOnboardingWizard()
                     }
                     Button {
-                        text: "Replay app tour"
+                        text: appController.appText.replay_app_tour_button
                         onClicked: appController.startAppTour()
                     }
                     Button {
-                        text: "Refresh checks"
+                        text: appController.appText.refresh_checks_button
                         onClicked: appController.refreshSetup()
                     }
                 }
@@ -3446,7 +3446,7 @@ ApplicationWindow {
                         ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 6
-                            Text { text: "Binance read-only connection"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            Text { text: appController.appText.binance_readonly_connection_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                             Text {
                                 Layout.fillWidth: true
                                 text: appController.binanceConnectionDetail
@@ -3476,7 +3476,7 @@ ApplicationWindow {
                             }
                         }
                         Button {
-                            text: appController.checkingConnection ? "Checking..." : "Check read-only access"
+                            text: appController.checkingConnection ? appController.appText.settings_checking_status : appController.appText.check_readonly_access_button
                             enabled: !appController.checkingConnection
                             onClicked: appController.checkBinanceReadOnly()
                         }
@@ -3499,7 +3499,7 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 5
-                                Text { text: "AI provider"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text { text: appController.appText.settings_ai_provider_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
                                     text: appController.aiProviderSummary
@@ -3529,12 +3529,12 @@ ApplicationWindow {
                                 }
                             }
                             Button {
-                                text: appController.checkingAiProvider ? "Checking..." : "Check AI provider"
+                                text: appController.checkingAiProvider ? appController.appText.settings_checking_status : appController.appText.settings_check_ai_provider_button
                                 enabled: !appController.checkingAiProvider
                                 onClicked: appController.checkAiProvider()
                             }
                             Button {
-                                text: "Configure AI models"
+                                text: appController.appText.configure_ai_models_button
                                 onClicked: {
                                     window.wizardStep = 3
                                     appController.openOnboardingWizard()
@@ -3622,7 +3622,7 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 4
-                                Text { text: "Onboarding profile"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text { text: appController.appText.onboarding_profile_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
                                     text: appController.userProfileSummary
@@ -3632,11 +3632,11 @@ ApplicationWindow {
                                 }
                             }
                             Button {
-                                text: "Open wizard"
+                                text: appController.appText.open_wizard_button
                                 onClicked: appController.openOnboardingWizard()
                             }
                             Button {
-                                text: "Use safe defaults"
+                                text: appController.appText.use_safe_defaults_button
                                 onClicked: appController.useSafeDefaultProfile()
                             }
                         }
@@ -3682,22 +3682,22 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 4
-                                Text { text: "Privacy & Data"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text { text: appController.appText.privacy_data_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
-                                    text: "Coinductor is local-first: it reads only what is needed for portfolio management and keeps project data on this computer unless you opt into an external AI provider."
+                                    text: appController.appText.privacy_data_description
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
                                 }
                             }
                             Button {
-                                text: "Reset onboarding"
+                                text: appController.appText.reset_onboarding_button
                                 enabled: appController.userProfileConfigured
                                 onClicked: deleteProfileDialog.open()
                             }
                             Button {
-                                text: "Delete local data"
+                                text: appController.appText.delete_local_data_button
                                 onClicked: localDataResetDialog.open()
                             }
                         }
@@ -3726,7 +3726,7 @@ ApplicationWindow {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: "Reset onboarding only changes preferences. Delete local data permanently removes the local files you select; it never touches anything outside this project folder."
+                            text: appController.appText.privacy_data_note
                             color: textSecondary
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
@@ -3736,7 +3736,7 @@ ApplicationWindow {
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Text { text: "System readiness"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                    Text { text: appController.appText.system_readiness_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                     Item { Layout.fillWidth: true }
                     Text { text: appController.setupSummary; color: textSecondary; font.pixelSize: 12 }
                 }
@@ -3791,10 +3791,10 @@ ApplicationWindow {
                         anchors.fill: parent
                         anchors.margins: 18
                         spacing: 9
-                        Text { text: "Safety baseline"; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                        Text { text: "Checks only report whether secrets exist; they never display or transmit them."; color: textSecondary; font.pixelSize: 12 }
-                        Text { text: "Selecting an onboarding path does not place orders or change configuration."; color: textSecondary; font.pixelSize: 12 }
-                        Text { text: "Live execution retains separate preview, limits, and explicit confirmation gates."; color: textSecondary; font.pixelSize: 12 }
+                        Text { text: appController.appText.safety_baseline_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                        Text { text: appController.appText.safety_baseline_secrets_note; color: textSecondary; font.pixelSize: 12 }
+                        Text { text: appController.appText.safety_baseline_path_note; color: textSecondary; font.pixelSize: 12 }
+                        Text { text: appController.appText.safety_baseline_live_note; color: textSecondary; font.pixelSize: 12 }
                     }
                 }
 
@@ -3813,7 +3813,7 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 4
-                                Text { text: "Safety stage"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                                Text { text: appController.appText.safety_stage_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
                                     text: appController.safetyDetail
@@ -3830,7 +3830,7 @@ ApplicationWindow {
                                 border.color: "transparent"
                                 Text {
                                     anchors.centerIn: parent
-                                    text: "Stage: " + appController.safetyStage
+                                    text: appController.appText.safety_stage_prefix + " " + appController.safetyStage
                                     color: appController.safetyAllowsLiveSubmit ? accent
                                         : appController.safetyAllowsLivePreview ? warning : accent
                                     font.pixelSize: 11

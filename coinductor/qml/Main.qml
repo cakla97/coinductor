@@ -5282,20 +5282,9 @@ ApplicationWindow {
             ColumnLayout {
                 width: guideDialog.width - 48
                 spacing: 14
-                Rectangle {
-                    Layout.preferredWidth: Math.max(90, guideSectionText.implicitWidth + 26)
-                    Layout.preferredHeight: 28
-                    radius: 5
-                    color: "#17372d"
-                    border.color: accent
-                    Text {
-                        id: guideSectionText
-                        anchors.centerIn: parent
-                        text: activeGuide.section || appController.appText.guide_section_fallback
-                        color: accent
-                        font.pixelSize: 11
-                        font.bold: true
-                    }
+                StatusPill {
+                    label: activeGuide.section || appController.appText.guide_section_fallback
+                    tone: "success"
                 }
                 Text {
                     Layout.fillWidth: true
@@ -5352,7 +5341,7 @@ ApplicationWindow {
                         Rectangle {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 260
-                            radius: 7
+                            radius: radiusSm
                             color: panelRaised
                             border.color: border
                             clip: true
@@ -5395,7 +5384,7 @@ ApplicationWindow {
         focus: false
         closePolicy: Popup.NoAutoClose
         background: Rectangle {
-            radius: 7
+            radius: radiusMd
             color: "#14352c"
             border.color: accent
         }
@@ -5505,7 +5494,7 @@ ApplicationWindow {
                     required property bool selected
                     width: ListView.view.width
                     height: 64
-                    radius: 5
+                    radius: radiusSm
                     color: panelRaised
                     RowLayout {
                         anchors.fill: parent

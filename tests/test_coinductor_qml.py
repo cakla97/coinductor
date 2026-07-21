@@ -265,6 +265,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "component StatusPill: Rectangle" in qml
     assert "component SectionCard: Rectangle" in qml
     assert "property color panelSunken" in qml
+    assert qml.count('"#3a3020"') == 1
     assert "property int radiusMd" in qml
     assert "property int spacingLg" in qml
     assert "appController.wizardText.welcome_title" in qml

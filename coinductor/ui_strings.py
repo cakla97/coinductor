@@ -913,6 +913,62 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "RUN",
         "cs": "BĚH",
     },
+    "assistant_title": {
+        "en": "AI Assistant",
+        "cs": "AI Assistant",
+    },
+    "assistant_context_prefix": {
+        "en": "Read-only help | Context:",
+        "cs": "Nápověda pouze pro čtení | Kontext:",
+    },
+    "assistant_active_ai_prefix": {
+        "en": "Active AI:",
+        "cs": "Aktivní AI:",
+    },
+    "assistant_history_button": {
+        "en": "History",
+        "cs": "Historie",
+    },
+    "assistant_new_chat_button": {
+        "en": "New chat",
+        "cs": "Nový chat",
+    },
+    "assistant_proposed_action_title": {
+        "en": "Proposed app action",
+        "cs": "Navrhovaná akce v aplikaci",
+    },
+    "assistant_dismiss_button": {
+        "en": "Dismiss",
+        "cs": "Zamítnout",
+    },
+    "assistant_confirm_button": {
+        "en": "Confirm",
+        "cs": "Potvrdit",
+    },
+    "assistant_attached_image_fallback": {
+        "en": "Attached image",
+        "cs": "Připojený obrázek",
+    },
+    "assistant_vision_available_note": {
+        "en": "The active AI supports image input. The screenshot will be sent with this message. You can paste another screenshot with Ctrl+V.",
+        "cs": "Aktivní AI podporuje vstup obrázků. Screenshot bude odeslán s touto zprávou. Další screenshot můžete vložit pomocí Ctrl+V.",
+    },
+    "assistant_remove_button": {
+        "en": "Remove",
+        "cs": "Odebrat",
+    },
+    "assistant_attach_image_button": {
+        "en": "Attach image",
+        "cs": "Připojit obrázek",
+    },
+    "assistant_input_placeholder": {
+        "en": "Ask about the latest run, portfolio, risk, Grid...",
+        "cs": "Zeptejte se na poslední běh, portfolio, riziko, Grid...",
+    },
+    "assistant_send_button": {
+        "en": "Send",
+        "cs": "Odeslat",
+    },
 }
 
 

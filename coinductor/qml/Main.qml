@@ -2768,12 +2768,12 @@ ApplicationWindow {
                 anchors.margins: 28
                 spacing: 14
 
-                Text { text: "AI Assistant"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { text: appController.appText.assistant_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
                         Layout.fillWidth: true
-                        text: "Read-only help | Context: " + appController.assistantContextPage
+                        text: appController.appText.assistant_context_prefix + " " + appController.assistantContextPage
                         color: textSecondary
                         font.pixelSize: 14
                     }
@@ -2789,18 +2789,18 @@ ApplicationWindow {
                             anchors.leftMargin: 12
                             anchors.rightMargin: 12
                             verticalAlignment: Text.AlignVCenter
-                            text: "Active AI: " + appController.aiProviderSummary
+                            text: appController.appText.assistant_active_ai_prefix + " " + appController.aiProviderSummary
                             color: textSecondary
                             font.pixelSize: 12
                             elide: Text.ElideRight
                         }
                     }
                     Button {
-                        text: "History"
+                        text: appController.appText.assistant_history_button
                         onClicked: assistantHistoryDialog.open()
                     }
                     Button {
-                        text: "New chat"
+                        text: appController.appText.assistant_new_chat_button
                         enabled: !appController.assistantBusy
                         onClicked: appController.newAssistantChat()
                     }
@@ -2904,13 +2904,13 @@ ApplicationWindow {
                         anchors.top: parent.top
                         anchors.margins: 14
                         spacing: 8
-                        Text { Layout.fillWidth: true; text: appController.assistantPendingAction.title || "Proposed app action"; color: textPrimary; font.pixelSize: 15; font.bold: true; wrapMode: Text.WordWrap }
+                        Text { Layout.fillWidth: true; text: appController.assistantPendingAction.title || appController.appText.assistant_proposed_action_title; color: textPrimary; font.pixelSize: 15; font.bold: true; wrapMode: Text.WordWrap }
                         Text { Layout.fillWidth: true; text: appController.assistantPendingAction.description || ""; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                         RowLayout {
                             Layout.alignment: Qt.AlignRight
                             spacing: 8
-                            Button { text: "Dismiss"; onClicked: appController.dismissAssistantAction() }
-                            Button { text: appController.assistantPendingAction.confirmLabel || "Confirm"; highlighted: true; onClicked: appController.confirmAssistantAction() }
+                            Button { text: appController.appText.assistant_dismiss_button; onClicked: appController.dismissAssistantAction() }
+                            Button { text: appController.assistantPendingAction.confirmLabel || appController.appText.assistant_confirm_button; highlighted: true; onClicked: appController.confirmAssistantAction() }
                         }
                     }
                 }
@@ -2939,7 +2939,7 @@ ApplicationWindow {
                             spacing: 3
                             Text {
                                 Layout.fillWidth: true
-                                text: appController.assistantAttachment.name || "Attached image"
+                                text: appController.assistantAttachment.name || appController.appText.assistant_attached_image_fallback
                                 color: textPrimary
                                 font.pixelSize: 13
                                 font.bold: true
@@ -2948,7 +2948,7 @@ ApplicationWindow {
                             Text {
                                 Layout.fillWidth: true
                                 text: appController.assistantVisionAvailable
-                                      ? "The active AI supports image input. The screenshot will be sent with this message. You can paste another screenshot with Ctrl+V."
+                                      ? appController.appText.assistant_vision_available_note
                                       : appController.assistantVisionDetail
                                 color: appController.assistantVisionAvailable ? textSecondary : warning
                                 font.pixelSize: 11
@@ -2956,7 +2956,7 @@ ApplicationWindow {
                             }
                         }
                         Button {
-                            text: "Remove"
+                            text: appController.appText.assistant_remove_button
                             enabled: !appController.assistantBusy
                             onClicked: appController.clearAssistantAttachment()
                         }
@@ -2967,14 +2967,14 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     spacing: 10
                     Button {
-                        text: "Attach image"
+                        text: appController.appText.assistant_attach_image_button
                         enabled: !appController.assistantBusy
                         onClicked: assistantImageDialog.open()
                     }
                     TextField {
                         id: assistantInput
                         Layout.fillWidth: true
-                        placeholderText: "Ask about the latest run, portfolio, risk, Grid..."
+                        placeholderText: appController.appText.assistant_input_placeholder
                         enabled: !appController.assistantBusy
                         Keys.onPressed: function(event) {
                             if (event.key === Qt.Key_V && (event.modifiers & Qt.ControlModifier)) {
@@ -2990,7 +2990,7 @@ ApplicationWindow {
                         }
                     }
                     Button {
-                        text: "Send"
+                        text: appController.appText.assistant_send_button
                         enabled: !appController.assistantBusy
                                  && (assistantInput.text.trim().length > 0 || Object.keys(appController.assistantAttachment).length > 0)
                                  && (Object.keys(appController.assistantAttachment).length === 0 || appController.assistantVisionAvailable)

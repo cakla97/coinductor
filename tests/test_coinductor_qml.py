@@ -150,7 +150,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert 'text: "Replay app tour"' in qml
     assert "safetyPhraseRow.implicitHeight + 24" in qml
     assert 'safetyAllowsLiveSubmit ? "#ee6b6e"' not in qml
-    assert 'text: "Attach image"' in qml
+    assert "text: appController.appText.assistant_attach_image_button" in qml
     assert "appController.attachAssistantImage" in qml
     assert "appController.assistantVisionAvailable" in qml
     assert "PlatformDialogs.FileDialog" in qml
@@ -212,6 +212,10 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.run_history_title" in qml
     assert "appController.appText.run_history_description" in qml
     assert "appController.appText.run_history_run_label" in qml
+    assert "appController.appText.assistant_title" in qml
+    assert "appController.appText.assistant_input_placeholder" in qml
+    assert "appController.appText.assistant_send_button" in qml
+    assert "appController.appText.assistant_vision_available_note" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

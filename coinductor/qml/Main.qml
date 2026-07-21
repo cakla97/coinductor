@@ -22,11 +22,41 @@ ApplicationWindow {
 
     property color panel: "#171d24"
     property color panelRaised: "#1d252e"
+    property color panelSunken: "#12171d"
     property color border: "#2a3540"
     property color textPrimary: "#f2f5f7"
     property color textSecondary: "#9ba8b5"
+    property color textTertiary: "#6b7680"
     property color accent: "#36c98f"
     property color warning: "#f1b84b"
+    property color danger: "#ee6b6e"
+    property color accentSoft: "#17372d"
+    property color warningSoft: "#3a3020"
+    property color dangerSoft: "#3a2226"
+
+    property int spacingXs: 4
+    property int spacingSm: 8
+    property int spacingMd: 12
+    property int spacingLg: 16
+    property int spacingXl: 24
+    property int spacingXxl: 32
+
+    property int radiusSm: 8
+    property int radiusMd: 12
+    property int radiusLg: 16
+    property int radiusPill: 999
+
+    property int textSizeCaption: 11
+    property int textSizeBody: 13
+    property int textSizeLabel: 12
+    property int textSizeSubtitle: 15
+    property int textSizeSectionTitle: 18
+    property int textSizePageTitle: 26
+
+    function pageContentWidth() {
+        return Math.max(window.width - 248 - 28 - 28, 640)
+    }
+
     property string toastText: ""
     property int wizardStep: 0
     property bool profileChoicesEdited: false
@@ -1577,22 +1607,22 @@ ApplicationWindow {
         spacing: 0
 
         Rectangle {
-            Layout.preferredWidth: 232
+            Layout.preferredWidth: 248
             Layout.fillHeight: true
-            color: "#12171d"
+            color: panelSunken
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 20
-                spacing: 8
+                anchors.margins: spacingLg
+                spacing: spacingXs
 
                 RowLayout {
-                    Layout.bottomMargin: 26
-                    spacing: 12
+                    Layout.bottomMargin: spacingXl
+                    spacing: spacingMd
                     Rectangle {
                         width: 38
                         height: 38
-                        radius: 8
+                        radius: radiusSm
                         color: accent
                         Text {
                             anchors.centerIn: parent
@@ -1604,7 +1634,7 @@ ApplicationWindow {
                     }
                     Column {
                         Text { text: appController.appText.app_title; color: textPrimary; font.pixelSize: 19; font.bold: true }
-                        Text { text: appController.appText.app_tagline; color: textSecondary; font.pixelSize: 11 }
+                        Text { text: appController.appText.app_tagline; color: textSecondary; font.pixelSize: textSizeCaption }
                     }
                 }
 
@@ -1614,18 +1644,28 @@ ApplicationWindow {
                     delegate: Rectangle {
                         required property var modelData
                         required property int index
+                        property bool current: appController.currentPage === modelData.page
                         Layout.fillWidth: true
                         Layout.preferredHeight: 42
-                        radius: 6
-                        color: appController.currentPage === modelData.page ? panelRaised : "transparent"
-                        border.color: appController.currentPage === modelData.page ? border : "transparent"
+                        radius: radiusSm
+                        color: current ? panelRaised : "transparent"
+                        Rectangle {
+                            visible: parent.current
+                            anchors.left: parent.left
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: 3
+                            height: 20
+                            radius: 2
+                            color: accent
+                        }
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             anchors.left: parent.left
-                            anchors.leftMargin: 14
+                            anchors.leftMargin: spacingLg
                             text: window.navLabelFor(modelData.page)
-                            color: appController.currentPage === modelData.page ? textPrimary : textSecondary
+                            color: parent.current ? textPrimary : textSecondary
                             font.pixelSize: 14
+                            font.bold: parent.current
                         }
                         MouseArea {
                             anchors.fill: parent
@@ -1640,7 +1680,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 86
-                    radius: 6
+                    radius: radiusSm
                     color: panel
                     border.color: appController.safetyAllowsLiveSubmit ? accent
                         : appController.safetyAllowsLivePreview ? warning : border
@@ -1674,7 +1714,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 72
-                    radius: 6
+                    radius: radiusSm
                     color: panel
                     border.color: border
                     Column {
@@ -1709,7 +1749,7 @@ ApplicationWindow {
             ColumnLayout {
                 x: 28
                 y: 28
-                width: Math.max(window.width - 288, 692)
+                width: window.pageContentWidth()
                 spacing: 18
 
                 Rectangle {
@@ -2014,7 +2054,7 @@ ApplicationWindow {
                 id: portfolioPageContent
                 x: 28
                 y: 28
-                width: Math.max(window.width - 288, 692)
+                width: window.pageContentWidth()
                 spacing: 18
 
                 Text { text: appController.appText.portfolio_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
@@ -2155,7 +2195,7 @@ ApplicationWindow {
                 id: actionPlanPageContent
                 x: 28
                 y: 28
-                width: Math.max(window.width - 288, 692)
+                width: window.pageContentWidth()
                 spacing: 18
 
                 RowLayout {
@@ -2412,7 +2452,7 @@ ApplicationWindow {
                 id: activeStrategiesContent
                 x: 28
                 y: 28
-                width: Math.max(window.width - 288, 692)
+                width: window.pageContentWidth()
                 spacing: 18
 
                 RowLayout {
@@ -2716,7 +2756,7 @@ ApplicationWindow {
                 id: runHistoryPageContent
                 x: 28
                 y: 28
-                width: Math.max(window.width - 288, 692)
+                width: window.pageContentWidth()
                 spacing: 18
 
                 Text { text: appController.appText.run_history_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
@@ -3026,7 +3066,7 @@ ApplicationWindow {
             ColumnLayout {
                 x: 28
                 y: 28
-                width: Math.max(window.width - 288, 692)
+                width: window.pageContentWidth()
                 spacing: 18
 
                 Text { text: appController.appText.help_guides_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
@@ -3097,7 +3137,7 @@ ApplicationWindow {
             GridLayout {
                 x: 28
                 y: 28
-                width: Math.max(window.width - 288, 692)
+                width: window.pageContentWidth()
                 columns: 1
                 rowSpacing: 18
                 Text { Layout.row: 0; text: appController.appText.live_actions_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
@@ -3403,7 +3443,7 @@ ApplicationWindow {
             ColumnLayout {
                 x: 28
                 y: 28
-                width: Math.max(window.width - 288, 692)
+                width: window.pageContentWidth()
                 spacing: 18
                 Text { text: appController.appText.settings_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
                 RowLayout {
@@ -5694,24 +5734,24 @@ ApplicationWindow {
         required property color accentColor
         property string helpText: ""
         Layout.fillWidth: true
-        Layout.preferredHeight: 98
-        radius: 7
+        Layout.preferredHeight: 104
+        radius: radiusMd
         color: panel
         border.color: border
         Column {
             anchors.fill: parent
-            anchors.margins: 14
-            spacing: 9
-            Text { text: title; color: textSecondary; font.pixelSize: 11; font.bold: true }
+            anchors.margins: spacingLg
+            spacing: spacingSm
+            Text { text: title; color: textSecondary; font.pixelSize: textSizeCaption; font.bold: true }
             Text {
                 width: parent.width
                 text: value
                 color: textPrimary
-                font.pixelSize: 17
+                font.pixelSize: 18
                 font.bold: true
                 elide: Text.ElideRight
             }
-            Rectangle { width: 28; height: 3; radius: 1; color: accentColor }
+            Rectangle { width: 28; height: 3; radius: 2; color: accentColor }
         }
         MouseArea {
             anchors.fill: parent
@@ -5720,6 +5760,53 @@ ApplicationWindow {
             ToolTip.visible: parent.helpText.length > 0 && containsMouse
             ToolTip.text: parent.helpText
             ToolTip.delay: 300
+        }
+    }
+
+    component StatusPill: Rectangle {
+        id: statusPill
+        required property string label
+        property string tone: "neutral"
+        implicitWidth: pillLabel.implicitWidth + spacingLg * 2
+        implicitHeight: pillLabel.implicitHeight + spacingSm * 1.6
+        radius: radiusPill
+        color: tone === "success" ? accentSoft
+            : tone === "warning" ? warningSoft
+            : tone === "danger" ? dangerSoft
+            : panelRaised
+        border.color: tone === "success" ? accent
+            : tone === "warning" ? warning
+            : tone === "danger" ? danger
+            : border
+        Text {
+            id: pillLabel
+            anchors.centerIn: parent
+            text: statusPill.label
+            color: statusPill.tone === "success" ? accent
+                : statusPill.tone === "warning" ? warning
+                : statusPill.tone === "danger" ? danger
+                : textSecondary
+            font.pixelSize: textSizeCaption
+            font.bold: true
+            elide: Text.ElideRight
+        }
+    }
+
+    component SectionCard: Rectangle {
+        default property alias content: cardContent.children
+        property alias contentSpacing: cardContent.spacing
+        implicitHeight: cardContent.implicitHeight + spacingXl * 2
+        Layout.fillWidth: true
+        radius: radiusMd
+        color: panel
+        border.color: border
+        ColumnLayout {
+            id: cardContent
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: spacingXl
+            spacing: spacingMd
         }
     }
 }

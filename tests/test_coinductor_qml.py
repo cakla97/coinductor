@@ -260,6 +260,13 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.safety_summary_live_guarded" in qml
     assert "window.navLabelFor(modelData.page)" in qml
     assert "appController.appText.nav_active_strategies" in qml
+    assert "function pageContentWidth()" in qml
+    assert "width: window.pageContentWidth()" in qml
+    assert "component StatusPill: Rectangle" in qml
+    assert "component SectionCard: Rectangle" in qml
+    assert "property color panelSunken" in qml
+    assert "property int radiusMd" in qml
+    assert "property int spacingLg" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

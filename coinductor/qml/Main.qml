@@ -2727,7 +2727,7 @@ ApplicationWindow {
                         required property var modelData
                         width: ListView.view.width
                         height: 78
-                        radius: 6
+                        radius: radiusSm
                         color: panel
                         border.color: border
                         RowLayout {
@@ -2784,7 +2784,7 @@ ApplicationWindow {
                         Layout.preferredWidth: 280
                         Layout.minimumWidth: 180
                         Layout.preferredHeight: 34
-                        radius: 6
+                        radius: radiusSm
                         color: panel
                         border.color: border
                         Text {
@@ -2830,7 +2830,7 @@ ApplicationWindow {
                             implicitHeight: assistantMessageDelegate.isTyping ? 44 : messageContent.implicitHeight + 24
                             anchors.right: modelData.role === "user" ? parent.right : undefined
                             anchors.left: modelData.role === "user" ? undefined : parent.left
-                            radius: 7
+                            radius: radiusMd
                             color: modelData.role === "user" ? "#234f43" : panel
                             border.color: modelData.role === "user" ? "#337660" : border
                             Column {
@@ -2896,7 +2896,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: assistantActionContent.implicitHeight + 28
                     visible: Object.keys(appController.assistantPendingAction).length > 0
-                    radius: 7
+                    radius: radiusMd
                     color: panelRaised
                     border.color: accent
 
@@ -2922,7 +2922,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 92
                     visible: Object.keys(appController.assistantAttachment).length > 0
-                    radius: 7
+                    radius: radiusMd
                     color: panelRaised
                     border.color: appController.assistantVisionAvailable ? accent : warning
 
@@ -3038,7 +3038,7 @@ ApplicationWindow {
                             required property var modelData
                             Layout.fillWidth: true
                             Layout.preferredHeight: 152
-                            radius: 7
+                            radius: radiusMd
                             color: panel
                             border.color: border
                             ColumnLayout {
@@ -3048,14 +3048,7 @@ ApplicationWindow {
                                 RowLayout {
                                     Layout.fillWidth: true
                                     Text { Layout.fillWidth: true; text: modelData.title; color: textPrimary; font.pixelSize: 16; font.bold: true; elide: Text.ElideRight }
-                                    Rectangle {
-                                        Layout.preferredWidth: 92
-                                        Layout.preferredHeight: 24
-                                        radius: 5
-                                        color: panelRaised
-                                        border.color: border
-                                        Text { anchors.centerIn: parent; text: modelData.section; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                                    }
+                                    StatusPill { label: modelData.section; tone: "neutral" }
                                 }
                                 Text {
                                     Layout.fillWidth: true

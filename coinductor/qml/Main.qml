@@ -2705,11 +2705,11 @@ ApplicationWindow {
                 width: Math.max(window.width - 288, 692)
                 spacing: 18
 
-                Text { text: "Run History"; color: textPrimary; font.pixelSize: 26; font.bold: true }
-                Text { text: "The latest 30 analytical runs"; color: textSecondary; font.pixelSize: 13 }
+                Text { text: appController.appText.run_history_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { text: appController.appText.run_history_subtitle; color: textSecondary; font.pixelSize: 13 }
                 Text {
                     Layout.fillWidth: true
-                    text: "REAL runs read your live Binance account and are the ones behind Action Plan and Active Strategies. MOCK runs use example data for trying the app and never touch your real portfolio. This is a read-only log; to act on a decision, use Action Plan."
+                    text: appController.appText.run_history_description
                     color: textSecondary
                     font.pixelSize: 11
                     wrapMode: Text.WordWrap
@@ -2733,7 +2733,7 @@ ApplicationWindow {
                             spacing: 14
                             ColumnLayout {
                                 Layout.preferredWidth: 85
-                                Text { text: "RUN " + modelData.runId; color: textPrimary; font.pixelSize: 13; font.bold: true }
+                                Text { text: appController.appText.run_history_run_label + " " + modelData.runId; color: textPrimary; font.pixelSize: 13; font.bold: true }
                                 Text { text: modelData.dataMode; color: modelData.dataMode === "REAL" ? accent : warning; font.pixelSize: 10; font.bold: true }
                             }
                             ColumnLayout {

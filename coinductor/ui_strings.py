@@ -897,6 +897,22 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "View details",
         "cs": "Zobrazit detail",
     },
+    "run_history_title": {
+        "en": "Run History",
+        "cs": "Historie běhů",
+    },
+    "run_history_subtitle": {
+        "en": "The latest 30 analytical runs",
+        "cs": "Posledních 30 analytických běhů",
+    },
+    "run_history_description": {
+        "en": "REAL runs read your live Binance account and are the ones behind Action Plan and Active Strategies. MOCK runs use example data for trying the app and never touch your real portfolio. This is a read-only log; to act on a decision, use Action Plan.",
+        "cs": "REAL běhy čtou váš skutečný účet Binance a jsou to ty, ze kterých vychází Action Plan a Active Strategies. MOCK běhy používají ukázková data pro vyzkoušení aplikace a nikdy se nedotknou vašeho skutečného portfolia. Toto je pouze log ke čtení; pro reakci na rozhodnutí použijte Action Plan.",
+    },
+    "run_history_run_label": {
+        "en": "RUN",
+        "cs": "BĚH",
+    },
 }
 
 

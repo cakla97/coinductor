@@ -209,6 +209,9 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.monitoring_evaluation_pending_detail" in qml
     assert "appController.appText.binance_id_label" in qml
     assert "appController.appText.view_details_button" in qml
+    assert "appController.appText.run_history_title" in qml
+    assert "appController.appText.run_history_description" in qml
+    assert "appController.appText.run_history_run_label" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

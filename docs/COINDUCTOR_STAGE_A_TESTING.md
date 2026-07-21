@@ -67,6 +67,18 @@ terminal.
   stay clickable while the answer is loading and after it returns. Try this both
   with and without a configured/reachable AI provider — an answer (deterministic
   or a graceful offline fallback) should appear either way, never a crash.
+- On Decision profile (step 3), ask "Co znamenají jednotlivá pole v Decision
+  profile, abych věděl co správně mám zvolit?" with no AI provider running.
+  Confirm it answers deterministically (explaining Management style, Automation,
+  Review rhythm, Drawdown comfort, budget, and the two checkboxes) instead of
+  showing a technical/connection error.
+- Confirm the box shows a one-line AI provider status line (e.g. "AI provider
+  configured: qwen3:14b", or a note that none is set up yet) so it is clear
+  before asking whether questions will be answered deterministically or by AI.
+- With a configured but unreachable AI provider (e.g. Ollama not running), ask
+  a free-form question that has no deterministic answer. Confirm the response
+  is a clean, readable message in the question's language and never shows raw
+  technical text like `[WinError 10061]`.
 - Open `Local AI guide` and `Cloud AI guide` from the wizard. Confirm the guides
   open in a modal, links are clickable, and closing returns to the same wizard step.
 - In Binance API setup, follow the shown Binance API steps and paste the read-only

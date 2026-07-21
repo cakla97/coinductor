@@ -172,6 +172,8 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.wizardAssistantBusy" in qml
     assert "appController.wizardAssistantAnswer" in qml
     assert "appController.wizardText.ask_ai_description" in qml
+    assert "appController.wizardText.ask_ai_provider_status_configured" in qml
+    assert "appController.wizardText.ask_ai_provider_status_missing" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

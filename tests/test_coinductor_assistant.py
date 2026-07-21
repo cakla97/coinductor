@@ -287,6 +287,47 @@ def test_provider_backed_assistant_falls_back_when_provider_missing(tmp_path, mo
     assert "AI provider fallback" in answer
 
 
+def test_provider_backed_assistant_hides_raw_connection_error_in_english(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\n",
+        encoding="utf-8",
+    )
+
+    def fake_urlopen(request, timeout):
+        raise OSError("[WinError 10061] No connection could be made because the target machine actively refused it")
+
+    monkeypatch.setattr(assistant_module.urllib.request, "urlopen", fake_urlopen)
+
+    answer = ProviderBackedAssistant("config.toml", ".env").answer("Explain risk", _snapshot())
+
+    assert "WinError" not in answer
+    assert "could not be reached" in answer
+
+
+def test_provider_backed_assistant_hides_raw_connection_error_in_czech(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\n",
+        encoding="utf-8",
+    )
+
+    def fake_urlopen(request, timeout):
+        raise OSError("[WinError 10061] Nemohlo být vytvořeno žádné připojení, protože cílový počítač jej aktivně odmítl")
+
+    monkeypatch.setattr(assistant_module.urllib.request, "urlopen", fake_urlopen)
+
+    answer = ProviderBackedAssistant("config.toml", ".env").answer(
+        "Co znamenají jednotlivá pole v Nastavení, abych věděl co mám zvolit?",
+        _snapshot(),
+    )
+
+    assert "WinError" not in answer
+    assert "nepodařilo kontaktovat" in answer
+
+
 def test_assistant_prepares_safe_navigation_without_calling_provider() -> None:
     response = ProviderBackedAssistant().respond("Open portfolio", _snapshot())
 
@@ -567,6 +608,25 @@ def test_ui_knowledge_explains_testnet_purpose() -> None:
     assert answer is not None
     assert "virtual funds" in answer
     assert "optional" in answer.lower()
+
+
+def test_ui_knowledge_explains_decision_profile_fields_in_czech() -> None:
+    answer = UiKnowledgeService().answer(
+        "Co znamenají jednotlivá pole v Decision profile, abych věděl co správně mám zvolit?"
+    )
+
+    assert answer is not None
+    assert "Balanced" in answer
+    assert "Recommendations only" in answer
+    assert "Drawdown comfort" in answer or "propad" in answer.lower()
+
+
+def test_ui_knowledge_explains_decision_profile_fields_in_english() -> None:
+    answer = UiKnowledgeService().answer("Explain the decision profile fields and which profile options should I choose.")
+
+    assert answer is not None
+    assert "Guarded automation" in answer
+    assert "None of these choices place an order" in answer
 
 
 def test_contextual_next_step_offers_navigation_not_execution() -> None:

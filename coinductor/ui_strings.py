@@ -310,6 +310,14 @@ WIZARD_STRINGS: dict[str, dict[str, str]] = {
         "en": "Uses your configured AI provider when available, with a deterministic offline fallback. This is read-only, never places orders or changes settings, and never blocks Back/Next.",
         "cs": "Používá vašeho nastaveného poskytovatele AI, pokud je dostupný, jinak deterministickou offline odpověď. Je pouze pro čtení, nikdy nezadává příkazy ani nemění nastavení a nikdy neblokuje Back/Next.",
     },
+    "ask_ai_provider_status_configured": {
+        "en": "AI provider configured:",
+        "cs": "Nastavený AI provider:",
+    },
+    "ask_ai_provider_status_missing": {
+        "en": "No AI provider configured yet — deterministic answers still work here; connect one in step 4 for broader help.",
+        "cs": "Zatím není nastavený žádný AI provider — deterministická nápověda funguje i tak; pro širší pomoc jej připojte v kroku 4.",
+    },
     "ask_ai_placeholder": {
         "en": "e.g. How do I create a Binance API key?",
         "cs": "např. Jak vytvořím API klíč na Binance?",

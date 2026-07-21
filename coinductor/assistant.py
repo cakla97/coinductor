@@ -438,14 +438,16 @@ class ProviderBackedAssistant:
         try:
             return self._provider_answer(question, snapshot, app_context or {}, conversation, image_path)
         except Exception as exc:
-            if is_czech(question):
+            czech = is_czech(question)
+            detail = _describe_provider_error(exc, czech=czech)
+            if czech:
                 return (
                     "Lokální AI model tentokrát nevrátil použitelnou odpověď. "
                     "Zdokumentované funkce aplikace mohu vysvětlit přímo; u obecného dotazu jej zkuste formulovat konkrétněji. "
-                    f"Technický detail: {exc}"
+                    f"Technický detail: {detail}"
                 )
             offline = self.fallback.answer(question, snapshot)
-            return f"{offline}\n\nAI provider fallback: {exc}"
+            return f"{offline}\n\nAI provider fallback: {detail}"
 
     def respond(
         self,
@@ -643,6 +645,22 @@ def _extract_provider_answer(content: object) -> str:
                 return value.strip()
         return ""
     return cleaned
+
+
+def _describe_provider_error(exc: Exception, *, czech: bool) -> str:
+    if isinstance(exc, RuntimeError):
+        return str(exc)
+    if isinstance(exc, OSError):
+        return (
+            "AI endpoint se nepodařilo kontaktovat (spojení selhalo nebo vypršel časový limit)."
+            if czech
+            else "the AI endpoint could not be reached (connection failed or timed out)."
+        )
+    return (
+        f"neočekávaná chyba ({type(exc).__name__})."
+        if czech
+        else f"unexpected error ({type(exc).__name__})."
+    )
 
 
 def _is_local_endpoint(base_url: str) -> bool:

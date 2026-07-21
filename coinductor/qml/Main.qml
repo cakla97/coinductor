@@ -1483,6 +1483,15 @@ ApplicationWindow {
                             font.pixelSize: 10
                             wrapMode: Text.WordWrap
                         }
+                        Text {
+                            Layout.fillWidth: true
+                            text: (appController.aiProviderBaseUrl.length > 0 && appController.aiTextModel.length > 0)
+                                ? appController.wizardText.ask_ai_provider_status_configured + " " + appController.aiTextModel
+                                : appController.wizardText.ask_ai_provider_status_missing
+                            color: (appController.aiProviderBaseUrl.length > 0 && appController.aiTextModel.length > 0) ? accent : warning
+                            font.pixelSize: 10
+                            wrapMode: Text.WordWrap
+                        }
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 8

@@ -29,6 +29,15 @@ def test_wizard_text_falls_back_to_english_for_unknown_language() -> None:
     assert text["welcome_title"] == "Welcome to Coinductor"
 
 
+def test_wizard_text_includes_ai_provider_status_strings() -> None:
+    text_en = UiStringsService().wizard_text("en")
+    text_cs = UiStringsService().wizard_text("cs")
+
+    assert text_en["ask_ai_provider_status_configured"] == "AI provider configured:"
+    assert "step 4" in text_en["ask_ai_provider_status_missing"]
+    assert "kroku 4" in text_cs["ask_ai_provider_status_missing"]
+
+
 def test_wizard_text_covers_the_same_keys_for_every_language() -> None:
     english_keys = set(UiStringsService().wizard_text("en"))
     czech_keys = set(UiStringsService().wizard_text("cs"))

@@ -182,12 +182,22 @@ checks and current generated state when the user asks for an actual portfolio de
 3. ~~**Inline wizard AI.**~~ Implemented: every wizard step has an "Ask about this
    step" box above Back/Next, wired to `AppController.askWizardAssistant()`. It reuses
    the same `ProviderBackedAssistant.respond()` pipeline as the AI Assistant page —
-   deterministic answers first (including five new `UiKnowledgeService` entries for
-   the most common onboarding questions: creating Binance API keys, automation level,
-   existing-vs-first-portfolio, local AI downloads, and Testnet purpose), then the
-   configured provider, then an offline fallback if the provider call fails or none is
-   configured. It runs on its own thread and state, entirely decoupled from wizard
-   navigation, so it can never block Back/Next.
+   deterministic answers first (including six `UiKnowledgeService` entries for the
+   most common onboarding questions: creating Binance API keys, automation level, a
+   full Decision-profile field-by-field guide covering management style/automation/
+   review rhythm/drawdown comfort/budget/bot toggles so users get real help choosing
+   their own criteria without needing a working AI provider, existing-vs-first-
+   portfolio, local AI downloads, and Testnet purpose), then the configured provider,
+   then an offline fallback if the provider call fails or none is configured. The box
+   also shows a one-line AI provider status (configured model, or a note that it is
+   not set up yet and can be added in step 4) so users know what to expect before
+   asking. `ProviderBackedAssistant.answer()`'s exception fallback no longer leaks raw
+   OS-level exception text (e.g. `[WinError 10061]`) into the answer — `OSError`s are
+   summarized as a clean "endpoint could not be reached" message in both languages,
+   while the app's own descriptive `RuntimeError`s (missing config, etc.) still pass
+   through unchanged since they were already human-written. It runs on its own thread
+   and state, entirely decoupled from wizard navigation, so it can never block
+   Back/Next.
 4. ~~**Standalone market questions.**~~ Implemented: `MarketDataAssistant`
    (`coinductor/assistant.py`) deterministically answers recognized asset/price
    questions (English and Czech) using a new `BinanceClient.get_symbol_market_snapshot`

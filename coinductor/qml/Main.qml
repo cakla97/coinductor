@@ -4324,7 +4324,7 @@ ApplicationWindow {
                             required property var modelData
                             Layout.fillWidth: true
                             Layout.preferredHeight: 68
-                            radius: 6
+                            radius: radiusSm
                             color: panelRaised
                             border.color: border
                             ColumnLayout {
@@ -4340,8 +4340,8 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: strategyMonitorNote.implicitHeight + 24
-                    radius: 7
-                    color: "#3a3020"
+                    radius: radiusMd
+                    color: warningSoft
                     border.color: warning
                     Text {
                         id: strategyMonitorNote
@@ -4449,8 +4449,8 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: liveApiWarningText.implicitHeight + 24
-                    radius: 7
-                    color: "#3a3020"
+                    radius: radiusMd
+                    color: warningSoft
                     border.color: warning
                     Text {
                         id: liveApiWarningText
@@ -4517,19 +4517,9 @@ ApplicationWindow {
                         onClicked: appController.checkBinanceLiveTrading()
                     }
                     Item { Layout.fillWidth: true }
-                    Rectangle {
-                        Layout.preferredWidth: 104
-                        Layout.preferredHeight: 30
-                        radius: 5
-                        color: appController.liveTradingCheckStatus === "Verified" ? "#17372d" : "#3a3020"
-                        border.color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
-                        Text {
-                            anchors.centerIn: parent
-                            text: appController.liveTradingCheckStatus === "Verified" ? "VERIFIED" : appController.liveTradingKeyStatus === "PASS" ? "CONFIGURED" : "LOCKED"
-                            color: appController.liveTradingCheckStatus === "Verified" ? accent : warning
-                            font.pixelSize: 10
-                            font.bold: true
-                        }
+                    StatusPill {
+                        label: appController.liveTradingCheckStatus === "Verified" ? "VERIFIED" : appController.liveTradingKeyStatus === "PASS" ? "CONFIGURED" : "LOCKED"
+                        tone: appController.liveTradingCheckStatus === "Verified" ? "success" : "warning"
                     }
                 }
                 Text {
@@ -4581,8 +4571,8 @@ ApplicationWindow {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: safetyPhraseRow.implicitHeight + 24
-                radius: 7
-                color: "#3a3020"
+                radius: radiusMd
+                color: warningSoft
                 border.color: warning
                 RowLayout {
                     id: safetyPhraseRow

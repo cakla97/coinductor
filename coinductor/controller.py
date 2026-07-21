@@ -555,6 +555,10 @@ class AppController(QObject):
     def wizardText(self) -> dict[str, str]:
         return UiStringsService().wizard_text(self._wizard_language)
 
+    @Property("QVariantMap", notify=wizardLanguageChanged)
+    def appText(self) -> dict[str, str]:
+        return UiStringsService().app_text(self._wizard_language)
+
     @Slot(str)
     def setWizardLanguage(self, language: str) -> None:
         normalized = language.strip().lower()

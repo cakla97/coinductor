@@ -1713,19 +1713,19 @@ ApplicationWindow {
                         anchors.top: parent.top
                         anchors.margins: 14
                         spacing: 8
-                        Text { text: "Finish setup"; color: warning; font.pixelSize: 14; font.bold: true }
+                        Text { text: appController.appText.overview_finish_setup_title; color: warning; font.pixelSize: 14; font.bold: true }
                         RowLayout {
                             Layout.fillWidth: true
                             visible: appController.binanceConnectionStatus !== "Connected"
                             spacing: 12
                             Text {
                                 Layout.fillWidth: true
-                                text: "Binance read-only access is not connected yet. Portfolio analysis needs it to show real data instead of examples."
+                                text: appController.appText.overview_finish_setup_binance
                                 color: textPrimary
                                 font.pixelSize: 12
                                 wrapMode: Text.WordWrap
                             }
-                            Button { text: "Complete Binance setup"; onClicked: window.openWizardAtStep(4) }
+                            Button { text: appController.appText.overview_complete_binance_setup_button; onClicked: window.openWizardAtStep(4) }
                         }
                         RowLayout {
                             Layout.fillWidth: true
@@ -1733,12 +1733,12 @@ ApplicationWindow {
                             spacing: 12
                             Text {
                                 Layout.fillWidth: true
-                                text: "AI assistant is not configured yet. This step is optional; Coinductor works without it."
+                                text: appController.appText.overview_finish_setup_ai
                                 color: textSecondary
                                 font.pixelSize: 12
                                 wrapMode: Text.WordWrap
                             }
-                            Button { text: "Set up AI (optional)"; onClicked: window.openWizardAtStep(3) }
+                            Button { text: appController.appText.overview_setup_ai_button; onClicked: window.openWizardAtStep(3) }
                         }
                     }
                 }
@@ -1748,15 +1748,15 @@ ApplicationWindow {
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 4
-                        Text { text: "Portfolio Overview"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                        Text { text: appController.appText.overview_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
                         Text {
-                            text: "Deterministic analysis with guarded execution"
+                            text: appController.appText.overview_subtitle
                             color: textSecondary
                             font.pixelSize: 13
                         }
                     }
                     Button {
-                        text: appController.busy ? "Running..." : "Run analysis"
+                        text: appController.busy ? appController.appText.running_status : appController.appText.overview_run_analysis_button
                         enabled: !appController.busy
                         onClicked: runDialog.open()
                     }
@@ -1779,15 +1779,15 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 3
-                                Text { text: "Safety & readiness"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                                Text { text: appController.appText.overview_safety_title; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
                                     text: appController.safetyStageCode === "SETUP"
                                         ? appController.hasCompletedRealAnalysis
-                                            ? "Real analysis is available. Continue in Live Actions when you want to enable mainnet preview."
-                                            : "Setup is complete and exchange-changing actions are locked. Start with a real read-only analysis."
+                                            ? appController.appText.overview_safety_setup_with_analysis
+                                            : appController.appText.overview_safety_setup_no_analysis
                                         : appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview
-                                            ? "Mainnet preview is enabled. Wait for a valid BUY setup and review its preview before arming guarded actions."
+                                            ? appController.appText.overview_safety_preview_waiting
                                             : appController.safetyDetail
                                     color: textSecondary
                                     font.pixelSize: 12
@@ -1810,8 +1810,8 @@ ApplicationWindow {
                             }
                             Button {
                                 text: appController.safetyStageCode === "SETUP" && !appController.hasCompletedRealAnalysis
-                                    ? "Run analysis"
-                                    : "Open Live Actions"
+                                    ? appController.appText.overview_run_analysis_button
+                                    : appController.appText.overview_open_live_actions_button
                                 onClicked: {
                                     if (appController.safetyStageCode === "SETUP" && !appController.hasCompletedRealAnalysis)
                                         runDialog.open()
@@ -1822,7 +1822,7 @@ ApplicationWindow {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: "This stage never places an order by itself. See Live Actions for the full safety-stage controls and confirmation gates."
+                            text: appController.appText.overview_safety_never_places_order
                             color: warning
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
@@ -1849,10 +1849,10 @@ ApplicationWindow {
                     columns: 4
                     columnSpacing: 12
                     rowSpacing: 12
-                    MetricCard { title: "Portfolio"; value: appController.portfolioValue; accentColor: accent; helpText: "Total value of everything Coinductor tracks, including Spot, Flexible Earn, and Locked balances." }
-                    MetricCard { title: "Liquid"; value: appController.liquidValue; accentColor: "#5aa9e6"; helpText: "Value in Spot or Flexible Earn that could be used without waiting." }
-                    MetricCard { title: "Locked"; value: appController.lockedValue; accentColor: warning; helpText: "Value in Locked Earn or otherwise not immediately available." }
-                    MetricCard { title: "Risk gate"; value: appController.riskState; accentColor: "#d66b75"; helpText: "Whether the deterministic risk engine currently approves a new trade. When it does not, the reason is shown here instead of \"Approved\"." }
+                    MetricCard { title: appController.appText.metric_portfolio_title; value: appController.portfolioValue; accentColor: accent; helpText: appController.appText.metric_portfolio_help }
+                    MetricCard { title: appController.appText.metric_liquid_title; value: appController.liquidValue; accentColor: "#5aa9e6"; helpText: appController.appText.metric_liquid_help }
+                    MetricCard { title: appController.appText.metric_locked_title; value: appController.lockedValue; accentColor: warning; helpText: appController.appText.metric_locked_help }
+                    MetricCard { title: appController.appText.metric_risk_gate_title; value: appController.riskState; accentColor: "#d66b75"; helpText: appController.appText.metric_risk_gate_help }
                 }
 
                 Rectangle {
@@ -1867,7 +1867,7 @@ ApplicationWindow {
                         spacing: 8
                         RowLayout {
                             Layout.fillWidth: true
-                            Text { text: "Latest decision"; color: textSecondary; font.pixelSize: 12; font.bold: true }
+                            Text { text: appController.appText.overview_latest_decision_title; color: textSecondary; font.pixelSize: 12; font.bold: true }
                             Item { Layout.fillWidth: true }
                             Rectangle {
                                 width: decisionText.implicitWidth + 22
@@ -1887,7 +1887,7 @@ ApplicationWindow {
                                     hoverEnabled: true
                                     cursorShape: Qt.WhatsThisCursor
                                     ToolTip.visible: containsMouse
-                                    ToolTip.text: "HOLD means no trade is currently recommended. Any other decision type is explained below and detailed further in Action Plan."
+                                    ToolTip.text: appController.appText.overview_decision_tooltip
                                     ToolTip.delay: 300
                                 }
                             }
@@ -1901,7 +1901,7 @@ ApplicationWindow {
                         }
                         Item { Layout.fillHeight: true }
                         Button {
-                            text: "Open detailed report"
+                            text: appController.appText.open_detailed_report_button
                             enabled: appController.hasReport
                             onClicked: appController.openReport()
                         }
@@ -1921,7 +1921,7 @@ ApplicationWindow {
                         ColumnLayout {
                             anchors.fill: parent
                             anchors.margins: 18
-                            Text { text: "Recommended actions"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            Text { text: appController.appText.overview_recommended_actions_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                             ListView {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
@@ -1971,7 +1971,7 @@ ApplicationWindow {
                         ColumnLayout {
                             anchors.fill: parent
                             anchors.margins: 18
-                            Text { text: "AI summary"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                            Text { text: appController.appText.overview_ai_summary_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                             Text {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
@@ -3412,6 +3412,25 @@ ApplicationWindow {
                         text: "Refresh checks"
                         onClicked: appController.refreshSetup()
                     }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Text { text: appController.appText.language_toggle_label; color: textSecondary; font.pixelSize: 12 }
+                    Button {
+                        text: "English"
+                        flat: appController.wizardLanguage !== "en"
+                        highlighted: appController.wizardLanguage === "en"
+                        onClicked: appController.setWizardLanguage("en")
+                    }
+                    Button {
+                        text: "Čeština"
+                        flat: appController.wizardLanguage !== "cs"
+                        highlighted: appController.wizardLanguage === "cs"
+                        onClicked: appController.setWizardLanguage("cs")
+                    }
+                    Item { Layout.fillWidth: true }
                 }
 
                 Rectangle {

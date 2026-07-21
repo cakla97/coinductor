@@ -67,6 +67,17 @@ def test_controller_switches_wizard_text_language() -> None:
     assert controller.wizardText["welcome_title"] == "Vítejte v Coinductoru"
 
 
+def test_controller_switches_app_text_language() -> None:
+    QGuiApplication.instance() or QGuiApplication([])
+    controller = AppController()
+
+    assert controller.appText["overview_title"] == "Portfolio Overview"
+
+    controller.setWizardLanguage("cs")
+
+    assert controller.appText["overview_title"] == "Přehled portfolia"
+
+
 def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> None:
     qml_path = Path(__file__).parents[1] / "coinductor" / "qml" / "Main.qml"
     qml = qml_path.read_text(encoding="utf-8")
@@ -89,7 +100,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "Enable guarded live submit" in qml
     assert "appController.copyText" in qml
     assert "appController.lockLiveSubmit" in qml
-    assert "Safety & readiness" in qml
+    assert "appController.appText.overview_safety_title" in qml
     assert "appController.hasCompletedRealAnalysis" in qml
     assert "appController.hasReadyLivePreview" in qml
     assert "Layout.row: 2" in qml
@@ -174,6 +185,11 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.wizardText.ask_ai_description" in qml
     assert "appController.wizardText.ask_ai_provider_status_configured" in qml
     assert "appController.wizardText.ask_ai_provider_status_missing" in qml
+    assert "appController.appText.overview_title" in qml
+    assert "appController.appText.metric_portfolio_help" in qml
+    assert "appController.appText.overview_ai_summary_title" in qml
+    assert "appController.appText.language_toggle_label" in qml
+    assert qml.count('appController.setWizardLanguage("cs")') == 2
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

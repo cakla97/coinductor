@@ -356,11 +356,136 @@ WIZARD_STRINGS: dict[str, dict[str, str]] = {
     },
 }
 
+APP_STRINGS: dict[str, dict[str, str]] = {
+    "language_toggle_label": {
+        "en": "App language:",
+        "cs": "Jazyk aplikace:",
+    },
+    "open_detailed_report_button": {
+        "en": "Open detailed report",
+        "cs": "Otevřít podrobný report",
+    },
+    "running_status": {
+        "en": "Running...",
+        "cs": "Probíhá...",
+    },
+    "overview_finish_setup_title": {
+        "en": "Finish setup",
+        "cs": "Dokončit nastavení",
+    },
+    "overview_finish_setup_binance": {
+        "en": "Binance read-only access is not connected yet. Portfolio analysis needs it to show real data instead of examples.",
+        "cs": "Read-only přístup k Binance zatím není připojen. Analýza portfolia jej potřebuje k zobrazení skutečných dat místo ukázkových.",
+    },
+    "overview_complete_binance_setup_button": {
+        "en": "Complete Binance setup",
+        "cs": "Dokončit nastavení Binance",
+    },
+    "overview_finish_setup_ai": {
+        "en": "AI assistant is not configured yet. This step is optional; Coinductor works without it.",
+        "cs": "AI asistent zatím není nastaven. Tento krok je volitelný; Coinductor funguje i bez něj.",
+    },
+    "overview_setup_ai_button": {
+        "en": "Set up AI (optional)",
+        "cs": "Nastavit AI (volitelné)",
+    },
+    "overview_title": {
+        "en": "Portfolio Overview",
+        "cs": "Přehled portfolia",
+    },
+    "overview_subtitle": {
+        "en": "Deterministic analysis with guarded execution",
+        "cs": "Deterministická analýza se zabezpečeným prováděním",
+    },
+    "overview_run_analysis_button": {
+        "en": "Run analysis",
+        "cs": "Spustit analýzu",
+    },
+    "overview_safety_title": {
+        "en": "Safety & readiness",
+        "cs": "Bezpečnost a připravenost",
+    },
+    "overview_safety_setup_with_analysis": {
+        "en": "Real analysis is available. Continue in Live Actions when you want to enable mainnet preview.",
+        "cs": "Skutečná analýza je k dispozici. Až budete chtít povolit mainnet preview, pokračujte v Live Actions.",
+    },
+    "overview_safety_setup_no_analysis": {
+        "en": "Setup is complete and exchange-changing actions are locked. Start with a real read-only analysis.",
+        "cs": "Nastavení je dokončeno a akce měnící stav burzy jsou uzamčeny. Začněte skutečnou read-only analýzou.",
+    },
+    "overview_safety_preview_waiting": {
+        "en": "Mainnet preview is enabled. Wait for a valid BUY setup and review its preview before arming guarded actions.",
+        "cs": "Mainnet preview je povolený. Počkejte na platné BUY nastavení a před odjištěním zabezpečených akcí zkontrolujte jeho náhled.",
+    },
+    "overview_safety_never_places_order": {
+        "en": "This stage never places an order by itself. See Live Actions for the full safety-stage controls and confirmation gates.",
+        "cs": "Tento stupeň sám o sobě nikdy nezadá příkaz. Úplné ovládání bezpečnostního stupně a potvrzovací brány najdete v Live Actions.",
+    },
+    "overview_open_live_actions_button": {
+        "en": "Open Live Actions",
+        "cs": "Otevřít Live Actions",
+    },
+    "metric_portfolio_title": {
+        "en": "Portfolio",
+        "cs": "Portfolio",
+    },
+    "metric_portfolio_help": {
+        "en": "Total value of everything Coinductor tracks, including Spot, Flexible Earn, and Locked balances.",
+        "cs": "Celková hodnota všeho, co Coinductor sleduje, včetně zůstatků Spot, Flexible Earn a Locked.",
+    },
+    "metric_liquid_title": {
+        "en": "Liquid",
+        "cs": "Likvidní",
+    },
+    "metric_liquid_help": {
+        "en": "Value in Spot or Flexible Earn that could be used without waiting.",
+        "cs": "Hodnota ve Spot nebo Flexible Earn, kterou lze použít bez čekání.",
+    },
+    "metric_locked_title": {
+        "en": "Locked",
+        "cs": "Uzamčeno",
+    },
+    "metric_locked_help": {
+        "en": "Value in Locked Earn or otherwise not immediately available.",
+        "cs": "Hodnota v Locked Earn nebo jinak okamžitě nedostupná.",
+    },
+    "metric_risk_gate_title": {
+        "en": "Risk gate",
+        "cs": "Riziková brána",
+    },
+    "metric_risk_gate_help": {
+        "en": "Whether the deterministic risk engine currently approves a new trade. When it does not, the reason is shown here instead of \"Approved\".",
+        "cs": "Zda deterministický risk engine aktuálně schvaluje nový obchod. Pokud ne, zobrazí se zde místo \"Approved\" důvod.",
+    },
+    "overview_latest_decision_title": {
+        "en": "Latest decision",
+        "cs": "Poslední rozhodnutí",
+    },
+    "overview_decision_tooltip": {
+        "en": "HOLD means no trade is currently recommended. Any other decision type is explained below and detailed further in Action Plan.",
+        "cs": "HOLD znamená, že aktuálně není doporučen žádný obchod. Jakýkoli jiný typ rozhodnutí je vysvětlen níže a podrobněji v Action Plan.",
+    },
+    "overview_recommended_actions_title": {
+        "en": "Recommended actions",
+        "cs": "Doporučené akce",
+    },
+    "overview_ai_summary_title": {
+        "en": "AI summary",
+        "cs": "Shrnutí od AI",
+    },
+}
+
 
 class UiStringsService:
     def wizard_text(self, language: str) -> dict[str, str]:
+        return self._resolve(WIZARD_STRINGS, language)
+
+    def app_text(self, language: str) -> dict[str, str]:
+        return self._resolve(APP_STRINGS, language)
+
+    def _resolve(self, strings: dict[str, dict[str, str]], language: str) -> dict[str, str]:
         normalized = language if language in SUPPORTED_LANGUAGES else DEFAULT_LANGUAGE
         return {
             key: variants.get(normalized, variants[DEFAULT_LANGUAGE])
-            for key, variants in WIZARD_STRINGS.items()
+            for key, variants in strings.items()
         }

@@ -1,4 +1,4 @@
-from coinductor.ui_strings import WIZARD_STRINGS, UiStringsService
+from coinductor.ui_strings import APP_STRINGS, WIZARD_STRINGS, UiStringsService
 
 
 def test_every_wizard_string_has_english_and_czech() -> None:
@@ -7,6 +7,27 @@ def test_every_wizard_string_has_english_and_czech() -> None:
         assert "cs" in variants, f"{key} is missing a Czech translation"
         assert variants["en"].strip(), f"{key} has an empty English translation"
         assert variants["cs"].strip(), f"{key} has an empty Czech translation"
+
+
+def test_every_app_string_has_english_and_czech() -> None:
+    for key, variants in APP_STRINGS.items():
+        assert "en" in variants, f"{key} is missing an English translation"
+        assert "cs" in variants, f"{key} is missing a Czech translation"
+        assert variants["en"].strip(), f"{key} has an empty English translation"
+        assert variants["cs"].strip(), f"{key} has an empty Czech translation"
+
+
+def test_app_text_returns_czech_when_requested() -> None:
+    text = UiStringsService().app_text("cs")
+
+    assert text["overview_title"] == "Přehled portfolia"
+    assert text["overview_run_analysis_button"] == "Spustit analýzu"
+
+
+def test_app_text_falls_back_to_english_for_unknown_language() -> None:
+    text = UiStringsService().app_text("fr")
+
+    assert text["overview_title"] == "Portfolio Overview"
 
 
 def test_wizard_text_returns_english_by_default() -> None:

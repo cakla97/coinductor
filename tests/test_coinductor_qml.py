@@ -93,7 +93,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.manualOverrideSymbols" in qml
     assert "appController.appText.challenge_hold_title" in qml
     assert "appController.executeLocalDataReset(codes, deleteConfirm.text)" in qml
-    assert "This permanently deletes the selected local files" in qml
+    assert "appController.appText.delete_local_data_warning" in qml
     assert "appController.checkBinanceLiveTrading" in qml
     assert "Enable mainnet preview" in qml
     assert "Arm guarded actions" in qml
@@ -248,6 +248,12 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.deploy_tranche_dialog_title_template.replace" in qml
     assert "appController.appText.submit_for_real_template.replace" in qml
     assert "appController.appText.mainnet_submit_warning" in qml
+    assert "appController.appText.guide_footer_note" in qml
+    assert "appController.appText.reset_onboarding_profile_note1" in qml
+    assert "appController.appText.delete_everything_checkbox" in qml
+    assert "appController.appText.type_delete_to_continue_button" in qml
+    assert "appController.appText.start_analysis_button" in qml
+    assert "appController.appText.mainnet_preview_locked_checkbox" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

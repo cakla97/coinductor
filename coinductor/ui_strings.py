@@ -1509,6 +1509,74 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Submit tranche",
         "cs": "Odeslat tranši",
     },
+    "guide_section_fallback": {
+        "en": "Guide",
+        "cs": "Návod",
+    },
+    "guide_footer_note": {
+        "en": "Screenshots and more detailed provider-specific steps can be added to this guide later.",
+        "cs": "Screenshoty a podrobnější kroky specifické pro poskytovatele mohou být do tohoto návodu doplněny později.",
+    },
+    "reset_onboarding_profile_title": {
+        "en": "Reset onboarding profile",
+        "cs": "Resetovat onboarding profil",
+    },
+    "reset_onboarding_profile_note1": {
+        "en": "This resets only your onboarding profile: region, risk preference, automation preference, budget, and planner settings.",
+        "cs": "Toto resetuje pouze váš onboarding profil: region, preferenci rizika, preferenci automatizace, rozpočet a nastavení plánovače.",
+    },
+    "reset_onboarding_profile_note2": {
+        "en": "API keys, reports, database history, role overrides, and safety state are not deleted.",
+        "cs": "API klíče, reporty, historie v databázi, přepsané role a stav zabezpečení se nemažou.",
+    },
+    "delete_local_app_data_title": {
+        "en": "Delete local app data",
+        "cs": "Smazat lokální data aplikace",
+    },
+    "delete_everything_checkbox": {
+        "en": "Delete everything",
+        "cs": "Smazat vše",
+    },
+    "delete_local_data_warning": {
+        "en": "This permanently deletes the selected local files. It cannot be undone. Type DELETE to confirm.",
+        "cs": "Toto trvale smaže vybrané lokální soubory. Nelze vzít zpět. Pro potvrzení napište DELETE.",
+    },
+    "delete_selected_local_data_button": {
+        "en": "Delete selected local data",
+        "cs": "Smazat vybraná lokální data",
+    },
+    "type_delete_to_continue_button": {
+        "en": "Type DELETE to continue",
+        "cs": "Pro pokračování napište DELETE",
+    },
+    "data_source_label": {
+        "en": "Data source",
+        "cs": "Zdroj dat",
+    },
+    "generate_ai_summary_checkbox": {
+        "en": "Generate AI summary",
+        "cs": "Vygenerovat shrnutí od AI",
+    },
+    "allow_ai_market_ranking_checkbox": {
+        "en": "Allow AI market ranking",
+        "cs": "Povolit AI žebříček trhu",
+    },
+    "include_mainnet_preview_checkbox": {
+        "en": "Include mainnet execution preview",
+        "cs": "Zahrnout mainnet náhled provedení",
+    },
+    "mainnet_preview_locked_checkbox": {
+        "en": "Mainnet preview locked by safety stage",
+        "cs": "Mainnet náhled uzamčen podle safety stage",
+    },
+    "run_dialog_note": {
+        "en": "This screen never submits orders. Confirmed execution remains a separate guarded workflow.",
+        "cs": "Tato obrazovka nikdy nezadává příkazy. Potvrzené provedení zůstává samostatným zabezpečeným postupem.",
+    },
+    "start_analysis_button": {
+        "en": "Start analysis",
+        "cs": "Spustit analýzu",
+    },
 }
 
 

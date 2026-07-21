@@ -5339,7 +5339,7 @@ ApplicationWindow {
     }
     Dialog {
         id: guideDialog
-        title: activeGuide.title || "Help & Guides"
+        title: activeGuide.title || appController.appText.help_guides_title
         modal: true
         anchors.centerIn: parent
         width: Math.min(820, window.width - 80)
@@ -5361,7 +5361,7 @@ ApplicationWindow {
                     Text {
                         id: guideSectionText
                         anchors.centerIn: parent
-                        text: activeGuide.section || "Guide"
+                        text: activeGuide.section || appController.appText.guide_section_fallback
                         color: accent
                         font.pixelSize: 11
                         font.bold: true
@@ -5446,7 +5446,7 @@ ApplicationWindow {
                 }
                 Text {
                     Layout.fillWidth: true
-                    text: "Screenshots and more detailed provider-specific steps can be added to this guide later."
+                    text: appController.appText.guide_footer_note
                     color: textSecondary
                     font.pixelSize: 11
                     wrapMode: Text.WordWrap
@@ -5488,7 +5488,7 @@ ApplicationWindow {
 
     Dialog {
         id: deleteProfileDialog
-        title: "Reset onboarding profile"
+        title: appController.appText.reset_onboarding_profile_title
         modal: true
         anchors.centerIn: parent
         width: 460
@@ -5499,17 +5499,17 @@ ApplicationWindow {
             spacing: 14
             Label {
                 Layout.fillWidth: true
-                text: "This resets only your onboarding profile: region, risk preference, automation preference, budget, and planner settings."
+                text: appController.appText.reset_onboarding_profile_note1
                 wrapMode: Text.WordWrap
             }
             Label {
                 Layout.fillWidth: true
-                text: "API keys, reports, database history, role overrides, and safety state are not deleted."
+                text: appController.appText.reset_onboarding_profile_note2
                 wrapMode: Text.WordWrap
             }
             Button {
                 Layout.fillWidth: true
-                text: "Reset onboarding profile"
+                text: appController.appText.reset_onboarding_profile_title
                 onClicked: {
                     deleteProfileDialog.close()
                     appController.deleteUserProfile()
@@ -5522,7 +5522,7 @@ ApplicationWindow {
 
     Dialog {
         id: localDataResetDialog
-        title: "Delete local app data"
+        title: appController.appText.delete_local_app_data_title
         modal: true
         anchors.centerIn: parent
         width: 640
@@ -5554,7 +5554,7 @@ ApplicationWindow {
             }
             CheckBox {
                 id: deleteEverything
-                text: "Delete everything"
+                text: appController.appText.delete_everything_checkbox
                 onToggled: {
                     for (let i = 0; i < localDataResetModel.count; i++) {
                         localDataResetModel.setProperty(i, "selected", checked)
@@ -5601,7 +5601,7 @@ ApplicationWindow {
             }
             Label {
                 Layout.fillWidth: true
-                text: "This permanently deletes the selected local files. It cannot be undone. Type DELETE to confirm."
+                text: appController.appText.delete_local_data_warning
                 color: warning
                 wrapMode: Text.WordWrap
             }
@@ -5612,7 +5612,7 @@ ApplicationWindow {
             }
             Button {
                 Layout.fillWidth: true
-                text: deleteConfirm.text === "DELETE" ? "Delete selected local data" : "Type DELETE to continue"
+                text: deleteConfirm.text === "DELETE" ? appController.appText.delete_selected_local_data_button : appController.appText.type_delete_to_continue_button
                 enabled: deleteConfirm.text === "DELETE" && !appController.busy
                 onClicked: {
                     let codes = []
@@ -5630,7 +5630,7 @@ ApplicationWindow {
 
     Dialog {
         id: runDialog
-        title: "Run analysis"
+        title: appController.appText.overview_run_analysis_button
         modal: true
         anchors.centerIn: parent
         width: 440
@@ -5639,28 +5639,28 @@ ApplicationWindow {
         ColumnLayout {
             width: parent.width
             spacing: 14
-            Label { text: "Data source" }
+            Label { text: appController.appText.data_source_label }
             ComboBox {
                 id: dataMode
                 Layout.fillWidth: true
                 model: ["REAL", "MOCK"]
             }
-            CheckBox { id: aiSummary; text: "Generate AI summary"; checked: true }
-            CheckBox { id: aiProposals; text: "Allow AI market ranking"; checked: false }
+            CheckBox { id: aiSummary; text: appController.appText.generate_ai_summary_checkbox; checked: true }
+            CheckBox { id: aiProposals; text: appController.appText.allow_ai_market_ranking_checkbox; checked: false }
             CheckBox {
                 id: livePreview
-                text: appController.safetyAllowsLivePreview ? "Include mainnet execution preview" : "Mainnet preview locked by safety stage"
+                text: appController.safetyAllowsLivePreview ? appController.appText.include_mainnet_preview_checkbox : appController.appText.mainnet_preview_locked_checkbox
                 checked: appController.safetyAllowsLivePreview
                 enabled: appController.safetyAllowsLivePreview
             }
             Label {
                 Layout.fillWidth: true
-                text: "This screen never submits orders. Confirmed execution remains a separate guarded workflow."
+                text: appController.appText.run_dialog_note
                 wrapMode: Text.WordWrap
             }
             Button {
                 Layout.fillWidth: true
-                text: "Start analysis"
+                text: appController.appText.start_analysis_button
                 onClicked: {
                     runDialog.close()
                     appController.runAnalysis(

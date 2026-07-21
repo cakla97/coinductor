@@ -353,7 +353,7 @@ ApplicationWindow {
                     Rectangle {
                         Layout.preferredWidth: 46
                         Layout.preferredHeight: 46
-                        radius: 9
+                        radius: radiusSm
                         color: accent
                         Text {
                             anchors.centerIn: parent
@@ -400,7 +400,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 68
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     RowLayout {
@@ -414,19 +414,10 @@ ApplicationWindow {
                             font.pixelSize: 13
                             wrapMode: Text.WordWrap
                         }
-                        Rectangle {
-                            Layout.preferredWidth: 150
-                            Layout.preferredHeight: 30
-                            radius: 5
-                            color: "#17372d"
-                            border.color: accent
-                            Text {
-                                anchors.centerIn: parent
-                                text: appController.wizardText.local_first_badge
-                                color: accent
-                                font.pixelSize: 11
-                                font.bold: true
-                            }
+                        StatusPill {
+                            Layout.alignment: Qt.AlignVCenter
+                            label: appController.wizardText.local_first_badge
+                            tone: "success"
                         }
                     }
                 }
@@ -441,7 +432,7 @@ ApplicationWindow {
                     Rectangle {
                         Layout.preferredWidth: 210
                         Layout.fillHeight: true
-                        radius: 7
+                        radius: radiusMd
                         color: panel
                         border.color: border
                         ColumnLayout {
@@ -462,7 +453,7 @@ ApplicationWindow {
                                     required property int index
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 42
-                                    radius: 6
+                                    radius: radiusSm
                                     color: window.wizardStep === index ? panelRaised : "transparent"
                                     border.color: window.wizardStep === index ? border : "transparent"
                                     opacity: window.canJumpToWizardStep(index) ? 1.0 : 0.45
@@ -474,7 +465,7 @@ ApplicationWindow {
                                         Rectangle {
                                             Layout.preferredWidth: 20
                                             Layout.preferredHeight: 20
-                                            radius: 10
+                                            radius: radiusPill
                                             color: window.wizardStep === index ? accent : "#27323d"
                                             Text {
                                                 anchors.centerIn: parent
@@ -515,7 +506,7 @@ ApplicationWindow {
                     Rectangle {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        radius: 7
+                        radius: radiusMd
                         color: panel
                         border.color: border
                         ColumnLayout {
@@ -549,7 +540,7 @@ ApplicationWindow {
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 170
-                                        radius: 7
+                                        radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         ColumnLayout {
@@ -583,7 +574,7 @@ ApplicationWindow {
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 118
-                                        radius: 7
+                                        radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         visible: appController.onboardingPath !== ""
@@ -628,7 +619,7 @@ ApplicationWindow {
                                         Rectangle {
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: 170
-                                            radius: 7
+                                            radius: radiusMd
                                             color: appController.onboardingPath === "EXISTING" ? "#1d332d" : panelRaised
                                             border.color: appController.onboardingPath === "EXISTING" ? accent : border
                                             ColumnLayout {
@@ -655,7 +646,7 @@ ApplicationWindow {
                                         Rectangle {
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: 170
-                                            radius: 7
+                                            radius: radiusMd
                                             color: appController.onboardingPath === "FIRST_PORTFOLIO" ? "#1d332d" : panelRaised
                                             border.color: appController.onboardingPath === "FIRST_PORTFOLIO" ? accent : border
                                             ColumnLayout {
@@ -727,7 +718,7 @@ ApplicationWindow {
                                             Rectangle {
                                                 Layout.fillWidth: true
                                                 Layout.preferredHeight: 56
-                                                radius: 5
+                                                radius: radiusSm
                                                 color: panelRaised
                                                 border.color: border
                                                 Text {
@@ -778,7 +769,7 @@ ApplicationWindow {
 
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        radius: 6
+                                        radius: radiusSm
                                         color: panelRaised
                                         Layout.preferredHeight: 128
                                         ColumnLayout {
@@ -870,7 +861,7 @@ ApplicationWindow {
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 104
-                                        radius: 7
+                                        radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         RowLayout {
@@ -902,7 +893,7 @@ ApplicationWindow {
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: (appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 760 : 690) : 460) + (appController.localAiDiscoveredModels.length > 0 ? 50 + Math.min(appController.localAiDiscoveredModels.length, 4) * 40 : (appController.discoveringAiModels || appController.localAiDiscoveryStatus === "BLOCK" ? 90 : 0))
                                             Layout.minimumHeight: (appController.localAiModelRecommendations.length > 0 ? 660 : 430) + (appController.localAiDiscoveredModels.length > 0 || appController.discoveringAiModels || appController.localAiDiscoveryStatus === "BLOCK" ? 90 : 0)
-                                            radius: 7
+                                            radius: radiusMd
                                             color: panelRaised
                                             border.color: border
                                             clip: true
@@ -980,7 +971,7 @@ ApplicationWindow {
                                                     Layout.bottomMargin: 10
                                                     Layout.minimumHeight: 90
                                                     Layout.preferredHeight: appController.localAiDiscoveredModels.length > 0 ? 60 + Math.min(appController.localAiDiscoveredModels.length, 4) * 40 : 90
-                                                    radius: 6
+                                                    radius: radiusSm
                                                     color: "#10161d"
                                                     border.color: border
                                                     clip: true
@@ -1016,7 +1007,7 @@ ApplicationWindow {
                                                                 required property string modelData
                                                                 width: ListView.view.width - 12
                                                                 height: 34
-                                                                radius: 5
+                                                                radius: radiusSm
                                                                 color: "#141a21"
                                                                 border.color: border
                                                                 RowLayout {
@@ -1048,7 +1039,7 @@ ApplicationWindow {
                                                     Layout.bottomMargin: 16
                                                     Layout.minimumHeight: 230
                                                     Layout.preferredHeight: 70 + Math.min(appController.localAiModelRecommendations.length, 4) * 58
-                                                    radius: 6
+                                                    radius: radiusSm
                                                     color: "#10161d"
                                                     border.color: border
                                                     clip: true
@@ -1075,7 +1066,7 @@ ApplicationWindow {
                                                                 required property var modelData
                                                                 width: ListView.view.width - 12
                                                                 height: 52
-                                                                radius: 5
+                                                                radius: radiusSm
                                                                 color: "#141a21"
                                                                 border.color: border
                                                                 RowLayout {
@@ -1098,7 +1089,7 @@ ApplicationWindow {
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 430 : 690) : 460
                                             Layout.minimumHeight: 410
-                                            radius: 7
+                                            radius: radiusMd
                                             color: panelRaised
                                             border.color: border
                                             clip: true
@@ -1178,7 +1169,7 @@ ApplicationWindow {
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 205
-                                        radius: 7
+                                        radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         ColumnLayout {
@@ -1196,7 +1187,7 @@ ApplicationWindow {
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 136
-                                        radius: 7
+                                        radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         ColumnLayout {
@@ -1228,29 +1219,18 @@ ApplicationWindow {
                                             enabled: !appController.checkingConnection
                                             onClicked: appController.checkBinanceReadOnly()
                                         }
-                                        Rectangle {
-                                            Layout.preferredWidth: 120
-                                            Layout.preferredHeight: 32
-                                            radius: 5
-                                            color: appController.binanceConnectionStatus === "Connected" ? "#17372d"
-                                                : appController.binanceConnectionStatus === "Blocked" ? "#3a2226" : panelRaised
-                                            border.color: appController.binanceConnectionStatus === "Connected" ? accent
-                                                : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : border
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: appController.binanceConnectionStatus
-                                                color: appController.binanceConnectionStatus === "Connected" ? accent
-                                                    : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : textSecondary
-                                                font.pixelSize: 11
-                                                font.bold: true
-                                            }
+                                        StatusPill {
+                                            Layout.alignment: Qt.AlignVCenter
+                                            label: appController.binanceConnectionStatus
+                                            tone: appController.binanceConnectionStatus === "Connected" ? "success"
+                                                : appController.binanceConnectionStatus === "Blocked" ? "danger" : "neutral"
                                         }
                                     }
                                     Text { Layout.fillWidth: true; text: appController.binanceConnectionDetail; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 232
-                                        radius: 7
+                                        radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         ColumnLayout {
@@ -1293,22 +1273,11 @@ ApplicationWindow {
                                                     enabled: !appController.checkingTestnet
                                                     onClicked: appController.checkBinanceTestnet()
                                                 }
-                                                Rectangle {
-                                                    Layout.preferredWidth: 120
-                                                    Layout.preferredHeight: 32
-                                                    radius: 5
-                                                    color: appController.testnetCheckStatus === "Verified" ? "#17372d"
-                                                        : appController.testnetCheckStatus === "Blocked" ? "#3a2226" : panel
-                                                    border.color: appController.testnetCheckStatus === "Verified" ? accent
-                                                        : appController.testnetCheckStatus === "Blocked" ? "#ee6b6e" : border
-                                                    Text {
-                                                        anchors.centerIn: parent
-                                                        text: appController.testnetCheckStatus
-                                                        color: appController.testnetCheckStatus === "Verified" ? accent
-                                                            : appController.testnetCheckStatus === "Blocked" ? "#ee6b6e" : textSecondary
-                                                        font.pixelSize: 11
-                                                        font.bold: true
-                                                    }
+                                                StatusPill {
+                                                    Layout.alignment: Qt.AlignVCenter
+                                                    label: appController.testnetCheckStatus
+                                                    tone: appController.testnetCheckStatus === "Verified" ? "success"
+                                                        : appController.testnetCheckStatus === "Blocked" ? "danger" : "neutral"
                                                 }
                                             }
                                             Text { Layout.fillWidth: true; text: appController.testnetCheckDetail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
@@ -1317,7 +1286,7 @@ ApplicationWindow {
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 72
-                                        radius: 7
+                                        radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         RowLayout {
@@ -1366,7 +1335,7 @@ ApplicationWindow {
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 300 : 190
-                                        radius: 7
+                                        radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         ColumnLayout {
@@ -1402,7 +1371,7 @@ ApplicationWindow {
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 64 + appController.exchangeOnboardingSteps.length * 34
-                                        radius: 7
+                                        radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         ColumnLayout {
@@ -1430,7 +1399,7 @@ ApplicationWindow {
                                     Rectangle {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: 140 + appController.firstPortfolioAllocation.length * 28 + appController.firstPortfolioSteps.length * 34
-                                        radius: 7
+                                        radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         visible: appController.onboardingPath === "FIRST_PORTFOLIO"
@@ -1487,7 +1456,7 @@ ApplicationWindow {
                                             required property var modelData
                                             width: ListView.view.width
                                             height: 34
-                                            radius: 5
+                                            radius: radiusSm
                                             color: panelRaised
                                             RowLayout {
                                                 anchors.fill: parent
@@ -1509,7 +1478,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: wizardAskAiContent.implicitHeight + 28
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     ColumnLayout {

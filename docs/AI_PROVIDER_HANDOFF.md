@@ -316,11 +316,32 @@ source-asset choices, and small-capital limits developed for the original portfo
    as of 2026-07-21 (Earn redeem, manual HOLD challenge, hard local-data
    deletion, first portfolio staged deployment, installed-model discovery,
    inline wizard AI Q&A, and English/Czech UI localization — see item 9 for
-   the localization's exact, deliberately bounded scope). What remains before
-   Stage B: the QML visual redesign (explicitly deferred to the very end of
-   Stage A by the user), `es-ES`/`pt-BR` localization if desired, and the
-   ongoing Assistant knowledge-coverage work in item 2 above.
-6. Only then begin Stage B packaging and public-default cleanup.
+   the localization's exact, deliberately bounded scope).
+6. ~~**QML visual redesign.**~~ Implemented as of 2026-07-21, the item
+   explicitly deferred to the very end of Stage A by the user. Adds a real
+   design-token system to `Main.qml` (semantic colors incl. soft tint
+   variants, a spacing scale, a radius scale, a type-size scale — previously
+   only 7 raw colors existed and radius/font sizes were ad-hoc per element)
+   plus two reusable components: `StatusPill` (auto-sizing, elide-safe badge)
+   and `SectionCard`. A pre-redesign audit found ~24 fixed-width, non-eliding
+   status badges across the app that would clip with longer (e.g. Czech)
+   text — every one was replaced with `StatusPill`. Also fixed a genuine
+   hardcoded-floor bug (`Math.max(window.width - 288, 692)`, duplicated
+   across 8 pages) via a single `pageContentWidth()` helper — caught a real
+   overflow regression from this change via an offscreen screenshot before
+   it was committed, not just by reading the code. The sidebar got a wider,
+   more spacious layout with a left accent-bar active-nav indicator instead
+   of a flat highlight. Every page, every dialog (~15), and the onboarding
+   wizard were revisited page-by-page/dialog-by-dialog, each verified via
+   `QT_QPA_PLATFORM=offscreen` screenshot rendering at minimum/default/large
+   window widths (and in Czech, the highest-overflow-risk language) before
+   committing — see "Offscreen QML screenshot verification" below for the
+   technique. Exact-match backend tokens (confirmation phrases, `DELETE`,
+   Paused/Stopped/Closed) were never touched, consistent with the
+   localization pass's policy.
+7. What remains before Stage B: `es-ES`/`pt-BR` localization if desired, and
+   the ongoing Assistant knowledge-coverage work in item 2 above.
+8. Only then begin Stage B packaging and public-default cleanup.
 
 Do not jump directly to installer work while core setup and guarded workflows still have
 known gaps. The user prefers completing and testing the personal Stage A application
@@ -351,6 +372,57 @@ python -m trading_agent last-report --config config.example.toml
 
 Do not copy guarded submit commands from `README.md` or `docs/RUNBOOK.md` into the
 terminal without a fresh explicit user request.
+
+## Offscreen QML Screenshot Verification
+
+For any QML visual/layout change, `python -m pytest tests/test_coinductor_qml.py`
+only proves there are no binding errors — it does not prove the layout actually
+looks right or fits the window. Render it and look, in an isolated temp directory
+so the real `state/`/`.env` are never touched:
+
+```python
+import os, sys
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+from PySide6.QtGui import QGuiApplication
+from PySide6.QtQml import QQmlApplicationEngine
+from PySide6.QtQuick import QQuickWindow  # required for grabWindow() to resolve
+
+sys.path.insert(0, r"D:\CodexWork\binance-trading-agent")
+from coinductor.controller import AppController
+
+app = QGuiApplication.instance() or QGuiApplication([])
+engine = QQmlApplicationEngine()
+controller = AppController(engine)
+engine.rootContext().setContextProperty("appController", controller)
+engine.load(QUrl.fromLocalFile(r"D:\CodexWork\binance-trading-agent\coinductor\qml\Main.qml"))
+window = engine.rootObjects()[0]
+
+# An isolated temp CWD has no onboarding profile, so closeOnboardingWizard()'s
+# own guard refuses to close it. Bypass directly for screenshot purposes only:
+controller._onboarding_wizard_visible = False
+controller.onboardingWizardChanged.emit()
+controller.setCurrentPage(0)  # or whichever page index
+app.processEvents()
+
+window.setWidth(1180); window.setHeight(820)  # try minimumWidth, default, and a large size
+app.processEvents(); app.processEvents()
+window.grabWindow().save("out.png")
+```
+
+Gotchas hit while building this session's redesign:
+
+- Set `QT_QPA_FONTDIR=C:/Windows/Fonts` (env var, not Python) or every `Text` renders
+  as tofu boxes — the offscreen platform doesn't pick up system fonts by default on
+  Windows, and tofu boxes make it impossible to judge real text overflow.
+- Test in Czech too (`controller.setWizardLanguage("cs")`) — translated strings are
+  often longer than English and are the most realistic way to catch a fixed-width
+  badge or button-row overflow that English text happens not to trigger.
+- QML `Dialog` items aren't reachable from Python via `findChild` without an explicit
+  `objectName` (their `id:` is compile-time-only); screenshotting a specific dialog's
+  contents needs either adding an `objectName` or triggering it from a page's own
+  button click path, neither of which this session's driver script did — dialog
+  changes were verified by the QML load test plus visual patterns already confirmed
+  correct on pages.
 
 ## Git and Editing Conventions
 

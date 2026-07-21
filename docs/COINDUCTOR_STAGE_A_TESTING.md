@@ -20,6 +20,20 @@ python -m coinductor.desktop
 If you prefer VS Code, open the folder and run the same commands in the integrated
 terminal.
 
+## 1a. Visual / Responsive Check
+
+The app got a full visual redesign (design tokens, `StatusPill`/`SectionCard`
+components, a responsive page-width helper) across every page, dialog, and the
+wizard. While clicking through the rest of this checklist, also:
+
+- Resize the window down to its minimum size and back up to large. Confirm content
+  reflows without any card or button spilling past the window edge, in both English
+  and Čeština (Settings has the language toggle) — Czech text is usually longer and
+  is the more realistic overflow test.
+- Confirm status badges (safety stage, connection status, decision, HOLD/READY, etc.)
+  render as a rounded pill that fits its text, never a clipped rectangle.
+- Confirm the sidebar's active page is marked with the green left accent bar.
+
 ## 2. First-Run Wizard
 
 - Click `Čeština` in the top-right of the wizard header. Confirm every step's

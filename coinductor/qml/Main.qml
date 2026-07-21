@@ -4643,20 +4643,9 @@ ApplicationWindow {
                         font.pixelSize: 22
                         font.bold: true
                     }
-                    Rectangle {
-                        Layout.preferredWidth: Math.max(96, actionDetailStatus.implicitWidth + 22)
-                        Layout.preferredHeight: 30
-                        radius: 5
-                        color: activeActionPlanItem.tone === "ready" ? "#17372d" : activeActionPlanItem.tone === "watch" ? "#3a3020" : "#26313b"
-                        border.color: activeActionPlanItem.tone === "ready" ? accent : warning
-                        Text {
-                            id: actionDetailStatus
-                            anchors.centerIn: parent
-                            text: activeActionPlanItem.status || "UNKNOWN"
-                            color: activeActionPlanItem.tone === "ready" ? accent : activeActionPlanItem.tone === "watch" ? warning : textSecondary
-                            font.pixelSize: 11
-                            font.bold: true
-                        }
+                    StatusPill {
+                        label: activeActionPlanItem.status || "UNKNOWN"
+                        tone: activeActionPlanItem.tone === "ready" ? "success" : activeActionPlanItem.tone === "watch" ? "warning" : "neutral"
                     }
                 }
                 Text {
@@ -4678,7 +4667,7 @@ ApplicationWindow {
                             required property var modelData
                             Layout.fillWidth: true
                             Layout.preferredHeight: 68
-                            radius: 6
+                            radius: radiusSm
                             color: panelRaised
                             border.color: border
                             ColumnLayout {
@@ -4730,7 +4719,7 @@ ApplicationWindow {
                                 required property var modelData
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 76
-                                radius: 6
+                                radius: radiusSm
                                 color: panelRaised
                                 border.color: modelData.status === "Done" ? accent : modelData.status === "Action needed" ? warning : border
                                 ColumnLayout {
@@ -4758,7 +4747,7 @@ ApplicationWindow {
                                 required property var modelData
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 64
-                                radius: 6
+                                radius: radiusSm
                                 color: panelRaised
                                 border.color: border
                                 ColumnLayout {
@@ -4775,8 +4764,8 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: actionDetailNote.implicitHeight + 28
-                    radius: 7
-                    color: "#3a3020"
+                    radius: radiusMd
+                    color: warningSoft
                     border.color: warning
                     Text {
                         id: actionDetailNote
@@ -4803,7 +4792,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: liveTradeGuardContent.implicitHeight + 28
                     visible: activeActionPlanItem.actionCode === "REVIEW_TRADE" || activeActionPlanItem.actionCode === "REVIEW_OCO" || activeActionPlanItem.actionCode === "REVIEW_EARN_REDEEM"
-                    radius: 7
+                    radius: radiusMd
                     color: panelRaised
                     border.color: activeActionPlanItem.submitEnabled === true ? accent : border
                     ColumnLayout {
@@ -4858,7 +4847,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: challengeHoldContent.implicitHeight + 28
                     visible: activeActionPlanItem.actionCode === "REVIEW_TRADE" && activeActionPlanItem.status === "HOLD"
-                    radius: 7
+                    radius: radiusMd
                     color: panelRaised
                     border.color: border
                     ColumnLayout {
@@ -4932,8 +4921,8 @@ ApplicationWindow {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: liveTradeConfirmWarning.implicitHeight + 24
-                radius: 7
-                color: "#3a3020"
+                radius: radiusMd
+                color: warningSoft
                 border.color: warning
                 Text {
                     id: liveTradeConfirmWarning
@@ -5019,7 +5008,7 @@ ApplicationWindow {
                     required property var modelData
                     width: ListView.view.width
                     height: 112
-                    radius: 7
+                    radius: radiusSm
                     color: panelRaised
                     border.color: border
                     RowLayout {
@@ -5067,8 +5056,8 @@ ApplicationWindow {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: ocoConfirmWarning.implicitHeight + 24
-                radius: 7
-                color: "#3a3020"
+                radius: radiusMd
+                color: warningSoft
                 border.color: warning
                 Text {
                     id: ocoConfirmWarning
@@ -5126,8 +5115,8 @@ ApplicationWindow {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: earnRedeemConfirmWarning.implicitHeight + 24
-                radius: 7
-                color: "#3a3020"
+                radius: radiusMd
+                color: warningSoft
                 border.color: warning
                 Text {
                     id: earnRedeemConfirmWarning
@@ -5205,8 +5194,8 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.preferredHeight: firstPortfolioMainnetWarning.implicitHeight + 24
                 visible: firstPortfolioDeployDialog.mode === "MAINNET"
-                radius: 7
-                color: "#3a3020"
+                radius: radiusMd
+                color: warningSoft
                 border.color: warning
                 Text {
                     id: firstPortfolioMainnetWarning
@@ -5319,8 +5308,8 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: guideWarningText.implicitHeight + 24
                     visible: Boolean(activeGuide.warning)
-                    radius: 7
-                    color: "#3a3020"
+                    radius: radiusMd
+                    color: warningSoft
                     border.color: warning
                     Text {
                         id: guideWarningText

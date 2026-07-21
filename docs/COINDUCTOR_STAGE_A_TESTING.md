@@ -24,10 +24,21 @@ terminal.
 
 - Click `Čeština` in the top-right of the wizard header. Confirm every step's
   title, description, card/option labels, checkboxes, and buttons switch to
-  Czech, and that clicking `English` switches them back. The deep technical
-  panels (Local AI/Cloud AI provider fields, the numbered Manual Binance
-  steps, guide dialogs) are expected to stay in English for now — use
+  Czech, and that clicking `English` switches them back. The language choice
+  also applies to the rest of the app (all 9 main pages, the sidebar
+  navigation, the app tour, and every dialog) — a matching toggle is in
+  Settings for switching after onboarding. The deep technical panels (Local
+  AI/Cloud AI provider fields, the numbered Manual Binance steps, guide
+  dialog body content) are expected to stay in English for now — use
   `Ask about this step` for a Czech explanation of those instead.
+- With Czech selected, open Live Actions and try to promote the Safety
+  stage. Confirm the *button* labels are Czech but the confirmation phrase
+  you must type (shown in the dialog and required to enable the button) stays
+  in English exactly as shown — this is intentional, not a translation gap.
+  Same check for the guarded trade/OCO/Earn redeem/first-portfolio confirm
+  dialogs (`CONFIRM_MAINNET_ORDER` etc.) and the Delete local data dialog
+  (`DELETE`): the button labels and surrounding text are Czech, the token you
+  type is not.
 - With no onboarding profile, the app opens into the setup wizard instead of the
   main dashboard.
 - Confirm the wizard is step-by-step: Exchange, Portfolio, Profile, AI, Binance API,

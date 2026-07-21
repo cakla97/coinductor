@@ -237,22 +237,37 @@ checks and current generated state when the user asks for an actual portfolio de
    and wraps each removal in try/except so a locked file is reported rather than
    crashing the app. `executeLocalDataReset(codes, confirmation)` in the desktop
    controller requires typed `DELETE` and is blocked while an analysis is running.
-9. **Full UI localization — partially implemented (setup wizard only).**
-   `coinductor/ui_strings.py` adds a small EN/CS translation dict (`WIZARD_STRINGS`)
-   and `AppController.wizardText`/`wizardLanguage`/`setWizardLanguage()`; the wizard
-   header gets an English/Čeština toggle and every step's title, description, card
-   labels, checkboxes, and buttons are wired to it. Deliberately left in English for
-   now: the deep "Local AI with Ollama"/"Cloud AI provider" technical panels, the
-   "Manual Binance steps" numbered instructions, and the guide dialogs — these are
-   dense technical reference text, already covered in Czech via the wizard's
-   "Ask about this step" assistant (item 3 above) rather than duplicated as
-   static translated UI. The rest of the app (main pages, Settings, Action Plan,
-   dialogs, `es-ES`/`pt-BR`) is still English-only; this was an explicit scope
-   decision, not an oversight, made with the user because a single-pass full-app
-   translation across ~5700 lines of QML was judged too large and too risky (already
-   fragile fixed-height panels) for one unit of work. `en-US`, `es-ES`, `cs-CZ`, and
-   `pt-BR` locale profiles for first-portfolio funding text (a separate, older
-   mechanism) are unchanged.
+9. ~~**Full UI localization (English/Czech).**~~ Implemented, in bounded scope.
+   `coinductor/ui_strings.py` holds two EN/CS dicts — `WIZARD_STRINGS` (setup
+   wizard) and `APP_STRINGS` (everything else) — exposed as
+   `AppController.wizardText`/`appText`, both driven by one shared
+   `wizardLanguage`/`setWizardLanguage()` state. A language toggle is available
+   both in the wizard header and in Settings, so it can be changed before or
+   after onboarding. Every page (Overview, Live Actions, Portfolio, Action
+   Plan, Active Strategies, Run History, AI Assistant, Help & Guides,
+   Settings), every shared dialog (strategy registration, active-strategy
+   detail, live API manager, safety-stage confirm, action-plan detail, live
+   trade/OCO/Earn redeem/first-portfolio-tranche confirms, assistant image/
+   history, guide dialog chrome, profile/data-reset, run analysis), the app
+   tour overlay, and sidebar navigation now follow the toggle. Exact-match
+   backend tokens are deliberately never translated — the safety-stage
+   confirmation phrases (`safety_service.py`), the guarded-action confirmation
+   strings (`CONFIRM_MAINNET_ORDER`, `CONFIRM_MAINNET_OCO`,
+   `CONFIRM_EARN_REDEEM`, `CONFIRM_TESTNET_ORDER`/`CONFIRM_MAINNET_ORDER` for
+   first-portfolio tranches), the local-data-reset `DELETE` token, and the
+   Paused/Stopped/Closed strategy-status values are all compared verbatim
+   against fixed English strings elsewhere in the codebase; translating them
+   would silently break those flows for Czech users, so they stay in English
+   in both language variants of the surrounding text. Deliberately left
+   English for now, as dense technical reference content already answerable
+   in Czech via the wizard's "Ask about this step" assistant (item 3) instead
+   of being duplicated as static translated UI: the "Local AI with Ollama"/
+   "Cloud AI provider" technical panels, the "Manual Binance steps" numbered
+   instructions, and guide dialog *body* content (`GuideService`, a Python
+   backend service — translating it is a content-authoring task, not a QML
+   string-binding task). `es-ES`/`pt-BR` were not attempted; `en-US`, `es-ES`,
+   `cs-CZ`, and `pt-BR` locale profiles for first-portfolio funding text (a
+   separate, older mechanism) are unchanged.
 10. ~~**Installed-model discovery.**~~ Implemented: `AiProviderService.discover_models()`
     calls the configured endpoint's `/models` route (the same OpenAI-compatible route
     `health_check()` already uses) and returns the model IDs it actually reports. The
@@ -297,12 +312,14 @@ source-asset choices, and small-capital limits developed for the original portfo
 4. Continue strengthening Assistant knowledge coverage (a real project knowledge/
    retrieval layer covering every visible control, not just navigation). Standalone
    read-only market intents are done as of 2026-07-20.
-5. Remaining smaller Stage A item: extend UI localization beyond the setup
-   wizard (main pages, Settings, Action Plan, dialogs, and the `es-ES`/`pt-BR`
-   languages) — see item 9 for what is and is not covered yet. (Earn redeem,
-   manual HOLD challenge, hard local-data deletion, first portfolio staged
-   deployment, installed-model discovery, and inline wizard AI Q&A are all
-   done as of 2026-07-20.)
+5. All items from the original "Known incomplete Stage A work" list are done
+   as of 2026-07-21 (Earn redeem, manual HOLD challenge, hard local-data
+   deletion, first portfolio staged deployment, installed-model discovery,
+   inline wizard AI Q&A, and English/Czech UI localization — see item 9 for
+   the localization's exact, deliberately bounded scope). What remains before
+   Stage B: the QML visual redesign (explicitly deferred to the very end of
+   Stage A by the user), `es-ES`/`pt-BR` localization if desired, and the
+   ongoing Assistant knowledge-coverage work in item 2 above.
 6. Only then begin Stage B packaging and public-default cleanup.
 
 Do not jump directly to installer work while core setup and guarded workflows still have

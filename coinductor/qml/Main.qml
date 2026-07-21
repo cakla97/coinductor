@@ -2003,12 +2003,12 @@ ApplicationWindow {
                 width: Math.max(window.width - 288, 692)
                 spacing: 18
 
-                Text { text: "Portfolio"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text { text: appController.appText.portfolio_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
                         Layout.fillWidth: true
-                        text: "Latest real-run valuation, asset roles, and liquidity location"
+                        text: appController.appText.portfolio_subtitle
                         color: textSecondary
                         font.pixelSize: 14
                     }
@@ -2016,10 +2016,10 @@ ApplicationWindow {
                         Layout.preferredWidth: 190
                         Layout.preferredHeight: 34
                         model: [
-                            { label: "Value high to low", value: "VALUE_DESC" },
-                            { label: "Value low to high", value: "VALUE_ASC" },
-                            { label: "Asset A-Z", value: "ASSET_ASC" },
-                            { label: "Policy A-Z", value: "ROLE_ASC" }
+                            { label: appController.appText.portfolio_sort_value_desc, value: "VALUE_DESC" },
+                            { label: appController.appText.portfolio_sort_value_asc, value: "VALUE_ASC" },
+                            { label: appController.appText.portfolio_sort_asset_asc, value: "ASSET_ASC" },
+                            { label: appController.appText.portfolio_sort_role_asc, value: "ROLE_ASC" }
                         ]
                         textRole: "label"
                         valueRole: "value"
@@ -2043,12 +2043,12 @@ ApplicationWindow {
                         anchors.leftMargin: 14
                         anchors.rightMargin: 14
                         spacing: 12
-                        Text { Layout.preferredWidth: 70; text: "ASSET"; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                        Text { Layout.preferredWidth: 210; text: "POLICY"; color: textSecondary; font.pixelSize: 11; font.bold: true }
-                        Text { Layout.preferredWidth: 120; text: "VALUE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                        Text { Layout.preferredWidth: 75; text: "SHARE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                        Text { Layout.fillWidth: true; text: "LIQUIDITY"; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                        Text { Layout.preferredWidth: 120; text: "SOURCE"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 70; text: appController.appText.portfolio_col_asset; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 210; text: appController.appText.portfolio_col_policy; color: textSecondary; font.pixelSize: 11; font.bold: true }
+                        Text { Layout.preferredWidth: 120; text: appController.appText.portfolio_col_value; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 75; text: appController.appText.portfolio_col_share; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.fillWidth: true; text: appController.appText.portfolio_col_liquidity; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                        Text { Layout.preferredWidth: 120; text: appController.appText.portfolio_col_source; color: textSecondary; font.pixelSize: 10; font.bold: true }
                     }
                 }
 
@@ -2091,7 +2091,7 @@ ApplicationWindow {
                                     font.pixelSize: 11
                                     onActivated: function(index) {
                                         appController.saveAssetRoleOverride(modelData.asset, currentValue)
-                                        window.showToast("Policy for " + modelData.asset + " changed to " + currentText)
+                                        window.showToast(appController.appText.portfolio_policy_changed_toast.replace("{asset}", modelData.asset).replace("{role}", currentText))
                                     }
                                     ToolTip.visible: hovered
                                     ToolTip.text: modelData.roleHelp
@@ -2102,8 +2102,8 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 2
-                                Text { text: "Spot " + modelData.spot + "   Flexible " + modelData.flexible; color: textSecondary; font.pixelSize: 11 }
-                                Text { text: "Locked " + modelData.locked; color: textSecondary; font.pixelSize: 11 }
+                                Text { text: appController.appText.portfolio_spot_label + " " + modelData.spot + "   " + appController.appText.portfolio_flexible_label + " " + modelData.flexible; color: textSecondary; font.pixelSize: 11 }
+                                Text { text: appController.appText.portfolio_locked_label + " " + modelData.locked; color: textSecondary; font.pixelSize: 11 }
                             }
                             ColumnLayout {
                                 Layout.preferredWidth: 120

@@ -24,6 +24,13 @@ def test_app_text_returns_czech_when_requested() -> None:
     assert text["overview_run_analysis_button"] == "Spustit analýzu"
 
 
+def test_app_text_portfolio_toast_supports_placeholder_substitution() -> None:
+    text = UiStringsService().app_text("cs")
+    rendered = text["portfolio_policy_changed_toast"].replace("{asset}", "BTC").replace("{role}", "Core")
+
+    assert rendered == "Politika pro BTC změněna na Core"
+
+
 def test_app_text_falls_back_to_english_for_unknown_language() -> None:
     text = UiStringsService().app_text("fr")
 

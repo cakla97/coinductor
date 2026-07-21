@@ -473,6 +473,70 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "AI summary",
         "cs": "Shrnutí od AI",
     },
+    "portfolio_title": {
+        "en": "Portfolio",
+        "cs": "Portfolio",
+    },
+    "portfolio_subtitle": {
+        "en": "Latest real-run valuation, asset roles, and liquidity location",
+        "cs": "Ocenění z posledního skutečného běhu, role aktiv a umístění likvidity",
+    },
+    "portfolio_sort_value_desc": {
+        "en": "Value high to low",
+        "cs": "Hodnota sestupně",
+    },
+    "portfolio_sort_value_asc": {
+        "en": "Value low to high",
+        "cs": "Hodnota vzestupně",
+    },
+    "portfolio_sort_asset_asc": {
+        "en": "Asset A-Z",
+        "cs": "Aktivum A-Z",
+    },
+    "portfolio_sort_role_asc": {
+        "en": "Policy A-Z",
+        "cs": "Politika A-Z",
+    },
+    "portfolio_col_asset": {
+        "en": "ASSET",
+        "cs": "AKTIVUM",
+    },
+    "portfolio_col_policy": {
+        "en": "POLICY",
+        "cs": "POLITIKA",
+    },
+    "portfolio_col_value": {
+        "en": "VALUE",
+        "cs": "HODNOTA",
+    },
+    "portfolio_col_share": {
+        "en": "SHARE",
+        "cs": "PODÍL",
+    },
+    "portfolio_col_liquidity": {
+        "en": "LIQUIDITY",
+        "cs": "LIKVIDITA",
+    },
+    "portfolio_col_source": {
+        "en": "SOURCE",
+        "cs": "ZDROJ",
+    },
+    "portfolio_spot_label": {
+        "en": "Spot",
+        "cs": "Spot",
+    },
+    "portfolio_flexible_label": {
+        "en": "Flexible",
+        "cs": "Flexible",
+    },
+    "portfolio_locked_label": {
+        "en": "Locked",
+        "cs": "Locked",
+    },
+    "portfolio_policy_changed_toast": {
+        "en": "Policy for {asset} changed to {role}",
+        "cs": "Politika pro {asset} změněna na {role}",
+    },
 }
 
 

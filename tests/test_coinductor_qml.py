@@ -190,6 +190,9 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.overview_ai_summary_title" in qml
     assert "appController.appText.language_toggle_label" in qml
     assert qml.count('appController.setWizardLanguage("cs")') == 2
+    assert "appController.appText.portfolio_title" in qml
+    assert "appController.appText.portfolio_col_liquidity" in qml
+    assert "appController.appText.portfolio_policy_changed_toast.replace" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

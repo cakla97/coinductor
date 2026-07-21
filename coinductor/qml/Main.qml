@@ -2207,7 +2207,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: firstPortfolioDeploymentContent.implicitHeight + 32
                     visible: appController.onboardingPath === "FIRST_PORTFOLIO" && appController.firstPortfolioAllocation.length > 0
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     ColumnLayout {
@@ -2231,7 +2231,7 @@ ApplicationWindow {
                                 required property var modelData
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: 40
-                                radius: 5
+                                radius: radiusSm
                                 color: panelRaised
                                 RowLayout {
                                     anchors.fill: parent
@@ -2309,7 +2309,7 @@ ApplicationWindow {
                         required property var modelData
                         width: ListView.view.width
                         height: Math.max(216, actionPlanCardContent.implicitHeight + 40)
-                        radius: 7
+                        radius: radiusMd
                         color: panel
                         border.color: modelData.tone === "ready" ? accent : warning
                         ColumnLayout {
@@ -2319,22 +2319,10 @@ ApplicationWindow {
                             spacing: 10
                             RowLayout {
                                 Layout.fillWidth: true
-                                Text { text: modelData.title; color: textPrimary; font.pixelSize: 17; font.bold: true }
-                                Item { Layout.fillWidth: true }
-                                Rectangle {
-                                    Layout.preferredWidth: Math.max(92, actionStatus.implicitWidth + 20)
-                                    Layout.preferredHeight: 28
-                                    radius: 5
-                                    color: modelData.tone === "ready" ? "#17372d" : modelData.tone === "watch" ? "#3a3020" : "#26313b"
-                                    border.color: modelData.tone === "ready" ? accent : warning
-                                    Text {
-                                        id: actionStatus
-                                        anchors.centerIn: parent
-                                        text: modelData.status
-                                        color: modelData.tone === "ready" ? accent : modelData.tone === "watch" ? warning : textSecondary
-                                        font.pixelSize: 11
-                                        font.bold: true
-                                    }
+                                Text { Layout.fillWidth: true; text: modelData.title; color: textPrimary; font.pixelSize: 17; font.bold: true; elide: Text.ElideRight }
+                                StatusPill {
+                                    label: modelData.status
+                                    tone: modelData.tone === "ready" ? "success" : modelData.tone === "watch" ? "warning" : "neutral"
                                 }
                             }
                             GridLayout {
@@ -2363,7 +2351,7 @@ ApplicationWindow {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: tradeLifecycleSummary.implicitHeight + 22
                                 visible: modelData.liveLifecycle !== undefined && modelData.liveLifecycle !== null
-                                radius: 6
+                                radius: radiusSm
                                 color: panelRaised
                                 border.color: modelData.liveLifecycle && modelData.liveLifecycle.tone === "ready" ? accent : border
                                 RowLayout {
@@ -2406,9 +2394,10 @@ ApplicationWindow {
                                 }
                                 Button {
                                     Layout.alignment: Qt.AlignVCenter
-                                    Layout.preferredWidth: 170
+                                    Layout.minimumWidth: 170
                                     text: modelData.primaryLabel || appController.appText.review_button
                                     enabled: modelData.actionCode !== "NONE"
+                                    highlighted: modelData.tone === "ready"
                                     onClicked: {
                                         window.activeActionPlanItem = modelData
                                         actionPlanDetailDialog.open()
@@ -2461,7 +2450,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 190
                     visible: appController.activeStrategies.length === 0
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     ColumnLayout {
@@ -2498,7 +2487,7 @@ ApplicationWindow {
                     Rectangle {
                     implicitHeight: nextReviewContent.implicitHeight + 36
                     visible: Object.keys(appController.nextReview).length > 0
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: appController.nextReview.tone === "blocked" ? warning : border
                     ColumnLayout {
@@ -2520,20 +2509,9 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                 }
                             }
-                            Rectangle {
-                                Layout.preferredWidth: Math.max(140, nextReviewStatus.implicitWidth + 24)
-                                Layout.preferredHeight: 30
-                                radius: 5
-                                color: appController.nextReview.tone === "blocked" ? "#3a3020" : panelRaised
-                                border.color: appController.nextReview.tone === "blocked" ? warning : border
-                                Text {
-                                    id: nextReviewStatus
-                                    anchors.centerIn: parent
-                                    text: appController.nextReview.status || appController.appText.next_review_not_scheduled
-                                    color: appController.nextReview.tone === "blocked" ? warning : textPrimary
-                                    font.pixelSize: 11
-                                    font.bold: true
-                                }
+                            StatusPill {
+                                label: appController.nextReview.status || appController.appText.next_review_not_scheduled
+                                tone: appController.nextReview.tone === "blocked" ? "warning" : "neutral"
                             }
                         }
                         GridLayout {
@@ -2655,7 +2633,7 @@ ApplicationWindow {
                         required property var modelData
                         width: ListView.view.width
                         height: Math.max(250, activeStrategyCardContent.implicitHeight + 36)
-                        radius: 7
+                        radius: radiusMd
                         color: panel
                         border.color: modelData.tone === "ready" ? accent : warning
                         ColumnLayout {
@@ -2671,20 +2649,9 @@ ApplicationWindow {
                                     Text { text: modelData.name; color: textPrimary; font.pixelSize: 17; font.bold: true }
                                     Text { text: modelData.type + "  |  " + appController.appText.binance_id_label + " " + modelData.botId; color: textSecondary; font.pixelSize: 11 }
                                 }
-                                Rectangle {
-                                    Layout.preferredWidth: Math.max(110, strategyHealth.implicitWidth + 22)
-                                    Layout.preferredHeight: 30
-                                    radius: 5
-                                    color: modelData.tone === "ready" ? "#17372d" : modelData.tone === "watch" ? "#3a3020" : "#3a2226"
-                                    border.color: modelData.tone === "ready" ? accent : warning
-                                    Text {
-                                        id: strategyHealth
-                                        anchors.centerIn: parent
-                                        text: modelData.health
-                                        color: modelData.tone === "ready" ? accent : warning
-                                        font.pixelSize: 11
-                                        font.bold: true
-                                    }
+                                StatusPill {
+                                    label: modelData.health
+                                    tone: modelData.tone === "ready" ? "success" : modelData.tone === "watch" ? "warning" : "danger"
                                 }
                             }
                             Text { text: modelData.state; color: modelData.tone === "ready" ? accent : warning; font.pixelSize: 11; font.bold: true }
@@ -2709,7 +2676,7 @@ ApplicationWindow {
                                 spacing: 12
                                 Text { Layout.fillWidth: true; text: modelData.recommendation; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap; maximumLineCount: 3; elide: Text.ElideRight }
                                 Button {
-                                    Layout.preferredWidth: 150
+                                    Layout.minimumWidth: 150
                                     text: appController.appText.view_details_button
                                     onClicked: {
                                         window.activeStrategyItem = modelData

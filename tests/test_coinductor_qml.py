@@ -105,7 +105,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.hasReadyLivePreview" in qml
     assert "Layout.row: 2" in qml
     assert "Layout.row: 3" in qml
-    assert "Manage live trading API" in qml
+    assert "appController.appText.manage_live_api_dialog_title" in qml
     assert "liveApiManagerDialog.open()" in qml
     assert "rightPadding: 18" in qml
     assert "Credentials & Safety" not in qml
@@ -127,7 +127,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.registerGridStrategy(" in qml
     assert "appController.registerRebalancingStrategy(" in qml
     assert "appController.updateActiveStrategyStatus(" in qml
-    assert "I already applied this status change to the bot in Binance." in qml
+    assert "appController.appText.already_applied_status_checkbox" in qml
     assert "OPEN_ACTIVE_STRATEGIES" in qml
     assert 'text: "Open Active Strategies"' in qml
     assert "appController.appText.verified_matches_bot_checkbox" in qml
@@ -229,6 +229,13 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.rebalancing_import_notice_template.replace" in qml
     assert "appController.appText.app_tour_quick_tour_label" in qml
     assert "appController.appText.app_tour_finish_button" in qml
+    assert "appController.appText.strategy_monitor_note" in qml
+    assert "appController.appText.update_local_record_button" in qml
+    assert "appController.appText.live_api_dialog_warning" in qml
+    assert "appController.appText.save_live_trading_key_button" in qml
+    assert "appController.appText.confirm_safety_stage_title" in qml
+    assert "appController.appText.confirmation_phrase_prefix" in qml
+    assert "appController.appText.change_safety_stage_button" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

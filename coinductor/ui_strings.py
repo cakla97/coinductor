@@ -1221,6 +1221,118 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Finish",
         "cs": "Dokončit",
     },
+    "active_strategy_fallback_title": {
+        "en": "Active strategy",
+        "cs": "Aktivní strategie",
+    },
+    "unknown_status_fallback": {
+        "en": "Unknown",
+        "cs": "Neznámý",
+    },
+    "strategy_monitor_note": {
+        "en": "Monitoring compares registered parameters with locally collected market data. Verify profit, fills, and final bot status directly in Binance before changing or stopping a bot.",
+        "cs": "Sledování porovnává registrované parametry s lokálně sesbíranými tržními daty. Před změnou nebo zastavením bota vždy ověřte zisk, výplně a konečný stav bota přímo na Binance.",
+    },
+    "update_local_monitoring_status_title": {
+        "en": "Update local monitoring status",
+        "cs": "Aktualizovat lokální stav sledování",
+    },
+    "update_local_status_warning": {
+        "en": "First pause, stop, or close the bot in Binance. This control only updates Coinductor's local monitoring record and never sends a command to Binance.",
+        "cs": "Nejprve bota pozastavte, zastavte nebo uzavřete na Binance. Tento ovládací prvek pouze aktualizuje lokální záznam sledování v Coinductoru a nikdy neodesílá příkaz na Binance.",
+    },
+    "new_local_status_label": {
+        "en": "New local status",
+        "cs": "Nový lokální stav",
+    },
+    "update_local_record_button": {
+        "en": "Update local record",
+        "cs": "Aktualizovat lokální záznam",
+    },
+    "already_applied_status_checkbox": {
+        "en": "I already applied this status change to the bot in Binance.",
+        "cs": "Tuto změnu stavu jsem již na botovi na Binance provedl(a).",
+    },
+    "status_records_note": {
+        "en": "Paused, Stopped, and Closed records leave active monitoring but remain in the local registry and historical run data.",
+        "cs": "Záznamy Paused, Stopped a Closed opustí aktivní sledování, ale zůstávají v lokálním registru a historických datech běhů.",
+    },
+    "manage_live_api_dialog_title": {
+        "en": "Manage live trading API",
+        "cs": "Spravovat live trading API",
+    },
+    "live_api_dialog_description": {
+        "en": "Store and verify the separate Binance key used by guarded live actions. Managing credentials never changes the Safety stage or submits an order.",
+        "cs": "Uložte a ověřte samostatný klíč Binance používaný pro zabezpečené live akce. Správa přístupových údajů nikdy nemění Safety stage ani nezadává příkaz.",
+    },
+    "live_api_dialog_warning": {
+        "en": "Use a separate key with Reading + Spot trading only, trusted-IP restriction enabled, and withdrawals disabled. Dynamic-IP users should keep live execution locked unless they can maintain the whitelist.",
+        "cs": "Používejte samostatný klíč pouze s Reading + Spot trading, zapnutým omezením na důvěryhodnou IP a vypnutými výběry. Uživatelé s dynamickou IP by měli live provádění nechat uzamčené, pokud nedokážou udržovat aktuální whitelist.",
+    },
+    "open_setup_guide_button": {
+        "en": "Open setup guide",
+        "cs": "Otevřít návod na nastavení",
+    },
+    "live_api_checkbox_separate_key": {
+        "en": "This key is separate from the read-only key",
+        "cs": "Tento klíč je oddělený od read-only klíče",
+    },
+    "live_api_checkbox_ip_restricted": {
+        "en": "Trusted-IP restriction is enabled in Binance",
+        "cs": "Na Binance je zapnuté omezení na důvěryhodnou IP",
+    },
+    "live_api_checkbox_no_withdrawals": {
+        "en": "Withdrawals and transfer permissions remain disabled",
+        "cs": "Oprávnění k výběrům a převodům zůstávají vypnutá",
+    },
+    "save_live_trading_key_button": {
+        "en": "Save live trading key",
+        "cs": "Uložit live trading klíč",
+    },
+    "live_trading_key_saved_toast": {
+        "en": "Live trading key saved locally; submit remains locked",
+        "cs": "Live trading klíč uložen lokálně; odeslání zůstává uzamčené",
+    },
+    "checking_permissions_status": {
+        "en": "Checking permissions...",
+        "cs": "Kontroluji oprávnění...",
+    },
+    "live_submit_control_note": {
+        "en": "Live submit remains controlled by Safety stage, fresh validation, and a separate confirmation for every trade or OCO action.",
+        "cs": "Live odeslání zůstává řízeno Safety stage, čerstvou validací a samostatným potvrzením pro každý obchod nebo OCO akci.",
+    },
+    "confirm_safety_stage_title": {
+        "en": "Confirm Safety stage change",
+        "cs": "Potvrdit změnu Safety stage",
+    },
+    "safety_confirm_live_enabled_note": {
+        "en": "This enables guarded live submit controls. It does not place an order, but future READY actions can be submitted after their own confirmation.",
+        "cs": "Tímto se zapnou ovládací prvky pro zabezpečené live odeslání. Nezadává se tím žádný příkaz, ale budoucí akce ve stavu READY lze po vlastním potvrzení odeslat.",
+    },
+    "safety_confirm_armed_note": {
+        "en": "This records that the live API permissions were verified and arms guarded workflows. Live submit remains locked.",
+        "cs": "Tímto se zaznamená, že oprávnění live API byla ověřena, a odjistí se zabezpečené postupy. Live odeslání zůstává uzamčené.",
+    },
+    "safety_confirm_preview_note": {
+        "en": "This enables mainnet previews only. No order or exchange-changing action can be submitted.",
+        "cs": "Tímto se povolí pouze mainnet náhledy. Nelze odeslat žádný příkaz ani akci měnící stav burzy.",
+    },
+    "confirmation_phrase_prefix": {
+        "en": "Confirmation phrase:",
+        "cs": "Potvrzovací fráze:",
+    },
+    "copy_phrase_button": {
+        "en": "Copy phrase",
+        "cs": "Kopírovat frázi",
+    },
+    "cancel_button": {
+        "en": "Cancel",
+        "cs": "Zrušit",
+    },
+    "change_safety_stage_button": {
+        "en": "Change Safety stage",
+        "cs": "Změnit Safety stage",
+    },
 }
 
 

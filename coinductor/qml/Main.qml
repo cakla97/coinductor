@@ -4326,7 +4326,7 @@ ApplicationWindow {
 
     Dialog {
         id: activeStrategyDetailDialog
-        title: activeStrategyItem.name || "Active strategy"
+        title: activeStrategyItem.name || appController.appText.active_strategy_fallback_title
         modal: true
         anchors.centerIn: parent
         width: Math.min(860, window.width - 96)
@@ -4355,9 +4355,9 @@ ApplicationWindow {
                         Layout.fillWidth: true
                         spacing: 3
                         Text { text: activeStrategyItem.name || ""; color: textPrimary; font.pixelSize: 22; font.bold: true }
-                        Text { text: (activeStrategyItem.type || "") + "  |  Binance ID " + (activeStrategyItem.botId || "-"); color: textSecondary; font.pixelSize: 12 }
+                        Text { text: (activeStrategyItem.type || "") + "  |  " + appController.appText.binance_id_label + " " + (activeStrategyItem.botId || "-"); color: textSecondary; font.pixelSize: 12 }
                     }
-                    Text { text: activeStrategyItem.health || "Unknown"; color: activeStrategyItem.tone === "ready" ? accent : warning; font.pixelSize: 12; font.bold: true }
+                    Text { text: activeStrategyItem.health || appController.appText.unknown_status_fallback; color: activeStrategyItem.tone === "ready" ? accent : warning; font.pixelSize: 12; font.bold: true }
                 }
                 Text { text: activeStrategyItem.state || ""; color: activeStrategyItem.tone === "ready" ? accent : warning; font.pixelSize: 12; font.bold: true }
                 Text { Layout.fillWidth: true; text: activeStrategyItem.recommendation || ""; color: textSecondary; font.pixelSize: 13; wrapMode: Text.WordWrap }
@@ -4396,7 +4396,7 @@ ApplicationWindow {
                         id: strategyMonitorNote
                         anchors.fill: parent
                         anchors.margins: 12
-                        text: "Monitoring compares registered parameters with locally collected market data. Verify profit, fills, and final bot status directly in Binance before changing or stopping a bot."
+                        text: appController.appText.strategy_monitor_note
                         color: warning
                         font.pixelSize: 11
                         font.bold: true
@@ -4407,10 +4407,10 @@ ApplicationWindow {
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 10
-                    Text { text: "Update local monitoring status"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                    Text { text: appController.appText.update_local_monitoring_status_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                     Text {
                         Layout.fillWidth: true
-                        text: "First pause, stop, or close the bot in Binance. This control only updates Coinductor's local monitoring record and never sends a command to Binance."
+                        text: appController.appText.update_local_status_warning
                         color: warning
                         font.pixelSize: 11
                         font.bold: true
@@ -4421,7 +4421,7 @@ ApplicationWindow {
                         spacing: 12
                         ColumnLayout {
                             Layout.fillWidth: true
-                            Text { text: "New local status"; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                            Text { text: appController.appText.new_local_status_label; color: textSecondary; font.pixelSize: 10; font.bold: true }
                             ComboBox {
                                 id: strategyStatusChoice
                                 Layout.fillWidth: true
@@ -4429,7 +4429,7 @@ ApplicationWindow {
                             }
                         }
                         Button {
-                            text: appController.busy ? "Working..." : "Update local record"
+                            text: appController.busy ? appController.appText.working_status : appController.appText.update_local_record_button
                             enabled: strategyStatusVerified.checked && !appController.busy
                             onClicked: {
                                 if (appController.updateActiveStrategyStatus(
@@ -4445,11 +4445,11 @@ ApplicationWindow {
                     CheckBox {
                         id: strategyStatusVerified
                         Layout.fillWidth: true
-                        text: "I already applied this status change to the bot in Binance."
+                        text: appController.appText.already_applied_status_checkbox
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: "Paused, Stopped, and Closed records leave active monitoring but remain in the local registry and historical run data."
+                        text: appController.appText.status_records_note
                         color: textSecondary
                         font.pixelSize: 10
                         wrapMode: Text.WordWrap
@@ -4461,7 +4461,7 @@ ApplicationWindow {
 
     Dialog {
         id: liveApiManagerDialog
-        title: "Manage live trading API"
+        title: appController.appText.manage_live_api_dialog_title
         modal: true
         anchors.centerIn: parent
         width: Math.min(840, window.width - 96)
@@ -4490,7 +4490,7 @@ ApplicationWindow {
                 spacing: 14
                 Text {
                     Layout.fillWidth: true
-                    text: "Store and verify the separate Binance key used by guarded live actions. Managing credentials never changes the Safety stage or submits an order."
+                    text: appController.appText.live_api_dialog_description
                     color: textSecondary
                     font.pixelSize: 13
                     wrapMode: Text.WordWrap
@@ -4505,7 +4505,7 @@ ApplicationWindow {
                         id: liveApiWarningText
                         anchors.fill: parent
                         anchors.margins: 12
-                        text: "Use a separate key with Reading + Spot trading only, trusted-IP restriction enabled, and withdrawals disabled. Dynamic-IP users should keep live execution locked unless they can maintain the whitelist."
+                        text: appController.appText.live_api_dialog_warning
                         color: warning
                         font.pixelSize: 12
                         font.bold: true
@@ -4522,7 +4522,7 @@ ApplicationWindow {
                         wrapMode: Text.WordWrap
                     }
                     Button {
-                        text: "Open setup guide"
+                        text: appController.appText.open_setup_guide_button
                         onClicked: window.openGuide("binance-live-api")
                     }
                 }
@@ -4537,14 +4537,14 @@ ApplicationWindow {
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 6
-                    CheckBox { id: liveSeparateKey; text: "This key is separate from the read-only key"; checked: false }
-                    CheckBox { id: liveIpRestricted; text: "Trusted-IP restriction is enabled in Binance"; checked: false }
-                    CheckBox { id: liveNoWithdrawals; text: "Withdrawals and transfer permissions remain disabled"; checked: false }
+                    CheckBox { id: liveSeparateKey; text: appController.appText.live_api_checkbox_separate_key; checked: false }
+                    CheckBox { id: liveIpRestricted; text: appController.appText.live_api_checkbox_ip_restricted; checked: false }
+                    CheckBox { id: liveNoWithdrawals; text: appController.appText.live_api_checkbox_no_withdrawals; checked: false }
                 }
                 RowLayout {
                     Layout.fillWidth: true
                     Button {
-                        text: "Save live trading key"
+                        text: appController.appText.save_live_trading_key_button
                         enabled: liveTradingApiKey.text.trim().length > 0
                             && liveTradingApiSecret.text.trim().length > 0
                             && liveSeparateKey.checked
@@ -4557,11 +4557,11 @@ ApplicationWindow {
                             liveSeparateKey.checked = false
                             liveIpRestricted.checked = false
                             liveNoWithdrawals.checked = false
-                            window.showToast("Live trading key saved locally; submit remains locked")
+                            window.showToast(appController.appText.live_trading_key_saved_toast)
                         }
                     }
                     Button {
-                        text: appController.checkingLiveTrading ? "Checking permissions..." : "Verify permissions"
+                        text: appController.checkingLiveTrading ? appController.appText.checking_permissions_status : appController.appText.verify_permissions_button
                         enabled: appController.liveTradingKeyStatus === "PASS" && !appController.checkingLiveTrading
                         onClicked: appController.checkBinanceLiveTrading()
                     }
@@ -4590,7 +4590,7 @@ ApplicationWindow {
                 }
                 Text {
                     Layout.fillWidth: true
-                    text: "Live submit remains controlled by Safety stage, fresh validation, and a separate confirmation for every trade or OCO action."
+                    text: appController.appText.live_submit_control_note
                     color: warning
                     font.pixelSize: 11
                     font.bold: true
@@ -4599,7 +4599,7 @@ ApplicationWindow {
                 RowLayout {
                     Layout.fillWidth: true
                     Item { Layout.fillWidth: true }
-                    Button { text: "Close"; onClicked: liveApiManagerDialog.close() }
+                    Button { text: appController.appText.close_button; onClicked: liveApiManagerDialog.close() }
                 }
             }
         }
@@ -4607,7 +4607,7 @@ ApplicationWindow {
 
     Dialog {
         id: safetyStageConfirmDialog
-        title: "Confirm Safety stage change"
+        title: appController.appText.confirm_safety_stage_title
         modal: true
         anchors.centerIn: parent
         width: Math.min(680, window.width - 120)
@@ -4619,10 +4619,10 @@ ApplicationWindow {
             Text {
                 Layout.fillWidth: true
                 text: pendingSafetyTarget === "LIVE_ENABLED"
-                    ? "This enables guarded live submit controls. It does not place an order, but future READY actions can be submitted after their own confirmation."
+                    ? appController.appText.safety_confirm_live_enabled_note
                     : pendingSafetyTarget === "ARMED"
-                        ? "This records that the live API permissions were verified and arms guarded workflows. Live submit remains locked."
-                        : "This enables mainnet previews only. No order or exchange-changing action can be submitted."
+                        ? appController.appText.safety_confirm_armed_note
+                        : appController.appText.safety_confirm_preview_note
                 color: textSecondary
                 font.pixelSize: 13
                 wrapMode: Text.WordWrap
@@ -4640,14 +4640,14 @@ ApplicationWindow {
                     spacing: 12
                     Text {
                         Layout.fillWidth: true
-                        text: "Confirmation phrase: " + pendingSafetyPhrase
+                        text: appController.appText.confirmation_phrase_prefix + " " + pendingSafetyPhrase
                         color: warning
                         font.pixelSize: 12
                         font.bold: true
                         wrapMode: Text.WordWrap
                     }
                     Button {
-                        text: "Copy phrase"
+                        text: appController.appText.copy_phrase_button
                         onClicked: appController.copyText(pendingSafetyPhrase)
                     }
                 }
@@ -4660,9 +4660,9 @@ ApplicationWindow {
             RowLayout {
                 Layout.fillWidth: true
                 Item { Layout.fillWidth: true }
-                Button { text: "Cancel"; onClicked: safetyStageConfirmDialog.close() }
+                Button { text: appController.appText.cancel_button; onClicked: safetyStageConfirmDialog.close() }
                 Button {
-                    text: "Change Safety stage"
+                    text: appController.appText.change_safety_stage_button
                     enabled: safetyStageConfirmInput.text === pendingSafetyPhrase
                     onClicked: {
                         appController.promoteSafetyStage(pendingSafetyTarget, safetyStageConfirmInput.text)

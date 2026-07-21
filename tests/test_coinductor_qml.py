@@ -241,6 +241,13 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.guard_ready_oco" in qml
     assert "appController.appText.challenge_hold_description" in qml
     assert "appController.appText.locked_button_fallback" in qml
+    assert "appController.appText.confirm_live_trade_warning" in qml
+    assert "appController.appText.ai_chat_history_title" in qml
+    assert "appController.appText.confirm_oco_warning" in qml
+    assert "appController.appText.confirm_earn_redeem_warning" in qml
+    assert "appController.appText.deploy_tranche_dialog_title_template.replace" in qml
+    assert "appController.appText.submit_for_real_template.replace" in qml
+    assert "appController.appText.mainnet_submit_warning" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

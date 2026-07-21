@@ -4972,7 +4972,7 @@ ApplicationWindow {
 
     Dialog {
         id: liveTradeConfirmDialog
-        title: "Confirm guarded live trade"
+        title: appController.appText.confirm_live_trade_title
         modal: true
         anchors.centerIn: parent
         width: Math.min(680, window.width - 120)
@@ -4983,7 +4983,7 @@ ApplicationWindow {
             spacing: 14
             Text {
                 Layout.fillWidth: true
-                text: "Coinductor will run a fresh guarded analysis and may submit a mainnet MARKET BUY only if the preview remains ready. This is not a 24/7 process and it will not bypass deterministic limits."
+                text: appController.appText.confirm_live_trade_description
                 color: textSecondary
                 font.pixelSize: 13
                 wrapMode: Text.WordWrap
@@ -4998,7 +4998,7 @@ ApplicationWindow {
                     id: liveTradeConfirmWarning
                     anchors.fill: parent
                     anchors.margins: 12
-                    text: "Type CONFIRM_MAINNET_ORDER exactly. Never use this if Binance trusted-IP restrictions, live key permissions, or funding look wrong."
+                    text: appController.appText.confirm_live_trade_warning
                     color: warning
                     font.pixelSize: 12
                     font.bold: true
@@ -5014,11 +5014,11 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Item { Layout.fillWidth: true }
                 Button {
-                    text: "Cancel"
+                    text: appController.appText.cancel_button
                     onClicked: liveTradeConfirmDialog.close()
                 }
                 Button {
-                    text: "Run guarded submit"
+                    text: appController.appText.run_guarded_submit_button
                     enabled: liveTradeConfirmInput.text === "CONFIRM_MAINNET_ORDER" && activeActionPlanItem.submitEnabled === true && !appController.busy
                     onClicked: {
                         appController.submitGuardedTrade(liveTradeConfirmInput.text)
@@ -5032,7 +5032,7 @@ ApplicationWindow {
 
     PlatformDialogs.FileDialog {
         id: assistantImageDialog
-        title: "Attach a screenshot or image"
+        title: appController.appText.attach_screenshot_dialog_title
         fileMode: PlatformDialogs.FileDialog.OpenFile
         nameFilters: ["Images (*.png *.jpg *.jpeg *.webp)"]
         onAccepted: appController.attachAssistantImage(selectedFile.toString())
@@ -5040,7 +5040,7 @@ ApplicationWindow {
 
     Dialog {
         id: assistantHistoryDialog
-        title: "AI chat history"
+        title: appController.appText.ai_chat_history_title
         modal: true
         anchors.centerIn: parent
         width: Math.min(760, window.width - 96)
@@ -5051,7 +5051,7 @@ ApplicationWindow {
             spacing: 12
             Text {
                 Layout.fillWidth: true
-                text: "Stored locally. The newest 20 conversations are kept."
+                text: appController.appText.ai_chat_history_storage_note
                 color: textSecondary
                 font.pixelSize: 12
                 wrapMode: Text.WordWrap
@@ -5060,7 +5060,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 visible: appController.assistantHistory.length === 0
-                text: "No saved conversations yet. A chat appears here after its first completed answer."
+                text: appController.appText.ai_chat_history_empty
                 color: textSecondary
                 font.pixelSize: 13
                 horizontalAlignment: Text.AlignHCenter
@@ -5090,10 +5090,10 @@ ApplicationWindow {
                             spacing: 5
                             Text { Layout.fillWidth: true; text: modelData.title; color: textPrimary; font.pixelSize: 14; font.bold: true; elide: Text.ElideRight }
                             Text { Layout.fillWidth: true; text: modelData.preview; color: textSecondary; font.pixelSize: 11; elide: Text.ElideRight }
-                            Text { text: modelData.contextPage + " | " + modelData.messageCount + " messages | " + modelData.updatedAt; color: textSecondary; font.pixelSize: 10 }
+                            Text { text: modelData.contextPage + " | " + modelData.messageCount + " " + appController.appText.ai_chat_history_messages_label + " | " + modelData.updatedAt; color: textSecondary; font.pixelSize: 10 }
                         }
                         Button {
-                            text: "Open"
+                            text: appController.appText.open_button
                             onClicked: {
                                 appController.restoreAssistantChat(modelData.id)
                                 assistantHistoryDialog.close()
@@ -5107,7 +5107,7 @@ ApplicationWindow {
 
     Dialog {
         id: ocoConfirmDialog
-        title: "Confirm OCO position protection"
+        title: appController.appText.confirm_oco_title
         modal: true
         anchors.centerIn: parent
         width: Math.min(680, window.width - 120)
@@ -5118,7 +5118,7 @@ ApplicationWindow {
             spacing: 14
             Text {
                 Layout.fillWidth: true
-                text: "Coinductor will run a fresh mainnet validation and may submit a linked take-profit and stop-loss SELL pair for the open position. Binance keeps this protection active while Coinductor is closed."
+                text: appController.appText.confirm_oco_description
                 color: textSecondary
                 font.pixelSize: 13
                 wrapMode: Text.WordWrap
@@ -5133,7 +5133,7 @@ ApplicationWindow {
                     id: ocoConfirmWarning
                     anchors.fill: parent
                     anchors.margins: 12
-                    text: "Type CONFIRM_MAINNET_OCO exactly. Recheck the quantity, take-profit, stop-loss, trusted IP, and live-key permissions before continuing."
+                    text: appController.appText.confirm_oco_warning
                     color: warning
                     font.pixelSize: 12
                     font.bold: true
@@ -5149,11 +5149,11 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Item { Layout.fillWidth: true }
                 Button {
-                    text: "Cancel"
+                    text: appController.appText.cancel_button
                     onClicked: ocoConfirmDialog.close()
                 }
                 Button {
-                    text: "Submit OCO protection"
+                    text: appController.appText.submit_oco_button
                     enabled: ocoConfirmInput.text === "CONFIRM_MAINNET_OCO" && activeActionPlanItem.submitEnabled === true && !appController.busy
                     onClicked: {
                         appController.submitGuardedOco(ocoConfirmInput.text)
@@ -5166,7 +5166,7 @@ ApplicationWindow {
     }
     Dialog {
         id: earnRedeemConfirmDialog
-        title: "Confirm Earn redeem"
+        title: appController.appText.confirm_earn_redeem_title
         modal: true
         anchors.centerIn: parent
         width: Math.min(680, window.width - 120)
@@ -5177,7 +5177,7 @@ ApplicationWindow {
             spacing: 14
             Text {
                 Layout.fillWidth: true
-                text: "Coinductor will run a fresh guarded analysis and may redeem the previewed amount from Flexible Earn back to Spot, only if the preview remains ready. This does not place a trade by itself."
+                text: appController.appText.confirm_earn_redeem_description
                 color: textSecondary
                 font.pixelSize: 13
                 wrapMode: Text.WordWrap
@@ -5192,7 +5192,7 @@ ApplicationWindow {
                     id: earnRedeemConfirmWarning
                     anchors.fill: parent
                     anchors.margins: 12
-                    text: "Type CONFIRM_EARN_REDEEM exactly. Recheck the asset and amount before continuing."
+                    text: appController.appText.confirm_earn_redeem_warning
                     color: warning
                     font.pixelSize: 12
                     font.bold: true
@@ -5208,11 +5208,11 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Item { Layout.fillWidth: true }
                 Button {
-                    text: "Cancel"
+                    text: appController.appText.cancel_button
                     onClicked: earnRedeemConfirmDialog.close()
                 }
                 Button {
-                    text: "Submit Earn redeem"
+                    text: appController.appText.submit_earn_redeem_button
                     enabled: earnRedeemConfirmInput.text === "CONFIRM_EARN_REDEEM" && activeActionPlanItem.submitEnabled === true && !appController.busy
                     onClicked: {
                         appController.submitGuardedEarnRedeem(earnRedeemConfirmInput.text)
@@ -5225,7 +5225,7 @@ ApplicationWindow {
     }
     Dialog {
         id: firstPortfolioDeployDialog
-        title: "Deploy " + firstPortfolioDeployAsset + " tranche"
+        title: appController.appText.deploy_tranche_dialog_title_template.replace("{asset}", firstPortfolioDeployAsset)
         modal: true
         anchors.centerIn: parent
         width: Math.min(680, window.width - 120)
@@ -5244,7 +5244,7 @@ ApplicationWindow {
             spacing: 14
             Text {
                 Layout.fillWidth: true
-                text: "This runs the next tranche for " + firstPortfolioDeployAsset + " (target " + firstPortfolioDeployTargetPct + "% of the basket) using the total USDC budget and tranche count set on the Action Plan page. Every existing safety gate applies except market-timing consensus, which is intentionally skipped for this initial deployment."
+                text: appController.appText.deploy_tranche_description_template.replace("{asset}", firstPortfolioDeployAsset).replace("{pct}", firstPortfolioDeployTargetPct)
                 color: textSecondary
                 font.pixelSize: 13
                 wrapMode: Text.WordWrap
@@ -5252,7 +5252,7 @@ ApplicationWindow {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 8
-                Text { text: "Mode:"; color: textPrimary; font.pixelSize: 12 }
+                Text { text: appController.appText.mode_label; color: textPrimary; font.pixelSize: 12 }
                 ComboBox {
                     id: firstPortfolioModeCombo
                     Layout.preferredWidth: 160
@@ -5271,7 +5271,7 @@ ApplicationWindow {
                     id: firstPortfolioMainnetWarning
                     anchors.fill: parent
                     anchors.margins: 12
-                    text: "Mainnet submit also requires the Safety stage to be LIVE_ENABLED and will place a real order."
+                    text: appController.appText.mainnet_submit_warning
                     color: warning
                     font.pixelSize: 12
                     font.bold: true
@@ -5282,7 +5282,7 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Item { Layout.fillWidth: true }
                 Button {
-                    text: "Validate only"
+                    text: appController.appText.validate_only_button
                     enabled: parseFloat(firstPortfolioBudgetInput.text) > 0 && !appController.busy
                     onClicked: {
                         appController.runFirstPortfolioTranche(
@@ -5300,7 +5300,7 @@ ApplicationWindow {
             }
             Text {
                 Layout.fillWidth: true
-                text: "To submit for real, type " + firstPortfolioDeployDialog.expectedConfirm + " exactly."
+                text: appController.appText.submit_for_real_template.replace("{token}", firstPortfolioDeployDialog.expectedConfirm)
                 color: textSecondary
                 font.pixelSize: 12
             }
@@ -5313,11 +5313,11 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 Item { Layout.fillWidth: true }
                 Button {
-                    text: "Cancel"
+                    text: appController.appText.cancel_button
                     onClicked: firstPortfolioDeployDialog.close()
                 }
                 Button {
-                    text: "Submit tranche"
+                    text: appController.appText.submit_tranche_button
                     enabled: firstPortfolioConfirmInput.text === firstPortfolioDeployDialog.expectedConfirm
                         && parseFloat(firstPortfolioBudgetInput.text) > 0
                         && !appController.busy

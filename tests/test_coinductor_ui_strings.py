@@ -38,6 +38,20 @@ def test_app_text_grid_import_notice_supports_placeholder_substitution() -> None
     assert "z běhu 42" in rendered
 
 
+def test_app_text_deploy_tranche_title_supports_placeholder_substitution() -> None:
+    text = UiStringsService().app_text("cs")
+    rendered = text["deploy_tranche_dialog_title_template"].replace("{asset}", "BTC")
+
+    assert rendered == "Nasadit tranši BTC"
+
+
+def test_app_text_submit_for_real_keeps_confirmation_token_intact() -> None:
+    text = UiStringsService().app_text("cs")
+    rendered = text["submit_for_real_template"].replace("{token}", "CONFIRM_MAINNET_ORDER")
+
+    assert "CONFIRM_MAINNET_ORDER" in rendered
+
+
 def test_app_text_falls_back_to_english_for_unknown_language() -> None:
     text = UiStringsService().app_text("fr")
 

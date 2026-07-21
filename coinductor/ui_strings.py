@@ -1409,6 +1409,106 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Open Active Strategies",
         "cs": "Otevřít Active Strategies",
     },
+    "confirm_live_trade_title": {
+        "en": "Confirm guarded live trade",
+        "cs": "Potvrdit zabezpečený live obchod",
+    },
+    "confirm_live_trade_description": {
+        "en": "Coinductor will run a fresh guarded analysis and may submit a mainnet MARKET BUY only if the preview remains ready. This is not a 24/7 process and it will not bypass deterministic limits.",
+        "cs": "Coinductor spustí novou zabezpečenou analýzu a odešle mainnet MARKET BUY pouze pokud náhled zůstane ready. Nejde o nepřetržitý proces a neobejde deterministické limity.",
+    },
+    "confirm_live_trade_warning": {
+        "en": "Type CONFIRM_MAINNET_ORDER exactly. Never use this if Binance trusted-IP restrictions, live key permissions, or funding look wrong.",
+        "cs": "Napište přesně CONFIRM_MAINNET_ORDER. Nikdy toto nepoužívejte, pokud omezení na důvěryhodnou IP na Binance, oprávnění live klíče nebo financování vypadají špatně.",
+    },
+    "run_guarded_submit_button": {
+        "en": "Run guarded submit",
+        "cs": "Spustit zabezpečené odeslání",
+    },
+    "attach_screenshot_dialog_title": {
+        "en": "Attach a screenshot or image",
+        "cs": "Připojit screenshot nebo obrázek",
+    },
+    "ai_chat_history_title": {
+        "en": "AI chat history",
+        "cs": "Historie chatu s AI",
+    },
+    "ai_chat_history_storage_note": {
+        "en": "Stored locally. The newest 20 conversations are kept.",
+        "cs": "Ukládáno lokálně. Uchovává se posledních 20 konverzací.",
+    },
+    "ai_chat_history_empty": {
+        "en": "No saved conversations yet. A chat appears here after its first completed answer.",
+        "cs": "Zatím nejsou uložené žádné konverzace. Chat se zde objeví po první dokončené odpovědi.",
+    },
+    "ai_chat_history_messages_label": {
+        "en": "messages",
+        "cs": "zpráv",
+    },
+    "open_button": {
+        "en": "Open",
+        "cs": "Otevřít",
+    },
+    "confirm_oco_title": {
+        "en": "Confirm OCO position protection",
+        "cs": "Potvrdit OCO ochranu pozice",
+    },
+    "confirm_oco_description": {
+        "en": "Coinductor will run a fresh mainnet validation and may submit a linked take-profit and stop-loss SELL pair for the open position. Binance keeps this protection active while Coinductor is closed.",
+        "cs": "Coinductor spustí novou mainnet validaci a odešle propojený pár SELL příkazů take-profit a stop-loss pro otevřenou pozici. Binance udržuje tuto ochranu aktivní i po zavření Coinductoru.",
+    },
+    "confirm_oco_warning": {
+        "en": "Type CONFIRM_MAINNET_OCO exactly. Recheck the quantity, take-profit, stop-loss, trusted IP, and live-key permissions before continuing.",
+        "cs": "Napište přesně CONFIRM_MAINNET_OCO. Před pokračováním znovu zkontrolujte množství, take-profit, stop-loss, důvěryhodnou IP a oprávnění live klíče.",
+    },
+    "submit_oco_button": {
+        "en": "Submit OCO protection",
+        "cs": "Odeslat OCO ochranu",
+    },
+    "confirm_earn_redeem_title": {
+        "en": "Confirm Earn redeem",
+        "cs": "Potvrdit Earn redeem",
+    },
+    "confirm_earn_redeem_description": {
+        "en": "Coinductor will run a fresh guarded analysis and may redeem the previewed amount from Flexible Earn back to Spot, only if the preview remains ready. This does not place a trade by itself.",
+        "cs": "Coinductor spustí novou zabezpečenou analýzu a provede redeem náhledové částky z Flexible Earn zpět na Spot, pouze pokud náhled zůstane ready. Samo o sobě to nezadává obchod.",
+    },
+    "confirm_earn_redeem_warning": {
+        "en": "Type CONFIRM_EARN_REDEEM exactly. Recheck the asset and amount before continuing.",
+        "cs": "Napište přesně CONFIRM_EARN_REDEEM. Před pokračováním znovu zkontrolujte aktivum a částku.",
+    },
+    "submit_earn_redeem_button": {
+        "en": "Submit Earn redeem",
+        "cs": "Odeslat Earn redeem",
+    },
+    "deploy_tranche_dialog_title_template": {
+        "en": "Deploy {asset} tranche",
+        "cs": "Nasadit tranši {asset}",
+    },
+    "deploy_tranche_description_template": {
+        "en": "This runs the next tranche for {asset} (target {pct}% of the basket) using the total USDC budget and tranche count set on the Action Plan page. Every existing safety gate applies except market-timing consensus, which is intentionally skipped for this initial deployment.",
+        "cs": "Toto spustí další tranši pro {asset} (cíl {pct}% košíku) s použitím celkového rozpočtu v USDC a počtu tranší nastavených na stránce Action Plan. Platí všechny stávající bezpečnostní brány kromě consensus časování trhu, který je pro toto počáteční nasazení záměrně vynechán.",
+    },
+    "mode_label": {
+        "en": "Mode:",
+        "cs": "Režim:",
+    },
+    "mainnet_submit_warning": {
+        "en": "Mainnet submit also requires the Safety stage to be LIVE_ENABLED and will place a real order.",
+        "cs": "Mainnet odeslání navíc vyžaduje, aby byl Safety stage LIVE_ENABLED, a zadá skutečný příkaz.",
+    },
+    "validate_only_button": {
+        "en": "Validate only",
+        "cs": "Pouze validovat",
+    },
+    "submit_for_real_template": {
+        "en": "To submit for real, type {token} exactly.",
+        "cs": "Pro skutečné odeslání napište přesně {token}.",
+    },
+    "submit_tranche_button": {
+        "en": "Submit tranche",
+        "cs": "Odeslat tranši",
+    },
 }
 
 

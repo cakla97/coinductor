@@ -2150,12 +2150,12 @@ ApplicationWindow {
                     spacing: 16
                     ColumnLayout {
                         spacing: 4
-                        Text { text: "Action Plan"; color: textPrimary; font.pixelSize: 26; font.bold: true }
-                        Text { text: "Latest trade, Grid, and Rebalancing decisions in one review list."; color: textSecondary; font.pixelSize: 13 }
+                        Text { text: appController.appText.action_plan_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                        Text { text: appController.appText.action_plan_subtitle; color: textSecondary; font.pixelSize: 13 }
                     }
                     Item { Layout.fillWidth: true }
                     Button {
-                        text: "Open detailed report"
+                        text: appController.appText.open_detailed_report_button
                         enabled: appController.hasReport
                         onClicked: appController.openReport()
                     }
@@ -2181,10 +2181,10 @@ ApplicationWindow {
                         anchors.top: parent.top
                         anchors.margins: 16
                         spacing: 8
-                        Text { text: "First portfolio deployment"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                        Text { text: appController.appText.first_portfolio_deployment_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
                         Text {
                             Layout.fillWidth: true
-                            text: "Staged, guarded purchase of your starting basket. Each tranche still passes bankroll, stop-loss, and confirmation checks; only market-timing (consensus/RSI) is intentionally skipped, since this executes a plan you already chose."
+                            text: appController.appText.first_portfolio_deployment_description
                             color: textSecondary
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
@@ -2206,13 +2206,13 @@ ApplicationWindow {
                                     Text { Layout.preferredWidth: 50; text: modelData.target; color: accent; font.pixelSize: 12 }
                                     Text {
                                         Layout.fillWidth: true
-                                        text: "Testnet " + window.firstPortfolioProgressCount(modelData.asset, "TESTNET") + "/" + firstPortfolioTranchesInput.value
-                                            + "  ·  Mainnet " + window.firstPortfolioProgressCount(modelData.asset, "MAINNET") + "/" + firstPortfolioTranchesInput.value
+                                        text: appController.appText.first_portfolio_testnet_label + " " + window.firstPortfolioProgressCount(modelData.asset, "TESTNET") + "/" + firstPortfolioTranchesInput.value
+                                            + "  ·  " + appController.appText.first_portfolio_mainnet_label + " " + window.firstPortfolioProgressCount(modelData.asset, "MAINNET") + "/" + firstPortfolioTranchesInput.value
                                         color: textSecondary
                                         font.pixelSize: 11
                                     }
                                     Button {
-                                        text: "Deploy"
+                                        text: appController.appText.first_portfolio_deploy_button
                                         enabled: !appController.busy
                                         onClicked: {
                                             firstPortfolioDeployAsset = modelData.asset
@@ -2227,14 +2227,14 @@ ApplicationWindow {
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 8
-                            Text { text: "Total USDC budget for the whole basket:"; color: textSecondary; font.pixelSize: 11 }
+                            Text { text: appController.appText.first_portfolio_budget_label; color: textSecondary; font.pixelSize: 11 }
                             TextField { id: firstPortfolioBudgetInput; Layout.preferredWidth: 120; placeholderText: "e.g. 400" }
-                            Text { text: "Tranches:"; color: textSecondary; font.pixelSize: 11 }
+                            Text { text: appController.appText.first_portfolio_tranches_label; color: textSecondary; font.pixelSize: 11 }
                             SpinBox { id: firstPortfolioTranchesInput; from: 1; to: 10; value: 3 }
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: "Enter the real USDC amount you intend to deploy here — the wizard's planned budget may be in a different currency and is not auto-converted."
+                            text: appController.appText.first_portfolio_budget_warning
                             color: warning
                             font.pixelSize: 10
                             wrapMode: Text.WordWrap
@@ -2249,17 +2249,17 @@ ApplicationWindow {
                     Row {
                         spacing: 6
                         Rectangle { width: 10; height: 10; radius: 5; color: accent; anchors.verticalCenter: parent.verticalCenter }
-                        Text { text: "Ready - can be confirmed now"; color: textSecondary; font.pixelSize: 11 }
+                        Text { text: appController.appText.legend_ready; color: textSecondary; font.pixelSize: 11 }
                     }
                     Row {
                         spacing: 6
                         Rectangle { width: 10; height: 10; radius: 5; color: warning; anchors.verticalCenter: parent.verticalCenter }
-                        Text { text: "Watch - conditions not met yet"; color: textSecondary; font.pixelSize: 11 }
+                        Text { text: appController.appText.legend_watch; color: textSecondary; font.pixelSize: 11 }
                     }
                     Row {
                         spacing: 6
                         Rectangle { width: 10; height: 10; radius: 5; color: textSecondary; anchors.verticalCenter: parent.verticalCenter }
-                        Text { text: "Other - review-only, e.g. HOLD or blocked"; color: textSecondary; font.pixelSize: 11 }
+                        Text { text: appController.appText.legend_other; color: textSecondary; font.pixelSize: 11 }
                     }
                     Item { Layout.fillWidth: true }
                 }
@@ -2336,7 +2336,7 @@ ApplicationWindow {
                                     anchors.margins: 11
                                     spacing: 12
                                     Text {
-                                        text: "Last live trade"
+                                        text: appController.appText.last_live_trade_label
                                         color: textPrimary
                                         font.pixelSize: 11
                                         font.bold: true
@@ -2371,7 +2371,7 @@ ApplicationWindow {
                                 Button {
                                     Layout.alignment: Qt.AlignVCenter
                                     Layout.preferredWidth: 170
-                                    text: modelData.primaryLabel || "Review"
+                                    text: modelData.primaryLabel || appController.appText.review_button
                                     enabled: modelData.actionCode !== "NONE"
                                     onClicked: {
                                         window.activeActionPlanItem = modelData

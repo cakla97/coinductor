@@ -733,6 +733,66 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Stage changes are local safety controls and never place an order. Every live trade or OCO protection still needs its own confirmation. If your public IP is dynamic, keep live execution locked unless the Binance whitelist is current.",
         "cs": "Změny stupně jsou lokální bezpečnostní ovládací prvky a nikdy nezadávají příkaz. Každý live obchod nebo OCO ochrana stále vyžaduje vlastní potvrzení. Pokud máte dynamickou veřejnou IP adresu, nechte live provádění uzamčené, dokud není whitelist na Binance aktuální.",
     },
+    "action_plan_title": {
+        "en": "Action Plan",
+        "cs": "Action Plan",
+    },
+    "action_plan_subtitle": {
+        "en": "Latest trade, Grid, and Rebalancing decisions in one review list.",
+        "cs": "Poslední rozhodnutí o obchodu, Gridu a Rebalancingu v jednom přehledu ke kontrole.",
+    },
+    "first_portfolio_deployment_title": {
+        "en": "First portfolio deployment",
+        "cs": "Nasazení prvního portfolia",
+    },
+    "first_portfolio_deployment_description": {
+        "en": "Staged, guarded purchase of your starting basket. Each tranche still passes bankroll, stop-loss, and confirmation checks; only market-timing (consensus/RSI) is intentionally skipped, since this executes a plan you already chose.",
+        "cs": "Postupný, zabezpečený nákup vašeho počátečního košíku. Každá tranše stále prochází kontrolou bankroll, stop-loss a potvrzení; záměrně je vynechán jen časový odhad trhu (consensus/RSI), protože se provádí plán, který jste už zvolili.",
+    },
+    "first_portfolio_testnet_label": {
+        "en": "Testnet",
+        "cs": "Testnet",
+    },
+    "first_portfolio_mainnet_label": {
+        "en": "Mainnet",
+        "cs": "Mainnet",
+    },
+    "first_portfolio_deploy_button": {
+        "en": "Deploy",
+        "cs": "Nasadit",
+    },
+    "first_portfolio_budget_label": {
+        "en": "Total USDC budget for the whole basket:",
+        "cs": "Celkový rozpočet v USDC pro celý košík:",
+    },
+    "first_portfolio_tranches_label": {
+        "en": "Tranches:",
+        "cs": "Tranše:",
+    },
+    "first_portfolio_budget_warning": {
+        "en": "Enter the real USDC amount you intend to deploy here — the wizard's planned budget may be in a different currency and is not auto-converted.",
+        "cs": "Zadejte skutečnou částku v USDC, kterou zde chcete nasadit — plánovaný rozpočet z wizardu může být v jiné měně a není automaticky přepočítán.",
+    },
+    "legend_ready": {
+        "en": "Ready - can be confirmed now",
+        "cs": "Ready - lze nyní potvrdit",
+    },
+    "legend_watch": {
+        "en": "Watch - conditions not met yet",
+        "cs": "Watch - podmínky zatím nesplněny",
+    },
+    "legend_other": {
+        "en": "Other - review-only, e.g. HOLD or blocked",
+        "cs": "Other - jen ke kontrole, např. HOLD nebo blocked",
+    },
+    "last_live_trade_label": {
+        "en": "Last live trade",
+        "cs": "Poslední live obchod",
+    },
+    "review_button": {
+        "en": "Review",
+        "cs": "Zkontrolovat",
+    },
 }
 
 

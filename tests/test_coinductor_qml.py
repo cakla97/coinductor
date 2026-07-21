@@ -165,14 +165,14 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert 'text: "Configure AI models"' in qml
     assert "id: cloudAiVisionModel" in qml
     assert "appController.saveCloudAiProvider(cloudAiBaseUrl.text, cloudAiModel.text, cloudAiVisionModel.text, cloudAiKey.text)" in qml
-    assert "First portfolio deployment" in qml
+    assert "appController.appText.first_portfolio_deployment_title" in qml
     assert "appController.firstPortfolioAllocation" in qml
     assert "appController.firstPortfolioDeploymentProgress" in qml
     assert "appController.runFirstPortfolioTranche(" in qml
     assert "CONFIRM_TESTNET_ORDER" in qml
     assert "id: firstPortfolioBudgetInput" in qml
     assert "id: firstPortfolioDeployDialog" in qml
-    assert "Enter the real USDC amount you intend to deploy here" in qml
+    assert "appController.appText.first_portfolio_budget_warning" in qml
     assert "appController.discoverLocalAiModels(localAiBaseUrl.text)" in qml
     assert "appController.localAiDiscoveredModels" in qml
     assert '"Detect installed models"' in qml
@@ -200,6 +200,10 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert 'openSafetyStageConfirmation("ARMED", "Arm guarded actions")' in qml
     assert 'openSafetyStageConfirmation("LIVE_ENABLED", "Enable guarded live submit")' in qml
     assert "text: appController.appText.safety_arm_button" in qml
+    assert "appController.appText.action_plan_title" in qml
+    assert "appController.appText.legend_ready" in qml
+    assert "appController.appText.last_live_trade_label" in qml
+    assert 'modelData.primaryLabel || appController.appText.review_button' in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

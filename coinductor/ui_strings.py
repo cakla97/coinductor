@@ -1077,6 +1077,150 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Stage:",
         "cs": "Stupeň:",
     },
+    "register_bot_dialog_title": {
+        "en": "Register an active Binance bot",
+        "cs": "Registrovat aktivního bota Binance",
+    },
+    "register_bot_warning": {
+        "en": "This records a bot that you already created in Binance. Coinductor does not create, stop, or modify the Binance bot from this form.",
+        "cs": "Tento formulář pouze zaznamenává bota, kterého jste již vytvořili na Binance. Coinductor z tohoto formuláře bota na Binance nevytváří, nezastavuje ani neupravuje.",
+    },
+    "tab_spot_grid": {
+        "en": "Spot Grid",
+        "cs": "Spot Grid",
+    },
+    "tab_rebalancing": {
+        "en": "Rebalancing",
+        "cs": "Rebalancing",
+    },
+    "grid_tab_description": {
+        "en": "Copy the exact active Grid parameters from Binance. Price range, entry, TP/SL, and creation time are used to identify review conditions.",
+        "cs": "Zkopírujte přesné aktivní parametry Gridu z Binance. Cenové rozpětí, vstup, TP/SL a čas vytvoření se používají k určení podmínek pro kontrolu.",
+    },
+    "import_latest_recommendation_button": {
+        "en": "Import latest recommendation",
+        "cs": "Importovat poslední doporučení",
+    },
+    "grid_import_notice_template": {
+        "en": "Imported proposed values from run {run}. Compare every field with the bot you actually created in Binance; missing values remain blank.",
+        "cs": "Importovány navrhované hodnoty z běhu {run}. Porovnejte každé pole s botem, kterého jste skutečně vytvořili na Binance; chybějící hodnoty zůstanou prázdné.",
+    },
+    "field_local_name": {
+        "en": "Local name *",
+        "cs": "Lokální název *",
+    },
+    "field_binance_bot_id": {
+        "en": "Binance bot ID",
+        "cs": "Binance bot ID",
+    },
+    "field_symbol": {
+        "en": "Symbol *",
+        "cs": "Symbol *",
+    },
+    "field_grid_spacing": {
+        "en": "Grid spacing *",
+        "cs": "Rozestup Gridu *",
+    },
+    "field_lower_price": {
+        "en": "Lower price *",
+        "cs": "Spodní cena *",
+    },
+    "field_upper_price": {
+        "en": "Upper price *",
+        "cs": "Horní cena *",
+    },
+    "field_number_of_grids": {
+        "en": "Number of grids *",
+        "cs": "Počet Gridů *",
+    },
+    "field_investment_usdc": {
+        "en": "Investment in USDC *",
+        "cs": "Investice v USDC *",
+    },
+    "field_entry_price": {
+        "en": "Entry price *",
+        "cs": "Vstupní cena *",
+    },
+    "field_created_at": {
+        "en": "Created at",
+        "cs": "Vytvořeno",
+    },
+    "field_stop_loss": {
+        "en": "Stop loss *",
+        "cs": "Stop loss *",
+    },
+    "field_take_profit": {
+        "en": "Take profit *",
+        "cs": "Take profit *",
+    },
+    "field_local_notes": {
+        "en": "Local notes",
+        "cs": "Lokální poznámky",
+    },
+    "verified_matches_bot_checkbox": {
+        "en": "I verified that these values match the currently active bot in Binance.",
+        "cs": "Ověřil(a) jsem, že tyto hodnoty odpovídají aktuálně aktivnímu botovi na Binance.",
+    },
+    "working_status": {
+        "en": "Working...",
+        "cs": "Pracuji...",
+    },
+    "register_and_refresh_button": {
+        "en": "Register and refresh monitoring",
+        "cs": "Registrovat a obnovit sledování",
+    },
+    "rebalancing_tab_description": {
+        "en": "Use comma-separated values in the same order for assets, target weights, and entry prices. Target weights must total exactly 100%.",
+        "cs": "Použijte hodnoty oddělené čárkou ve stejném pořadí pro aktiva, cílové váhy a vstupní ceny. Cílové váhy musí dát dohromady přesně 100 %.",
+    },
+    "rebalancing_import_notice_template": {
+        "en": "Imported proposed values from run {run}. Compare every field with Binance; entry prices stay blank if the latest run did not contain all required markets.",
+        "cs": "Importovány navrhované hodnoty z běhu {run}. Porovnejte každé pole s Binance; vstupní ceny zůstanou prázdné, pokud poslední běh neobsahoval všechny potřebné trhy.",
+    },
+    "allowed_assets_prefix": {
+        "en": "Allowed assets:",
+        "cs": "Povolená aktiva:",
+    },
+    "field_assets": {
+        "en": "Assets *",
+        "cs": "Aktiva *",
+    },
+    "field_target_weights": {
+        "en": "Target weights (%) *",
+        "cs": "Cílové váhy (%) *",
+    },
+    "field_entry_prices_usdc": {
+        "en": "Entry prices in USDC *",
+        "cs": "Vstupní ceny v USDC *",
+    },
+    "field_rebalance_threshold": {
+        "en": "Rebalance threshold (%) *",
+        "cs": "Práh rebalancování (%) *",
+    },
+    "close_button": {
+        "en": "Close",
+        "cs": "Zavřít",
+    },
+    "app_tour_quick_tour_label": {
+        "en": "QUICK TOUR",
+        "cs": "RYCHLÁ PROHLÍDKA",
+    },
+    "app_tour_skip_button": {
+        "en": "Skip tour",
+        "cs": "Přeskočit prohlídku",
+    },
+    "app_tour_back_button": {
+        "en": "Back",
+        "cs": "Zpět",
+    },
+    "app_tour_next_button": {
+        "en": "Next",
+        "cs": "Další",
+    },
+    "app_tour_finish_button": {
+        "en": "Finish",
+        "cs": "Dokončit",
+    },
 }
 
 

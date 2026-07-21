@@ -3871,7 +3871,7 @@ ApplicationWindow {
     Dialog {
         id: strategyRegistrationDialog
         property string importNotice: ""
-        title: "Register an active Binance bot"
+        title: appController.appText.register_bot_dialog_title
         modal: true
         anchors.centerIn: parent
         width: Math.min(window.width - 56, 920)
@@ -3896,7 +3896,7 @@ ApplicationWindow {
 
                 Text {
                     Layout.fillWidth: true
-                    text: "This records a bot that you already created in Binance. Coinductor does not create, stop, or modify the Binance bot from this form."
+                    text: appController.appText.register_bot_warning
                     color: warning
                     font.pixelSize: 12
                     font.bold: true
@@ -3915,8 +3915,8 @@ ApplicationWindow {
                 TabBar {
                     id: strategyRegistrationTabs
                     Layout.fillWidth: true
-                    TabButton { text: "Spot Grid" }
-                    TabButton { text: "Rebalancing" }
+                    TabButton { text: appController.appText.tab_spot_grid }
+                    TabButton { text: appController.appText.tab_rebalancing }
                 }
 
                 StackLayout {
@@ -3929,13 +3929,13 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Text {
                                 Layout.fillWidth: true
-                                text: "Copy the exact active Grid parameters from Binance. Price range, entry, TP/SL, and creation time are used to identify review conditions."
+                                text: appController.appText.grid_tab_description
                                 color: textSecondary
                                 font.pixelSize: 12
                                 wrapMode: Text.WordWrap
                             }
                             Button {
-                                text: "Import latest recommendation"
+                                text: appController.appText.import_latest_recommendation_button
                                 enabled: Boolean(appController.latestGridRegistrationSuggestion.available)
                                 onClicked: {
                                     var suggestion = appController.latestGridRegistrationSuggestion
@@ -3952,7 +3952,7 @@ ApplicationWindow {
                                     gridStopLoss.text = suggestion.stopLoss || ""
                                     gridTakeProfit.text = suggestion.takeProfit || ""
                                     gridVerified.checked = false
-                                    strategyRegistrationDialog.importNotice = "Imported proposed values from run " + suggestion.sourceRun + ". Compare every field with the bot you actually created in Binance; missing values remain blank."
+                                    strategyRegistrationDialog.importNotice = appController.appText.grid_import_notice_template.replace("{run}", suggestion.sourceRun)
                                 }
                             }
                         }
@@ -3964,80 +3964,80 @@ ApplicationWindow {
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Local name *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_local_name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: gridName; Layout.fillWidth: true; placeholderText: "Example: BTC range bot" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Binance bot ID"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_binance_bot_id; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: gridBotId; Layout.fillWidth: true; placeholderText: "Optional, but recommended" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Symbol *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_symbol; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 ComboBox { id: gridSymbol; Layout.fillWidth: true; model: appController.gridRegistrationSymbols }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Grid spacing *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_grid_spacing; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 ComboBox { id: gridType; Layout.fillWidth: true; model: ["ARITHMETIC", "GEOMETRIC"] }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Lower price *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_lower_price; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: gridRangeLow; Layout.fillWidth: true; placeholderText: "Lower range shown in Binance" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Upper price *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_upper_price; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: gridRangeHigh; Layout.fillWidth: true; placeholderText: "Upper range shown in Binance" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Number of grids *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_number_of_grids; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: gridCount; Layout.fillWidth: true; placeholderText: "Example: 10" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Investment in USDC *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_investment_usdc; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: gridInvestment; Layout.fillWidth: true; placeholderText: "Exact allocated amount" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Entry price *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_entry_price; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: gridEntryPrice; Layout.fillWidth: true; placeholderText: "Price when the bot was created" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Created at"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_created_at; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: gridCreatedAt; Layout.fillWidth: true; placeholderText: "Optional ISO date, e.g. 2026-07-13T12:00:00+02:00" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Stop loss *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_stop_loss; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: gridStopLoss; Layout.fillWidth: true; placeholderText: "Must be below the lower range" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Take profit *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_take_profit; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: gridTakeProfit; Layout.fillWidth: true; placeholderText: "Must be above the upper range" }
                             }
                         }
                         ColumnLayout {
                             Layout.fillWidth: true
-                            Text { text: "Local notes"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                            Text { text: appController.appText.field_local_notes; color: textPrimary; font.pixelSize: 11; font.bold: true }
                             TextField { id: gridNotes; Layout.fillWidth: true; placeholderText: "Optional context for future reviews" }
                         }
                         CheckBox {
                             id: gridVerified
                             Layout.fillWidth: true
-                            text: "I verified that these values match the currently active bot in Binance."
+                            text: appController.appText.verified_matches_bot_checkbox
                         }
                         RowLayout {
                             Layout.fillWidth: true
                             Item { Layout.fillWidth: true }
                             Button {
-                                text: appController.busy ? "Working..." : "Register and refresh monitoring"
+                                text: appController.busy ? appController.appText.working_status : appController.appText.register_and_refresh_button
                                 enabled: gridVerified.checked && !appController.busy
                                 onClicked: {
                                     if (appController.registerGridStrategy(
@@ -4059,13 +4059,13 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Text {
                                 Layout.fillWidth: true
-                                text: "Use comma-separated values in the same order for assets, target weights, and entry prices. Target weights must total exactly 100%."
+                                text: appController.appText.rebalancing_tab_description
                                 color: textSecondary
                                 font.pixelSize: 12
                                 wrapMode: Text.WordWrap
                             }
                             Button {
-                                text: "Import latest recommendation"
+                                text: appController.appText.import_latest_recommendation_button
                                 enabled: Boolean(appController.latestRebalancingRegistrationSuggestion.available)
                                 onClicked: {
                                     var suggestion = appController.latestRebalancingRegistrationSuggestion
@@ -4076,13 +4076,13 @@ ApplicationWindow {
                                     rebalancingInvestment.text = suggestion.investment || ""
                                     rebalancingThreshold.text = suggestion.threshold || ""
                                     rebalancingVerified.checked = false
-                                    strategyRegistrationDialog.importNotice = "Imported proposed values from run " + suggestion.sourceRun + ". Compare every field with Binance; entry prices stay blank if the latest run did not contain all required markets."
+                                    strategyRegistrationDialog.importNotice = appController.appText.rebalancing_import_notice_template.replace("{run}", suggestion.sourceRun)
                                 }
                             }
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: "Allowed assets: " + appController.rebalancingRegistrationAssets.join(", ")
+                            text: appController.appText.allowed_assets_prefix + " " + appController.rebalancingRegistrationAssets.join(", ")
                             color: accent
                             font.pixelSize: 11
                             font.bold: true
@@ -4096,60 +4096,60 @@ ApplicationWindow {
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Local name *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_local_name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: rebalancingName; Layout.fillWidth: true; placeholderText: "Example: Core portfolio basket" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Binance bot ID"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_binance_bot_id; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: rebalancingBotId; Layout.fillWidth: true; placeholderText: "Optional, but recommended" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Assets *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_assets; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: rebalancingAssets; Layout.fillWidth: true; placeholderText: "BTC, ETH, SOL" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Target weights (%) *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_target_weights; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: rebalancingWeights; Layout.fillWidth: true; placeholderText: "50, 25, 25" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Entry prices in USDC *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_entry_prices_usdc; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: rebalancingEntryPrices; Layout.fillWidth: true; placeholderText: "One price for each asset" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Investment in USDC *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_investment_usdc; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: rebalancingInvestment; Layout.fillWidth: true; placeholderText: "Exact allocated amount" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Rebalance threshold (%) *"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_rebalance_threshold; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: rebalancingThreshold; Layout.fillWidth: true; placeholderText: "Example: 10" }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Created at"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                Text { text: appController.appText.field_created_at; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                 TextField { id: rebalancingCreatedAt; Layout.fillWidth: true; placeholderText: "Optional ISO date; empty means now" }
                             }
                         }
                         ColumnLayout {
                             Layout.fillWidth: true
-                            Text { text: "Local notes"; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                            Text { text: appController.appText.field_local_notes; color: textPrimary; font.pixelSize: 11; font.bold: true }
                             TextField { id: rebalancingNotes; Layout.fillWidth: true; placeholderText: "Optional context for future reviews" }
                         }
                         CheckBox {
                             id: rebalancingVerified
                             Layout.fillWidth: true
-                            text: "I verified that these values match the currently active bot in Binance."
+                            text: appController.appText.verified_matches_bot_checkbox
                         }
                         RowLayout {
                             Layout.fillWidth: true
                             Item { Layout.fillWidth: true }
                             Button {
-                                text: appController.busy ? "Working..." : "Register and refresh monitoring"
+                                text: appController.busy ? appController.appText.working_status : appController.appText.register_and_refresh_button
                                 enabled: rebalancingVerified.checked && !appController.busy
                                 onClicked: {
                                     if (appController.registerRebalancingStrategy(
@@ -4171,7 +4171,7 @@ ApplicationWindow {
 
         footer: DialogButtonBox {
             Button {
-                text: "Close"
+                text: appController.appText.close_button
                 DialogButtonBox.buttonRole: DialogButtonBox.RejectRole
                 onClicked: strategyRegistrationDialog.close()
             }
@@ -4250,14 +4250,14 @@ ApplicationWindow {
                 RowLayout {
                     Layout.fillWidth: true
                     Text {
-                        text: "QUICK TOUR  " + (appController.appTourStep + 1) + " / " + appController.appTourStepCount
+                        text: appController.appText.app_tour_quick_tour_label + "  " + (appController.appTourStep + 1) + " / " + appController.appTourStepCount
                         color: accent
                         font.pixelSize: 10
                         font.bold: true
                     }
                     Item { Layout.fillWidth: true }
                     Button {
-                        text: "Skip tour"
+                        text: appController.appText.app_tour_skip_button
                         flat: true
                         onClicked: appController.skipAppTour()
                     }
@@ -4310,12 +4310,12 @@ ApplicationWindow {
                     }
                     Item { Layout.fillWidth: true }
                     Button {
-                        text: "Back"
+                        text: appController.appText.app_tour_back_button
                         enabled: appController.appTourStep > 0
                         onClicked: appController.previousAppTourStep()
                     }
                     Button {
-                        text: appController.appTourStep === appController.appTourStepCount - 1 ? "Finish" : "Next"
+                        text: appController.appTourStep === appController.appTourStepCount - 1 ? appController.appText.app_tour_finish_button : appController.appText.app_tour_next_button
                         highlighted: true
                         onClicked: appController.nextAppTourStep()
                     }

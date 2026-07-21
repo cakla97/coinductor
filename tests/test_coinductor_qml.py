@@ -120,17 +120,17 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.activeStrategiesSummary" in qml
     assert "appController.refreshActiveStrategies()" in qml
     assert "strategyRegistrationDialog.open()" in qml
-    assert qml.count('text: "Import latest recommendation"') == 2
+    assert qml.count("text: appController.appText.import_latest_recommendation_button") == 2
     assert "appController.latestGridRegistrationSuggestion" in qml
     assert "appController.latestRebalancingRegistrationSuggestion" in qml
-    assert "Compare every field with" in qml
+    assert "appController.appText.grid_import_notice_template.replace" in qml
     assert "appController.registerGridStrategy(" in qml
     assert "appController.registerRebalancingStrategy(" in qml
     assert "appController.updateActiveStrategyStatus(" in qml
     assert "I already applied this status change to the bot in Binance." in qml
     assert "OPEN_ACTIVE_STRATEGIES" in qml
     assert 'text: "Open Active Strategies"' in qml
-    assert "I verified that these values match the currently active bot in Binance." in qml
+    assert "appController.appText.verified_matches_bot_checkbox" in qml
     assert "activeStrategyDetailDialog.open()" in qml
     assert "visible: appController.currentPage === 8" in qml
     assert "appController.appText.next_review_title" in qml
@@ -222,6 +222,13 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.privacy_data_note" in qml
     assert "appController.appText.safety_baseline_title" in qml
     assert "appController.appText.safety_stage_prefix" in qml
+    assert "appController.appText.register_bot_dialog_title" in qml
+    assert "appController.appText.tab_spot_grid" in qml
+    assert "appController.appText.field_local_name" in qml
+    assert "appController.appText.field_target_weights" in qml
+    assert "appController.appText.rebalancing_import_notice_template.replace" in qml
+    assert "appController.appText.app_tour_quick_tour_label" in qml
+    assert "appController.appText.app_tour_finish_button" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

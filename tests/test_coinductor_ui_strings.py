@@ -31,6 +31,13 @@ def test_app_text_portfolio_toast_supports_placeholder_substitution() -> None:
     assert rendered == "Politika pro BTC změněna na Core"
 
 
+def test_app_text_grid_import_notice_supports_placeholder_substitution() -> None:
+    text = UiStringsService().app_text("cs")
+    rendered = text["grid_import_notice_template"].replace("{run}", "42")
+
+    assert "z běhu 42" in rendered
+
+
 def test_app_text_falls_back_to_english_for_unknown_language() -> None:
     text = UiStringsService().app_text("fr")
 

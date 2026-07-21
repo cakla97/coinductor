@@ -2406,16 +2406,16 @@ ApplicationWindow {
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 4
-                        Text { text: "Active Strategies"; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                        Text { text: appController.appText.active_strategies_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
                         Text { Layout.fillWidth: true; text: appController.activeStrategiesSummary; color: textSecondary; font.pixelSize: 13; wrapMode: Text.WordWrap }
                     }
                     Button {
-                        text: appController.busy ? "Refreshing..." : "Refresh monitoring"
+                        text: appController.busy ? appController.appText.refreshing_status : appController.appText.refresh_monitoring_button
                         enabled: !appController.busy
                         onClicked: appController.refreshActiveStrategies()
                     }
                     Button {
-                        text: "Register active bot"
+                        text: appController.appText.register_active_bot_button
                         enabled: !appController.busy
                         onClicked: strategyRegistrationDialog.open()
                     }
@@ -2433,7 +2433,7 @@ ApplicationWindow {
                         anchors.margins: 18
                         spacing: 10
                         Text {
-                            text: appController.registeredStrategyCount > 0 ? "Monitoring evaluation pending" : "No active bots registered"
+                            text: appController.registeredStrategyCount > 0 ? appController.appText.monitoring_evaluation_pending_title : appController.appText.no_active_bots_title
                             color: textPrimary
                             font.pixelSize: 17
                             font.bold: true
@@ -2441,8 +2441,8 @@ ApplicationWindow {
                         Text {
                             Layout.fillWidth: true
                             text: appController.registeredStrategyCount > 0
-                                  ? "The bot is stored locally, but no fresh evaluation is available yet. Refresh monitoring after checking your Binance connection."
-                                  : "Create a Grid or Rebalancing Bot in Binance from a READY Action Plan recommendation, then register its real parameters in Coinductor for periodic monitoring."
+                                  ? appController.appText.monitoring_evaluation_pending_detail
+                                  : appController.appText.no_active_bots_detail
                             color: textSecondary
                             font.pixelSize: 12
                             wrapMode: Text.WordWrap
@@ -2451,8 +2451,8 @@ ApplicationWindow {
                         RowLayout {
                             Layout.fillWidth: true
                             Item { Layout.fillWidth: true }
-                            Button { text: "Register active bot"; onClicked: strategyRegistrationDialog.open() }
-                            Button { text: "Open Action Plan"; onClicked: appController.setCurrentPage(3) }
+                            Button { text: appController.appText.register_active_bot_button; onClicked: strategyRegistrationDialog.open() }
+                            Button { text: appController.appText.open_action_plan_button; onClicked: appController.setCurrentPage(3) }
                         }
                     }
                 }
@@ -2475,7 +2475,7 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 3
-                                Text { text: "Next review"; color: textPrimary; font.pixelSize: 17; font.bold: true }
+                                Text { text: appController.appText.next_review_title; color: textPrimary; font.pixelSize: 17; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
                                     text: appController.nextReview.headline || ""
@@ -2493,7 +2493,7 @@ ApplicationWindow {
                                 Text {
                                     id: nextReviewStatus
                                     anchors.centerIn: parent
-                                    text: appController.nextReview.status || "Not scheduled"
+                                    text: appController.nextReview.status || appController.appText.next_review_not_scheduled
                                     color: appController.nextReview.tone === "blocked" ? warning : textPrimary
                                     font.pixelSize: 11
                                     font.bold: true
@@ -2507,18 +2507,18 @@ ApplicationWindow {
                             rowSpacing: 8
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Suggested timing"; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                                Text { Layout.fillWidth: true; text: appController.nextReview.timing || "Not available"; color: textPrimary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                Text { text: appController.appText.next_review_suggested_timing; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                Text { Layout.fillWidth: true; text: appController.nextReview.timing || appController.appText.next_review_not_available; color: textPrimary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Scheduled from latest run"; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                                Text { Layout.fillWidth: true; text: appController.nextReview.scheduledAt || "Not available"; color: textPrimary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                Text { text: appController.appText.next_review_scheduled_from_run; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                Text { Layout.fillWidth: true; text: appController.nextReview.scheduledAt || appController.appText.next_review_not_available; color: textPrimary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                             }
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                Text { text: "Profile review rhythm"; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                                Text { Layout.fillWidth: true; text: appController.nextReview.profileCadence || "Not configured"; color: textPrimary; font.pixelSize: 12; wrapMode: Text.WordWrap }
+                                Text { text: appController.appText.next_review_profile_cadence; color: textSecondary; font.pixelSize: 10; font.bold: true }
+                                Text { Layout.fillWidth: true; text: appController.nextReview.profileCadence || appController.appText.next_review_not_configured; color: textPrimary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                             }
                         }
                         Text {
@@ -2536,10 +2536,10 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 5
-                                Text { text: "Run earlier if"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                Text { text: appController.appText.next_review_run_earlier_if_title; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
-                                    text: "These are optional triggers for refreshing the analysis before the scheduled review. You do not need to make them happen."
+                                    text: appController.appText.next_review_run_earlier_if_description
                                     color: textSecondary
                                     font.pixelSize: 10
                                     wrapMode: Text.WordWrap
@@ -2559,10 +2559,10 @@ ApplicationWindow {
                             ColumnLayout {
                                 Layout.fillWidth: true
                                 spacing: 5
-                                Text { text: "Resolve before rerunning"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                Text { text: appController.appText.next_review_resolve_before_rerun_title; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                 Text {
                                     Layout.fillWidth: true
-                                    text: "These blockers need a manual or funding change. Repeating the same analysis alone will not remove them."
+                                    text: appController.appText.next_review_resolve_before_rerun_description
                                     color: textSecondary
                                     font.pixelSize: 10
                                     wrapMode: Text.WordWrap
@@ -2570,7 +2570,7 @@ ApplicationWindow {
                                 Text {
                                     Layout.fillWidth: true
                                     visible: (appController.nextReview.manualSteps || []).length === 0
-                                    text: "No manual prerequisite. A fresh run can reassess current market conditions."
+                                    text: appController.appText.next_review_no_manual_prerequisite
                                     color: textSecondary
                                     font.pixelSize: 11
                                     wrapMode: Text.WordWrap
@@ -2593,13 +2593,13 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Text {
                                 Layout.fillWidth: true
-                                text: "Based on deterministic output from run " + (appController.nextReview.sourceRun || "-") + ". AI commentary does not control this timing."
+                                text: appController.appText.next_review_ai_disclaimer_prefix + " " + (appController.nextReview.sourceRun || "-") + ". " + appController.appText.next_review_ai_disclaimer_suffix
                                 color: textSecondary
                                 font.pixelSize: 10
                                 wrapMode: Text.WordWrap
                             }
                             Button {
-                                text: "Run analysis now"
+                                text: appController.appText.run_analysis_now_button
                                 enabled: !appController.busy
                                 onClicked: runDialog.open()
                             }
@@ -2633,7 +2633,7 @@ ApplicationWindow {
                                     Layout.fillWidth: true
                                     spacing: 3
                                     Text { text: modelData.name; color: textPrimary; font.pixelSize: 17; font.bold: true }
-                                    Text { text: modelData.type + "  |  Binance ID " + modelData.botId; color: textSecondary; font.pixelSize: 11 }
+                                    Text { text: modelData.type + "  |  " + appController.appText.binance_id_label + " " + modelData.botId; color: textSecondary; font.pixelSize: 11 }
                                 }
                                 Rectangle {
                                     Layout.preferredWidth: Math.max(110, strategyHealth.implicitWidth + 22)
@@ -2674,7 +2674,7 @@ ApplicationWindow {
                                 Text { Layout.fillWidth: true; text: modelData.recommendation; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap; maximumLineCount: 3; elide: Text.ElideRight }
                                 Button {
                                     Layout.preferredWidth: 150
-                                    text: "View details"
+                                    text: appController.appText.view_details_button
                                     onClicked: {
                                         window.activeStrategyItem = modelData
                                         activeStrategyDetailDialog.open()

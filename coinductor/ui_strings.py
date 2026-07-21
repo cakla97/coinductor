@@ -793,6 +793,110 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Review",
         "cs": "Zkontrolovat",
     },
+    "active_strategies_title": {
+        "en": "Active Strategies",
+        "cs": "Aktivní strategie",
+    },
+    "refreshing_status": {
+        "en": "Refreshing...",
+        "cs": "Obnovuji...",
+    },
+    "refresh_monitoring_button": {
+        "en": "Refresh monitoring",
+        "cs": "Obnovit sledování",
+    },
+    "register_active_bot_button": {
+        "en": "Register active bot",
+        "cs": "Registrovat aktivního bota",
+    },
+    "monitoring_evaluation_pending_title": {
+        "en": "Monitoring evaluation pending",
+        "cs": "Vyhodnocení sledování čeká",
+    },
+    "no_active_bots_title": {
+        "en": "No active bots registered",
+        "cs": "Nejsou registrováni žádní aktivní boti",
+    },
+    "monitoring_evaluation_pending_detail": {
+        "en": "The bot is stored locally, but no fresh evaluation is available yet. Refresh monitoring after checking your Binance connection.",
+        "cs": "Bot je uložen lokálně, ale zatím není k dispozici čerstvé vyhodnocení. Obnovte sledování po kontrole připojení k Binance.",
+    },
+    "no_active_bots_detail": {
+        "en": "Create a Grid or Rebalancing Bot in Binance from a READY Action Plan recommendation, then register its real parameters in Coinductor for periodic monitoring.",
+        "cs": "Vytvořte Grid nebo Rebalancing Bota na Binance podle doporučení se stavem READY z Action Plan a poté zaregistrujte jeho skutečné parametry v Coinductoru pro pravidelné sledování.",
+    },
+    "open_action_plan_button": {
+        "en": "Open Action Plan",
+        "cs": "Otevřít Action Plan",
+    },
+    "next_review_title": {
+        "en": "Next review",
+        "cs": "Další kontrola",
+    },
+    "next_review_not_scheduled": {
+        "en": "Not scheduled",
+        "cs": "Není naplánováno",
+    },
+    "next_review_suggested_timing": {
+        "en": "Suggested timing",
+        "cs": "Doporučené načasování",
+    },
+    "next_review_not_available": {
+        "en": "Not available",
+        "cs": "Není k dispozici",
+    },
+    "next_review_scheduled_from_run": {
+        "en": "Scheduled from latest run",
+        "cs": "Naplánováno podle posledního běhu",
+    },
+    "next_review_profile_cadence": {
+        "en": "Profile review rhythm",
+        "cs": "Rytmus kontrol z profilu",
+    },
+    "next_review_not_configured": {
+        "en": "Not configured",
+        "cs": "Není nastaveno",
+    },
+    "next_review_run_earlier_if_title": {
+        "en": "Run earlier if",
+        "cs": "Spusťte dříve, pokud",
+    },
+    "next_review_run_earlier_if_description": {
+        "en": "These are optional triggers for refreshing the analysis before the scheduled review. You do not need to make them happen.",
+        "cs": "Toto jsou volitelné podněty pro obnovení analýzy před naplánovanou kontrolou. Není třeba je záměrně vyvolávat.",
+    },
+    "next_review_resolve_before_rerun_title": {
+        "en": "Resolve before rerunning",
+        "cs": "Vyřešte před opětovným spuštěním",
+    },
+    "next_review_resolve_before_rerun_description": {
+        "en": "These blockers need a manual or funding change. Repeating the same analysis alone will not remove them.",
+        "cs": "Tyto blokátory vyžadují ruční zásah nebo změnu financování. Samotné opakování stejné analýzy je neodstraní.",
+    },
+    "next_review_no_manual_prerequisite": {
+        "en": "No manual prerequisite. A fresh run can reassess current market conditions.",
+        "cs": "Žádný ruční předpoklad. Nový běh může znovu vyhodnotit aktuální tržní podmínky.",
+    },
+    "next_review_ai_disclaimer_prefix": {
+        "en": "Based on deterministic output from run",
+        "cs": "Na základě deterministického výstupu z běhu",
+    },
+    "next_review_ai_disclaimer_suffix": {
+        "en": "AI commentary does not control this timing.",
+        "cs": "Komentář AI toto načasování neřídí.",
+    },
+    "run_analysis_now_button": {
+        "en": "Run analysis now",
+        "cs": "Spustit analýzu nyní",
+    },
+    "binance_id_label": {
+        "en": "Binance ID",
+        "cs": "Binance ID",
+    },
+    "view_details_button": {
+        "en": "View details",
+        "cs": "Zobrazit detail",
+    },
 }
 
 

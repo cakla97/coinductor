@@ -133,13 +133,13 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "I verified that these values match the currently active bot in Binance." in qml
     assert "activeStrategyDetailDialog.open()" in qml
     assert "visible: appController.currentPage === 8" in qml
-    assert 'text: "Next review"' in qml
+    assert "appController.appText.next_review_title" in qml
     assert "appController.nextReview" in qml
-    assert 'text: "Run earlier if"' in qml
-    assert "These are optional triggers for refreshing the analysis" in qml
-    assert 'text: "Resolve before rerunning"' in qml
-    assert "Repeating the same analysis alone will not remove them." in qml
-    assert "AI commentary does not control this timing." in qml
+    assert "appController.appText.next_review_run_earlier_if_title" in qml
+    assert "appController.appText.next_review_run_earlier_if_description" in qml
+    assert "appController.appText.next_review_resolve_before_rerun_title" in qml
+    assert "appController.appText.next_review_resolve_before_rerun_description" in qml
+    assert "appController.appText.next_review_ai_disclaimer_suffix" in qml
     assert "sourceComponent: nextReviewPanelComponent" in qml
     assert "id: appTourOverlay" in qml
     assert "navigationRepeater.itemAt" in qml
@@ -204,6 +204,11 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.legend_ready" in qml
     assert "appController.appText.last_live_trade_label" in qml
     assert 'modelData.primaryLabel || appController.appText.review_button' in qml
+    assert "appController.appText.active_strategies_title" in qml
+    assert "appController.appText.no_active_bots_title" in qml
+    assert "appController.appText.monitoring_evaluation_pending_detail" in qml
+    assert "appController.appText.binance_id_label" in qml
+    assert "appController.appText.view_details_button" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

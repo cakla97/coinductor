@@ -91,7 +91,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "REVIEW_EARN_REDEEM" in qml
     assert "appController.challengeHold" in qml
     assert "appController.manualOverrideSymbols" in qml
-    assert "Challenge this HOLD" in qml
+    assert "appController.appText.challenge_hold_title" in qml
     assert "appController.executeLocalDataReset(codes, deleteConfirm.text)" in qml
     assert "This permanently deletes the selected local files" in qml
     assert "appController.checkBinanceLiveTrading" in qml
@@ -110,7 +110,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "rightPadding: 18" in qml
     assert "Credentials & Safety" not in qml
     assert "appController.appText.live_api_permissions_verified" in qml
-    assert "Last live trade" in qml
+    assert "appController.appText.last_live_trade_label" in qml
     assert "activeActionPlanItem.liveLifecycle.lifecycleSteps" in qml
     assert "contentHeight: actionPlanPageContent.implicitHeight + 72" in qml
     assert "contentHeight: portfolioPageContent.implicitHeight + 72" in qml
@@ -129,7 +129,7 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.updateActiveStrategyStatus(" in qml
     assert "appController.appText.already_applied_status_checkbox" in qml
     assert "OPEN_ACTIVE_STRATEGIES" in qml
-    assert 'text: "Open Active Strategies"' in qml
+    assert "text: appController.appText.open_active_strategies_button" in qml
     assert "appController.appText.verified_matches_bot_checkbox" in qml
     assert "activeStrategyDetailDialog.open()" in qml
     assert "visible: appController.currentPage === 8" in qml
@@ -236,6 +236,11 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.confirm_safety_stage_title" in qml
     assert "appController.appText.confirmation_phrase_prefix" in qml
     assert "appController.appText.change_safety_stage_button" in qml
+    assert "appController.appText.action_note_review_only" in qml
+    assert "appController.appText.guard_title_trade" in qml
+    assert "appController.appText.guard_ready_oco" in qml
+    assert "appController.appText.challenge_hold_description" in qml
+    assert "appController.appText.locked_button_fallback" in qml
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml

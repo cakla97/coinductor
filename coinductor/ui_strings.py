@@ -1333,6 +1333,82 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Change Safety stage",
         "cs": "Změnit Safety stage",
     },
+    "action_detail_fallback_title": {
+        "en": "Action detail",
+        "cs": "Detail akce",
+    },
+    "action_note_trade_resync": {
+        "en": "The current recommendation and the last live trade are separate. Run a fresh analysis to synchronize Binance order and OCO status again.",
+        "cs": "Aktuální doporučení a poslední live obchod jsou oddělené. Spusťte novou analýzu pro opětovnou synchronizaci stavu příkazu a OCO na Binance.",
+    },
+    "action_note_trade_locked": {
+        "en": "Live trade submission is separate from review. It stays locked unless the latest BUY preview, live key, safety stage, and confirmation text all pass.",
+        "cs": "Odeslání live obchodu je oddělené od kontroly. Zůstává uzamčené, dokud neprojdou zároveň poslední BUY náhled, live klíč, safety stage i potvrzovací text.",
+    },
+    "action_note_oco": {
+        "en": "OCO protection is a separate SELL order pair. Submission requires a READY preview and its own explicit confirmation.",
+        "cs": "OCO ochrana je samostatný pár SELL příkazů. Odeslání vyžaduje náhled ve stavu READY a vlastní explicitní potvrzení.",
+    },
+    "action_note_earn_redeem": {
+        "en": "Earn redeem moves funds from Flexible Earn back to Spot so a trade can be funded. Submission requires a READY preview and its own explicit confirmation.",
+        "cs": "Earn redeem přesune prostředky z Flexible Earn zpět na Spot, aby bylo možné obchod financovat. Odeslání vyžaduje náhled ve stavu READY a vlastní explicitní potvrzení.",
+    },
+    "action_note_lifecycle": {
+        "en": "Coinductor detected a lifecycle condition from locally registered parameters. Verify the real bot state in Binance before updating the local record.",
+        "cs": "Coinductor zjistil stav životního cyklu z lokálně registrovaných parametrů. Před aktualizací lokálního záznamu ověřte skutečný stav bota na Binance.",
+    },
+    "action_note_review_only": {
+        "en": "This dialog is review-only. Manual bot setup remains outside automatic desktop submission.",
+        "cs": "Tento dialog je pouze ke kontrole. Ruční nastavení bota zůstává mimo automatické odesílání z desktopové aplikace.",
+    },
+    "guard_title_oco": {
+        "en": "Guarded position protection",
+        "cs": "Zabezpečená ochrana pozice",
+    },
+    "guard_title_earn_redeem": {
+        "en": "Guarded Earn redeem",
+        "cs": "Zabezpečený Earn redeem",
+    },
+    "guard_title_trade": {
+        "en": "Guarded live trade",
+        "cs": "Zabezpečený live obchod",
+    },
+    "guard_ready_oco": {
+        "en": "This will run a fresh validation pass and submit the OCO pair only if the position protection preview is still ready.",
+        "cs": "Toto spustí novou validaci a odešle pár OCO příkazů, pouze pokud je náhled ochrany pozice stále ready.",
+    },
+    "guard_ready_earn_redeem": {
+        "en": "This will run a fresh validation pass and redeem from Flexible Earn only if the preview is still ready.",
+        "cs": "Toto spustí novou validaci a provede redeem z Flexible Earn, pouze pokud je náhled stále ready.",
+    },
+    "guard_ready_trade": {
+        "en": "This will run a fresh validation pass and submit only if the new mainnet preview is still ready.",
+        "cs": "Toto spustí novou validaci a odešle příkaz, pouze pokud je nový mainnet náhled stále ready.",
+    },
+    "live_submit_locked_fallback": {
+        "en": "Live submit is locked.",
+        "cs": "Live odeslání je uzamčené.",
+    },
+    "locked_button_fallback": {
+        "en": "Locked",
+        "cs": "Uzamčeno",
+    },
+    "challenge_hold_title": {
+        "en": "Challenge this HOLD",
+        "cs": "Zpochybnit tento HOLD",
+    },
+    "challenge_hold_description": {
+        "en": "Request a BUY evaluation for a specific allowed symbol instead of accepting HOLD. This does not bypass any check: bankroll, exposure, consensus/RSI/trend, stop-loss, and live-submit confirmation all still apply and can still reject it.",
+        "cs": "Vyžádejte si vyhodnocení BUY pro konkrétní povolený symbol místo přijetí HOLD. Tímto se neobchází žádná kontrola: bankroll, expozice, consensus/RSI/trend, stop-loss i potvrzení live odeslání stále platí a mohou požadavek stále odmítnout.",
+    },
+    "challenge_hold_button": {
+        "en": "Challenge HOLD",
+        "cs": "Zpochybnit HOLD",
+    },
+    "open_active_strategies_button": {
+        "en": "Open Active Strategies",
+        "cs": "Otevřít Active Strategies",
+    },
 }
 
 

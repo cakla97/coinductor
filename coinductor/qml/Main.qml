@@ -4676,7 +4676,7 @@ ApplicationWindow {
 
     Dialog {
         id: actionPlanDetailDialog
-        title: activeActionPlanItem.title || "Action detail"
+        title: activeActionPlanItem.title || appController.appText.action_detail_fallback_title
         modal: true
         anchors.centerIn: parent
         width: Math.min(920, window.width - 96)
@@ -4763,7 +4763,7 @@ ApplicationWindow {
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: border }
                     RowLayout {
                         Layout.fillWidth: true
-                        Text { Layout.fillWidth: true; text: "Last live trade"; color: textPrimary; font.pixelSize: 16; font.bold: true }
+                        Text { Layout.fillWidth: true; text: appController.appText.last_live_trade_label; color: textPrimary; font.pixelSize: 16; font.bold: true }
                         Text {
                             text: activeActionPlanItem.liveLifecycle ? activeActionPlanItem.liveLifecycle.status : ""
                             color: activeActionPlanItem.liveLifecycle && activeActionPlanItem.liveLifecycle.tone === "ready" ? accent : warning
@@ -4843,15 +4843,15 @@ ApplicationWindow {
                         anchors.margins: 12
                         text: activeActionPlanItem.actionCode === "REVIEW_TRADE"
                             ? (activeActionPlanItem.liveLifecycle
-                                ? "The current recommendation and the last live trade are separate. Run a fresh analysis to synchronize Binance order and OCO status again."
-                                : "Live trade submission is separate from review. It stays locked unless the latest BUY preview, live key, safety stage, and confirmation text all pass.")
+                                ? appController.appText.action_note_trade_resync
+                                : appController.appText.action_note_trade_locked)
                             : activeActionPlanItem.actionCode === "REVIEW_OCO"
-                                ? "OCO protection is a separate SELL order pair. Submission requires a READY preview and its own explicit confirmation."
+                                ? appController.appText.action_note_oco
                                 : activeActionPlanItem.actionCode === "REVIEW_EARN_REDEEM"
-                                    ? "Earn redeem moves funds from Flexible Earn back to Spot so a trade can be funded. Submission requires a READY preview and its own explicit confirmation."
+                                    ? appController.appText.action_note_earn_redeem
                                 : activeActionPlanItem.actionCode === "OPEN_ACTIVE_STRATEGIES"
-                                    ? "Coinductor detected a lifecycle condition from locally registered parameters. Verify the real bot state in Binance before updating the local record."
-                                : "This dialog is review-only. Manual bot setup remains outside automatic desktop submission."
+                                    ? appController.appText.action_note_lifecycle
+                                : appController.appText.action_note_review_only
                         color: warning
                         font.pixelSize: 12
                         font.bold: true
@@ -4871,9 +4871,9 @@ ApplicationWindow {
                         anchors.margins: 14
                         spacing: 8
                         Text {
-                            text: activeActionPlanItem.actionCode === "REVIEW_OCO" ? "Guarded position protection"
-                                : activeActionPlanItem.actionCode === "REVIEW_EARN_REDEEM" ? "Guarded Earn redeem"
-                                : "Guarded live trade"
+                            text: activeActionPlanItem.actionCode === "REVIEW_OCO" ? appController.appText.guard_title_oco
+                                : activeActionPlanItem.actionCode === "REVIEW_EARN_REDEEM" ? appController.appText.guard_title_earn_redeem
+                                : appController.appText.guard_title_trade
                             color: textPrimary
                             font.pixelSize: 15
                             font.bold: true
@@ -4882,11 +4882,11 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             text: activeActionPlanItem.submitEnabled === true
                                 ? activeActionPlanItem.actionCode === "REVIEW_OCO"
-                                    ? "This will run a fresh validation pass and submit the OCO pair only if the position protection preview is still ready."
+                                    ? appController.appText.guard_ready_oco
                                     : activeActionPlanItem.actionCode === "REVIEW_EARN_REDEEM"
-                                        ? "This will run a fresh validation pass and redeem from Flexible Earn only if the preview is still ready."
-                                        : "This will run a fresh validation pass and submit only if the new mainnet preview is still ready."
-                                : (activeActionPlanItem.submitBlockedReason || "Live submit is locked.")
+                                        ? appController.appText.guard_ready_earn_redeem
+                                        : appController.appText.guard_ready_trade
+                                : (activeActionPlanItem.submitBlockedReason || appController.appText.live_submit_locked_fallback)
                             color: activeActionPlanItem.submitEnabled === true ? textSecondary : warning
                             font.pixelSize: 12
                             wrapMode: Text.WordWrap
@@ -4895,7 +4895,7 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             Item { Layout.fillWidth: true }
                             Button {
-                                text: activeActionPlanItem.submitEnabled === true ? activeActionPlanItem.submitLabel : "Locked"
+                                text: activeActionPlanItem.submitEnabled === true ? activeActionPlanItem.submitLabel : appController.appText.locked_button_fallback
                                 enabled: activeActionPlanItem.submitEnabled === true && !appController.busy
                                 onClicked: {
                                     if (activeActionPlanItem.actionCode === "REVIEW_OCO") {
@@ -4925,10 +4925,10 @@ ApplicationWindow {
                         anchors.fill: parent
                         anchors.margins: 14
                         spacing: 8
-                        Text { text: "Challenge this HOLD"; color: textPrimary; font.pixelSize: 15; font.bold: true }
+                        Text { text: appController.appText.challenge_hold_title; color: textPrimary; font.pixelSize: 15; font.bold: true }
                         Text {
                             Layout.fillWidth: true
-                            text: "Request a BUY evaluation for a specific allowed symbol instead of accepting HOLD. This does not bypass any check: bankroll, exposure, consensus/RSI/trend, stop-loss, and live-submit confirmation all still apply and can still reject it."
+                            text: appController.appText.challenge_hold_description
                             color: textSecondary
                             font.pixelSize: 12
                             wrapMode: Text.WordWrap
@@ -4942,7 +4942,7 @@ ApplicationWindow {
                                 model: appController.manualOverrideSymbols
                             }
                             Button {
-                                text: appController.busy ? "Running..." : "Challenge HOLD"
+                                text: appController.busy ? appController.appText.running_status : appController.appText.challenge_hold_button
                                 enabled: !appController.busy && appController.manualOverrideSymbols.length > 0
                                 onClicked: {
                                     appController.challengeHold(challengeHoldSymbol.currentText)
@@ -4958,7 +4958,7 @@ ApplicationWindow {
                     visible: activeActionPlanItem.actionCode === "OPEN_ACTIVE_STRATEGIES"
                     Item { Layout.fillWidth: true }
                     Button {
-                        text: "Open Active Strategies"
+                        text: appController.appText.open_active_strategies_button
                         onClicked: {
                             actionPlanDetailDialog.close()
                             appController.setCurrentPage(4)

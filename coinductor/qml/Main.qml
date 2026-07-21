@@ -3413,7 +3413,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 104
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     RowLayout {
@@ -3432,25 +3432,12 @@ ApplicationWindow {
                                 wrapMode: Text.WordWrap
                             }
                         }
-                        Rectangle {
-                            Layout.preferredWidth: 96
-                            Layout.preferredHeight: 30
-                            radius: 5
-                            color: appController.binanceConnectionStatus === "Connected" ? "#17372d"
-                                : appController.binanceConnectionStatus === "Checking" ? "#3a3020"
-                                : appController.binanceConnectionStatus === "Blocked" ? "#3a2226" : panelRaised
-                            border.color: appController.binanceConnectionStatus === "Connected" ? accent
-                                : appController.binanceConnectionStatus === "Checking" ? warning
-                                : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : border
-                            Text {
-                                anchors.centerIn: parent
-                                text: appController.binanceConnectionStatus
-                                color: appController.binanceConnectionStatus === "Connected" ? accent
-                                    : appController.binanceConnectionStatus === "Checking" ? warning
-                                    : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : textSecondary
-                                font.pixelSize: 10
-                                font.bold: true
-                            }
+                        StatusPill {
+                            Layout.alignment: Qt.AlignVCenter
+                            label: appController.binanceConnectionStatus
+                            tone: appController.binanceConnectionStatus === "Connected" ? "success"
+                                : appController.binanceConnectionStatus === "Checking" ? "warning"
+                                : appController.binanceConnectionStatus === "Blocked" ? "danger" : "neutral"
                         }
                         Button {
                             text: appController.checkingConnection ? appController.appText.settings_checking_status : appController.appText.check_readonly_access_button
@@ -3464,7 +3451,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 330
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     ColumnLayout {
@@ -3485,25 +3472,12 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                 }
                             }
-                            Rectangle {
-                                Layout.preferredWidth: 96
-                                Layout.preferredHeight: 30
-                                radius: 5
-                                color: appController.aiProviderHealthStatus === "Connected" ? "#17372d"
-                                    : appController.aiProviderHealthStatus === "Checking" ? "#3a3020"
-                                    : appController.aiProviderHealthStatus === "Blocked" ? "#3a2226" : panelRaised
-                                border.color: appController.aiProviderHealthStatus === "Connected" ? accent
-                                    : appController.aiProviderHealthStatus === "Checking" ? warning
-                                    : appController.aiProviderHealthStatus === "Blocked" ? "#ee6b6e" : border
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: appController.aiProviderHealthStatus
-                                    color: appController.aiProviderHealthStatus === "Connected" ? accent
-                                        : appController.aiProviderHealthStatus === "Checking" ? warning
-                                        : appController.aiProviderHealthStatus === "Blocked" ? "#ee6b6e" : textSecondary
-                                    font.pixelSize: 10
-                                    font.bold: true
-                                }
+                            StatusPill {
+                                Layout.alignment: Qt.AlignVCenter
+                                label: appController.aiProviderHealthStatus
+                                tone: appController.aiProviderHealthStatus === "Connected" ? "success"
+                                    : appController.aiProviderHealthStatus === "Checking" ? "warning"
+                                    : appController.aiProviderHealthStatus === "Blocked" ? "danger" : "neutral"
                             }
                             Button {
                                 text: appController.checkingAiProvider ? appController.appText.settings_checking_status : appController.appText.settings_check_ai_provider_button
@@ -3587,7 +3561,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 285
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     ColumnLayout {
@@ -3647,7 +3621,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 335
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     ColumnLayout {
@@ -3761,7 +3735,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 132
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     ColumnLayout {
@@ -3778,7 +3752,7 @@ ApplicationWindow {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 190
-                    radius: 7
+                    radius: radiusMd
                     color: panel
                     border.color: border
                     ColumnLayout {

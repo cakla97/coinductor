@@ -1714,8 +1714,12 @@ ApplicationWindow {
             Layout.fillHeight: true
             clip: true
             visible: appController.currentPage === 0
+            contentWidth: availableWidth
+            contentHeight: overviewPageContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
             ColumnLayout {
+                id: overviewPageContent
                 x: 28
                 y: 28
                 width: window.pageContentWidth()
@@ -2980,8 +2984,12 @@ ApplicationWindow {
             Layout.fillHeight: true
             clip: true
             visible: appController.currentPage === 7
+            contentWidth: availableWidth
+            contentHeight: helpGuidesPageContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
             ColumnLayout {
+                id: helpGuidesPageContent
                 x: 28
                 y: 28
                 width: window.pageContentWidth()
@@ -3044,8 +3052,12 @@ ApplicationWindow {
             Layout.fillHeight: true
             clip: true
             visible: appController.currentPage === 1
+            contentWidth: availableWidth
+            contentHeight: liveActionsPageContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
             GridLayout {
+                id: liveActionsPageContent
                 x: 28
                 y: 28
                 width: window.pageContentWidth()
@@ -3331,8 +3343,12 @@ ApplicationWindow {
             Layout.fillHeight: true
             clip: true
             visible: appController.currentPage === 8
+            contentWidth: availableWidth
+            contentHeight: settingsPageContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
             ColumnLayout {
+                id: settingsPageContent
                 x: 28
                 y: 28
                 width: window.pageContentWidth()

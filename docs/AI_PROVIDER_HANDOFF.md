@@ -368,10 +368,41 @@ python -m coinductor.desktop
 python -m trading_agent doctor --config config.example.toml --real-data --ai-commentary
 python -m trading_agent readiness --config config.example.toml
 python -m trading_agent last-report --config config.example.toml
+
+# Build a standalone Windows bundle (PyInstaller, unsigned, onedir)
+python -m pip install -e ".[build]"
+python -m PyInstaller --noconfirm --distpath dist --workpath build packaging/coinductor.spec
+# -> dist/Coinductor/Coinductor.exe
 ```
 
 Do not copy guarded submit commands from `README.md` or `docs/RUNBOOK.md` into the
 terminal without a fresh explicit user request.
+
+## Stage B progress: frozen build data directory
+
+`coinductor/paths.py` (`resolve_data_dir()`/`bootstrap_data_dir()`) and
+`coinductor/desktop.py::main()` now redirect a **frozen** build (PyInstaller sets
+`sys.frozen`) to `%LOCALAPPDATA%\Coinductor` (or `COINDUCTOR_DATA_DIR` if set) before
+any service is constructed, by `os.chdir()`-ing there once at startup. Every existing
+CWD-relative default across ~15 classes (`.env`, `state/*.toml`,
+`config.example.toml`, `work/trading_agent.sqlite3`, `outputs/reports`,
+`research/notes`, `research/requests`) then resolves correctly without having been
+touched individually. Dev/test runs are unaffected: `resolve_data_dir()` returns
+`None` unless `sys.frozen` is set, so `python -m coinductor.desktop` from a source
+checkout behaves exactly as before.
+
+`packaging/run_coinductor.py` + `packaging/coinductor.spec` build a onedir,
+unsigned, windowed (`console=False`) bundle. Verified end-to-end outside the repo
+directory: launches without a crash or QML error, and `bootstrap_data_dir()`
+correctly creates `state/`, `work/`, `outputs/reports/`, `research/{notes,requests}/`
+and seeds `config.example.toml` from the bundled template on first run. One harmless
+PyInstaller warning about a missing `Qt/labs/assetdownloader` plugin DLL — that QML
+module isn't used anywhere in `Main.qml`.
+
+Not done yet: Inno Setup installer wrapper (Start Menu shortcut, uninstaller — the
+onedir bundle above is not itself an installer), code signing, credential storage
+(`.env` is still plaintext), and public-default cleanup of `config.example.toml`'s
+personal values before any GitHub release.
 
 ## Offscreen QML Screenshot Verification
 

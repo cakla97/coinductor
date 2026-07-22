@@ -5641,20 +5641,20 @@ ApplicationWindow {
             }
         }
         Rectangle {
-            x: appLogo.markCx + appLogo.ringRadius * 0.18
-            y: appLogo.markCy - appLogo.ringRadius * 0.78
             width: Math.max(1.1, appLogo.ringStroke * 0.55)
-            height: appLogo.ringRadius * 1.56
+            height: appLogo.ringRadius * 2.5
             radius: width / 2
             color: "#09110e"
+            x: appLogo.markCx - appLogo.ringRadius * 0.34 - width / 2
+            y: appLogo.markCy - height / 2
         }
         Rectangle {
-            x: appLogo.markCx + appLogo.ringRadius * 0.62
-            y: appLogo.markCy - appLogo.ringRadius * 0.78
             width: Math.max(1.1, appLogo.ringStroke * 0.55)
-            height: appLogo.ringRadius * 1.56
+            height: appLogo.ringRadius * 2.5
             radius: width / 2
             color: "#09110e"
+            x: appLogo.markCx + appLogo.ringRadius * 0.34 - width / 2
+            y: appLogo.markCy - height / 2
         }
     }
 

@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
-import QtQuick.Shapes
 import QtQuick.Dialogs as PlatformDialogs
 
 ApplicationWindow {
@@ -5622,23 +5621,22 @@ ApplicationWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             y: appLogo.size * 0.32
         }
-        Shape {
+        Canvas {
+            id: ringCanvas
             anchors.fill: parent
-            antialiasing: true
-            ShapePath {
-                strokeWidth: appLogo.ringStroke
-                strokeColor: "#09110e"
-                fillColor: "transparent"
-                capStyle: ShapePath.RoundCap
-                PathAngleArc {
-                    centerX: appLogo.markCx
-                    centerY: appLogo.markCy
-                    radiusX: appLogo.ringRadius
-                    radiusY: appLogo.ringRadius
-                    startAngle: 40
-                    sweepAngle: 280
-                }
+            renderStrategy: Canvas.Immediate
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.reset()
+                ctx.lineWidth = appLogo.ringStroke
+                ctx.strokeStyle = "#09110e"
+                ctx.lineCap = "round"
+                ctx.beginPath()
+                ctx.arc(appLogo.markCx, appLogo.markCy, appLogo.ringRadius,
+                         40 * Math.PI / 180, 320 * Math.PI / 180, false)
+                ctx.stroke()
             }
+            Component.onCompleted: requestPaint()
         }
         Rectangle {
             width: Math.max(1.1, appLogo.ringStroke * 0.55)

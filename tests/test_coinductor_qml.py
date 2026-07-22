@@ -270,6 +270,9 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "contentHeight: helpGuidesPageContent.implicitHeight + 72" in qml
     assert "contentHeight: liveActionsPageContent.implicitHeight + 72" in qml
     assert "contentHeight: settingsPageContent.implicitHeight + 72" in qml
+    assert "component AppLogo: Item" in qml
+    assert 'text: "C"' not in qml
+    assert qml.count("AppLogo {") == 2
     assert "property int radiusMd" in qml
     assert "property int spacingLg" in qml
     assert "appController.wizardText.welcome_title" in qml

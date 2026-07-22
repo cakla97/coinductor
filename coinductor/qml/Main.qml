@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Material
 import QtQuick.Layouts
+import QtQuick.Shapes
 import QtQuick.Dialogs as PlatformDialogs
 
 ApplicationWindow {
@@ -350,18 +351,10 @@ ApplicationWindow {
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 14
-                    Rectangle {
+                    AppLogo {
                         Layout.preferredWidth: 46
                         Layout.preferredHeight: 46
-                        radius: radiusSm
-                        color: accent
-                        Text {
-                            anchors.centerIn: parent
-                            text: "C"
-                            color: "#09110e"
-                            font.pixelSize: 26
-                            font.bold: true
-                        }
+                        size: 46
                     }
                     ColumnLayout {
                         Layout.fillWidth: true
@@ -1588,18 +1581,8 @@ ApplicationWindow {
                 RowLayout {
                     Layout.bottomMargin: spacingXl
                     spacing: spacingMd
-                    Rectangle {
-                        width: 38
-                        height: 38
-                        radius: radiusSm
-                        color: accent
-                        Text {
-                            anchors.centerIn: parent
-                            text: "C"
-                            color: "#09110e"
-                            font.pixelSize: 22
-                            font.bold: true
-                        }
+                    AppLogo {
+                        size: 38
                     }
                     Column {
                         Text { text: appController.appText.app_title; color: textPrimary; font.pixelSize: 19; font.bold: true }
@@ -5610,6 +5593,68 @@ ApplicationWindow {
             ToolTip.visible: parent.helpText.length > 0 && containsMouse
             ToolTip.text: parent.helpText
             ToolTip.delay: 300
+        }
+    }
+
+    component AppLogo: Item {
+        id: appLogo
+        property int size: 38
+        implicitWidth: size
+        implicitHeight: size
+        readonly property real markCx: size * 0.5
+        readonly property real markCy: size * 0.46
+        readonly property real ringRadius: size * 0.23
+        readonly property real ringStroke: size * 0.09
+
+        Rectangle {
+            width: appLogo.size
+            height: appLogo.size * 0.62
+            radius: appLogo.size * 0.26
+            color: accent
+            anchors.top: parent.top
+        }
+        Rectangle {
+            width: appLogo.size * 0.72
+            height: appLogo.size * 0.72
+            radius: appLogo.size * 0.16
+            color: accent
+            rotation: 45
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: appLogo.size * 0.32
+        }
+        Shape {
+            anchors.fill: parent
+            antialiasing: true
+            ShapePath {
+                strokeWidth: appLogo.ringStroke
+                strokeColor: "#09110e"
+                fillColor: "transparent"
+                capStyle: ShapePath.RoundCap
+                PathAngleArc {
+                    centerX: appLogo.markCx
+                    centerY: appLogo.markCy
+                    radiusX: appLogo.ringRadius
+                    radiusY: appLogo.ringRadius
+                    startAngle: 40
+                    sweepAngle: 280
+                }
+            }
+        }
+        Rectangle {
+            x: appLogo.markCx + appLogo.ringRadius * 0.18
+            y: appLogo.markCy - appLogo.ringRadius * 0.78
+            width: Math.max(1.1, appLogo.ringStroke * 0.55)
+            height: appLogo.ringRadius * 1.56
+            radius: width / 2
+            color: "#09110e"
+        }
+        Rectangle {
+            x: appLogo.markCx + appLogo.ringRadius * 0.62
+            y: appLogo.markCy - appLogo.ringRadius * 0.78
+            width: Math.max(1.1, appLogo.ringStroke * 0.55)
+            height: appLogo.ringRadius * 1.56
+            radius: width / 2
+            color: "#09110e"
         }
     }
 

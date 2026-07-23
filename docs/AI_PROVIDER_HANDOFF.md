@@ -373,6 +373,10 @@ python -m trading_agent last-report --config config.example.toml
 python -m pip install -e ".[build]"
 python -m PyInstaller --noconfirm --distpath dist --workpath build packaging/coinductor.spec
 # -> dist/Coinductor/Coinductor.exe
+
+# Wrap the bundle into a per-user installer (needs Inno Setup 6; ISCC.exe)
+& "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe" packaging\coinductor.iss
+# -> dist/installer/Coinductor-0.1.0-setup.exe
 ```
 
 Do not copy guarded submit commands from `README.md` or `docs/RUNBOOK.md` into the
@@ -399,10 +403,21 @@ and seeds `config.example.toml` from the bundled template on first run. One harm
 PyInstaller warning about a missing `Qt/labs/assetdownloader` plugin DLL — that QML
 module isn't used anywhere in `Main.qml`.
 
-Not done yet: Inno Setup installer wrapper (Start Menu shortcut, uninstaller — the
-onedir bundle above is not itself an installer), code signing, credential storage
-(`.env` is still plaintext), and public-default cleanup of `config.example.toml`'s
-personal values before any GitHub release.
+`packaging/coinductor.iss` wraps the onedir bundle into a **per-user** installer
+(`PrivilegesRequired=lowest`, so no admin/UAC — installs to `%LOCALAPPDATA%\Programs\
+Coinductor`, matches the local-first data dir) with a Start Menu shortcut, optional
+desktop icon, and an uninstaller. Compile it with Inno Setup 6's `ISCC.exe`; output is
+`dist/installer/Coinductor-<version>-setup.exe` (~114 MB, unsigned). Verified
+end-to-end: silent install (`/VERYSILENT`) → 3027 files + uninstaller present →
+installed exe launches and bootstraps its data dir → silent uninstall removes the
+install directory cleanly. Note: the destination path must stay reasonably short —
+PySide6/QML files nest deeply, so an install dir already ~120+ chars long overflows
+`MAX_PATH` and rolls the install back (`MoveFile failed; code 3`); the default
+`%LOCALAPPDATA%\Programs\Coinductor` is short enough.
+
+Not done yet: code signing (SmartScreen warns on first run until an EV/OV cert is
+added), credential storage (`.env` is still plaintext), and public-default cleanup of
+`config.example.toml`'s personal values before any GitHub release.
 
 ## Offscreen QML Screenshot Verification
 

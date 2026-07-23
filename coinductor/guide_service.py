@@ -1,9 +1,19 @@
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 
-ASSET_DIR = Path(__file__).resolve().parent / "assets" / "guides"
+def _asset_dir() -> Path:
+    # In a PyInstaller build the assets are bundled under _MEIPASS; in a source
+    # checkout they sit next to this module.
+    base = getattr(sys, "_MEIPASS", None)
+    if base:
+        return Path(base) / "coinductor" / "assets" / "guides"
+    return Path(__file__).resolve().parent / "assets" / "guides"
+
+
+ASSET_DIR = _asset_dir()
 
 
 def _image(name: str, caption: str) -> dict[str, str]:

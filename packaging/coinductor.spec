@@ -9,6 +9,7 @@ a = Analysis(
     binaries=[],
     datas=[
         (str(project_root / "coinductor" / "qml"), "coinductor/qml"),
+        (str(project_root / "coinductor" / "assets" / "guides"), "coinductor/assets/guides"),
         (str(project_root / "coinductor" / "coinductor.ico"), "coinductor"),
         (str(project_root / "config.example.toml"), "."),
     ],

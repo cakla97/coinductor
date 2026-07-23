@@ -29,7 +29,7 @@ include = ["trading_agent*", "coinductor*"]
 exclude = ["outputs*", "research*", "state*", "work*", "tests*"]
 
 [tool.setuptools.package-data]
-coinductor = ["qml/*.qml", "coinductor.ico", "coinductor.png"]
+coinductor = ["qml/*.qml", "assets/guides/*", "coinductor.ico", "coinductor.png"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

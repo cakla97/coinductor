@@ -1,10 +1,27 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 from pathlib import Path
 import tomllib
 
 from .asset_policy import apply_asset_policy_overrides
+
+
+def default_config_path() -> str:
+    """Config file to load when a caller does not specify one.
+
+    Prefers a local, gitignored ``config.toml`` (personal settings) and
+    falls back to the tracked, neutral ``config.example.toml`` template.
+    ``COINDUCTOR_CONFIG`` overrides both. Resolved relative to the current
+    working directory, so it honors the frozen build's data-dir chdir.
+    """
+    override = os.environ.get("COINDUCTOR_CONFIG")
+    if override:
+        return override
+    if Path("config.toml").exists():
+        return "config.toml"
+    return "config.example.toml"
 
 
 @dataclass(frozen=True)

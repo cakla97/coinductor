@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
-from trading_agent.config import load_config
+from trading_agent.config import default_config_path, load_config
 from trading_agent.grid_registry import GridRegistry
 from trading_agent.models import ActiveGridBot, ActiveRebalancingBot
 from trading_agent.rebalancing_registry import RebalancingRegistry
@@ -18,8 +18,8 @@ class StrategyRegistrationResult:
 
 
 class StrategyRegistrationService:
-    def __init__(self, config_path: Path | str = "config.example.toml"):
-        self.config_path = Path(config_path)
+    def __init__(self, config_path: Path | str | None = None):
+        self.config_path = Path(config_path or default_config_path())
 
     def grid_symbols(self) -> tuple[str, ...]:
         if not self.config_path.exists():

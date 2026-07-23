@@ -1,12 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
+
+from trading_agent.config import default_config_path
 
 
 @dataclass(frozen=True)
 class RunOptions:
-    config_path: str = "config.example.toml"
+    config_path: str = field(default_factory=default_config_path)
     data_mode: str = "REAL"
     ai_summary: bool = True
     ai_proposals: bool = False

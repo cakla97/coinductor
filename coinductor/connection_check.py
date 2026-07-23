@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from trading_agent.binance_client import BinanceApiError, BinanceClient
-from trading_agent.config import load_config
+from trading_agent.config import default_config_path, load_config
 from trading_agent.env import load_env_file
 
 from .models import ConnectionCheckResult
@@ -12,10 +12,10 @@ from .models import ConnectionCheckResult
 class ConnectionCheckService:
     def __init__(
         self,
-        config_path: str | Path = "config.example.toml",
+        config_path: str | Path | None = None,
         env_path: str | Path = ".env",
     ):
-        self.config_path = Path(config_path)
+        self.config_path = Path(config_path or default_config_path())
         self.env_path = Path(env_path)
 
     def check_binance_read_only(self) -> ConnectionCheckResult:
@@ -39,10 +39,10 @@ class ConnectionCheckService:
 class LiveTradingCheckService:
     def __init__(
         self,
-        config_path: str | Path = "config.example.toml",
+        config_path: str | Path | None = None,
         env_path: str | Path = ".env",
     ):
-        self.config_path = Path(config_path)
+        self.config_path = Path(config_path or default_config_path())
         self.env_path = Path(env_path)
 
     def check_binance_live_trading(self) -> ConnectionCheckResult:
@@ -69,10 +69,10 @@ class LiveTradingCheckService:
 class TestnetCheckService:
     def __init__(
         self,
-        config_path: str | Path = "config.example.toml",
+        config_path: str | Path | None = None,
         env_path: str | Path = ".env",
     ):
-        self.config_path = Path(config_path)
+        self.config_path = Path(config_path or default_config_path())
         self.env_path = Path(env_path)
 
     def check_binance_testnet(self) -> ConnectionCheckResult:

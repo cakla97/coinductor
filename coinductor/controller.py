@@ -7,7 +7,7 @@ from uuid import uuid4
 from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication, QImageReader
 
-from trading_agent.config import load_config
+from trading_agent.config import default_config_path, load_config
 from trading_agent.storage import Storage
 
 from .ai_provider import AiProviderService
@@ -399,7 +399,7 @@ class AppController(QObject):
         self._first_portfolio_deployment_progress: list[dict[str, object]] = self._load_first_portfolio_progress()
         self._guides = GuideService().list_guides()
         try:
-            self._manual_override_symbols = load_config("config.example.toml").allowed_symbols
+            self._manual_override_symbols = load_config(default_config_path()).allowed_symbols
         except Exception:
             self._manual_override_symbols = []
         self._local_data_reset_snapshot = LocalDataResetService().preview()
@@ -2501,7 +2501,7 @@ class AppController(QObject):
 
     def _load_first_portfolio_progress(self) -> list[dict[str, object]]:
         try:
-            config = load_config("config.example.toml")
+            config = load_config(default_config_path())
             return Storage(config.database_path).get_first_portfolio_progress()
         except Exception:
             return []

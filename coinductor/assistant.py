@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from trading_agent.binance_client import BinanceApiError, BinanceClient
-from trading_agent.config import load_config
+from trading_agent.config import default_config_path, load_config
 from trading_agent.env import load_env_file
 
 from .ai_provider import AiProviderService
@@ -307,8 +307,8 @@ class MarketDataAssistant:
         "co dela", "trend", "kurz", "hodnota", "how much is",
     )
 
-    def __init__(self, config_path: str = "config.example.toml"):
-        self.config_path = config_path
+    def __init__(self, config_path: str | None = None):
+        self.config_path = config_path or default_config_path()
 
     def answer(self, question: str, snapshot: DesktopSnapshot) -> AssistantResponse | None:
         query = _normalize(question)
@@ -419,11 +419,11 @@ class LocalHelpAssistant:
 class ProviderBackedAssistant:
     def __init__(
         self,
-        config_path: str = "config.example.toml",
+        config_path: str | None = None,
         env_path: str = ".env",
         fallback: LocalHelpAssistant | None = None,
     ):
-        self.config_path = config_path
+        self.config_path = config_path or default_config_path()
         self.env_path = env_path
         self.fallback = fallback or LocalHelpAssistant()
 

@@ -10,7 +10,7 @@ import sys
 import urllib.request
 
 from .binance_client import BinanceApiError, BinanceClient
-from .config import AppConfig, load_config
+from .config import AppConfig, default_config_path, load_config
 from .config_validator import ConfigValidator
 from .env import load_env_file
 from .grid_registry import GridRegistry
@@ -73,33 +73,33 @@ def _build_parser() -> argparse.ArgumentParser:
     _add_common_run_args(run_parser)
 
     doctor_parser = subparsers.add_parser("doctor", help="Check local setup and optional integrations")
-    doctor_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    doctor_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
     doctor_parser.add_argument("--real-data", action="store_true", help="Check Binance API read-only permissions")
     doctor_parser.add_argument("--ai-commentary", action="store_true", help="Check local OpenAI-compatible LLM endpoint")
 
     readiness_parser = subparsers.add_parser("readiness", help="Check blockers before any future mainnet LIVE_CONFIRM mode")
-    readiness_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    readiness_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
 
     last_parser = subparsers.add_parser("last-report", help="Print the latest report path")
-    last_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    last_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
 
     request_parser = subparsers.add_parser("research-request", help="Generate a Binance skills research request")
-    request_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    request_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
     request_parser.add_argument("--real-data", action="store_true", help="Use real Binance read-only data for portfolio context")
     request_parser.add_argument("--mock-data", action="store_true", help="Use mock data for portfolio context")
 
     testnet_account_parser = subparsers.add_parser("testnet-account", help="Check Binance Spot Testnet account access")
-    testnet_account_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    testnet_account_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
 
     testnet_buy_parser = subparsers.add_parser("testnet-market-buy", help="Preview or submit a Spot Testnet market buy")
-    testnet_buy_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    testnet_buy_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
     testnet_buy_parser.add_argument("--symbol", required=True, help="Spot symbol, for example BTCUSDT")
     testnet_buy_parser.add_argument("--quote-amount", required=True, help="USDT quote amount to spend")
     testnet_buy_parser.add_argument("--client-order-id", default="", help="Optional custom client order id")
     testnet_buy_parser.add_argument("--confirm", default="", help="Must equal CONFIRM_TESTNET_ORDER to submit")
 
     testnet_sell_parser = subparsers.add_parser("testnet-market-sell", help="Preview or submit a Spot Testnet market sell")
-    testnet_sell_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    testnet_sell_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
     testnet_sell_parser.add_argument("--symbol", required=True, help="Spot symbol, for example BTCUSDT")
     testnet_sell_parser.add_argument("--quantity", default="", help="Base asset quantity to sell")
     testnet_sell_parser.add_argument("--from-last-buy", action="store_true", help="Use the last filled testnet BUY quantity from local SQLite history")
@@ -107,12 +107,12 @@ def _build_parser() -> argparse.ArgumentParser:
     testnet_sell_parser.add_argument("--confirm", default="", help="Must equal CONFIRM_TESTNET_ORDER to submit")
 
     testnet_symbol_parser = subparsers.add_parser("testnet-symbol", help="Inspect Spot Testnet symbol filters")
-    testnet_symbol_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    testnet_symbol_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
     testnet_symbol_parser.add_argument("--symbol", required=True, help="Spot symbol, for example BTCUSDT")
     testnet_symbol_parser.add_argument("--quote-amount", default="10", help="Quote amount to validate")
 
     order_status_parser = subparsers.add_parser("testnet-order-status", help="Query a Spot Testnet order status")
-    order_status_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    order_status_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
     order_status_parser.add_argument("--symbol", required=True, help="Spot symbol, for example BTCUSDT")
     order_status_parser.add_argument("--order-id", default="", help="Binance orderId")
     order_status_parser.add_argument("--client-order-id", default="", help="Client order id")
@@ -121,7 +121,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "grid-register",
         help="Preview or register a manually created Binance Spot Grid bot",
     )
-    grid_register_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    grid_register_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
     grid_register_parser.add_argument("--name", required=True, help="Unique local grid name")
     grid_register_parser.add_argument("--binance-bot-id", default="", help="Optional Binance bot/strategy id")
     grid_register_parser.add_argument("--symbol", required=True, help="Grid symbol, for example BTCUSDC")
@@ -149,7 +149,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "grid-set-status",
         help="Preview or update local status for a registered grid bot",
     )
-    grid_status_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    grid_status_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
     grid_status_parser.add_argument("--name", required=True, help="Registered local grid name")
     grid_status_parser.add_argument(
         "--status",
@@ -166,7 +166,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "rebalancing-register",
         help="Preview or register a manually created Binance Rebalancing Bot",
     )
-    rebalancing_register_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    rebalancing_register_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
     rebalancing_register_parser.add_argument("--name", required=True, help="Unique local bot name")
     rebalancing_register_parser.add_argument("--binance-bot-id", default="", help="Optional Binance bot/strategy id")
     rebalancing_register_parser.add_argument("--assets", required=True, help="Comma-separated assets in Binance order")
@@ -186,7 +186,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "rebalancing-set-status",
         help="Preview or update local status for a registered Rebalancing Bot",
     )
-    rebalancing_status_parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    rebalancing_status_parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
     rebalancing_status_parser.add_argument("--name", required=True, help="Registered local bot name")
     rebalancing_status_parser.add_argument(
         "--status",
@@ -202,7 +202,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _add_common_run_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--config", default="config.example.toml", help="Path to TOML config")
+    parser.add_argument("--config", default=default_config_path(), help="Path to TOML config")
     parser.add_argument("--real-data", action="store_true", help="Use real Binance read-only data instead of mock data")
     parser.add_argument("--mock-data", action="store_true", help="Force mock data even if config disables it")
     parser.add_argument("--ai-commentary", action="store_true", help="Enable optional local LLM commentary for this run")

@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import urllib.request
 
-from trading_agent.config import load_config
+from trading_agent.config import default_config_path, load_config
 from trading_agent.env import load_env_file
 
 from .models import AiModelDiscoveryResult, AiProviderHealthResult, AiProviderSnapshot
@@ -14,10 +14,10 @@ from .models import AiModelDiscoveryResult, AiProviderHealthResult, AiProviderSn
 class AiProviderService:
     def __init__(
         self,
-        config_path: str | Path = "config.example.toml",
+        config_path: str | Path | None = None,
         env_path: str | Path = ".env",
     ):
-        self.config_path = Path(config_path)
+        self.config_path = Path(config_path or default_config_path())
         self.env_path = Path(env_path)
 
     def inspect(self) -> AiProviderSnapshot:

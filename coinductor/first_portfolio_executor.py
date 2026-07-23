@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal, ROUND_HALF_UP
 
 from trading_agent.binance_client import BinanceApiError
-from trading_agent.config import load_config
+from trading_agent.config import default_config_path, load_config
 from trading_agent.env import load_env_file
 from trading_agent.live_preview import LivePreviewExecutor
 from trading_agent.models import FirstPortfolioTrancheResult, TradeProposal
@@ -25,8 +25,8 @@ class FirstPortfolioExecutor:
     BinanceClient directly for a narrower purpose.
     """
 
-    def __init__(self, config_path: str = "config.example.toml", env_path: str = ".env"):
-        self.config_path = config_path
+    def __init__(self, config_path: str | None = None, env_path: str = ".env"):
+        self.config_path = config_path or default_config_path()
         self.env_path = env_path
 
     def run_tranche(

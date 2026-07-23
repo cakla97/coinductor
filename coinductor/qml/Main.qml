@@ -280,6 +280,14 @@ ApplicationWindow {
         }
     }
 
+    function handleGuideLink(link) {
+        if (link.indexOf("guide:") === 0) {
+            window.openGuide(link.substring(6))
+        } else {
+            Qt.openUrlExternally(link)
+        }
+    }
+
     function canContinueWizard() {
         if (wizardStep === 0)
             return wizardExchange.currentValue === "BINANCE"
@@ -5300,7 +5308,7 @@ ApplicationWindow {
                     font.pixelSize: 13
                     lineHeight: 1.18
                     wrapMode: Text.WordWrap
-                    onLinkActivated: (link) => Qt.openUrlExternally(link)
+                    onLinkActivated: (link) => window.handleGuideLink(link)
                     MouseArea {
                         anchors.fill: parent
                         acceptedButtons: Qt.NoButton

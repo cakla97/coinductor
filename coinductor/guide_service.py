@@ -187,4 +187,172 @@ class GuideService:
                     ]
                 ),
             },
+            {
+                "id": "page-overview",
+                "section": "Using Coinductor",
+                "title": "Overview page",
+                "summary": "Your dashboard: current portfolio state, safety readiness, the latest decision, and recommended next actions.",
+                "body": "<br>".join(
+                    [
+                        "Overview is the first page and summarizes everything at a glance. Nothing here places an order.",
+                        "",
+                        "What you see:",
+                        "- Metric cards: total portfolio value, liquid vs locked balance, and the current risk gate (for example whether the AI proposal is HOLD).",
+                        "- Safety &amp; readiness: the current safety stage and whether guarded live actions are available. See the <a href=\"guide:safety-model\">Safety model</a> guide.",
+                        "- Latest decision: the most recent analysis result and why an action was or was not recommended.",
+                        "- Recommended actions: the prioritized follow-ups produced by the last run.",
+                        "- AI summary: optional plain-language commentary when an AI provider is connected.",
+                        "- Finish setup banner: appears when Binance read-only access is not connected yet, with a button back into setup.",
+                        "",
+                        "What you can do:",
+                        "- Run analysis to refresh all of the above from current data.",
+                        "- Open the detailed report for the full breakdown, or jump to <a href=\"guide:page-action-plan\">Action Plan</a> to act on a recommendation.",
+                        "",
+                        "A run reads data and produces recommendations only. Any live action happens later, on <a href=\"guide:page-live-actions\">Live Actions</a> or <a href=\"guide:page-action-plan\">Action Plan</a>, behind explicit confirmation.",
+                    ]
+                ),
+            },
+            {
+                "id": "page-portfolio",
+                "section": "Using Coinductor",
+                "title": "Portfolio page",
+                "summary": "Full asset inventory with roles, valuations, and manual per-asset role overrides.",
+                "body": "<br>".join(
+                    [
+                        "Portfolio lists every tracked asset with its balance, value, and role. Roles decide what Coinductor is allowed to do with each asset.",
+                        "",
+                        "What you can do:",
+                        "- Review balances and how each asset is valued (assets that cannot be priced are shown as unpriced rather than dropped).",
+                        "- Set a manual role override on an asset when you want to change its eligibility for trading, Grid, rebalancing, funding, or dust conversion.",
+                        "",
+                        "For what each role means and the safe-override rules, see the <a href=\"guide:portfolio-roles\">Portfolio roles</a> guide. Overrides can change eligibility but never disable global risk limits, protected-asset checks, or confirmation gates.",
+                    ]
+                ),
+            },
+            {
+                "id": "page-live-actions",
+                "section": "Using Coinductor",
+                "title": "Live Actions page",
+                "summary": "Safety-stage controls and the live trading key: how Coinductor moves from read-only toward guarded live submit.",
+                "body": "<br>".join(
+                    [
+                        "Live Actions is where the deliberate, staged progression from read-only to guarded live execution happens. Each step is explicit and reversible.",
+                        "",
+                        "What you see:",
+                        "- The current safety stage and controls to progress it (Setup, Read-only connected, Testnet ready, Preview only, Armed, Live enabled).",
+                        "- Live API key management for the separate live trading key (see the <a href=\"guide:binance-live-api\">Binance live trading API</a> guide).",
+                        "- Status pills such as VERIFIED, CONFIGURED, and LOCKED that show what is ready and what is still gated.",
+                        "",
+                        "What you can do:",
+                        "- Advance the safety stage by typing the exact confirmation phrase shown for that step. Progression is backed by deterministic checks, not just a button.",
+                        "- Lock live submit again at any time.",
+                        "",
+                        "Nothing becomes live until you deliberately reach the guarded live stage and confirm each action. See the <a href=\"guide:safety-model\">Safety model</a> guide for the full stage list.",
+                    ]
+                ),
+            },
+            {
+                "id": "page-action-plan",
+                "section": "Using Coinductor",
+                "title": "Action Plan page",
+                "summary": "Turn recommendations into previewed, individually confirmed actions: trades, OCO protection, Earn redeem, and first-portfolio deployment.",
+                "body": "<br>".join(
+                    [
+                        "Action Plan lists the concrete follow-ups from the latest run and opens a detail view for each one. Every money-moving action is preview-first and needs its own typed confirmation.",
+                        "",
+                        "What you can do (each is separately gated):",
+                        "- Preview and, when the safety stage allows, submit a guarded Spot trade.",
+                        "- Add OCO protection (a linked take-profit / stop-loss) to an open position.",
+                        "- Redeem from Flexible Earn as a liquidity step.",
+                        "- Challenge HOLD: ask the risk engine to re-evaluate one allowed symbol for a BUY. It still runs the full deterministic checks and can still reject.",
+                        "- First-portfolio deployment: run one basket asset/tranche at a time when building a portfolio from scratch, on Testnet or mainnet.",
+                        "",
+                        "Every submit requires the exact confirmation phrase for that action and passes bankroll, exposure, stop-loss, kill-switch, and safety-stage checks. See <a href=\"guide:page-live-actions\">Live Actions</a> and the <a href=\"guide:safety-model\">Safety model</a> guide.",
+                    ]
+                ),
+            },
+            {
+                "id": "page-active-strategies",
+                "section": "Using Coinductor",
+                "title": "Active Strategies page",
+                "summary": "Track the Grid and Rebalancing bots you registered locally, with health and next-review status.",
+                "body": "<br>".join(
+                    [
+                        "Coinductor recommends Grid and Rebalancing bot parameters but does not create the bots; you create them in the Binance app and register them here for local tracking.",
+                        "",
+                        "What you can do:",
+                        "- See each registered bot with its health, next-review timing, and whether price is near the configured range.",
+                        "- Update a bot's status to Paused, Stopped, or Closed as you manage it in Binance.",
+                        "",
+                        "Monitoring is based on local registration and market prices, not on Binance's own bot execution telemetry, so treat it as a review aid rather than a live PnL feed.",
+                    ]
+                ),
+            },
+            {
+                "id": "page-run-history",
+                "section": "Using Coinductor",
+                "title": "Run History page",
+                "summary": "Browse past analysis runs and open their reports.",
+                "body": "<br>".join(
+                    [
+                        "Run History is a read-only log of previous analysis runs.",
+                        "",
+                        "What you can do:",
+                        "- See when each run happened, in which mode, and its status.",
+                        "- Open a run's report to review the portfolio state, decisions, and recommendations captured at that time.",
+                        "",
+                        "History is useful for comparing how recommendations and portfolio state change between runs.",
+                    ]
+                ),
+            },
+            {
+                "id": "page-ai-assistant",
+                "section": "Using Coinductor",
+                "title": "AI Assistant page",
+                "summary": "Ask questions about the app, your reports, and portfolio state; attach screenshots. It never executes live actions.",
+                "body": "<br>".join(
+                    [
+                        "The AI Assistant answers questions and can point you to the right screen or guide. It is advisory only: it can never place a trade, redeem Earn, or change a safety gate.",
+                        "",
+                        "What you can do:",
+                        "- Ask how a feature works, what a report section means, or what your current state is.",
+                        "- Attach an image (file or clipboard) to ask about a screenshot.",
+                        "- Reuse and copy earlier messages from the history.",
+                        "",
+                        "Deterministic answers about documented app features come first and work even with no AI provider configured. Connecting a provider adds broader free-form answers; see the <a href=\"guide:local-ai\">Local AI with Ollama</a> and <a href=\"guide:cloud-ai\">Cloud AI API</a> guides. Any action the assistant suggests still requires you to confirm it in the normal guarded flow.",
+                    ]
+                ),
+            },
+            {
+                "id": "page-settings",
+                "section": "Using Coinductor",
+                "title": "Settings page",
+                "summary": "Connection checks, AI provider configuration, language, onboarding profile, privacy &amp; data, and diagnostics.",
+                "body": "<br>".join(
+                    [
+                        "Settings is where you connect services and manage local data. Connection checks only run when you click them.",
+                        "",
+                        "What you can do:",
+                        "- Run the Binance read-only connection check (see the <a href=\"guide:binance-api\">Binance read-only API</a> guide) and the AI provider check, or Configure AI models.",
+                        "- Switch the app language between English and Czech.",
+                        "- Review or re-open your onboarding profile, or replay the app tour.",
+                        "- Privacy &amp; data: Export diagnostics (a sanitized report with no keys or holdings, safe to share for support), Reset onboarding, or Delete local data.",
+                        "",
+                        "Everything here stays local to this machine. Delete local data only removes the files you select and never touches anything outside the app's own folder.",
+                    ]
+                ),
+            },
+            {
+                "id": "page-help-guides",
+                "section": "Using Coinductor",
+                "title": "Help &amp; Guides page",
+                "summary": "Browse every built-in guide, including setup walkthroughs and these per-page explanations.",
+                "body": "<br>".join(
+                    [
+                        "Help &amp; Guides collects all built-in guides in one place: AI and Binance setup walkthroughs, the safety model, portfolio roles, and a guide for each app page.",
+                        "",
+                        "The same guides are also available during onboarding, so you never have to enter the main app to read setup help. Links inside a guide open either an external page (in your browser) or another guide.",
+                    ]
+                ),
+            },
         ]

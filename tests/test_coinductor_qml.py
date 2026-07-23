@@ -222,6 +222,8 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.privacy_data_note" in qml
     assert "appController.appText.export_diagnostics_button" in qml
     assert "appController.exportDiagnosticsBundle()" in qml
+    assert "function handleGuideLink" in qml
+    assert "window.handleGuideLink(link)" in qml
     assert "appController.appText.safety_baseline_title" in qml
     assert "appController.appText.safety_stage_prefix" in qml
     assert "appController.appText.register_bot_dialog_title" in qml

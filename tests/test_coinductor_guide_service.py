@@ -8,7 +8,38 @@ def test_guide_service_exposes_core_setup_guides() -> None:
     assert {"local-ai", "cloud-ai", "binance-api", "binance-live-api", "safety-model", "portfolio-roles"} <= ids
     assert all(guide["title"] for guide in guides)
     assert all(guide["summary"] for guide in guides)
-    assert all("1." in guide["body"] or guide["id"] == "portfolio-roles" for guide in guides)
+    # Setup walkthroughs are numbered step-by-step; portfolio-roles and the
+    # per-page "Using Coinductor" guides are descriptive instead.
+    for guide in guides:
+        if guide["section"] == "Using Coinductor" or guide["id"] == "portfolio-roles":
+            continue
+        assert "1." in guide["body"]
+
+
+def test_guide_service_covers_every_app_page() -> None:
+    ids = {guide["id"] for guide in GuideService().list_guides()}
+
+    assert {
+        "page-overview",
+        "page-portfolio",
+        "page-live-actions",
+        "page-action-plan",
+        "page-active-strategies",
+        "page-run-history",
+        "page-ai-assistant",
+        "page-settings",
+        "page-help-guides",
+    } <= ids
+
+
+def test_internal_guide_cross_links_resolve_to_real_guides() -> None:
+    import re
+
+    guides = GuideService().list_guides()
+    ids = {guide["id"] for guide in guides}
+    for guide in guides:
+        for target in re.findall(r'href="guide:([^"]+)"', guide["body"]):
+            assert target in ids, f"{guide['id']} links to unknown guide '{target}'"
 
 
 def test_cloud_ai_guide_warns_about_subscription_and_api_pricing() -> None:

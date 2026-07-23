@@ -351,7 +351,7 @@ class GuideService:
                 "id": "page-settings",
                 "section": "Using Coinductor",
                 "title": "Settings page",
-                "summary": "Connection checks, AI provider configuration, language, onboarding profile, privacy &amp; data, and diagnostics.",
+                "summary": "Connection checks, AI provider configuration, language, onboarding profile, privacy & data, and diagnostics.",
                 "body": "<br>".join(
                     [
                         "Settings is where you connect services and manage local data. Connection checks only run when you click them.",
@@ -369,7 +369,7 @@ class GuideService:
             {
                 "id": "page-help-guides",
                 "section": "Using Coinductor",
-                "title": "Help &amp; Guides page",
+                "title": "Help & Guides page",
                 "summary": "Browse every built-in guide, including setup walkthroughs and these per-page explanations.",
                 "body": "<br>".join(
                     [

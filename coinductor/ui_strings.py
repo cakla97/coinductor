@@ -1061,6 +1061,10 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Delete local data",
         "cs": "Smazat lokální data",
     },
+    "export_diagnostics_button": {
+        "en": "Export diagnostics",
+        "cs": "Exportovat diagnostiku",
+    },
     "privacy_data_note": {
         "en": "Reset onboarding only changes preferences. Delete local data permanently removes the local files you select; it never touches anything outside this project folder.",
         "cs": "Reset onboardingu mění pouze preference. Delete local data trvale odstraní vybrané lokální soubory; nikdy se nedotkne ničeho mimo tuto složku projektu.",

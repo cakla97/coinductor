@@ -3609,14 +3609,22 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                 }
                             }
-                            Button {
-                                text: appController.appText.reset_onboarding_button
-                                enabled: appController.userProfileConfigured
-                                onClicked: deleteProfileDialog.open()
-                            }
-                            Button {
-                                text: appController.appText.delete_local_data_button
-                                onClicked: localDataResetDialog.open()
+                            Flow {
+                                Layout.preferredWidth: implicitWidth
+                                spacing: 8
+                                Button {
+                                    text: appController.appText.export_diagnostics_button
+                                    onClicked: appController.exportDiagnosticsBundle()
+                                }
+                                Button {
+                                    text: appController.appText.reset_onboarding_button
+                                    enabled: appController.userProfileConfigured
+                                    onClicked: deleteProfileDialog.open()
+                                }
+                                Button {
+                                    text: appController.appText.delete_local_data_button
+                                    onClicked: localDataResetDialog.open()
+                                }
                             }
                         }
                         ListView {

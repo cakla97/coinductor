@@ -21,6 +21,7 @@ from .desktop_store import DesktopStore
 from .env_writer import EnvWriter
 from .first_portfolio_executor import FirstPortfolioExecutor
 from .first_portfolio_planner import FirstPortfolioPlanner
+from .diagnostics_service import DiagnosticsService
 from .guide_service import GuideService
 from .local_data_reset import LocalDataResetService
 from .local_ai_recommender import LocalAiRecommender
@@ -1050,6 +1051,15 @@ class AppController(QObject):
         self._apply_snapshot()
         self.dataChanged.emit()
         return True
+
+    @Slot()
+    def exportDiagnosticsBundle(self) -> None:
+        try:
+            path = DiagnosticsService().write_bundle()
+        except Exception as exc:
+            self.notificationRequested.emit(f"Could not write diagnostics bundle: {type(exc).__name__}")
+            return
+        self.notificationRequested.emit(f"Diagnostics bundle saved to {path}")
 
     @Slot(str, str, str, str, str, bool, bool, float, float)
     def saveGuidedProfile(

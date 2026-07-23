@@ -34,6 +34,8 @@ class GuideService:
                         "Do not enable LLM_VISION_ENABLED just to force a text-only model. That advanced override changes detection only and cannot add image support.",
                         "",
                         "Local AI can explain Coinductor, summarize reports, and help with onboarding. It cannot bypass deterministic safety gates or submit trades by itself.",
+                        "",
+                        "In the app: configure and test the provider on the <a href=\"guide:page-settings\">Settings page</a>, then use it on the <a href=\"guide:page-ai-assistant\">AI Assistant page</a>.",
                     ]
                 ),
                 "images": [
@@ -60,6 +62,8 @@ class GuideService:
                         "5. Paste the API key and run Check AI provider.",
                         "",
                         "Privacy note: selected report, profile, and question context may be sent to the configured provider. Do not use cloud AI if you want all portfolio context to remain on your computer.",
+                        "",
+                        "In the app: set the endpoint, model, and key on the <a href=\"guide:page-settings\">Settings page</a> (Configure AI models), then use it on the <a href=\"guide:page-ai-assistant\">AI Assistant page</a>.",
                     ]
                 ),
                 "warning": "Cloud AI API calls may cost money separately from a normal chat subscription. Set provider-side limits before using it.",
@@ -86,6 +90,8 @@ class GuideService:
                         "8. Paste the key and secret into Coinductor and run Check read-only access.",
                         "",
                         "Trading/write access should use a separate later key after testnet and preview checks. Withdrawals should remain disabled.",
+                        "",
+                        "In the app: run Check read-only access on the <a href=\"guide:page-settings\">Settings page</a>. The inventory it unlocks appears on the <a href=\"guide:page-portfolio\">Portfolio page</a>.",
                     ]
                 ),
                 "images": [
@@ -114,6 +120,8 @@ class GuideService:
                         "10. Paste the live trading key into Coinductor Live Actions. Live submit remains locked until a separate safety stage allows it.",
                         "",
                         "Important: use a separate key from the read-only key. Keep withdrawals disabled forever. Coinductor can store this key locally, but it should not make live submit available until deterministic safety gates and explicit confirmations are enabled.",
+                        "",
+                        "In the app: you paste and manage this key on the <a href=\"guide:page-live-actions\">Live Actions page</a>, and live submit stays locked until you progress the stages in the <a href=\"guide:safety-model\">Safety model</a>.",
                     ]
                 ),
                 "warning": "A live trading key can place/cancel Spot orders if Binance permissions allow it. Keep withdrawals disabled and restrict the key to trusted IPs only.",
@@ -139,6 +147,8 @@ class GuideService:
                         "5. Testnet orders can also be exercised from a terminal for more control, for example: python -m trading_agent testnet-market-buy --config config.example.toml --symbol BTCUSDT --quote-amount 10. See README.md for the full list of Testnet CLI commands.",
                         "",
                         "Testnet is optional but recommended before any real mainnet order: it costs nothing, risks nothing, and exercises the same order-validation and confirmation-string logic used for real trading.",
+                        "",
+                        "In the app: Testnet execution is exercised from the <a href=\"guide:page-action-plan\">Action Plan page</a> (including first-portfolio deployment) once the safety stage reaches Testnet ready.",
                     ]
                 ),
             },
@@ -159,6 +169,8 @@ class GuideService:
                         "5. Guarded live: explicitly enabled workflows can submit actions only after deterministic checks and confirmations.",
                         "",
                         "Coinductor should never enable withdrawals. Loss limits, protected assets, capital caps, and confirmation gates remain deterministic even when AI is connected.",
+                        "",
+                        "In the app: you progress these stages on the <a href=\"guide:page-live-actions\">Live Actions page</a>, and guarded actions are prepared and confirmed on the <a href=\"guide:page-action-plan\">Action Plan page</a>.",
                     ]
                 ),
             },
@@ -184,6 +196,8 @@ class GuideService:
                         "Unclassified: keep visible but do not intentionally assign it to an active role yet.",
                         "",
                         "Manual overrides are available because different users care about different assets. Overrides can change eligibility, but they must not disable global risk limits, loss stops, or confirmation gates.",
+                        "",
+                        "In the app: you set these overrides on the <a href=\"guide:page-portfolio\">Portfolio page</a>.",
                     ]
                 ),
             },

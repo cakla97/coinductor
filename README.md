@@ -695,3 +695,21 @@ Real trading and real redeem are disabled by default. Before enabling anything l
 - restrict API key by IP
 - start with tiny amounts
 - keep `allow_locked_redeem = false`
+
+## License
+
+Copyright (C) 2026 Coinductor
+
+This program is free software: you can redistribute it and/or modify it under the
+terms of the GNU Affero General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later version.
+See [LICENSE](LICENSE) for the full text.
+
+Under the AGPL, anyone who conveys the software or runs a modified version as a
+network service must make the corresponding source available under the same license.
+The copyright holder retains the right to offer the software under separate commercial
+terms.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. It is a personal portfolio tool, not financial advice.

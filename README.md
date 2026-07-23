@@ -32,6 +32,9 @@ edit that copy with your own assets, roles, and limits. When a `config.toml` exi
 desktop app use it automatically, so the `--config` flag below is optional. Set `COINDUCTOR_CONFIG`
 to point at a different file.
 
+For API key permissions, dynamic-IP allowlists, remote/always-on operation, and AI provider
+presets, see [docs/OPERATIONS.md](docs/OPERATIONS.md).
+
 Preferred CLI form:
 
 ```powershell

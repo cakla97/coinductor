@@ -23,8 +23,14 @@ This project is intentionally conservative:
 
 ```powershell
 Copy-Item .env.example .env
-python -m trading_agent --config config.example.toml
+Copy-Item config.example.toml config.toml
+python -m trading_agent
 ```
+
+`config.example.toml` is a neutral, tracked template. Copy it to `config.toml` (gitignored) and
+edit that copy with your own assets, roles, and limits. When a `config.toml` exists, the CLI and
+desktop app use it automatically, so the `--config` flag below is optional. Set `COINDUCTOR_CONFIG`
+to point at a different file.
 
 Preferred CLI form:
 
@@ -266,7 +272,7 @@ Reports include a Spot Testnet Positions section built from local SQLite BUY/SEL
 Open the project folder directly:
 
 ```powershell
-code "D:\CodexWork\binance-trading-agent"
+code path\to\binance-trading-agent
 ```
 
 The repository includes a minimal `.vscode/launch.json` debug profile named
@@ -306,15 +312,16 @@ Portfolio tracking is intentionally broader than trading permissions:
 
 Backup capital sourcing is deliberately conservative. It caps total suggested sourcing per run,
 caps each asset by percentage, and keeps both an absolute and percentage reserve in every source
-asset. Current defaults are 20 USD-like value per run, 15% max from one source asset, 10% max of
+asset. Example defaults are 20 USD-like value per run, 15% max from one source asset, 10% max of
 the whole source basket per run, and at least 70% / 50 USD-like value left in each source asset.
-Current source assets are `SOL` and `WLD`. `BNB` is treated as protected utility capital because
-holding it can be useful for Binance campaigns, Launchpool-style rewards, and small airdrops.
-`BTC`, `ETH`, and `WBETH` remain protected core positions.
+Source assets are configured under `[capital_sourcing].allowed_source_assets`, and protected
+assets under `[capital_sourcing].protected_assets`, so a source or protected role is a policy
+choice rather than a fixed list. A utility asset (for example one useful for exchange campaigns or
+rewards) can be marked protected so it is never sourced.
 
-Small legacy holdings such as `PEPE`, `DOGE`, `ADA`, and `DOT` are tracked explicitly rather than
-treated as random dust. Unclassified assets outside the keep-list can be reported as airdrop/dust
-funding candidates for conversion to USDC, currently recommendation-only.
+Small legacy holdings you list under `tracked_assets` are tracked explicitly rather than treated as
+random dust. Unclassified assets outside the keep-list can be reported as airdrop/dust funding
+candidates for conversion to the base currency, currently recommendation-only.
 
 Assets that cannot be priced are shown as unpriced instead of silently disappearing from totals.
 Binance internal voucher-like assets with configured prefixes, such as `LD`, are reported separately
@@ -347,7 +354,7 @@ steps. Current defaults are intentionally small:
 - default investment: `25 USDC`
 - max grid capital: `50 USDC`
 - only range-friendly conditions are accepted: `NEUTRAL`/`RISK_ON` trend and RSI 45-65
-- no grid recommendations for BNB, SOL, WLD, PEPE, DOGE, ADA, or DOT
+- no grid recommendations for assets outside `[grid_bot].allowed_symbols`
 
 Use `doctor` to validate local setup and config consistency:
 
@@ -610,9 +617,11 @@ Each normal run also creates a recommend-only Binance Rebalancing Bot proposal. 
 - preserves relative weights inside the configured eligible basket,
 - defaults to threshold rebalancing to avoid unnecessary periodic turnover,
 - caps proposed investment by an absolute and portfolio-percentage limit,
-- keeps BNB and other excluded portfolio roles outside the bot,
-- uses WBETH only as a reference for existing ETH exposure while keeping it protected outside the bot,
-- funds the bot's ETH allocation from the separate USDC investment rather than converting WBETH,
+- keeps protected and excluded portfolio roles outside the bot,
+- treats staked/wrapped variants only as a reference for existing exposure while keeping them
+  protected outside the bot,
+- funds the bot's allocation from the separate base-currency investment rather than converting
+  protected assets,
 - stores each recommendation and target basket in SQLite for later comparison.
 
 The advisor never creates the Binance bot or converts protected assets. Use a real-data
@@ -622,18 +631,18 @@ preview to generate parameters from the current portfolio:
 python -m trading_agent run --config config.example.toml --real-data
 ```
 
-The configured Binance minimum is `200 USDC`. Before recommending creation, the
-assistant builds a separate setup funding plan: existing Spot/Flexible USDC first,
-full conversion of configured small legacy holdings, then capped portions of WLD and
-SOL. Any remaining gap stays blocked rather than being taken from protected BTC, ETH,
-WBETH, or BNB.
+The Binance minimum is configured under `[rebalancing_bot].min_investment_usdt`. Before
+recommending creation, the assistant builds a separate setup funding plan: existing Spot/Flexible
+base currency first, full conversion of the configured `full_exit_assets`, then capped portions of
+the configured `reserve_source_assets`. Any remaining gap stays blocked rather than being taken
+from protected assets.
 
-The current mobile-form policy is:
+The suggested mobile-form policy is:
 
-- start from `Equal`, then manually enter the advisor's custom BTC/ETH/SOL weights;
+- start from `Equal`, then manually enter the advisor's custom per-asset weights;
 - do not use `Market Cap`, because it would make the basket follow global market-cap
-  dominance rather than the user's portfolio policy;
-- enable Auto Rebalance `By Ratio` at `10%` for the small MVP allocation;
+  dominance rather than your configured portfolio policy;
+- enable Auto Rebalance `By Ratio` at the configured `[rebalancing_bot].threshold_pct`;
 - leave `Trigger Price`, `Stop Trigger`, and `Sell All Coins on Stop` disabled initially.
 
 For Spot Grid manual setup, choose the quote asset (`USDC`) in the Investment dropdown,

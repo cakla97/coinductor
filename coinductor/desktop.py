@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 
 from PySide6.QtCore import QUrl
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
 from .controller import AppController
@@ -21,6 +21,9 @@ def main() -> int:
     app = QGuiApplication(sys.argv)
     app.setApplicationName("Coinductor")
     app.setOrganizationName("Coinductor")
+    icon_path = Path(__file__).parent / "coinductor.ico"
+    if icon_path.exists():
+        app.setWindowIcon(QIcon(str(icon_path)))
 
     engine = QQmlApplicationEngine()
     controller = AppController(engine)

@@ -9,6 +9,7 @@ a = Analysis(
     binaries=[],
     datas=[
         (str(project_root / "coinductor" / "qml"), "coinductor/qml"),
+        (str(project_root / "coinductor" / "coinductor.ico"), "coinductor"),
         (str(project_root / "config.example.toml"), "."),
     ],
     hiddenimports=[],
@@ -32,6 +33,7 @@ exe = EXE(
     strip=False,
     upx=False,
     console=False,
+    icon=str(project_root / "coinductor" / "coinductor.ico"),
 )
 
 coll = COLLECT(

@@ -22,8 +22,8 @@ max_chars_per_note = 3000
 include_in_ai_commentary = true
 generate_requests = true
 freshness_hours = 24
-request_symbols = ["BTCUSDC", "ETHUSDC", "BNBUSDC", "SOLUSDC", "WLDUSDC"]
-request_assets = ["BTC", "ETH", "WBETH", "BNB", "SOL", "WLD"]
+request_symbols = ["BTCUSDC", "ETHUSDC", "BNBUSDC"]
+request_assets = ["BTC", "ETH", "BNB"]
 
 [market_research]
 enabled = true
@@ -94,7 +94,7 @@ use_oco_when_live = true
 allow_flexible_redeem = true
 allow_locked_redeem = false
 redeem_destination = "SPOT"
-allowed_redeem_assets = ["USDC", "SOL", "WLD"]
+allowed_redeem_assets = ["USDC"]
 auto_redeem_assets = ["USDC"]
 max_redeem_per_run_usdt = 50.0
 max_redeem_per_day_usdt = 100.0
@@ -143,7 +143,10 @@ allow_seed_bootstrap = true
 max_flexible_earn_draw_usdc_per_run = 12.0
 
 [portfolio]
-tracked_assets = ["USDC", "USDT", "BNB", "BTC", "WBETH", "ETH", "SOL", "WLD", "PEPE", "ADA", "DOGE", "DOT"]
+# Replace this example universe with your own assets. Keep stablecoins and
+# core holdings here; add speculative or legacy assets only if you want the
+# agent to see them.
+tracked_assets = ["USDC", "USDT", "BTC", "ETH", "BNB"]
 pricing_quote_assets = ["USDC", "USDT", "FDUSD"]
 ignored_asset_prefixes = ["LD"]
 
@@ -152,19 +155,12 @@ USDC = "STABLE"
 USDT = "STABLE"
 BTC = "CORE"
 ETH = "CORE"
-WBETH = "PROTECTED"
 BNB = "PROTECTED_UTILITY"
-SOL = "CAPITAL_SOURCE"
-WLD = "SPECULATIVE_SOURCE"
-PEPE = "SPECULATIVE_LEGACY"
-DOGE = "SPECULATIVE_LEGACY"
-ADA = "LEGACY_ALT"
-DOT = "LEGACY_ALT"
 
 [dust_sourcing]
 enabled = true
 quote_asset = "USDC"
-exclude_assets = ["USDC", "USDT", "BNB", "BTC", "SOL", "WBETH", "ETH", "WLD", "PEPE", "ADA", "DOGE", "DOT"]
+exclude_assets = ["USDC", "USDT", "BTC", "ETH", "BNB"]
 max_convert_value_usdt_per_run = 10.0
 max_convert_pct_per_asset = 100.0
 min_convert_value_usdt_per_asset = 0.5
@@ -173,8 +169,8 @@ recommend_only = true
 [capital_sourcing]
 enabled = true
 recommend_only = true
-allowed_source_assets = ["SOL", "WLD"]
-protected_assets = ["BTC", "ETH", "WBETH", "BNB"]
+allowed_source_assets = []
+protected_assets = ["BTC", "ETH", "BNB"]
 max_source_value_usdt_per_run = 20.0
 max_source_pct_per_asset = 15.0
 max_total_source_pct_per_run = 10.0
@@ -245,14 +241,12 @@ enabled = true
 mode = "THRESHOLD"
 allocation_method = "CUSTOM"
 auto_rebalance_mode = "BY_RATIO"
-# A 10% drift threshold limits churn and fees for the 200 USDC MVP bot.
+# A higher drift threshold limits churn and fees on small bankrolls.
 threshold_pct = 10.0
 trigger_price_enabled = false
 stop_trigger_enabled = false
 sell_all_coins_on_stop = false
-# WLD stays outside the core bot: threshold rebalancing would systematically buy
-# more of this speculative allocation during sharp declines.
-allowed_assets = ["BTC", "ETH", "SOL"]
+allowed_assets = ["BTC", "ETH"]
 min_assets = 2
 min_asset_value_usdt = 25.0
 min_investment_usdt = 200.0
@@ -260,10 +254,10 @@ max_investment_usdt = 200.0
 max_portfolio_pct = 30.0
 
 [rebalancing_bot.funding]
-# One-time setup funding. Protected BTC/ETH/WBETH/BNB are never included.
-source_priority = ["PEPE", "DOGE", "ADA", "DOT", "WLD", "SOL"]
-full_exit_assets = ["PEPE", "DOGE", "ADA", "DOT"]
-reserve_source_assets = ["WLD", "SOL"]
+# One-time setup funding. Protected assets are never included; list the
+# assets you are willing to sell down to seed the bot, highest priority first.
+source_priority = []
+full_exit_assets = []
+reserve_source_assets = []
 max_source_pct_per_reserve_asset = 15.0
-max_source_pct_wld = 30.0
 min_remaining_value_usdt = 50.0

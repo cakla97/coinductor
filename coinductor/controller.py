@@ -235,6 +235,7 @@ class AppController(QObject):
     safetyChanged = Signal()
     readinessChanged = Signal()
     notificationRequested = Signal(str)
+    openGuideRequested = Signal(str)
     firstPortfolioPlanChanged = Signal()
     onboardingWizardChanged = Signal()
     appTourChanged = Signal()
@@ -1552,6 +1553,10 @@ class AppController(QObject):
                 self.notificationRequested.emit("Page opened from the AI Assistant.")
         elif action_type == "OPEN_REPORT":
             self.openReport()
+        elif action_type == "OPEN_GUIDE":
+            guide_id = str(action.get("guide_id", ""))
+            if guide_id:
+                self.openGuideRequested.emit(guide_id)
         elif action_type == "RUN_READ_ONLY_ANALYSIS":
             self._start_analysis(
                 "REAL",

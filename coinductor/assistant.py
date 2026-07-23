@@ -16,6 +16,7 @@ from trading_agent.config import default_config_path, load_config
 from trading_agent.env import load_env_file
 
 from .ai_provider import AiProviderService
+from .guide_service import GuideService
 from .models import DesktopSnapshot
 from .ui_knowledge import UiKnowledgeService, is_czech
 
@@ -24,6 +25,28 @@ from .ui_knowledge import UiKnowledgeService, is_czech
 class AssistantResponse:
     text: str
     proposed_action: dict[str, object] | None = None
+
+
+def _open_guide_action(guide_id: str, czech: bool) -> dict[str, object] | None:
+    if not guide_id:
+        return None
+    title = next(
+        (guide["title"] for guide in GuideService().list_guides() if guide["id"] == guide_id),
+        "",
+    )
+    if not title:
+        return None
+    return {
+        "type": "OPEN_GUIDE",
+        "title": (f"Otevřít návod: {title}" if czech else f"Open guide: {title}"),
+        "description": (
+            "Otevře podrobný návod k této části aplikace v sekci Help & Guides."
+            if czech
+            else "Opens the detailed guide for this part of the app in Help & Guides."
+        ),
+        "confirmLabel": "Otevřít návod" if czech else "Open guide",
+        "guide_id": guide_id,
+    }
 
 
 class ContextualHelpService:
@@ -467,9 +490,11 @@ class ProviderBackedAssistant:
         if contextual is not None:
             proposal = ContextualHelpService().proposed_action(question, app_context or {})
             return AssistantResponse(contextual, proposal)
-        ui_answer = UiKnowledgeService().answer(question)
+        knowledge = UiKnowledgeService()
+        ui_answer = knowledge.answer(question)
         if ui_answer is not None:
-            return AssistantResponse(ui_answer)
+            action = _open_guide_action(knowledge.matched_guide_id(question), is_czech(question))
+            return AssistantResponse(ui_answer, action)
         return AssistantResponse(self.answer(question, snapshot, app_context, conversation, image_path))
 
     def _provider_answer(

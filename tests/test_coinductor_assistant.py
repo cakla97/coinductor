@@ -713,6 +713,32 @@ def test_completed_answer_is_immediately_visible_in_chat_history(tmp_path, monke
     assert controller.assistantHistory[0]["title"] == "What does Refresh checks do?"
 
 
+def test_matched_guide_id_uses_explicit_override() -> None:
+    service = UiKnowledgeService()
+
+    assert service.matched_guide_id("how do i create an api key") == "binance-api"
+    assert service.matched_guide_id("what is testnet for") == "binance-testnet"
+
+
+def test_matched_guide_id_maps_page_to_page_guide() -> None:
+    service = UiKnowledgeService()
+
+    assert service.matched_guide_id("what does prepare trade preview do") == "page-live-actions"
+
+
+def test_respond_offers_open_guide_action_for_documented_topic(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    assistant = ProviderBackedAssistant(config_path="config.toml", env_path=str(tmp_path / ".env"))
+
+    response = assistant.respond("how do i create an api key", _snapshot())
+
+    assert response.proposed_action is not None
+    assert response.proposed_action["type"] == "OPEN_GUIDE"
+    assert response.proposed_action["guide_id"] == "binance-api"
+
+
 def _snapshot() -> DesktopSnapshot:
     run = DesktopRunResult(
         run_id=42,

@@ -11,6 +11,23 @@ class UiKnowledgeEntry:
     aliases: tuple[str, ...]
     english: str
     czech: str
+    guide_id: str = ""
+
+
+# Maps a knowledge entry's page to the guide that documents it. Ordered so a
+# specific page wins over "Settings" in compound page strings such as
+# "Live Actions and Settings".
+_PAGE_GUIDE_MAP: tuple[tuple[str, str], ...] = (
+    ("Overview", "page-overview"),
+    ("Portfolio", "page-portfolio"),
+    ("Live Actions", "page-live-actions"),
+    ("Action Plan", "page-action-plan"),
+    ("Active Strategies", "page-active-strategies"),
+    ("Run History", "page-run-history"),
+    ("AI Assistant", "page-ai-assistant"),
+    ("Help & Guides", "page-help-guides"),
+    ("Settings", "page-settings"),
+)
 
 
 class UiKnowledgeService:
@@ -31,6 +48,17 @@ class UiKnowledgeService:
     def match(self, question: str) -> UiKnowledgeEntry | None:
         matches = self.matches(question)
         return matches[0] if len(matches) == 1 else None
+
+    def matched_guide_id(self, question: str) -> str:
+        entry = self.match(question)
+        if entry is None:
+            return ""
+        if entry.guide_id:
+            return entry.guide_id
+        for keyword, guide_id in _PAGE_GUIDE_MAP:
+            if keyword in entry.page:
+                return guide_id
+        return ""
 
     def matches(self, question: str) -> tuple[UiKnowledgeEntry, ...]:
         query = _normalize(question)
@@ -209,6 +237,7 @@ UI_KNOWLEDGE = (
         ),
         "In Binance, open API Management under your account, create a new key, and label it. For the read-only key used in early setup, leave Enable Spot & Margin Trading off; Coinductor only needs read permissions to analyze your portfolio. A separate live-trading key with trading enabled is only needed later, once you deliberately choose to allow guarded live actions. Never enable withdrawals on any key used with Coinductor. Restrict the key to your IP address if your connection allows it, then paste the key/secret into the matching wizard field; Coinductor saves them to your local .env file only.",
         "V Binance otevřete API Management ve svém účtu, vytvořte nový klíč a pojmenujte jej. Pro read-only klíč použitý v úvodním nastavení nechte Enable Spot & Margin Trading vypnuté; Coinductor pro analýzu portfolia potřebuje jen oprávnění ke čtení. Samostatný live-trading klíč s povoleným obchodováním je potřeba až později, pokud se vědomě rozhodnete povolit zabezpečené live akce. U žádného klíče používaného s Coinductorem nikdy nepovolujte výběry (withdrawals). Pokud to vaše připojení umožňuje, omezte klíč na vaši IP adresu a poté klíč/secret vložte do odpovídajícího pole ve wizardu; Coinductor je ukládá pouze do lokálního souboru .env.",
+        guide_id="binance-api",
     ),
     UiKnowledgeEntry(
         "Wizard: automation level meaning",
@@ -251,6 +280,7 @@ UI_KNOWLEDGE = (
         ),
         "For local AI, install Ollama from ollama.com, then pull a text model with 'ollama pull <model>' in a terminal, e.g. qwen3:14b for GPUs with about 16 GB VRAM, or a smaller tag such as qwen3:4b on more limited hardware. A vision model such as qwen3-vl:8b is optional and only needed if you want to attach screenshots to AI Assistant questions. Use Scan hardware in this step for a hardware-based suggestion, or Detect installed models once Ollama is running to see exactly which tags it already reports, then Save local AI and Check AI provider to verify the endpoint.",
         "Pro lokální AI nainstalujte Ollamu z ollama.com a poté v terminálu stáhněte textový model příkazem 'ollama pull <model>', např. qwen3:14b pro GPU s cca 16 GB VRAM, nebo menší variantu jako qwen3:4b na slabším hardwaru. Vision model jako qwen3-vl:8b je volitelný a potřebný jen pokud chcete k dotazům do AI Assistant přikládat screenshoty. V tomto kroku použijte Scan hardware pro doporučení podle hardwaru, nebo po spuštění Ollamy Detect installed models pro zjištění, jaké tagy skutečně hlásí, a poté Save local AI a Check AI provider pro ověření endpointu.",
+        guide_id="local-ai",
     ),
     UiKnowledgeEntry(
         "Wizard: what is Spot Testnet for",
@@ -261,6 +291,7 @@ UI_KNOWLEDGE = (
         ),
         "Binance Spot Testnet lets you rehearse guarded actions, including first-portfolio tranches, with virtual funds on Binance's own test exchange before ever touching real money. It is optional but recommended: a Testnet credential pair is separate from your real Binance account and never places a real order regardless of the app's Safety stage. Skipping it does not block setup; it only means your first guarded rehearsal happens on mainnet preview instead.",
         "Binance Spot Testnet umožňuje si nanečisto vyzkoušet zabezpečené akce, včetně tranší prvního portfolia, s virtuálními prostředky na testovací burze Binance dřív, než sáhnete na skutečné peníze. Je volitelný, ale doporučený: pár přístupových údajů pro Testnet je oddělený od skutečného účtu Binance a nikdy nezadá skutečný příkaz bez ohledu na Safety stage aplikace. Přeskočení tohoto kroku nastavení nijak neblokuje; znamená jen, že první zabezpečenou zkoušku uděláte rovnou přes mainnet preview.",
+        guide_id="binance-testnet",
     ),
     UiKnowledgeEntry(
         "Replay app tour",

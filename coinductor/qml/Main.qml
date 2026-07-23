@@ -211,6 +211,9 @@ ApplicationWindow {
         function onNotificationRequested(message) {
             window.showToast(message)
         }
+        function onOpenGuideRequested(guideId) {
+            window.openGuide(guideId)
+        }
     }
 
     function styleHelp(value) {

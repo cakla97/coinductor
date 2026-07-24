@@ -13,11 +13,19 @@ from __future__ import annotations
 
 
 SERVICE_STRINGS: dict[str, dict[str, str]] = {
-    # --- idle status defaults (controller) ---
+    # --- check status values ---
+    # These are display labels only. The controller keeps the underlying status
+    # in English because guarded-action gates compare it verbatim (for example
+    # `_live_trading_check_status == "Verified"`), so translation happens at the
+    # display boundary and never touches the compared value.
     "status_not_checked": {
         "en": "Not checked",
         "cs": "Nezkontrolováno",
     },
+    "status_checking": {"en": "Checking", "cs": "Kontroluji"},
+    "status_connected": {"en": "Connected", "cs": "Připojeno"},
+    "status_verified": {"en": "Verified", "cs": "Ověřeno"},
+    "status_blocked": {"en": "Blocked", "cs": "Zablokováno"},
     "connection_idle_detail": {
         "en": "Run the read-only check from Settings before live analysis.",
         "cs": "Před živou analýzou spusťte read-only kontrolu v Nastavení.",

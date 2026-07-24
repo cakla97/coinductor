@@ -564,21 +564,47 @@ class AppController(QObject):
     def appText(self) -> dict[str, str]:
         return UiStringsService().app_text(self._wizard_language)
 
-    def _apply_idle_status_defaults(self) -> None:
-        """Idle (never-checked) status text, resolved in the current language."""
+    def _status_display(self, status: str) -> str:
+        """Localize a check status for display only.
+
+        The stored status stays English because guarded-action gates compare it
+        verbatim (e.g. `_live_trading_check_status == "Verified"`); translating
+        the stored value would silently disable those gates.
+        """
+        key = {
+            "Not checked": "status_not_checked",
+            "Checking": "status_checking",
+            "Connected": "status_connected",
+            "Verified": "status_verified",
+            "Blocked": "status_blocked",
+        }.get(status)
+        return service_text(key, self._wizard_language) if key else status
+
+    # (status attribute, detail attribute, idle detail key)
+    _IDLE_STATUS_FIELDS = (
+        ("_connection_status", "_connection_detail", "connection_idle_detail"),
+        ("_live_trading_check_status", "_live_trading_check_detail", "live_trading_idle_detail"),
+        ("_testnet_check_status", "_testnet_check_detail", "testnet_idle_detail"),
+        ("_ai_provider_health_status", "_ai_provider_health_detail", "ai_provider_idle_detail"),
+        ("_local_ai_discovery_status", "_local_ai_discovery_detail", "ai_discovery_idle_detail"),
+    )
+
+    def _apply_idle_status_defaults(self, only_unchecked: bool = False) -> None:
+        """Reset checks to their idle status and localized explanatory detail.
+
+        With ``only_unchecked`` (used when the language changes) checks that
+        already ran keep their result: re-running them is a network call, and
+        clearing a "Verified" live key would silently revoke guarded-action
+        access just because the user switched language.
+        """
         language = self._wizard_language
-        not_checked = service_text("status_not_checked", language)
-        self._connection_status = not_checked
-        self._connection_detail = service_text("connection_idle_detail", language)
-        self._live_trading_check_status = not_checked
-        self._live_trading_check_detail = service_text("live_trading_idle_detail", language)
-        self._testnet_check_status = not_checked
-        self._testnet_check_detail = service_text("testnet_idle_detail", language)
-        self._ai_provider_health_status = not_checked
-        self._ai_provider_health_detail = service_text("ai_provider_idle_detail", language)
-        self._local_ai_hardware_summary = service_text("hardware_not_scanned", language)
-        self._local_ai_discovery_status = not_checked
-        self._local_ai_discovery_detail = service_text("ai_discovery_idle_detail", language)
+        for status_attr, detail_attr, detail_key in self._IDLE_STATUS_FIELDS:
+            if only_unchecked and getattr(self, status_attr, "Not checked") != "Not checked":
+                continue
+            setattr(self, status_attr, "Not checked")
+            setattr(self, detail_attr, service_text(detail_key, language))
+        if not only_unchecked or not self._local_ai_model_recommendations:
+            self._local_ai_hardware_summary = service_text("hardware_not_scanned", language)
 
     @Slot(str)
     def setWizardLanguage(self, language: str) -> None:
@@ -587,9 +613,9 @@ class AppController(QObject):
             return
         self._wizard_language = normalized
         self._guides = GuideService().list_guides(normalized)
-        # Re-resolve locally computed text. Network check results are not re-run;
-        # their idle defaults are restored instead.
-        self._apply_idle_status_defaults()
+        # Re-resolve locally computed text. Checks that already ran keep their
+        # result; only never-run checks get their idle text re-localized.
+        self._apply_idle_status_defaults(only_unchecked=True)
         self._setup_snapshot = SetupService(language=normalized).inspect()
         self._ai_provider_snapshot = AiProviderService(language=normalized).inspect()
         self._user_profile_service.language = normalized
@@ -714,7 +740,7 @@ class AppController(QObject):
 
     @Property(str, notify=liveTradingCheckChanged)
     def liveTradingCheckStatus(self) -> str:
-        return self._live_trading_check_status
+        return self._status_display(self._live_trading_check_status)
 
     @Property(str, notify=liveTradingCheckChanged)
     def liveTradingCheckDetail(self) -> str:
@@ -726,7 +752,7 @@ class AppController(QObject):
 
     @Property(str, notify=testnetCheckChanged)
     def testnetCheckStatus(self) -> str:
-        return self._testnet_check_status
+        return self._status_display(self._testnet_check_status)
 
     @Property(str, notify=testnetCheckChanged)
     def testnetCheckDetail(self) -> str:
@@ -770,7 +796,7 @@ class AppController(QObject):
 
     @Property(str, notify=aiProviderChanged)
     def aiProviderHealthStatus(self) -> str:
-        return self._ai_provider_health_status
+        return self._status_display(self._ai_provider_health_status)
 
     @Property(str, notify=aiProviderChanged)
     def aiProviderHealthDetail(self) -> str:
@@ -790,7 +816,7 @@ class AppController(QObject):
 
     @Property(str, notify=localAiDiscoveryChanged)
     def localAiDiscoveryStatus(self) -> str:
-        return self._local_ai_discovery_status
+        return self._status_display(self._local_ai_discovery_status)
 
     @Property(str, notify=localAiDiscoveryChanged)
     def localAiDiscoveryDetail(self) -> str:
@@ -925,7 +951,7 @@ class AppController(QObject):
 
     @Property(str, notify=connectionChanged)
     def binanceConnectionStatus(self) -> str:
-        return self._connection_status
+        return self._status_display(self._connection_status)
 
     @Property(str, notify=connectionChanged)
     def binanceConnectionDetail(self) -> str:

@@ -125,6 +125,39 @@ def test_local_data_reset_groups_are_localized_but_codes_are_not(tmp_path) -> No
     assert [item["code"] for item in english.items] == [item["code"] for item in czech.items]
 
 
+def test_check_status_is_localized_for_display_only(monkeypatch, tmp_path) -> None:
+    """Guarded-action gates compare the stored status verbatim.
+
+    Localizing the stored value would silently disable live-submit gating, so
+    only the QML-facing property may be translated.
+    """
+    import pytest
+
+    pytest.importorskip("PySide6")
+    from coinductor.controller import AppController
+
+    monkeypatch.chdir(tmp_path)
+    controller = AppController()
+    controller.setWizardLanguage("cs")
+    controller._live_trading_check_status = "Verified"
+    controller._connection_status = "Connected"
+
+    assert controller._live_trading_check_status == "Verified"
+    assert controller.liveTradingCheckStatus == "Ověřeno"
+    assert controller.binanceConnectionStatus == "Připojeno"
+
+    # Switching language must not revoke an already-verified check, which would
+    # silently withdraw guarded-action access.
+    controller.setWizardLanguage("en")
+    assert controller._live_trading_check_status == "Verified"
+    assert controller.liveTradingCheckStatus == "Verified"
+
+    # A check that never ran still gets its idle text re-localized.
+    assert controller._testnet_check_status == "Not checked"
+    controller.setWizardLanguage("cs")
+    assert controller.testnetCheckStatus == "Nezkontrolováno"
+
+
 def test_ai_provider_context_sections_are_localized() -> None:
     from coinductor.ai_provider import AiProviderService
 

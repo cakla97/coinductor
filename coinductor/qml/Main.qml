@@ -1770,9 +1770,11 @@ ApplicationWindow {
                         spacing: 4
                         Text { text: appController.appText.overview_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
                         Text {
+                            Layout.fillWidth: true
                             text: appController.appText.overview_subtitle
                             color: textSecondary
                             font.pixelSize: 13
+                            elide: Text.ElideRight
                         }
                     }
                     Button {
@@ -2013,6 +2015,7 @@ ApplicationWindow {
                         text: appController.appText.portfolio_subtitle
                         color: textSecondary
                         font.pixelSize: 14
+                        elide: Text.ElideRight
                     }
                     ComboBox {
                         Layout.preferredWidth: 190
@@ -2675,7 +2678,7 @@ ApplicationWindow {
                 spacing: 18
 
                 Text { text: appController.appText.run_history_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
-                Text { text: appController.appText.run_history_subtitle; color: textSecondary; font.pixelSize: 13 }
+                Text { Layout.fillWidth: true; text: appController.appText.run_history_subtitle; color: textSecondary; font.pixelSize: 13; wrapMode: Text.WordWrap }
                 Text {
                     Layout.fillWidth: true
                     text: appController.appText.run_history_description
@@ -3354,6 +3357,7 @@ ApplicationWindow {
                         text: appController.appText.settings_subtitle
                         color: textSecondary
                         font.pixelSize: 13
+                        elide: Text.ElideRight
                     }
                     Button {
                         text: appController.appText.setup_wizard_button

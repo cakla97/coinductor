@@ -426,6 +426,49 @@ operation, AI provider presets) live in [OPERATIONS.md](OPERATIONS.md).
 Not done yet: code signing (SmartScreen warns on first run until an EV/OV cert is
 added) and credential storage (`.env` is still plaintext) before any GitHub release.
 
+## Localization Layers
+
+Three layers, each with its own mechanism:
+
+1. **QML chrome** - `coinductor/ui_strings.py` (`APP_STRINGS`/`WIZARD_STRINGS`),
+   read via `appController.appText`/`wizardText`.
+2. **In-app guides** - `coinductor/guide_strings_cs.py`, merged over the English
+   guides by `GuideService.list_guides("cs")` with per-field fallback.
+3. **Backend service text** - `coinductor/service_strings.py` (`service_text(key,
+   language)`). Services (`SetupService`, `AiProviderService`, `SafetyService`,
+   `ReadinessService`, `UserProfileService`, `LocalDataResetService`, the three
+   connection checks) take a `language` argument.
+
+Because these strings are computed once and cached, `setWizardLanguage()` also
+re-inspects the local (non-network) snapshots. Network check *results* are never
+re-run on a language switch, and a check that already ran keeps its result -
+clearing a `Verified` live key would revoke guarded-action access.
+
+**Never translate a value that code compares.** Several strings are identifiers
+wearing display clothes, and translating them fails silently and dangerously:
+
+- `_live_trading_check_status == "Verified"` gates live submit in three places and
+  feeds `live_key_verified` into the safety-stage transition. Check statuses are
+  stored in English and translated only in the QML-facing property
+  (`_status_display`).
+- Safety-stage confirmation phrases (`Enable mainnet preview`, `Arm guarded
+  actions`, `Enable guarded live submit`), guarded-action tokens
+  (`CONFIRM_MAINNET_ORDER` etc.), and the `DELETE` reset token.
+- Stage identifiers, readiness action codes (`GUIDE_PROFILE`, `CHECK_BINANCE`),
+  local-data group codes (`PROFILE`, `ENV`), and profile enums (`BINANCE`,
+  `RECOMMEND_ONLY`).
+- Cross-service lookups match on a stable `code`, never on a translated `name`
+  (readiness -> setup checks, readiness -> its own steps).
+
+Env var names, file paths, and Binance/Ollama/OpenAI screen labels stay English in
+both variants because the user has to match them literally.
+
+Still English: run-derived report text (`desktop_store` and the `trading_agent`
+report pipeline) and the profile summary line. These are generated during a run
+and persisted to SQLite, so localizing them means either generating in the run's
+language (old runs keep their original language) or storing structured data and
+composing text at read time - an open design decision, not just translation.
+
 ## Offscreen QML Screenshot Verification
 
 For any QML visual/layout change, `python -m pytest tests/test_coinductor_qml.py`

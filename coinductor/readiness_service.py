@@ -1,9 +1,24 @@
 from __future__ import annotations
 
 from .models import DesktopSnapshot, ReadinessSnapshot, SafetySnapshot, SetupSnapshot, UserProfileSnapshot
+from .service_strings import service_text
 
 
 class ReadinessService:
+    """Derives the next readiness step from the other snapshots.
+
+    Steps carry a stable ``code`` alongside their translated ``name``: matching
+    on the display name would break as soon as a name is translated. The same
+    applies to ``connection_status``, which the controller keeps in English
+    because guarded-action gates compare it verbatim.
+    """
+
+    def __init__(self, language: str = "en"):
+        self.language = language
+
+    def _t(self, key: str) -> str:
+        return service_text(key, self.language)
+
     def inspect(
         self,
         setup: SetupSnapshot,
@@ -20,10 +35,10 @@ class ReadinessService:
             self._live_step(safety),
         ]
         open_steps = [step for step in steps if step["status"] != "READY"]
-        next_step = open_steps[0]["detail"] if open_steps else "All personal-stage readiness gates are satisfied."
+        next_step = open_steps[0]["detail"] if open_steps else self._t("readiness_all_satisfied")
         action_code, action_label, action_enabled = self._next_action(steps, user_profile, desktop, connection_status)
         ready_count = len(steps) - len(open_steps)
-        summary = f"{ready_count}/{len(steps)} readiness step(s) ready"
+        summary = self._t("readiness_summary").format(ready=ready_count, total=len(steps))
         return ReadinessSnapshot(
             summary=summary,
             next_step=next_step,
@@ -34,87 +49,105 @@ class ReadinessService:
         )
 
     def _profile_step(self, user_profile: UserProfileSnapshot) -> dict[str, str]:
+        name = self._t("readiness_step_profile")
         if user_profile.configured:
             return {
-                "name": "Profile",
+                "code": "PROFILE",
+                "name": name,
                 "status": "READY",
-                "detail": "Onboarding profile is configured.",
-                "action": "Review when your risk preference changes.",
+                "detail": self._t("readiness_profile_ready_detail"),
+                "action": self._t("readiness_profile_ready_action"),
             }
         return {
-            "name": "Profile",
+            "code": "PROFILE",
+            "name": name,
             "status": "NEXT",
-            "detail": "Choose safe defaults or Guide me before relying on recommendations.",
-            "action": "Use Settings > Guide me.",
+            "detail": self._t("readiness_profile_next_detail"),
+            "action": self._t("readiness_profile_next_action"),
         }
 
     def _binance_step(self, setup: SetupSnapshot, connection_status: str) -> dict[str, str]:
-        credential = next((item for item in setup.checks if item["name"] == "Binance read-only"), None)
+        credential = next((item for item in setup.checks if item.get("code") == "BINANCE_READONLY"), None)
         has_keys = credential is not None and credential["status"] == "PASS"
+        name = self._t("readiness_step_binance")
         if connection_status == "Connected":
             return {
-                "name": "Binance read-only",
+                "code": "BINANCE_READONLY",
+                "name": name,
                 "status": "READY",
-                "detail": "Read-only API connection has been verified.",
-                "action": "Recheck only after changing API keys.",
+                "detail": self._t("readiness_binance_ready_detail"),
+                "action": self._t("readiness_binance_ready_action"),
             }
         if has_keys:
             return {
-                "name": "Binance read-only",
+                "code": "BINANCE_READONLY",
+                "name": name,
                 "status": "NEXT",
-                "detail": "Read-only keys exist but the connection check has not passed in this session.",
-                "action": "Run the Binance read-only check.",
+                "detail": self._t("readiness_binance_next_detail"),
+                "action": self._t("readiness_binance_next_action"),
             }
         return {
-            "name": "Binance read-only",
+            "code": "BINANCE_READONLY",
+            "name": name,
             "status": "BLOCKED",
-            "detail": "Read-only API keys are required for real portfolio analysis.",
-            "action": "Create read-only Binance keys and add them to .env.",
+            "detail": self._t("readiness_binance_blocked_detail"),
+            "action": self._t("readiness_binance_blocked_action"),
         }
 
     def _classification_step(self, desktop: DesktopSnapshot) -> dict[str, str]:
+        name = self._t("readiness_step_classification")
         if desktop.portfolio_assets:
             return {
-                "name": "Portfolio classification",
+                "code": "CLASSIFICATION",
+                "name": name,
                 "status": "READY",
-                "detail": f"{len(desktop.portfolio_assets)} tracked asset(s) loaded from the latest real run.",
-                "action": "Review manual role overrides if needed.",
+                "detail": self._t("readiness_classification_ready_detail").format(
+                    count=len(desktop.portfolio_assets)
+                ),
+                "action": self._t("readiness_classification_ready_action"),
             }
         return {
-            "name": "Portfolio classification",
+            "code": "CLASSIFICATION",
+            "name": name,
             "status": "NEXT",
-            "detail": "No real portfolio classification has been loaded yet.",
-            "action": "Run initial classification after read-only access is ready.",
+            "detail": self._t("readiness_classification_next_detail"),
+            "action": self._t("readiness_classification_next_action"),
         }
 
     def _preview_step(self, safety: SafetySnapshot) -> dict[str, str]:
+        name = self._t("readiness_step_preview")
         if safety.allows_live_preview:
             return {
-                "name": "Mainnet preview",
+                "code": "PREVIEW",
+                "name": name,
                 "status": "READY",
-                "detail": "Mainnet execution previews may be shown, but orders remain blocked.",
-                "action": "Use preview runs before any live action.",
+                "detail": self._t("readiness_preview_ready_detail"),
+                "action": self._t("readiness_preview_ready_action"),
             }
         return {
-            "name": "Mainnet preview",
+            "code": "PREVIEW",
+            "name": name,
             "status": "LOCKED",
-            "detail": "Safety stage must reach PREVIEW_ONLY before mainnet previews are shown.",
-            "action": "Complete setup and testnet checks first.",
+            "detail": self._t("readiness_preview_locked_detail"),
+            "action": self._t("readiness_preview_locked_action"),
         }
 
     def _live_step(self, safety: SafetySnapshot) -> dict[str, str]:
+        name = self._t("readiness_step_live")
         if safety.allows_live_submit:
             return {
-                "name": "Guarded live execution",
+                "code": "LIVE",
+                "name": name,
                 "status": "READY",
-                "detail": "Guarded live submit workflows may be exposed.",
-                "action": "Keep limits and confirmations enabled.",
+                "detail": self._t("readiness_live_ready_detail"),
+                "action": self._t("readiness_live_ready_action"),
             }
         return {
-            "name": "Guarded live execution",
+            "code": "LIVE",
+            "name": name,
             "status": "LOCKED",
-            "detail": "Live submit stays locked until explicit safety stage promotion.",
-            "action": "Do not unlock before repeated preview/testnet confidence.",
+            "detail": self._t("readiness_live_locked_detail"),
+            "action": self._t("readiness_live_locked_action"),
         }
 
     def _next_action(
@@ -124,21 +157,23 @@ class ReadinessService:
         desktop: DesktopSnapshot,
         connection_status: str,
     ) -> tuple[str, str, bool]:
-        profile = self._step(steps, "Profile")
-        binance = self._step(steps, "Binance read-only")
-        classification = self._step(steps, "Portfolio classification")
+        profile = self._step(steps, "PROFILE")
+        binance = self._step(steps, "BINANCE_READONLY")
+        classification = self._step(steps, "CLASSIFICATION")
 
+        # Action codes are identifiers consumed by the assistant/controller;
+        # only the labels are translated.
         if profile["status"] != "READY":
-            return ("GUIDE_PROFILE", "Guide me", True)
+            return ("GUIDE_PROFILE", self._t("readiness_action_guide_me"), True)
         if binance["status"] == "NEXT":
-            return ("CHECK_BINANCE", "Run read-only check", connection_status != "Checking")
+            return ("CHECK_BINANCE", self._t("readiness_action_check_binance"), connection_status != "Checking")
         if binance["status"] == "BLOCKED":
-            return ("OPEN_SETTINGS", "Add API keys first", False)
+            return ("OPEN_SETTINGS", self._t("readiness_action_add_keys"), False)
         if classification["status"] != "READY":
-            return ("RUN_CLASSIFICATION", "Run classification", True)
+            return ("RUN_CLASSIFICATION", self._t("readiness_action_run_classification"), True)
         if user_profile.configured and desktop.portfolio_assets:
-            return ("OPEN_PORTFOLIO", "Review portfolio roles", True)
-        return ("NONE", "No action needed", False)
+            return ("OPEN_PORTFOLIO", self._t("readiness_action_review_portfolio"), True)
+        return ("NONE", self._t("readiness_action_none"), False)
 
-    def _step(self, steps: list[dict[str, str]], name: str) -> dict[str, str]:
-        return next(item for item in steps if item["name"] == name)
+    def _step(self, steps: list[dict[str, str]], code: str) -> dict[str, str]:
+        return next(item for item in steps if item["code"] == code)

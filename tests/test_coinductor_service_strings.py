@@ -158,6 +158,44 @@ def test_check_status_is_localized_for_display_only(monkeypatch, tmp_path) -> No
     assert controller.testnetCheckStatus == "Nezkontrolováno"
 
 
+def test_readiness_matches_on_codes_not_translated_names() -> None:
+    """Readiness looked up steps and setup checks by display name.
+
+    Once those names are translated, name matching silently stops finding them,
+    so both sides now carry a stable code.
+    """
+    from coinductor.models import DesktopSnapshot, SafetySnapshot, SetupSnapshot, UserProfileSnapshot
+    from coinductor.readiness_service import ReadinessService
+
+    setup = SetupSnapshot(
+        checks=(
+            {
+                "code": "BINANCE_READONLY",
+                "name": "přeložený název",
+                "status": "PASS",
+                "detail": "",
+                "group": "",
+            },
+        ),
+        passed=1,
+        warnings=0,
+        blocked=0,
+    )
+    profile = UserProfileSnapshot(configured=True, summary="", fields=(), exchange_steps=())
+    safety = SafetySnapshot(
+        stage="SETUP", label="Setup", detail="", allows_live_preview=False, allows_live_submit=False, checks=()
+    )
+    desktop = DesktopSnapshot(latest_run=None, portfolio_assets=(), strategies=(), run_history=())
+
+    czech = ReadinessService(language="cs").inspect(setup, profile, safety, desktop, "Not checked")
+
+    # The Binance step is found via its code even though the name is translated.
+    binance = next(step for step in czech.steps if step["code"] == "BINANCE_READONLY")
+    assert binance["status"] == "NEXT"
+    assert czech.action_code == "CHECK_BINANCE"
+    assert czech.action_label == "Spustit read-only kontrolu"
+
+
 def test_ai_provider_context_sections_are_localized() -> None:
     from coinductor.ai_provider import AiProviderService
 

@@ -321,6 +321,114 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": ".env file with Binance keys and optional AI provider settings. Only delete this when you want a completely clean app setup.",
         "cs": "Soubor .env s klíči k Binance a volitelným nastavením poskytovatele AI. Mažte jej jen tehdy, když chcete úplně čisté nastavení aplikace.",
     },
+    # --- readiness steps (step codes and action codes stay identifiers) ---
+    "readiness_summary": {
+        "en": "{ready}/{total} readiness step(s) ready",
+        "cs": "připraveno kroků: {ready}/{total}",
+    },
+    "readiness_all_satisfied": {
+        "en": "All personal-stage readiness gates are satisfied.",
+        "cs": "Všechny brány připravenosti osobní fáze jsou splněné.",
+    },
+    "readiness_step_profile": {"en": "Profile", "cs": "Profil"},
+    "readiness_profile_ready_detail": {
+        "en": "Onboarding profile is configured.",
+        "cs": "Onboarding profil je nastavený.",
+    },
+    "readiness_profile_ready_action": {
+        "en": "Review when your risk preference changes.",
+        "cs": "Zkontrolujte při změně tolerance rizika.",
+    },
+    "readiness_profile_next_detail": {
+        "en": "Choose safe defaults or Guide me before relying on recommendations.",
+        "cs": "Než se spolehnete na doporučení, zvolte bezpečné výchozí hodnoty nebo Provést průvodcem.",
+    },
+    "readiness_profile_next_action": {
+        "en": "Use Settings > Guide me.",
+        "cs": "Použijte Nastavení > Provést průvodcem.",
+    },
+    "readiness_step_binance": {"en": "Binance read-only", "cs": "Binance read-only"},
+    "readiness_binance_ready_detail": {
+        "en": "Read-only API connection has been verified.",
+        "cs": "Read-only API připojení bylo ověřeno.",
+    },
+    "readiness_binance_ready_action": {
+        "en": "Recheck only after changing API keys.",
+        "cs": "Kontrolujte znovu až po změně API klíčů.",
+    },
+    "readiness_binance_next_detail": {
+        "en": "Read-only keys exist but the connection check has not passed in this session.",
+        "cs": "Read-only klíče existují, ale kontrola připojení v této relaci neproběhla úspěšně.",
+    },
+    "readiness_binance_next_action": {
+        "en": "Run the Binance read-only check.",
+        "cs": "Spusťte read-only kontrolu Binance.",
+    },
+    "readiness_binance_blocked_detail": {
+        "en": "Read-only API keys are required for real portfolio analysis.",
+        "cs": "Pro skutečnou analýzu portfolia jsou nutné read-only API klíče.",
+    },
+    "readiness_binance_blocked_action": {
+        "en": "Create read-only Binance keys and add them to .env.",
+        "cs": "Vytvořte read-only klíče Binance a přidejte je do .env.",
+    },
+    "readiness_step_classification": {"en": "Portfolio classification", "cs": "Klasifikace portfolia"},
+    "readiness_classification_ready_detail": {
+        "en": "{count} tracked asset(s) loaded from the latest real run.",
+        "cs": "Načtených sledovaných aktiv z posledního skutečného běhu: {count}.",
+    },
+    "readiness_classification_ready_action": {
+        "en": "Review manual role overrides if needed.",
+        "cs": "V případě potřeby zkontrolujte ruční přepsání rolí.",
+    },
+    "readiness_classification_next_detail": {
+        "en": "No real portfolio classification has been loaded yet.",
+        "cs": "Zatím nebyla načtena žádná skutečná klasifikace portfolia.",
+    },
+    "readiness_classification_next_action": {
+        "en": "Run initial classification after read-only access is ready.",
+        "cs": "Po zprovoznění read-only přístupu spusťte úvodní klasifikaci.",
+    },
+    "readiness_step_preview": {"en": "Mainnet preview", "cs": "Náhled na mainnetu"},
+    "readiness_preview_ready_detail": {
+        "en": "Mainnet execution previews may be shown, but orders remain blocked.",
+        "cs": "Náhledy provádění na mainnetu se mohou zobrazit, ale příkazy zůstávají blokované.",
+    },
+    "readiness_preview_ready_action": {
+        "en": "Use preview runs before any live action.",
+        "cs": "Před jakoukoliv živou akcí použijte náhledové běhy.",
+    },
+    "readiness_preview_locked_detail": {
+        "en": "Safety stage must reach PREVIEW_ONLY before mainnet previews are shown.",
+        "cs": "Než se zobrazí náhledy na mainnetu, musí bezpečnostní fáze dosáhnout PREVIEW_ONLY.",
+    },
+    "readiness_preview_locked_action": {
+        "en": "Complete setup and testnet checks first.",
+        "cs": "Nejdřív dokončete nastavení a kontroly na testnetu.",
+    },
+    "readiness_step_live": {"en": "Guarded live execution", "cs": "Zabezpečené živé provádění"},
+    "readiness_live_ready_detail": {
+        "en": "Guarded live submit workflows may be exposed.",
+        "cs": "Zabezpečené postupy živého odeslání mohou být dostupné.",
+    },
+    "readiness_live_ready_action": {
+        "en": "Keep limits and confirmations enabled.",
+        "cs": "Ponechte limity a potvrzení zapnuté.",
+    },
+    "readiness_live_locked_detail": {
+        "en": "Live submit stays locked until explicit safety stage promotion.",
+        "cs": "Živé odeslání zůstává zamčené až do výslovného posunu bezpečnostní fáze.",
+    },
+    "readiness_live_locked_action": {
+        "en": "Do not unlock before repeated preview/testnet confidence.",
+        "cs": "Neodemykejte dřív, než budete opakovaně jistí náhledy a testnetem.",
+    },
+    "readiness_action_guide_me": {"en": "Guide me", "cs": "Provést průvodcem"},
+    "readiness_action_check_binance": {"en": "Run read-only check", "cs": "Spustit read-only kontrolu"},
+    "readiness_action_add_keys": {"en": "Add API keys first", "cs": "Nejdřív přidejte API klíče"},
+    "readiness_action_run_classification": {"en": "Run classification", "cs": "Spustit klasifikaci"},
+    "readiness_action_review_portfolio": {"en": "Review portfolio roles", "cs": "Zkontrolovat role v portfoliu"},
+    "readiness_action_none": {"en": "No action needed", "cs": "Není potřeba žádná akce"},
     # --- setup service check names ---
     "setup_check_python": {"en": "Python", "cs": "Python"},
     "setup_check_configuration": {"en": "Configuration", "cs": "Konfigurace"},

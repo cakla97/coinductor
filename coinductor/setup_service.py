@@ -66,6 +66,7 @@ class SetupService:
             "BINANCE_API_KEY",
             "BINANCE_API_SECRET",
             self._t("setup_binance_readonly_missing"),
+            code="BINANCE_READONLY",
         )
         self._credential_check(
             checks,
@@ -74,6 +75,7 @@ class SetupService:
             "BINANCE_TESTNET_API_KEY",
             "BINANCE_TESTNET_API_SECRET",
             self._t("setup_binance_testnet_missing"),
+            code="BINANCE_TESTNET",
         )
         self._credential_check(
             checks,
@@ -82,6 +84,7 @@ class SetupService:
             "BINANCE_LIVE_TRADE_API_KEY",
             "BINANCE_LIVE_TRADE_API_SECRET",
             self._t("setup_binance_live_missing"),
+            code="BINANCE_LIVE",
         )
 
         ai_config = config.raw.get("ai", {})
@@ -132,14 +135,16 @@ class SetupService:
         key_name: str,
         secret_name: str,
         missing_detail: str,
+        code: str = "",
     ) -> None:
         configured = bool(self._value(env, key_name) and self._value(env, secret_name))
         self._add(
             checks,
             name,
             "PASS" if configured else "WARN",
-            "Configured" if configured else missing_detail,
-            "Binance",
+            self._t("setup_credentials_configured") if configured else missing_detail,
+            self._t("setup_group_binance"),
+            code=code,
         )
 
     def _env_values(self) -> dict[str, str]:
@@ -163,8 +168,11 @@ class SetupService:
         status: str,
         detail: str,
         group: str,
+        code: str = "",
     ) -> None:
-        checks.append({"name": name, "status": status, "detail": detail, "group": group})
+        # `code` is a stable identifier: other services match on it instead of
+        # the translated `name`.
+        checks.append({"code": code, "name": name, "status": status, "detail": detail, "group": group})
 
     def _snapshot(self, checks: list[dict[str, str]]) -> SetupSnapshot:
         return SetupSnapshot(

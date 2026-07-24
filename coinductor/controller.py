@@ -389,7 +389,7 @@ class AppController(QObject):
         self._app_tour_visible = self._user_profile_snapshot.configured and not self._app_tour_service.is_completed()
         self._safety_service = SafetyService(language=self._wizard_language)
         self._safety_snapshot = self._safety_service.inspect()
-        self._readiness_service = ReadinessService()
+        self._readiness_service = ReadinessService(language=self._wizard_language)
         self._readiness_snapshot = self._readiness_service.inspect(
             self._setup_snapshot,
             self._user_profile_snapshot,
@@ -623,6 +623,9 @@ class AppController(QObject):
         self._safety_service.language = normalized
         self._safety_snapshot = self._safety_service.inspect()
         self._local_data_reset_snapshot = LocalDataResetService(language=normalized).preview()
+        self._readiness_service.language = normalized
+        self._refresh_readiness()
+        self.readinessChanged.emit()
         self.wizardLanguageChanged.emit()
         self.setupChanged.emit()
         self.connectionChanged.emit()

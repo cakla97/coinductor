@@ -89,10 +89,12 @@ def _readiness(
 
 
 def _setup(read_only_status: str) -> SetupSnapshot:
+    # `code` mirrors SetupService: readiness matches on it, not the translated name.
     checks = (
-        {"name": "Python", "status": "PASS", "detail": "3.14", "group": "Runtime"},
-        {"name": "Configuration", "status": "PASS", "detail": "Valid", "group": "Runtime"},
+        {"code": "", "name": "Python", "status": "PASS", "detail": "3.14", "group": "Runtime"},
+        {"code": "", "name": "Configuration", "status": "PASS", "detail": "Valid", "group": "Runtime"},
         {
+            "code": "BINANCE_READONLY",
             "name": "Binance read-only",
             "status": read_only_status,
             "detail": "Configured" if read_only_status == "PASS" else "Required",

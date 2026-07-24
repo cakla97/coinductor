@@ -195,6 +195,13 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     "profile_value_disabled": {"en": "Disabled", "cs": "Vypnuto"},
     "profile_value_enabled": {"en": "Enabled", "cs": "Zapnuto"},
     "profile_value_auto": {"en": "Auto", "cs": "Automaticky"},
+    # --- safety stage labels (display only; the stage identifier is separate) ---
+    "safety_stage_label_SETUP": {"en": "Setup", "cs": "Nastavení"},
+    "safety_stage_label_READ_ONLY_CONNECTED": {"en": "Read Only Connected", "cs": "Připojeno read-only"},
+    "safety_stage_label_TESTNET_READY": {"en": "Testnet Ready", "cs": "Testnet připraven"},
+    "safety_stage_label_PREVIEW_ONLY": {"en": "Preview Only", "cs": "Pouze náhled"},
+    "safety_stage_label_ARMED": {"en": "Armed", "cs": "Připraveno"},
+    "safety_stage_label_LIVE_ENABLED": {"en": "Live Enabled", "cs": "Živě povoleno"},
     # --- safety service checks ---
     "safety_check_orders": {"en": "Orders", "cs": "Příkazy"},
     "safety_check_orders_locked": {

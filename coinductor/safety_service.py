@@ -42,7 +42,9 @@ class SafetyService:
         )
         return SafetySnapshot(
             stage=state.stage,
-            label=state.stage.replace("_", " ").title(),
+            # Display label only; state.stage stays the identifier everything
+            # else compares against.
+            label=t(f"safety_stage_label_{state.stage}") or state.stage.replace("_", " ").title(),
             # Resolved from the stage so a language switch re-renders it; the
             # persisted detail is the fallback for stages we do not describe.
             detail=t(f"safety_stage_detail_{state.stage}") or state.detail,

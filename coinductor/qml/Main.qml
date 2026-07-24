@@ -918,17 +918,25 @@ ApplicationWindow {
                                                     TextField {
                                                         id: localAiModel
                                                         Layout.fillWidth: true
+                                                        // Without a minimum the fields keep their
+                                                        // placeholder-sized implicit width and the
+                                                        // card clips them.
+                                                        Layout.minimumWidth: 120
                                                         placeholderText: "Text model, e.g. qwen3:14b"
                                                         text: appController.aiTextModel.length > 0 ? appController.aiTextModel : "qwen3:14b"
                                                     }
                                                     TextField {
                                                         id: localAiVisionModel
                                                         Layout.fillWidth: true
-                                                        placeholderText: "Vision model (optional), e.g. qwen3-vl:8b"
+                                                        Layout.minimumWidth: 120
+                                                        placeholderText: "Vision model (optional)"
                                                         text: appController.aiVisionModel
                                                     }
                                                 }
-                                                RowLayout {
+                                                // Flow, not RowLayout: three buttons do not fit
+                                                // side by side when the grid is in two columns,
+                                                // and the card clips whatever overflows.
+                                                Flow {
                                                     Layout.fillWidth: true
                                                     spacing: 8
                                                     Button {
@@ -947,7 +955,6 @@ ApplicationWindow {
                                                         enabled: !appController.discoveringAiModels
                                                         onClicked: appController.discoverLocalAiModels(localAiBaseUrl.text)
                                                     }
-                                                    Item { Layout.fillWidth: true }
                                                 }
                                                 Text {
                                                     Layout.fillWidth: true
@@ -1467,7 +1474,8 @@ ApplicationWindow {
                                     }
                                     ListView {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 160
+                                        // Fits all rows: a fixed height cut the last one off.
+                                        Layout.preferredHeight: contentHeight
                                         interactive: false
                                         spacing: 6
                                         model: appController.readinessSteps
@@ -1482,7 +1490,9 @@ ApplicationWindow {
                                                 anchors.leftMargin: 12
                                                 anchors.rightMargin: 12
                                                 spacing: 10
-                                                Text { Layout.preferredWidth: 140; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
+                                                // Elides so a long translated label cannot run
+                                                // into the status column.
+                                                Text { Layout.preferredWidth: 180; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
                                                 Text { Layout.preferredWidth: 75; text: modelData.status; color: modelData.status === "READY" ? accent : modelData.status === "NEXT" ? warning : textSecondary; font.pixelSize: 10; font.bold: true }
                                                 Text { Layout.fillWidth: true; text: modelData.action; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
                                             }

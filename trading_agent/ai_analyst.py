@@ -8,6 +8,29 @@ import urllib.request
 from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, CapitalSourcingPlan, GridRecommendation, LivePositionSummary, MarketResearchReport, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
+def _string_list(value: object, limit: int = 5) -> tuple[str, ...]:
+    """Coerce a model-supplied field into a short tuple of strings.
+
+    Models do not always honour the requested JSON shape: a list may come back
+    as a bare string or as a dict. Slicing those directly raised (a dict lookup
+    with a slice key fails with ``KeyError: slice(None, 5, None)``) and threw
+    away the whole commentary, so normalize instead of trusting the shape.
+    """
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        text = value.strip()
+        return (text,) if text else ()
+    if isinstance(value, dict):
+        items: list[object] = list(value.values())
+    elif isinstance(value, (list, tuple)):
+        items = list(value)
+    else:
+        return ()
+    rendered = [str(item).strip() for item in items]
+    return tuple(item for item in rendered if item)[:limit]
+
+
 class AiAnalyst:
     def __init__(self, config: dict):
         self.config = config
@@ -227,15 +250,18 @@ class AiAnalyst:
             return AiCommentary(
                 enabled=True,
                 summary=str(data.get("summary", "")).strip() or "AI commentary returned no summary.",
-                risks=tuple(str(item) for item in data.get("risks", [])[:5]),
-                watchlist=tuple(str(item) for item in data.get("watchlist", [])[:5]),
+                risks=_string_list(data.get("risks")),
+                watchlist=_string_list(data.get("watchlist")),
                 raw_response=content,
                 rebalancing_assessment=rebalancing_assessment,
             )
         except Exception as exc:
             return AiCommentary(
                 enabled=True,
-                summary=f"AI commentary failed: {exc}",
+                summary=(
+                    "AI commentary could not be generated because the model response was not usable "
+                    f"({type(exc).__name__}). Deterministic analysis below is unaffected."
+                ),
                 risks=(),
                 watchlist=(),
                 raw_response="",

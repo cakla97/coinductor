@@ -363,3 +363,16 @@ def test_rebalancing_assessment_rejects_target_weight_as_threshold_drift() -> No
     )
 
     assert "rejected" in result
+
+
+def test_string_list_tolerates_shapes_models_actually_return() -> None:
+    from trading_agent.ai_analyst import _string_list
+
+    # A dict here used to raise KeyError: slice(None, 5, None), which discarded
+    # the entire AI commentary and surfaced the raw Python artifact to the user.
+    assert _string_list({"r1": "alpha", "r2": "beta"}) == ("alpha", "beta")
+    assert _string_list("single risk") == ("single risk",)
+    assert _string_list(["a", "b", "c", "d", "e", "f"]) == ("a", "b", "c", "d", "e")
+    assert _string_list(None) == ()
+    assert _string_list(42) == ()
+    assert _string_list(["", "   ", "ok"]) == ("ok",)

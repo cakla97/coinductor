@@ -399,7 +399,7 @@ class AppController(QObject):
             self._user_profile_service.current_profile("EXISTING_PORTFOLIO")
         )
         self._first_portfolio_deployment_progress: list[dict[str, object]] = self._load_first_portfolio_progress()
-        self._guides = GuideService().list_guides()
+        self._guides = GuideService().list_guides(self._wizard_language)
         try:
             self._manual_override_symbols = load_config(default_config_path()).allowed_symbols
         except Exception:
@@ -567,6 +567,7 @@ class AppController(QObject):
         if normalized == self._wizard_language:
             return
         self._wizard_language = normalized
+        self._guides = GuideService().list_guides(normalized)
         self.wizardLanguageChanged.emit()
 
     @Property("QVariantMap", notify=assistantChanged)
@@ -646,7 +647,7 @@ class AppController(QObject):
             },
         ]
 
-    @Property("QVariantList", constant=True)
+    @Property("QVariantList", notify=wizardLanguageChanged)
     def guides(self) -> list[dict[str, str]]:
         return list(self._guides)
 

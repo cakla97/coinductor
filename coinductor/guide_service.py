@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 
+from .guide_strings_cs import GUIDE_SECTIONS_CS, GUIDES_CS
+
 
 def _asset_dir() -> Path:
     # In a PyInstaller build the assets are bundled under _MEIPASS; in a source
@@ -21,7 +23,26 @@ def _image(name: str, caption: str) -> dict[str, str]:
 
 
 class GuideService:
-    def list_guides(self) -> list[dict[str, str]]:
+    def list_guides(self, language: str = "en") -> list[dict[str, str]]:
+        """Guides in the requested language, falling back to English per field."""
+        guides = self._english_guides()
+        if not str(language).strip().lower().startswith("cs"):
+            return guides
+        for guide in guides:
+            guide["section"] = GUIDE_SECTIONS_CS.get(guide["section"], guide["section"])
+            translation = GUIDES_CS.get(guide["id"])
+            if not translation:
+                continue
+            for field in ("title", "summary", "body", "warning"):
+                if translation.get(field):
+                    guide[field] = translation[field]
+            captions = translation.get("images") or []
+            for image, caption in zip(guide.get("images", []), captions):
+                if caption:
+                    image["caption"] = caption
+        return guides
+
+    def _english_guides(self) -> list[dict[str, str]]:
         return [
             {
                 "id": "local-ai",

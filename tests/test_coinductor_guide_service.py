@@ -32,6 +32,46 @@ def test_guide_service_covers_every_app_page() -> None:
     } <= ids
 
 
+def test_every_guide_has_a_czech_translation() -> None:
+    from coinductor.guide_strings_cs import GUIDES_CS
+
+    guides = GuideService().list_guides()
+    for guide in guides:
+        translation = GUIDES_CS.get(guide["id"])
+        assert translation, f"missing Czech translation for guide '{guide['id']}'"
+        for field in ("title", "summary", "body"):
+            assert translation.get(field), f"{guide['id']} is missing Czech {field}"
+        if guide.get("warning"):
+            assert translation.get("warning"), f"{guide['id']} is missing Czech warning"
+        if guide.get("images"):
+            assert len(translation.get("images") or []) == len(guide["images"])
+
+
+def test_list_guides_returns_czech_and_falls_back_to_english() -> None:
+    service = GuideService()
+    english = {guide["id"]: guide for guide in service.list_guides("en")}
+    czech = {guide["id"]: guide for guide in service.list_guides("cs")}
+
+    assert czech["local-ai"]["title"] == "Lokální AI s Ollamou"
+    assert "Přehled" in czech["page-overview"]["title"]
+    # Unknown languages fall back to English.
+    assert service.list_guides("de")[0]["title"] == english["local-ai"]["title"]
+
+
+def test_czech_guides_keep_cross_links_and_literal_labels() -> None:
+    czech = {guide["id"]: guide for guide in GuideService().list_guides("cs")}
+    ids = set(czech)
+
+    import re
+
+    for guide in czech.values():
+        for target in re.findall(r'href="guide:([^"]+)"', guide["body"]):
+            assert target in ids, f"{guide['id']} links to unknown guide '{target}'"
+    # Literal Binance/Ollama labels the user must match stay in English.
+    assert "API Management" in czech["binance-api"]["body"]
+    assert "ollama pull qwen3:14b" in czech["local-ai"]["body"]
+
+
 def test_internal_guide_cross_links_resolve_to_real_guides() -> None:
     import re
 

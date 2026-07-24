@@ -9,6 +9,7 @@ from trading_agent.config import default_config_path, load_config
 from trading_agent.env import load_env_file
 
 from .models import AiModelDiscoveryResult, AiProviderHealthResult, AiProviderSnapshot
+from .service_strings import service_text
 
 
 class AiProviderService:
@@ -16,9 +17,11 @@ class AiProviderService:
         self,
         config_path: str | Path | None = None,
         env_path: str | Path = ".env",
+        language: str = "en",
     ):
         self.config_path = Path(config_path or default_config_path())
         self.env_path = Path(env_path)
+        self.language = language
 
     def inspect(self) -> AiProviderSnapshot:
         checks: list[dict[str, str]] = []
@@ -248,23 +251,12 @@ class AiProviderService:
         checks.append({"name": name, "status": status, "detail": detail, "group": group})
 
     def _context_sections(self) -> tuple[dict[str, str], ...]:
-        return (
+        return tuple(
             {
-                "name": "Safety contract",
-                "detail": "AI can explain, summarize, rank bounded options, and prepare intents; deterministic code owns execution limits.",
-            },
-            {
-                "name": "Portfolio context",
-                "detail": "Assistant context includes latest real run, portfolio roles, strategy recommendations, and local report paths.",
-            },
-            {
-                "name": "Privacy boundary",
-                "detail": "Local providers keep prompts on this machine; cloud providers may receive selected report and portfolio context.",
-            },
-            {
-                "name": "Action boundary",
-                "detail": "Changing policy, funding, or execution state will require structured intents, validation, and confirmation.",
-            },
+                "name": service_text(f"ai_context_{slug}_name", self.language),
+                "detail": service_text(f"ai_context_{slug}_detail", self.language),
+            }
+            for slug in ("safety", "portfolio", "privacy", "action")
         )
 
 

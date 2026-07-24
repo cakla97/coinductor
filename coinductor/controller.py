@@ -28,6 +28,7 @@ from .local_ai_recommender import LocalAiRecommender
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
 from .readiness_service import ReadinessService
 from .safety_service import SafetyService
+from .service_strings import service_text
 from .setup_service import SetupService
 from .strategy_registration import StrategyRegistrationService
 from .ui_strings import DEFAULT_LANGUAGE, UiStringsService
@@ -281,27 +282,18 @@ class AppController(QObject):
         self._pending_completion_message = "Analysis complete. Review the Action Plan."
         self._onboarding_path = ""
         self._checking_connection = False
-        self._connection_status = "Not checked"
-        self._connection_detail = "Run the read-only check from Settings before live analysis."
         self._checking_live_trading = False
-        self._live_trading_check_status = "Not checked"
-        self._live_trading_check_detail = "Verify live-key permissions before arming guarded execution."
         self._checking_testnet = False
-        self._testnet_check_status = "Not checked"
-        self._testnet_check_detail = "Optional but recommended: verify Spot Testnet access before any real mainnet action."
         self._checking_ai_provider = False
         self._assistant_busy = False
-        self._ai_provider_health_status = "Not checked"
-        self._ai_provider_health_detail = "Run an AI provider check after configuring LLM_BASE_URL and LLM_MODEL."
-        self._local_ai_hardware_summary = "Hardware has not been scanned yet."
         self._local_ai_model_recommendations: list[dict[str, str]] = []
         self._discovering_ai_models = False
-        self._local_ai_discovery_status = "Not checked"
-        self._local_ai_discovery_detail = "Detect which models the endpoint currently reports as installed."
+        self._wizard_language = DEFAULT_LANGUAGE
+        self._apply_idle_status_defaults()
         self._local_ai_discovered_models: list[str] = []
         self._snapshot = DesktopStore().load()
-        self._setup_snapshot = SetupService().inspect()
-        self._ai_provider_snapshot = AiProviderService().inspect()
+        self._setup_snapshot = SetupService(language=self._wizard_language).inspect()
+        self._ai_provider_snapshot = AiProviderService(language=self._wizard_language).inspect()
         self._user_profile_service = UserProfileService()
         self._user_profile_snapshot = self._user_profile_service.inspect()
         self._onboarding_wizard_visible = not self._user_profile_snapshot.configured
@@ -381,7 +373,6 @@ class AppController(QObject):
         self._wizard_assistant_busy = False
         self._wizard_assistant_question = ""
         self._wizard_assistant_answer = ""
-        self._wizard_language = DEFAULT_LANGUAGE
         self._app_tour_step = 0
         self._app_tour_visible = self._user_profile_snapshot.configured and not self._app_tour_service.is_completed()
         self._safety_service = SafetyService()
@@ -561,6 +552,22 @@ class AppController(QObject):
     def appText(self) -> dict[str, str]:
         return UiStringsService().app_text(self._wizard_language)
 
+    def _apply_idle_status_defaults(self) -> None:
+        """Idle (never-checked) status text, resolved in the current language."""
+        language = self._wizard_language
+        not_checked = service_text("status_not_checked", language)
+        self._connection_status = not_checked
+        self._connection_detail = service_text("connection_idle_detail", language)
+        self._live_trading_check_status = not_checked
+        self._live_trading_check_detail = service_text("live_trading_idle_detail", language)
+        self._testnet_check_status = not_checked
+        self._testnet_check_detail = service_text("testnet_idle_detail", language)
+        self._ai_provider_health_status = not_checked
+        self._ai_provider_health_detail = service_text("ai_provider_idle_detail", language)
+        self._local_ai_hardware_summary = service_text("hardware_not_scanned", language)
+        self._local_ai_discovery_status = not_checked
+        self._local_ai_discovery_detail = service_text("ai_discovery_idle_detail", language)
+
     @Slot(str)
     def setWizardLanguage(self, language: str) -> None:
         normalized = language.strip().lower()
@@ -568,7 +575,15 @@ class AppController(QObject):
             return
         self._wizard_language = normalized
         self._guides = GuideService().list_guides(normalized)
+        # Re-resolve locally computed text. Network check results are not re-run;
+        # their idle defaults are restored instead.
+        self._apply_idle_status_defaults()
+        self._setup_snapshot = SetupService(language=normalized).inspect()
+        self._ai_provider_snapshot = AiProviderService(language=normalized).inspect()
         self.wizardLanguageChanged.emit()
+        self.setupChanged.emit()
+        self.connectionChanged.emit()
+        self.aiProviderChanged.emit()
 
     @Property("QVariantMap", notify=assistantChanged)
     def assistantPendingAction(self) -> dict[str, object]:
@@ -979,8 +994,8 @@ class AppController(QObject):
 
     @Slot()
     def refreshSetup(self) -> None:
-        self._setup_snapshot = SetupService().inspect()
-        self._ai_provider_snapshot = AiProviderService().inspect()
+        self._setup_snapshot = SetupService(language=self._wizard_language).inspect()
+        self._ai_provider_snapshot = AiProviderService(language=self._wizard_language).inspect()
         self._assistant_vision_available, self._assistant_vision_detail = AiProviderService().vision_support()
         self._user_profile_snapshot = self._user_profile_service.inspect()
         if not self._user_profile_snapshot.configured:
@@ -2074,7 +2089,7 @@ class AppController(QObject):
     def _on_ai_provider_completed(self, result: AiProviderHealthResult) -> None:
         self._ai_provider_health_status = "Connected" if result.status == "PASS" else "Blocked"
         self._ai_provider_health_detail = result.detail
-        self._ai_provider_snapshot = AiProviderService().inspect()
+        self._ai_provider_snapshot = AiProviderService(language=self._wizard_language).inspect()
         self.aiProviderChanged.emit()
 
     @Slot(str)

@@ -713,6 +713,56 @@ def test_completed_answer_is_immediately_visible_in_chat_history(tmp_path, monke
     assert controller.assistantHistory[0]["title"] == "What does Refresh checks do?"
 
 
+def test_language_meta_question_is_answered_deterministically() -> None:
+    service = ContextualHelpService()
+
+    czech = service.answer("Můžu si s tebou povídat česky?", {})
+    english = service.answer("Can I talk to you in Czech?", {})
+
+    assert czech is not None and czech.startswith("Ano, můžeme se bavit česky")
+    assert english is not None and english.startswith("Yes, I can answer in Czech")
+    # It must not be mistaken for a portfolio/strategy question.
+    assert "HOLD" not in czech and "strategi" not in czech.lower()
+    # Unrelated questions still fall through to the rest of the pipeline.
+    assert service.answer("Jaká je cena BTC?", {}) is None
+
+
+def test_czech_questions_instruct_the_model_to_avoid_slovak(tmp_path, monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_urlopen(request, timeout=0):
+        captured["body"] = json.loads(request.data.decode("utf-8"))
+
+        class _Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self):
+                return json.dumps({"choices": [{"message": {"content": '{"answer": "ok"}'}}]}).encode("utf-8")
+
+        return _Response()
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    (tmp_path / ".env").write_text("LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\n", encoding="utf-8")
+    monkeypatch.setattr(assistant_module.urllib.request, "urlopen", fake_urlopen)
+
+    ProviderBackedAssistant("config.toml", str(tmp_path / ".env")).answer(
+        "Co znamená Action Plan?", _snapshot()
+    )
+
+    # The payload is embedded as an ASCII-escaped JSON string, so parse it back
+    # rather than string-matching the outer request body.
+    user_message = next(item for item in captured["body"]["messages"] if item["role"] == "user")
+    payload = json.loads(user_message["content"])
+
+    assert payload["response_language"] == "Czech (čeština)"
+    assert any("Slovak is a different language" in rule for rule in payload["strict_boundaries"])
+
+
 def test_matched_guide_id_uses_explicit_override() -> None:
     service = UiKnowledgeService()
 

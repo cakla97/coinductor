@@ -55,6 +55,26 @@ class ContextualHelpService:
         czech = is_czech(question)
         page_name = str(app_context.get("context_page", "AI Assistant"))
 
+        # Meta question about language. Answered deterministically so it never
+        # reaches the model, which otherwise treats it as a portfolio question.
+        if any(
+            phrase in query
+            for phrase in (
+                "mluvit cesky", "povidat cesky", "umis cesky", "mluvis cesky", "domluvim se cesky",
+                "odpovidat cesky", "cesky s tebou", "do you speak czech", "can you speak czech",
+                "talk to you in czech", "answer in czech",
+            )
+        ):
+            if czech:
+                return (
+                    "Ano, můžeme se bavit česky. Ptejte se česky a odpovím česky. "
+                    "Jazyk rozhraní aplikace přepnete v Nastavení přepínačem Jazyk aplikace."
+                )
+            return (
+                "Yes, I can answer in Czech. Ask in Czech and I will reply in Czech. "
+                "The app interface language is switched in Settings under App language."
+            )
+
         if any(
             phrase in query
             for phrase in ("o sobe reknes", "kdo jsi", "co umis", "who are you", "about yourself", "what can you do")
@@ -522,12 +542,23 @@ class ProviderBackedAssistant:
             if not vision_available:
                 raise RuntimeError(vision_detail)
 
-        response_language = "Czech" if is_czech(question) else "English"
+        czech = is_czech(question)
+        # Name the language explicitly: smaller local models otherwise drift into
+        # Slovak, which is close enough to Czech to slip past a generic "Czech".
+        response_language = "Czech (čeština)" if czech else "English"
+        language_rules = [
+            f"Answer exclusively in {response_language}; do not mix languages except exact UI labels and technical identifiers.",
+        ]
+        if czech:
+            language_rules.append(
+                "The user writes Czech. Reply in Czech only. Slovak is a different language and is not acceptable, "
+                "even though it looks similar; do not use Slovak words, spelling, or grammar."
+            )
         payload = {
             "task": "Answer a user question about Coinductor in a concise, read-only way.",
             "response_language": response_language,
             "strict_boundaries": [
-                f"Answer exclusively in {response_language}; do not mix languages except exact UI labels and technical identifiers.",
+                *language_rules,
                 "Do not claim that you changed settings, placed orders, redeemed Earn, or created Binance bots.",
                 "Do not provide financial guarantees.",
                 "Do not invent live market prices. Standalone price questions for a recognized asset (e.g. 'BTC price') are already answered deterministically before reaching you; if you are still asked for a current price, say you cannot fetch it yourself and suggest asking about a specific tracked asset, e.g. 'ETH price'.",

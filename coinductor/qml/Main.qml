@@ -1349,7 +1349,13 @@ ApplicationWindow {
                                     }
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO" ? 300 : 190
+                                        // The first-portfolio path needs room for the
+                                        // basket list; the existing-portfolio path is
+                                        // just two lines, so size it to the text
+                                        // instead of leaving a large empty block.
+                                        Layout.preferredHeight: appController.onboardingPath === "FIRST_PORTFOLIO"
+                                            ? 300
+                                            : summaryStepTitle.implicitHeight + summaryStepText.implicitHeight + 40
                                         radius: radiusMd
                                         color: panelRaised
                                         border.color: border
@@ -1357,8 +1363,17 @@ ApplicationWindow {
                                             anchors.fill: parent
                                             anchors.margins: 16
                                             spacing: 8
-                                            Text { text: appController.onboardingPath === "FIRST_PORTFOLIO" ? "First portfolio plan" : "Existing portfolio next step"; color: textPrimary; font.pixelSize: 15; font.bold: true }
                                             Text {
+                                                id: summaryStepTitle
+                                                text: appController.onboardingPath === "FIRST_PORTFOLIO"
+                                                    ? appController.wizardText.first_portfolio_plan_title
+                                                    : appController.wizardText.existing_portfolio_next_step_title
+                                                color: textPrimary
+                                                font.pixelSize: 15
+                                                font.bold: true
+                                            }
+                                            Text {
+                                                id: summaryStepText
                                                 Layout.fillWidth: true
                                                 text: appController.onboardingPath === "FIRST_PORTFOLIO" ? appController.firstPortfolioPlanSummary : appController.readinessNextStep
                                                 color: textSecondary

@@ -358,6 +358,14 @@ WIZARD_STRINGS: dict[str, dict[str, str]] = {
         "en": "Next steps outside Coinductor",
         "cs": "Další kroky mimo Coinductor",
     },
+    "first_portfolio_plan_title": {
+        "en": "First portfolio plan",
+        "cs": "Plán prvního portfolia",
+    },
+    "existing_portfolio_next_step_title": {
+        "en": "Existing portfolio next step",
+        "cs": "Další krok pro existující portfolio",
+    },
     "suggested_first_basket_title": {
         "en": "Suggested first basket (manual purchase)",
         "cs": "Navrhovaný první košík (ruční nákup)",

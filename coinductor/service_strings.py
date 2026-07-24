@@ -436,6 +436,52 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     "readiness_action_run_classification": {"en": "Run classification", "cs": "Spustit klasifikaci"},
     "readiness_action_review_portfolio": {"en": "Review portfolio roles", "cs": "Zkontrolovat role v portfoliu"},
     "readiness_action_none": {"en": "No action needed", "cs": "Není potřeba žádná akce"},
+    # --- onboarding exchange steps (wizard summary) ---
+    "exch_unsupported_name": {"en": "Exchange", "cs": "Burza"},
+    "exch_unsupported_detail": {
+        "en": "This exchange is planned but not supported yet.",
+        "cs": "Tato burza je plánovaná, ale zatím není podporovaná.",
+    },
+    "exch_value_manual": {"en": "Manual", "cs": "Ručně"},
+    "exch_value_required_later": {"en": "Required later", "cs": "Bude potřeba později"},
+    "exch_value_recommended": {"en": "Recommended", "cs": "Doporučeno"},
+    "exch_value_assumed": {"en": "Assumed", "cs": "Předpokládá se"},
+    "exch_value_next": {"en": "Next", "cs": "Další krok"},
+    "exch_create_account": {"en": "Create account", "cs": "Založit účet"},
+    "exch_create_account_detail": {
+        "en": "Open a Binance account and complete identity verification.",
+        "cs": "Založte si účet na Binance a dokončete ověření totožnosti.",
+    },
+    "exch_deposit": {"en": "Deposit funds", "cs": "Vložit prostředky"},
+    "exch_deposit_detail": {
+        "en": "Deposit EUR or stablecoins; Coinductor can later recommend a USDC starting plan.",
+        "cs": "Vložte EUR nebo stablecoiny; Coinductor může později doporučit počáteční plán v USDC.",
+    },
+    "exch_api_access": {"en": "API access", "cs": "Přístup k API"},
+    "exch_api_access_detail": {
+        "en": "Create read-only API keys before portfolio analysis.",
+        "cs": "Před analýzou portfolia vytvořte read-only API klíče.",
+    },
+    "exch_test_first": {"en": "Test first", "cs": "Nejdřív otestovat"},
+    "exch_test_first_detail": {
+        "en": "Use Testnet or preview-only flows before guarded mainnet actions.",
+        "cs": "Před zabezpečenými akcemi na mainnetu použijte Testnet nebo postupy pouze s náhledem.",
+    },
+    "exch_existing_account": {"en": "Existing account", "cs": "Existující účet"},
+    "exch_existing_account_detail": {
+        "en": "Account creation is skipped for existing Binance users.",
+        "cs": "U stávajících uživatelů Binance se zakládání účtu přeskakuje.",
+    },
+    "exch_readonly_api": {"en": "Read-only API", "cs": "Read-only API"},
+    "exch_readonly_api_detail": {
+        "en": "Connect read-only keys so Coinductor can inventory the portfolio.",
+        "cs": "Připojte read-only klíče, aby Coinductor mohl provést inventuru portfolia.",
+    },
+    "exch_classify": {"en": "Classify assets", "cs": "Klasifikovat aktiva"},
+    "exch_classify_detail": {
+        "en": "Review protected, funding, trading, Grid, and Rebalancing universes.",
+        "cs": "Projděte chráněná aktiva, zdroje financování, obchodování, Grid a rebalancování.",
+    },
     # --- setup service check names ---
     "setup_check_python": {"en": "Python", "cs": "Python"},
     "setup_check_configuration": {"en": "Configuration", "cs": "Konfigurace"},

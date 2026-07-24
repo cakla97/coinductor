@@ -100,19 +100,20 @@ class UserProfileService:
         )
 
     def _exchange_steps(self, exchange: str, onboarding_path: str) -> tuple[dict[str, str], ...]:
+        t = self._t
         if exchange != "BINANCE":
             return (
-                {"name": "Exchange", "value": exchange, "detail": "This exchange is planned but not supported yet."},
+                {"name": t("exch_unsupported_name"), "value": exchange, "detail": t("exch_unsupported_detail")},
             )
         if onboarding_path == "FIRST_PORTFOLIO":
             return (
-                {"name": "Create account", "value": "Manual", "detail": "Open a Binance account and complete identity verification."},
-                {"name": "Deposit funds", "value": "Manual", "detail": "Deposit EUR or stablecoins; Coinductor can later recommend a USDC starting plan."},
-                {"name": "API access", "value": "Required later", "detail": "Create read-only API keys before portfolio analysis."},
-                {"name": "Test first", "value": "Recommended", "detail": "Use Testnet or preview-only flows before guarded mainnet actions."},
+                {"name": t("exch_create_account"), "value": t("exch_value_manual"), "detail": t("exch_create_account_detail")},
+                {"name": t("exch_deposit"), "value": t("exch_value_manual"), "detail": t("exch_deposit_detail")},
+                {"name": t("exch_api_access"), "value": t("exch_value_required_later"), "detail": t("exch_api_access_detail")},
+                {"name": t("exch_test_first"), "value": t("exch_value_recommended"), "detail": t("exch_test_first_detail")},
             )
         return (
-            {"name": "Existing account", "value": "Assumed", "detail": "Account creation is skipped for existing Binance users."},
-            {"name": "Read-only API", "value": "Next", "detail": "Connect read-only keys so Coinductor can inventory the portfolio."},
-            {"name": "Classify assets", "value": "Next", "detail": "Review protected, funding, trading, Grid, and Rebalancing universes."},
+            {"name": t("exch_existing_account"), "value": t("exch_value_assumed"), "detail": t("exch_existing_account_detail")},
+            {"name": t("exch_readonly_api"), "value": t("exch_value_next"), "detail": t("exch_readonly_api_detail")},
+            {"name": t("exch_classify"), "value": t("exch_value_next"), "detail": t("exch_classify_detail")},
         )

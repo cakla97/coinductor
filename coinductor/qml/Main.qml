@@ -4955,6 +4955,29 @@ ApplicationWindow {
                             }
                             Item { Layout.fillWidth: true; visible: !appController.busy }
                         }
+                        // Persistent result: the toast that carried this
+                        // disappeared before it could be read, leaving no record
+                        // of what the challenge actually did.
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: challengeOutcomeText.implicitHeight + 20
+                            visible: !appController.busy && appController.challengeOutcome.length > 0
+                            radius: radiusSm
+                            color: accentSoft
+                            border.color: accent
+                            Text {
+                                id: challengeOutcomeText
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 12
+                                text: appController.challengeOutcome
+                                color: textPrimary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                            }
+                        }
                     }
                 }
                 RowLayout {
@@ -5462,7 +5485,9 @@ ApplicationWindow {
         id: toastPopup
         x: window.width - width - 28
         y: 28
-        width: Math.min(420, Math.max(260, toastLabel.implicitWidth + 36))
+        // Measured unwrapped, so the box can size to short messages without
+        // depending on the (wrapped) label width, which would be a loop.
+        width: Math.min(Math.min(560, window.width - 56), Math.max(260, toastMetrics.width + 36))
         height: toastLabel.implicitHeight + 24
         modal: false
         focus: false
@@ -5472,20 +5497,29 @@ ApplicationWindow {
             color: "#14352c"
             border.color: accent
         }
+        TextMetrics {
+            id: toastMetrics
+            font: toastLabel.font
+            text: window.toastText
+        }
         Text {
             id: toastLabel
             anchors.centerIn: parent
+            // Bounded width: without it the text ignored elide, overflowed the
+            // popup and was cut off at the window edge.
+            width: toastPopup.width - 36
             text: window.toastText
             color: textPrimary
             font.pixelSize: 13
             font.bold: true
-            elide: Text.ElideRight
+            wrapMode: Text.WordWrap
         }
     }
 
     Timer {
         id: toastTimer
-        interval: 2400
+        // Long outcome messages were gone before they could be read.
+        interval: Math.max(3000, Math.min(11000, window.toastText.length * 70))
         onTriggered: toastPopup.close()
     }
 

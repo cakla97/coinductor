@@ -291,6 +291,7 @@ class AppController(QObject):
         ]
         self._current_page = 0
         self._challenged_symbol = ""
+        self._challenge_outcome = ""
         self._pending_result_page = 3
         self._pending_completion_message = "Analysis complete. Review the Action Plan."
         self._onboarding_path = ""
@@ -2103,6 +2104,11 @@ class AppController(QObject):
         self._progress = percent
         self.stateChanged.emit()
 
+    @Property(str, notify=actionsChanged)
+    def challengeOutcome(self) -> str:
+        """Last challenge result, kept so it outlives the toast."""
+        return self._challenge_outcome
+
     def _challenge_outcome_message(self) -> str:
         """Say whether the challenge changed the decision, not just that it ran."""
         symbol = getattr(self, "_challenged_symbol", "")
@@ -2110,10 +2116,14 @@ class AppController(QObject):
             return ""
         self._challenged_symbol = ""
         if self._decision == "HOLD":
-            return service_text("challenge_rejected", self._wizard_language).format(symbol=symbol)
-        return service_text("challenge_accepted", self._wizard_language).format(
-            symbol=symbol, decision=self._decision
-        )
+            self._challenge_outcome = service_text(
+                "challenge_rejected", self._wizard_language
+            ).format(symbol=symbol)
+        else:
+            self._challenge_outcome = service_text(
+                "challenge_accepted", self._wizard_language
+            ).format(symbol=symbol, decision=self._decision)
+        return self._challenge_outcome
 
     @Slot(object)
     def _on_completed(self, result: DesktopRunResult) -> None:

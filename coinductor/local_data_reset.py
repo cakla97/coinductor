@@ -4,15 +4,20 @@ from pathlib import Path
 import shutil
 
 from .models import LocalDataResetSnapshot
+from .service_strings import service_text
 
 
 class LocalDataResetService:
-    def __init__(self, root: str | Path = "."):
+    def __init__(self, root: str | Path = ".", language: str = "en"):
         self.root = Path(root)
+        self.language = language
+
+    def _t(self, key: str) -> str:
+        return service_text(key, self.language)
 
     def preview(self) -> LocalDataResetSnapshot:
         items = tuple(self._preview_item(group) for group in self._groups())
-        summary = "Choose specific local data groups to remove, or use Delete everything to select the full local reset preview."
+        summary = self._t("reset_summary_choose")
         return LocalDataResetSnapshot(summary=summary, items=items)
 
     def execute(self, codes: list[str]) -> LocalDataResetSnapshot:
@@ -48,27 +53,27 @@ class LocalDataResetService:
         if removed or blocked:
             parts = []
             if removed:
-                parts.append(f"Removed: {', '.join(removed)}.")
+                parts.append(self._t("reset_summary_removed").format(paths=", ".join(removed)))
             if blocked:
-                parts.append(f"Could not remove: {', '.join(blocked)}.")
+                parts.append(self._t("reset_summary_blocked").format(paths=", ".join(blocked)))
             summary = " ".join(parts)
         else:
-            summary = "No selected local data group had anything to remove."
+            summary = self._t("reset_summary_nothing")
         return LocalDataResetSnapshot(summary=summary, items=snapshot.items)
 
     def _groups(self) -> tuple[dict[str, object], ...]:
         return (
             {
                 "code": "PROFILE",
-                "name": "Onboarding profile",
-                "detail": "Region, language, risk preference, automation preference, budget, planner settings, and first-use tour status.",
+                "name": self._t("reset_group_profile"),
+                "detail": self._t("reset_group_profile_detail"),
                 "default": True,
                 "paths": ("state/user_profile.toml", "state/app_ui_state.toml"),
             },
             {
                 "code": "POLICY_AND_STRATEGY",
-                "name": "Policy and strategy settings",
-                "detail": "Manual asset role overrides, safety stage, active strategy registry, Grid/Rebalancing local registries.",
+                "name": self._t("reset_group_policy"),
+                "detail": self._t("reset_group_policy_detail"),
                 "default": False,
                 "paths": (
                     "state/asset_policy_overrides.toml",
@@ -80,36 +85,36 @@ class LocalDataResetService:
             },
             {
                 "code": "DATABASE",
-                "name": "Local database and run history",
-                "detail": "SQLite run history, portfolio snapshots, shadow signals, and local state derived from previous runs.",
+                "name": self._t("reset_group_database"),
+                "detail": self._t("reset_group_database_detail"),
                 "default": False,
                 "paths": ("work/trading_agent.sqlite3",),
             },
             {
                 "code": "REPORTS",
-                "name": "Reports",
-                "detail": "Generated run reports and human-readable summaries.",
+                "name": self._t("reset_group_reports"),
+                "detail": self._t("reset_group_reports_detail"),
                 "default": False,
                 "paths": ("reports",),
             },
             {
                 "code": "RESEARCH",
-                "name": "Research notes and requests",
-                "detail": "Manual research notes, Binance Skills prompts, generated research requests, and optional AI context files.",
+                "name": self._t("reset_group_research"),
+                "detail": self._t("reset_group_research_detail"),
                 "default": False,
                 "paths": ("research/notes", "research/requests"),
             },
             {
                 "code": "AI_CHAT_HISTORY",
-                "name": "AI chat history",
-                "detail": "Locally stored AI Assistant conversations and screenshots pasted from the clipboard. The newest 20 chats and up to 40 pasted images are retained until this data group is removed.",
+                "name": self._t("reset_group_ai_chat"),
+                "detail": self._t("reset_group_ai_chat_detail"),
                 "default": False,
                 "paths": ("state/assistant_history.json", "state/assistant_attachments"),
             },
             {
                 "code": "ENV",
-                "name": "API keys and local environment",
-                "detail": ".env file with Binance keys and optional AI provider settings. Only delete this when you want a completely clean app setup.",
+                "name": self._t("reset_group_env"),
+                "detail": self._t("reset_group_env_detail"),
                 "default": False,
                 "paths": (".env",),
             },

@@ -267,6 +267,52 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Spot Testnet key is reachable. Virtual funds are ready for safe testing.",
         "cs": "Klíč pro Spot Testnet je dostupný. Virtuální prostředky jsou připravené k bezpečnému testování.",
     },
+    # --- local data reset (group codes stay as backend identifiers) ---
+    "reset_summary_choose": {
+        "en": "Choose specific local data groups to remove, or use Delete everything to select the full local reset preview.",
+        "cs": "Vyberte konkrétní skupiny lokálních dat k odstranění, nebo použijte Smazat vše pro náhled úplného lokálního resetu.",
+    },
+    "reset_summary_nothing": {
+        "en": "No selected local data group had anything to remove.",
+        "cs": "Žádná z vybraných skupin lokálních dat neobsahovala nic k odstranění.",
+    },
+    "reset_summary_removed": {"en": "Removed: {paths}.", "cs": "Odstraněno: {paths}."},
+    "reset_summary_blocked": {"en": "Could not remove: {paths}.", "cs": "Nepodařilo se odstranit: {paths}."},
+    "reset_group_profile": {"en": "Onboarding profile", "cs": "Onboarding profil"},
+    "reset_group_profile_detail": {
+        "en": "Region, language, risk preference, automation preference, budget, planner settings, and first-use tour status.",
+        "cs": "Region, jazyk, tolerance rizika, míra automatizace, rozpočet, nastavení plánovače a stav úvodní prohlídky.",
+    },
+    "reset_group_policy": {"en": "Policy and strategy settings", "cs": "Nastavení politik a strategií"},
+    "reset_group_policy_detail": {
+        "en": "Manual asset role overrides, safety stage, active strategy registry, Grid/Rebalancing local registries.",
+        "cs": "Ruční přepsání rolí aktiv, bezpečnostní fáze, registr aktivních strategií, lokální registry Grid/Rebalancování.",
+    },
+    "reset_group_database": {"en": "Local database and run history", "cs": "Lokální databáze a historie běhů"},
+    "reset_group_database_detail": {
+        "en": "SQLite run history, portfolio snapshots, shadow signals, and local state derived from previous runs.",
+        "cs": "SQLite historie běhů, snímky portfolia, shadow signály a lokální stav odvozený z předchozích běhů.",
+    },
+    "reset_group_reports": {"en": "Reports", "cs": "Reporty"},
+    "reset_group_reports_detail": {
+        "en": "Generated run reports and human-readable summaries.",
+        "cs": "Vygenerované reporty z běhů a čitelná shrnutí.",
+    },
+    "reset_group_research": {"en": "Research notes and requests", "cs": "Výzkumné poznámky a požadavky"},
+    "reset_group_research_detail": {
+        "en": "Manual research notes, Binance Skills prompts, generated research requests, and optional AI context files.",
+        "cs": "Ruční výzkumné poznámky, prompty Binance Skills, vygenerované výzkumné požadavky a volitelné soubory s AI kontextem.",
+    },
+    "reset_group_ai_chat": {"en": "AI chat history", "cs": "Historie AI chatu"},
+    "reset_group_ai_chat_detail": {
+        "en": "Locally stored AI Assistant conversations and screenshots pasted from the clipboard. The newest 20 chats and up to 40 pasted images are retained until this data group is removed.",
+        "cs": "Lokálně uložené konverzace s AI Assistant a snímky obrazovky vložené ze schránky. Do odstranění této skupiny se uchovává 20 nejnovějších chatů a až 40 vložených obrázků.",
+    },
+    "reset_group_env": {"en": "API keys and local environment", "cs": "API klíče a lokální prostředí"},
+    "reset_group_env_detail": {
+        "en": ".env file with Binance keys and optional AI provider settings. Only delete this when you want a completely clean app setup.",
+        "cs": "Soubor .env s klíči k Binance a volitelným nastavením poskytovatele AI. Mažte jej jen tehdy, když chcete úplně čisté nastavení aplikace.",
+    },
     # --- setup service check names ---
     "setup_check_python": {"en": "Python", "cs": "Python"},
     "setup_check_configuration": {"en": "Configuration", "cs": "Konfigurace"},

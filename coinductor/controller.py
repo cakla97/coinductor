@@ -407,7 +407,7 @@ class AppController(QObject):
             self._manual_override_symbols = load_config(default_config_path()).allowed_symbols
         except Exception:
             self._manual_override_symbols = []
-        self._local_data_reset_snapshot = LocalDataResetService().preview()
+        self._local_data_reset_snapshot = LocalDataResetService(language=self._wizard_language).preview()
         self._asset_policy_store = AssetPolicyStore()
         self._asset_role_overrides = self._asset_policy_store.load()
         self._strategy_registration_service = StrategyRegistrationService()
@@ -596,12 +596,14 @@ class AppController(QObject):
         self._user_profile_snapshot = self._user_profile_service.inspect()
         self._safety_service.language = normalized
         self._safety_snapshot = self._safety_service.inspect()
+        self._local_data_reset_snapshot = LocalDataResetService(language=normalized).preview()
         self.wizardLanguageChanged.emit()
         self.setupChanged.emit()
         self.connectionChanged.emit()
         self.aiProviderChanged.emit()
         self.userProfileChanged.emit()
         self.safetyChanged.emit()
+        self.localDataResetChanged.emit()
 
     @Property("QVariantMap", notify=assistantChanged)
     def assistantPendingAction(self) -> dict[str, object]:
@@ -1026,6 +1028,7 @@ class AppController(QObject):
         self.aiProviderChanged.emit()
         self.userProfileChanged.emit()
         self.safetyChanged.emit()
+        self.localDataResetChanged.emit()
         self.readinessChanged.emit()
         self.firstPortfolioPlanChanged.emit()
         self.onboardingWizardChanged.emit()
@@ -1078,7 +1081,7 @@ class AppController(QObject):
         if not selected:
             self.notificationRequested.emit("Select at least one local data group first.")
             return False
-        self._local_data_reset_snapshot = LocalDataResetService().execute(selected)
+        self._local_data_reset_snapshot = LocalDataResetService(language=self._wizard_language).execute(selected)
         self.notificationRequested.emit(self._local_data_reset_snapshot.summary)
         self.localDataResetChanged.emit()
         self.refreshSetup()

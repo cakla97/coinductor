@@ -113,6 +113,18 @@ def test_safety_confirmation_phrases_are_never_translated() -> None:
             assert entry["cs"] != phrase
 
 
+def test_local_data_reset_groups_are_localized_but_codes_are_not(tmp_path) -> None:
+    from coinductor.local_data_reset import LocalDataResetService
+
+    english = LocalDataResetService(tmp_path, language="en").preview()
+    czech = LocalDataResetService(tmp_path, language="cs").preview()
+
+    assert english.items[0]["name"] == "Onboarding profile"
+    assert czech.items[0]["name"] == "Onboarding profil"
+    # Group codes are passed back to executeLocalDataReset, so they stay stable.
+    assert [item["code"] for item in english.items] == [item["code"] for item in czech.items]
+
+
 def test_ai_provider_context_sections_are_localized() -> None:
     from coinductor.ai_provider import AiProviderService
 

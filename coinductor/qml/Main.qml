@@ -68,6 +68,12 @@ ApplicationWindow {
     property string activeActionPlanCode: ""
     property string activeActionPlanTitle: ""
 
+    // A Python tuple reaching a Repeater's model reports "Model size of -1";
+    // a real JS array does not. Coerce dynamic sequences through this.
+    function toModel(value) {
+        return value ? Array.from(value) : []
+    }
+
     function refreshActiveActionPlanItem() {
         if (!actionPlanDetailDialog.visible || activeActionPlanCode === "")
             return
@@ -2350,7 +2356,7 @@ ApplicationWindow {
                                 columnSpacing: 20
                                 rowSpacing: 8
                                 Repeater {
-                                    model: modelData.parameters || []
+                                    model: window.toModel(modelData.parameters)
                                     delegate: ColumnLayout {
                                         required property var modelData
                                         Layout.fillWidth: true
@@ -2584,7 +2590,7 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                 }
                                 Repeater {
-                                    model: appController.nextReview.triggers || []
+                                    model: window.toModel(appController.nextReview.triggers)
                                     delegate: Text {
                                         required property var modelData
                                         Layout.fillWidth: true
@@ -2615,7 +2621,7 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                 }
                                 Repeater {
-                                    model: appController.nextReview.manualSteps || []
+                                    model: window.toModel(appController.nextReview.manualSteps)
                                     delegate: Text {
                                         required property var modelData
                                         Layout.fillWidth: true
@@ -2686,7 +2692,7 @@ ApplicationWindow {
                                 columnSpacing: 18
                                 rowSpacing: 8
                                 Repeater {
-                                    model: modelData.parameters || []
+                                    model: window.toModel(modelData.parameters)
                                     delegate: ColumnLayout {
                                         required property var modelData
                                         Layout.fillWidth: true
@@ -4377,7 +4383,7 @@ ApplicationWindow {
                     columnSpacing: 12
                     rowSpacing: 10
                     Repeater {
-                        model: activeStrategyItem.parameters || []
+                        model: window.toModel(activeStrategyItem.parameters)
                         delegate: Rectangle {
                             required property var modelData
                             Layout.fillWidth: true
@@ -4723,7 +4729,7 @@ ApplicationWindow {
                     columnSpacing: 14
                     rowSpacing: 10
                     Repeater {
-                        model: activeActionPlanItem.parameters || []
+                        model: window.toModel(activeActionPlanItem.parameters)
                         delegate: Rectangle {
                             required property var modelData
                             Layout.fillWidth: true
@@ -4775,7 +4781,7 @@ ApplicationWindow {
                         columnSpacing: 12
                         rowSpacing: 12
                         Repeater {
-                            model: activeActionPlanItem.liveLifecycle ? activeActionPlanItem.liveLifecycle.lifecycleSteps : []
+                            model: window.toModel(activeActionPlanItem.liveLifecycle ? activeActionPlanItem.liveLifecycle.lifecycleSteps : [])
                             delegate: Rectangle {
                                 required property var modelData
                                 Layout.fillWidth: true
@@ -4803,7 +4809,7 @@ ApplicationWindow {
                         columnSpacing: 12
                         rowSpacing: 10
                         Repeater {
-                            model: activeActionPlanItem.liveLifecycle ? activeActionPlanItem.liveLifecycle.parameters : []
+                            model: window.toModel(activeActionPlanItem.liveLifecycle ? activeActionPlanItem.liveLifecycle.parameters : [])
                             delegate: Rectangle {
                                 required property var modelData
                                 Layout.fillWidth: true
@@ -5442,7 +5448,7 @@ ApplicationWindow {
                     }
                 }
                 Repeater {
-                    model: activeGuide.images || []
+                    model: window.toModel(activeGuide.images)
                     delegate: ColumnLayout {
                         required property var modelData
                         Layout.fillWidth: true

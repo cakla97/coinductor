@@ -2444,13 +2444,18 @@ ApplicationWindow {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 190
+                    // Content-driven: a fixed height plus a greedy spacer left a
+                    // large empty block under this short empty-state text.
+                    Layout.preferredHeight: noActiveBotsContent.implicitHeight + 36
                     visible: appController.activeStrategies.length === 0
                     radius: radiusMd
                     color: panel
                     border.color: border
                     ColumnLayout {
-                        anchors.fill: parent
+                        id: noActiveBotsContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
                         anchors.margins: 18
                         spacing: 10
                         Text {
@@ -2468,7 +2473,6 @@ ApplicationWindow {
                             font.pixelSize: 12
                             wrapMode: Text.WordWrap
                         }
-                        Item { Layout.fillHeight: true }
                         RowLayout {
                             Layout.fillWidth: true
                             Item { Layout.fillWidth: true }

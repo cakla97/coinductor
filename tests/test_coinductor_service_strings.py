@@ -57,6 +57,22 @@ allowed_symbols = ["BTCUSDC"]
     assert any(check["name"] == "Soubor s proměnnými prostředí" for check in czech.checks)
 
 
+def test_user_profile_fields_are_localized(tmp_path) -> None:
+    from coinductor.user_profile_service import UserProfileService
+
+    path = tmp_path / "user_profile.toml"
+    UserProfileService(path).save_safe_default("EXISTING_PORTFOLIO")
+
+    english = UserProfileService(path, language="en").inspect()
+    czech = UserProfileService(path, language="cs").inspect()
+
+    assert english.fields[0]["name"] == "Exchange"
+    assert czech.fields[0]["name"] == "Burza"
+    assert czech.fields[0]["detail"] == "Kde bude portfolio spravováno."
+    # Enum-like values stay untranslated so backend comparisons keep working.
+    assert english.fields[0]["value"] == czech.fields[0]["value"]
+
+
 def test_ai_provider_context_sections_are_localized() -> None:
     from coinductor.ai_provider import AiProviderService
 

@@ -6,11 +6,16 @@ from trading_agent.locale_profile import locale_profile
 from trading_agent.user_profile import UserProfile, UserProfileStore, safe_default_profile
 
 from .models import UserProfileSnapshot
+from .service_strings import service_text
 
 
 class UserProfileService:
-    def __init__(self, path: str | Path = "state/user_profile.toml"):
+    def __init__(self, path: str | Path = "state/user_profile.toml", language: str = "en"):
         self.store = UserProfileStore(path)
+        self.language = language
+
+    def _t(self, key: str) -> str:
+        return service_text(key, self.language)
 
     def inspect(self) -> UserProfileSnapshot:
         profile = self.store.load()
@@ -69,22 +74,23 @@ class UserProfileService:
 
     def _snapshot(self, profile: UserProfile) -> UserProfileSnapshot:
         locale = locale_profile(profile.locale)
+        t = self._t
         fields = (
-            {"name": "Exchange", "value": profile.exchange, "detail": "Where the portfolio will be managed."},
-            {"name": "Locale", "value": profile.locale, "detail": f"{locale.language_name}, {locale.region_name}."},
-            {"name": "Path", "value": profile.onboarding_path, "detail": "Existing portfolio or first portfolio."},
-            {"name": "Setup", "value": profile.setup_mode, "detail": "Safe defaults, guided, or advanced."},
-            {"name": "Style", "value": profile.management_style, "detail": "Portfolio management intensity."},
-            {"name": "Automation", "value": profile.automation_level, "detail": "How much the app may automate."},
-            {"name": "Run cadence", "value": profile.run_cadence, "detail": "Suggested review rhythm."},
-            {"name": "Fiat funding", "value": locale.fiat_currency, "detail": locale.fiat_to_funding_hint},
-            {"name": "Funding currency", "value": profile.base_currency, "detail": "Internal strategy funding and reporting currency."},
-            {"name": "Starting budget", "value": f"{profile.planned_deposit_amount:.0f} {locale.fiat_currency}" if profile.planned_deposit_amount else "Auto", "detail": "Used by first portfolio planner."},
-            {"name": "Reserve", "value": f"{profile.reserve_pct:.0f}%", "detail": "Capital kept outside active strategy use."},
-            {"name": "Drawdown comfort", "value": f"{profile.max_drawdown_comfort_pct:.0f}%", "detail": "Used for conservative strategy sizing."},
-            {"name": "Spot trades", "value": "Allowed" if profile.allow_spot_trades else "Disabled", "detail": "Live execution still needs guard approval."},
-            {"name": "Grid", "value": "Enabled" if profile.use_grid else "Disabled", "detail": "Manual Binance creation remains required."},
-            {"name": "Rebalancing", "value": "Enabled" if profile.use_rebalancing else "Disabled", "detail": "Only when minimum capital and limits pass."},
+            {"name": t("profile_field_exchange"), "value": profile.exchange, "detail": t("profile_field_exchange_detail")},
+            {"name": t("profile_field_locale"), "value": profile.locale, "detail": f"{locale.language_name}, {locale.region_name}."},
+            {"name": t("profile_field_path"), "value": profile.onboarding_path, "detail": t("profile_field_path_detail")},
+            {"name": t("profile_field_setup"), "value": profile.setup_mode, "detail": t("profile_field_setup_detail")},
+            {"name": t("profile_field_style"), "value": profile.management_style, "detail": t("profile_field_style_detail")},
+            {"name": t("profile_field_automation"), "value": profile.automation_level, "detail": t("profile_field_automation_detail")},
+            {"name": t("profile_field_cadence"), "value": profile.run_cadence, "detail": t("profile_field_cadence_detail")},
+            {"name": t("profile_field_fiat"), "value": locale.fiat_currency, "detail": locale.fiat_to_funding_hint},
+            {"name": t("profile_field_funding_currency"), "value": profile.base_currency, "detail": t("profile_field_funding_currency_detail")},
+            {"name": t("profile_field_budget"), "value": f"{profile.planned_deposit_amount:.0f} {locale.fiat_currency}" if profile.planned_deposit_amount else t("profile_value_auto"), "detail": t("profile_field_budget_detail")},
+            {"name": t("profile_field_reserve"), "value": f"{profile.reserve_pct:.0f}%", "detail": t("profile_field_reserve_detail")},
+            {"name": t("profile_field_drawdown"), "value": f"{profile.max_drawdown_comfort_pct:.0f}%", "detail": t("profile_field_drawdown_detail")},
+            {"name": t("profile_field_spot_trades"), "value": t("profile_value_allowed") if profile.allow_spot_trades else t("profile_value_disabled"), "detail": t("profile_field_spot_trades_detail")},
+            {"name": t("profile_field_grid"), "value": t("profile_value_enabled") if profile.use_grid else t("profile_value_disabled"), "detail": t("profile_field_grid_detail")},
+            {"name": t("profile_field_rebalancing"), "value": t("profile_value_enabled") if profile.use_rebalancing else t("profile_value_disabled"), "detail": t("profile_field_rebalancing_detail")},
         )
         return UserProfileSnapshot(
             configured=True,

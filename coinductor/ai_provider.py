@@ -23,12 +23,21 @@ class AiProviderService:
         self.env_path = Path(env_path)
         self.language = language
 
+    def _t(self, key: str) -> str:
+        return service_text(key, self.language)
+
     def inspect(self) -> AiProviderSnapshot:
         checks: list[dict[str, str]] = []
         if not self.config_path.exists():
             return AiProviderSnapshot(
-                summary="AI settings are unavailable because config is missing.",
-                checks=({"name": "Configuration", "status": "BLOCK", "detail": str(self.config_path)},),
+                summary=self._t("ai_config_missing_summary"),
+                checks=(
+                    {
+                        "name": self._t("ai_check_configuration"),
+                        "status": "BLOCK",
+                        "detail": str(self.config_path),
+                    },
+                ),
                 context_sections=self._context_sections(),
             )
 
@@ -45,52 +54,58 @@ class AiProviderService:
         vision_model = self._value(env, vision_model_key)
         api_key = self._value(env, api_key_name)
 
-        self._add(checks, "Provider", "PASS", provider, "AI")
+        self._add(checks, self._t("ai_check_provider"), "PASS", provider, self._t("ai_group_ai"))
         self._add(
             checks,
-            "Endpoint",
+            self._t("ai_check_endpoint"),
             "PASS" if base_url else "WARN",
-            self._redact_url(base_url) if base_url else f"Set {base_url_key}",
-            "AI",
+            self._redact_url(base_url) if base_url else self._t("ai_set_env").format(key=base_url_key),
+            self._t("ai_group_ai"),
         )
         self._add(
             checks,
-            "Model",
+            self._t("ai_check_model"),
             "PASS" if model else "WARN",
-            model if model else f"Set {model_key}",
-            "AI",
+            model if model else self._t("ai_set_env").format(key=model_key),
+            self._t("ai_group_ai"),
         )
         self._add(
             checks,
-            "Vision model",
+            self._t("ai_check_vision_model"),
             "PASS" if vision_model and supports_vision_model(vision_model) else "WARN",
             (
                 vision_model
                 if vision_model and supports_vision_model(vision_model)
-                else f"{vision_model} is not recognized as vision-capable"
+                else self._t("ai_vision_not_recognized").format(model=vision_model)
                 if vision_model
-                else f"Optional; set {vision_model_key} to enable image input without replacing the text model"
+                else self._t("ai_vision_optional").format(key=vision_model_key)
             ),
-            "AI",
+            self._t("ai_group_ai"),
         )
         self._add(
             checks,
-            "API key",
+            self._t("ai_check_api_key"),
             "PASS" if api_key else "WARN",
-            "Configured" if api_key else f"Optional for local providers; set {api_key_name} for cloud providers",
-            "Privacy",
+            self._t("ai_api_key_configured")
+            if api_key
+            else self._t("ai_api_key_optional").format(key=api_key_name),
+            self._t("ai_group_privacy"),
         )
         self._add(
             checks,
-            "Privacy mode",
+            self._t("ai_check_privacy_mode"),
             "PASS" if self._is_local_url(base_url) else "WARN",
-            "Local endpoint" if self._is_local_url(base_url) else "External/cloud endpoint or not configured",
-            "Privacy",
+            self._t("ai_privacy_local") if self._is_local_url(base_url) else self._t("ai_privacy_external"),
+            self._t("ai_group_privacy"),
         )
-        vision_summary = vision_model or (model if supports_vision_model(model) else "not configured")
-        summary = (
-            f"{provider}: text {model or 'not set'}, vision {vision_summary} at "
-            f"{self._redact_url(base_url) if base_url else 'no endpoint'}"
+        vision_summary = vision_model or (
+            model if supports_vision_model(model) else self._t("ai_summary_not_configured")
+        )
+        summary = self._t("ai_summary").format(
+            provider=provider,
+            model=model or self._t("ai_summary_not_set"),
+            vision=vision_summary,
+            endpoint=self._redact_url(base_url) if base_url else self._t("ai_summary_no_endpoint"),
         )
         return AiProviderSnapshot(
             summary=summary,

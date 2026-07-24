@@ -294,7 +294,7 @@ class AppController(QObject):
         self._snapshot = DesktopStore().load()
         self._setup_snapshot = SetupService(language=self._wizard_language).inspect()
         self._ai_provider_snapshot = AiProviderService(language=self._wizard_language).inspect()
-        self._user_profile_service = UserProfileService()
+        self._user_profile_service = UserProfileService(language=self._wizard_language)
         self._user_profile_snapshot = self._user_profile_service.inspect()
         self._onboarding_wizard_visible = not self._user_profile_snapshot.configured
         self._app_tour_service = AppTourService()
@@ -580,10 +580,13 @@ class AppController(QObject):
         self._apply_idle_status_defaults()
         self._setup_snapshot = SetupService(language=normalized).inspect()
         self._ai_provider_snapshot = AiProviderService(language=normalized).inspect()
+        self._user_profile_service.language = normalized
+        self._user_profile_snapshot = self._user_profile_service.inspect()
         self.wizardLanguageChanged.emit()
         self.setupChanged.emit()
         self.connectionChanged.emit()
         self.aiProviderChanged.emit()
+        self.userProfileChanged.emit()
 
     @Property("QVariantMap", notify=assistantChanged)
     def assistantPendingAction(self) -> dict[str, object]:

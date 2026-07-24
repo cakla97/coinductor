@@ -317,23 +317,6 @@ ApplicationWindow {
         wizardStep = Math.min(wizardStep + 1, wizardSteps.length - 1)
     }
 
-    function wizardStepContentHeight() {
-        if (wizardStep === 2)
-            return 720
-        if (wizardStep === 3)
-            return 840
-        if (wizardStep === 4)
-            return 900
-        if (wizardStep === 5) {
-            var exchangeSteps = 64 + appController.exchangeOnboardingSteps.length * 34
-            var basket = appController.onboardingPath === "FIRST_PORTFOLIO"
-                ? 140 + appController.firstPortfolioAllocation.length * 28 + appController.firstPortfolioSteps.length * 34
-                : 0
-            return 700 + exchangeSteps + basket
-        }
-        return 640
-    }
-
     function openWizardAtStep(stepIndex) {
         wizardStep = stepIndex
         appController.openOnboardingWizard()
@@ -428,7 +411,12 @@ ApplicationWindow {
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.preferredHeight: Math.max(window.wizardStepContentHeight(), window.height - 190)
+                    // Driven by the step's real content. A hardcoded per-step
+                    // height table used to under-report once translated text
+                    // wrapped onto more lines, pushing the last card under the
+                    // "ask about this step" panel. implicitHeight depends on
+                    // width, not on the height assigned here, so this is safe.
+                    Layout.preferredHeight: Math.max(wizardStepPanel.implicitHeight + 36, window.height - 190)
                     Layout.minimumHeight: 420
                     spacing: 16
 
@@ -513,6 +501,7 @@ ApplicationWindow {
                         color: panel
                         border.color: border
                         ColumnLayout {
+                            id: wizardStepPanel
                             anchors.fill: parent
                             anchors.margins: 18
                             spacing: 14
@@ -5301,9 +5290,10 @@ ApplicationWindow {
             id: guideScroll
             anchors.fill: parent
             clip: true
-            // Size to the available width (which excludes the vertical
-            // scrollbar) so content never overflows sideways and raises a
-            // horizontal scrollbar over the last line.
+            // The vertical scrollbar is drawn as an overlay, so availableWidth
+            // still spans under it; reserve the space explicitly or it covers
+            // the right edge of the text.
+            rightPadding: 18
             contentWidth: availableWidth
             contentHeight: guideDialogContent.implicitHeight + 24
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff

@@ -463,11 +463,42 @@ wearing display clothes, and translating them fails silently and dangerously:
 Env var names, file paths, and Binance/Ollama/OpenAI screen labels stay English in
 both variants because the user has to match them literally.
 
-Still English: run-derived report text (`desktop_store` and the `trading_agent`
-report pipeline) and the profile summary line. These are generated during a run
-and persisted to SQLite, so localizing them means either generating in the run's
-language (old runs keep their original language) or storing structured data and
-composing text at read time - an open design decision, not just translation.
+### Run-derived report text stays English (decided, not an oversight)
+
+Recommended actions, risk-decision reasons, and run summaries are **not**
+localized, and this is deliberate. Do not "fix" it without re-reading this.
+
+The engine composes finished prose at run time and stores only the resulting
+string - never a message code plus parameters:
+
+```python
+action="Review the Rebalancing Bot USDC funding plan."                 # fixed
+action=f"Monitor grid conditions for {symbol}; do not create it yet."  # template
+reason=funding.summary                                                 # prose from elsewhere
+```
+
+In `recommended_actions.py` that is 3 fixed vs 7 templated `action` strings, and
+only 2 of 10 `reason` values are literals - the rest delegate to prose composed
+in other engine modules, so translating "reasons" means chasing text across the
+whole engine.
+
+Why English was chosen over the alternatives:
+
+- Generating in the run's language would put a UI concern (display language)
+  inside the deterministic engine that owns risk and execution, which is the
+  highest-risk edit in the repo for a purely cosmetic gain, and would leave Run
+  History as a mix of languages anyway.
+- Storing structured data and composing at read time is the architecturally
+  correct fix, but needs a schema change plus migration, and rows already in
+  SQLite hold only prose - so it costs the most and still cannot translate
+  existing history.
+- The content is largely technical (RSI14, EMA200, ATR, tickers, USDC amounts)
+  and gains little from translation.
+- Translating only the short `action` headlines while their `reason` detail
+  stays English was considered and rejected: Czech headline over English detail
+  in the same card likely reads worse than consistent English.
+
+The same reasoning covers the profile summary line, which is mostly enum tokens.
 
 ## Offscreen QML Screenshot Verification
 

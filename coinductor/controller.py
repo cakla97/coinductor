@@ -2456,7 +2456,12 @@ class AppController(QObject):
             "tone": trade_tone,
             "detail": trade_detail,
             "parameters": trade_parameters,
-            "primaryLabel": "Review trade" if trade_tone == "ready" else "Why watched?" if trade_tone == "watch" else "Show blockers",
+            # A HOLD decision is not "watched", so name it for what it is.
+            "primaryLabel": service_text("card_review_trade", self._wizard_language)
+            if trade_tone == "ready"
+            else service_text("card_why_hold" if trade_status == "HOLD" else "card_why_watched", self._wizard_language)
+            if trade_tone == "watch"
+            else service_text("card_show_blockers", self._wizard_language),
             "actionCode": "REVIEW_TRADE",
             "canSubmitLive": trade_can_submit,
             "submitEnabled": trade_can_submit
@@ -2484,7 +2489,11 @@ class AppController(QObject):
                         "tone": tone,
                         "detail": detail or "No strategy detail was recorded for the latest run.",
                         "parameters": list(item.get("parameters", ())),
-                        "primaryLabel": "Show manual setup" if tone == "ready" else "Why watched?" if tone == "watch" else "Show blockers",
+                        "primaryLabel": service_text("card_show_manual_setup", self._wizard_language)
+                        if tone == "ready"
+                        else service_text("card_why_watched", self._wizard_language)
+                        if tone == "watch"
+                        else service_text("card_show_blockers", self._wizard_language),
                         "actionCode": "REVIEW_ACTION",
                     }
                 )

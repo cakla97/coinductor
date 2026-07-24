@@ -4649,6 +4649,9 @@ ApplicationWindow {
             anchors.fill: parent
             anchors.margins: 12
             clip: true
+            // The vertical scrollbar is an overlay, so reserve its width or it
+            // covers the right edge of the content (matches the other dialogs).
+            rightPadding: 18
             contentWidth: availableWidth
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
             ColumnLayout {

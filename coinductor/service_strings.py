@@ -482,6 +482,12 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Review protected, funding, trading, Grid, and Rebalancing universes.",
         "cs": "Projděte chráněná aktiva, zdroje financování, obchodování, Grid a rebalancování.",
     },
+    # --- action plan card buttons (display labels; actionCode is the identifier) ---
+    "card_review_trade": {"en": "Review trade", "cs": "Zkontrolovat obchod"},
+    "card_why_hold": {"en": "Why HOLD?", "cs": "Proč HOLD?"},
+    "card_why_watched": {"en": "Why watched?", "cs": "Proč jen sledovat?"},
+    "card_show_blockers": {"en": "Show blockers", "cs": "Zobrazit blokátory"},
+    "card_show_manual_setup": {"en": "Show manual setup", "cs": "Zobrazit ruční nastavení"},
     # --- setup service check names ---
     "setup_check_python": {"en": "Python", "cs": "Python"},
     "setup_check_configuration": {"en": "Configuration", "cs": "Konfigurace"},

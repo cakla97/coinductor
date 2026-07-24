@@ -5,35 +5,47 @@ from pathlib import Path
 from trading_agent.safety_state import SafetyState, SafetyStateStore
 
 from .models import SafetySnapshot
+from .service_strings import service_text
 
 
 class SafetyService:
-    def __init__(self, path: str | Path = "state/app_safety_state.toml"):
+    def __init__(self, path: str | Path = "state/app_safety_state.toml", language: str = "en"):
         self.store = SafetyStateStore(path)
+        self.language = language
+
+    def _t(self, key: str) -> str:
+        return service_text(key, self.language)
 
     def inspect(self) -> SafetySnapshot:
         state = self.store.load()
+        t = self._t
         checks = (
             {
-                "name": "Orders",
+                "name": t("safety_check_orders"),
                 "status": "LOCKED" if not state.allows_live_submit else "AVAILABLE",
-                "detail": "Live order submit is disabled" if not state.allows_live_submit else "Guarded live submit workflows may be shown",
+                "detail": t("safety_check_orders_locked")
+                if not state.allows_live_submit
+                else t("safety_check_orders_available"),
             },
             {
-                "name": "Mainnet preview",
+                "name": t("safety_check_preview"),
                 "status": "LOCKED" if not state.allows_live_preview else "AVAILABLE",
-                "detail": "Preview remains hidden until PREVIEW_ONLY" if not state.allows_live_preview else "Preview-only mainnet checks are available",
+                "detail": t("safety_check_preview_locked")
+                if not state.allows_live_preview
+                else t("safety_check_preview_available"),
             },
             {
-                "name": "Onboarding",
+                "name": t("safety_check_onboarding"),
                 "status": "SAFE",
-                "detail": "Wizard steps cannot place orders or change exchange state.",
+                "detail": t("safety_check_onboarding_detail"),
             },
         )
         return SafetySnapshot(
             stage=state.stage,
             label=state.stage.replace("_", " ").title(),
-            detail=state.detail,
+            # Resolved from the stage so a language switch re-renders it; the
+            # persisted detail is the fallback for stages we do not describe.
+            detail=t(f"safety_stage_detail_{state.stage}") or state.detail,
             allows_live_preview=state.allows_live_preview,
             allows_live_submit=state.allows_live_submit,
             checks=checks,

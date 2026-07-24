@@ -64,10 +64,14 @@ class ConnectionCheckWorker(QObject):
     failed = Signal(str)
     finished = Signal()
 
+    def __init__(self, language: str = "en"):
+        super().__init__()
+        self.language = language
+
     @Slot()
     def run(self) -> None:
         try:
-            self.completed.emit(ConnectionCheckService().check_binance_read_only())
+            self.completed.emit(ConnectionCheckService(language=self.language).check_binance_read_only())
         except Exception as exc:
             self.failed.emit(str(exc))
         finally:
@@ -79,10 +83,14 @@ class LiveTradingCheckWorker(QObject):
     failed = Signal(str)
     finished = Signal()
 
+    def __init__(self, language: str = "en"):
+        super().__init__()
+        self.language = language
+
     @Slot()
     def run(self) -> None:
         try:
-            self.completed.emit(LiveTradingCheckService().check_binance_live_trading())
+            self.completed.emit(LiveTradingCheckService(language=self.language).check_binance_live_trading())
         except Exception as exc:
             self.failed.emit(str(exc))
         finally:
@@ -94,10 +102,14 @@ class TestnetCheckWorker(QObject):
     failed = Signal(str)
     finished = Signal()
 
+    def __init__(self, language: str = "en"):
+        super().__init__()
+        self.language = language
+
     @Slot()
     def run(self) -> None:
         try:
-            self.completed.emit(TestnetCheckService().check_binance_testnet())
+            self.completed.emit(TestnetCheckService(language=self.language).check_binance_testnet())
         except Exception as exc:
             self.failed.emit(str(exc))
         finally:
@@ -375,7 +387,7 @@ class AppController(QObject):
         self._wizard_assistant_answer = ""
         self._app_tour_step = 0
         self._app_tour_visible = self._user_profile_snapshot.configured and not self._app_tour_service.is_completed()
-        self._safety_service = SafetyService()
+        self._safety_service = SafetyService(language=self._wizard_language)
         self._safety_snapshot = self._safety_service.inspect()
         self._readiness_service = ReadinessService()
         self._readiness_snapshot = self._readiness_service.inspect(
@@ -582,11 +594,14 @@ class AppController(QObject):
         self._ai_provider_snapshot = AiProviderService(language=normalized).inspect()
         self._user_profile_service.language = normalized
         self._user_profile_snapshot = self._user_profile_service.inspect()
+        self._safety_service.language = normalized
+        self._safety_snapshot = self._safety_service.inspect()
         self.wizardLanguageChanged.emit()
         self.setupChanged.emit()
         self.connectionChanged.emit()
         self.aiProviderChanged.emit()
         self.userProfileChanged.emit()
+        self.safetyChanged.emit()
 
     @Property("QVariantMap", notify=assistantChanged)
     def assistantPendingAction(self) -> dict[str, object]:
@@ -1124,7 +1139,7 @@ class AppController(QObject):
         self.connectionChanged.emit()
 
         self._connection_thread = QThread(self)
-        self._connection_worker = ConnectionCheckWorker()
+        self._connection_worker = ConnectionCheckWorker(self._wizard_language)
         self._connection_worker.moveToThread(self._connection_thread)
         self._connection_thread.started.connect(self._connection_worker.run)
         self._connection_worker.completed.connect(self._on_connection_completed)
@@ -1245,7 +1260,7 @@ class AppController(QObject):
         self.liveTradingCheckChanged.emit()
 
         self._live_trading_check_thread = QThread(self)
-        self._live_trading_check_worker = LiveTradingCheckWorker()
+        self._live_trading_check_worker = LiveTradingCheckWorker(self._wizard_language)
         self._live_trading_check_worker.moveToThread(self._live_trading_check_thread)
         self._live_trading_check_thread.started.connect(self._live_trading_check_worker.run)
         self._live_trading_check_worker.completed.connect(self._on_live_trading_check_completed)
@@ -1279,7 +1294,7 @@ class AppController(QObject):
         self.testnetCheckChanged.emit()
 
         self._testnet_check_thread = QThread(self)
-        self._testnet_check_worker = TestnetCheckWorker()
+        self._testnet_check_worker = TestnetCheckWorker(self._wizard_language)
         self._testnet_check_worker.moveToThread(self._testnet_check_thread)
         self._testnet_check_thread.started.connect(self._testnet_check_worker.run)
         self._testnet_check_worker.completed.connect(self._on_testnet_check_completed)

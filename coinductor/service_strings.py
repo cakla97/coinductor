@@ -187,6 +187,86 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     "profile_value_disabled": {"en": "Disabled", "cs": "Vypnuto"},
     "profile_value_enabled": {"en": "Enabled", "cs": "Zapnuto"},
     "profile_value_auto": {"en": "Auto", "cs": "Automaticky"},
+    # --- safety service checks ---
+    "safety_check_orders": {"en": "Orders", "cs": "Příkazy"},
+    "safety_check_orders_locked": {
+        "en": "Live order submit is disabled",
+        "cs": "Odesílání živých příkazů je vypnuté",
+    },
+    "safety_check_orders_available": {
+        "en": "Guarded live submit workflows may be shown",
+        "cs": "Zabezpečené postupy živého odeslání se mohou zobrazit",
+    },
+    "safety_check_preview": {"en": "Mainnet preview", "cs": "Náhled na mainnetu"},
+    "safety_check_preview_locked": {
+        "en": "Preview remains hidden until PREVIEW_ONLY",
+        "cs": "Náhled zůstává skrytý až do fáze PREVIEW_ONLY",
+    },
+    "safety_check_preview_available": {
+        "en": "Preview-only mainnet checks are available",
+        "cs": "Mainnet kontroly pouze pro náhled jsou dostupné",
+    },
+    "safety_check_onboarding": {"en": "Onboarding", "cs": "Prvotní nastavení"},
+    "safety_check_onboarding_detail": {
+        "en": "Wizard steps cannot place orders or change exchange state.",
+        "cs": "Kroky průvodce nemohou zadat příkaz ani změnit stav na burze.",
+    },
+    # Stage descriptions are resolved from the stage at read time, so switching
+    # language re-renders them instead of showing the language used at transition.
+    "safety_stage_detail_SETUP": {
+        "en": "Local profile and configuration only; no exchange-changing actions are available.",
+        "cs": "Pouze lokální profil a konfigurace; žádné akce měnící stav na burze nejsou dostupné.",
+    },
+    "safety_stage_detail_PREVIEW_ONLY": {
+        "en": "Mainnet previews are available; all live submissions remain locked.",
+        "cs": "Náhledy na mainnetu jsou dostupné; veškerá živá odeslání zůstávají zamčená.",
+    },
+    "safety_stage_detail_ARMED": {
+        "en": "Live credentials are verified and guarded actions are armed; final live submission remains locked.",
+        "cs": "Živé přihlašovací údaje jsou ověřené a zabezpečené akce připravené; finální živé odeslání zůstává zamčené.",
+    },
+    "safety_stage_detail_LIVE_ENABLED": {
+        "en": "Guarded live submissions are enabled with fresh validation and explicit per-action confirmation.",
+        "cs": "Zabezpečená živá odeslání jsou povolena s čerstvou validací a výslovným potvrzením u každé akce.",
+    },
+    # --- connection checks ---
+    "conn_missing_config": {"en": "Missing config: {path}", "cs": "Chybí konfigurace: {path}"},
+    "conn_missing_env_readonly": {
+        "en": "Missing .env with Binance read-only keys",
+        "cs": "Chybí .env s read-only klíči pro Binance",
+    },
+    "conn_missing_env_live": {
+        "en": "Missing .env with Binance live trading keys",
+        "cs": "Chybí .env s klíči pro živé obchodování na Binance",
+    },
+    "conn_missing_env_testnet": {
+        "en": "Missing .env with Binance Spot Testnet keys",
+        "cs": "Chybí .env s klíči pro Binance Spot Testnet",
+    },
+    "conn_readonly_failed": {
+        "en": "Connection check failed: {error}",
+        "cs": "Kontrola připojení selhala: {error}",
+    },
+    "conn_live_failed": {
+        "en": "Live trading check failed: {error}",
+        "cs": "Kontrola živého obchodování selhala: {error}",
+    },
+    "conn_testnet_failed": {
+        "en": "Testnet check failed: {error}",
+        "cs": "Kontrola Testnetu selhala: {error}",
+    },
+    "conn_readonly_ok": {
+        "en": "Read-only API key is reachable and trading permissions are disabled",
+        "cs": "Read-only API klíč je dostupný a obchodní oprávnění jsou vypnutá",
+    },
+    "conn_live_ok": {
+        "en": "Live key is reachable: Reading + Spot trading enabled, trusted-IP restriction active, forbidden permissions disabled",
+        "cs": "Živý klíč je dostupný: Reading + Spot trading zapnuté, omezení na důvěryhodné IP aktivní, zakázaná oprávnění vypnutá",
+    },
+    "conn_testnet_ok": {
+        "en": "Spot Testnet key is reachable. Virtual funds are ready for safe testing.",
+        "cs": "Klíč pro Spot Testnet je dostupný. Virtuální prostředky jsou připravené k bezpečnému testování.",
+    },
     # --- setup service check names ---
     "setup_check_python": {"en": "Python", "cs": "Python"},
     "setup_check_configuration": {"en": "Configuration", "cs": "Konfigurace"},

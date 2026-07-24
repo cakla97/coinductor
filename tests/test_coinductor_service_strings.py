@@ -73,6 +73,46 @@ def test_user_profile_fields_are_localized(tmp_path) -> None:
     assert english.fields[0]["value"] == czech.fields[0]["value"]
 
 
+def test_safety_checks_and_stage_detail_are_localized(tmp_path) -> None:
+    from coinductor.safety_service import SafetyService
+    from trading_agent.safety_state import SafetyState, SafetyStateStore
+
+    path = tmp_path / "app_safety_state.toml"
+    SafetyStateStore(path).save(SafetyState(stage="PREVIEW_ONLY", detail="stored English detail"))
+
+    english = SafetyService(path, language="en").inspect()
+    czech = SafetyService(path, language="cs").inspect()
+
+    assert english.checks[0]["name"] == "Orders"
+    assert czech.checks[0]["name"] == "Příkazy"
+    # Stage detail is resolved from the stage, not the persisted English text,
+    # so switching language re-renders it.
+    assert "stored English detail" not in czech.detail
+    assert "zamčená" in czech.detail
+
+
+def test_connection_check_messages_are_localized(tmp_path) -> None:
+    from coinductor.connection_check import ConnectionCheckService
+
+    missing = tmp_path / "nope.toml"
+    english = ConnectionCheckService(missing, tmp_path / ".env", language="en").check_binance_read_only()
+    czech = ConnectionCheckService(missing, tmp_path / ".env", language="cs").check_binance_read_only()
+
+    assert english.detail.startswith("Missing config:")
+    assert czech.detail.startswith("Chybí konfigurace:")
+    assert str(missing) in czech.detail
+
+
+def test_safety_confirmation_phrases_are_never_translated() -> None:
+    from coinductor.service_strings import SERVICE_STRINGS
+
+    # These are compared verbatim by safety_service; they must not appear as
+    # translatable strings.
+    for phrase in ("Enable mainnet preview", "Arm guarded actions", "Enable guarded live submit"):
+        for entry in SERVICE_STRINGS.values():
+            assert entry["cs"] != phrase
+
+
 def test_ai_provider_context_sections_are_localized() -> None:
     from coinductor.ai_provider import AiProviderService
 

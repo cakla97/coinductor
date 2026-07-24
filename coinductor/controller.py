@@ -633,6 +633,11 @@ class AppController(QObject):
         self.userProfileChanged.emit()
         self.safetyChanged.emit()
         self.localDataResetChanged.emit()
+        # These carry their own notify signal, so QML keeps the previous
+        # language until they are emitted too.
+        self.liveTradingCheckChanged.emit()
+        self.testnetCheckChanged.emit()
+        self.localAiDiscoveryChanged.emit()
 
     @Property("QVariantMap", notify=assistantChanged)
     def assistantPendingAction(self) -> dict[str, object]:
@@ -731,11 +736,11 @@ class AppController(QObject):
 
     @Property(str, notify=setupChanged)
     def liveTradingKeyStatus(self) -> str:
-        return self._setup_check("Binance live trading").get("status", "WARN")
+        return self._setup_check("BINANCE_LIVE").get("status", "WARN")
 
     @Property(str, notify=setupChanged)
     def liveTradingKeyDetail(self) -> str:
-        return self._setup_check("Binance live trading").get("detail", "Optional; guarded execution only")
+        return self._setup_check("BINANCE_LIVE").get("detail", "Optional; guarded execution only")
 
     @Property(bool, notify=liveTradingCheckChanged)
     def checkingLiveTrading(self) -> bool:
@@ -744,6 +749,11 @@ class AppController(QObject):
     @Property(str, notify=liveTradingCheckChanged)
     def liveTradingCheckStatus(self) -> str:
         return self._status_display(self._live_trading_check_status)
+
+    @Property(str, notify=liveTradingCheckChanged)
+    def liveTradingCheckState(self) -> str:
+        """Untranslated status for QML comparisons; use *Status for display."""
+        return self._live_trading_check_status
 
     @Property(str, notify=liveTradingCheckChanged)
     def liveTradingCheckDetail(self) -> str:
@@ -756,6 +766,10 @@ class AppController(QObject):
     @Property(str, notify=testnetCheckChanged)
     def testnetCheckStatus(self) -> str:
         return self._status_display(self._testnet_check_status)
+
+    @Property(str, notify=testnetCheckChanged)
+    def testnetCheckState(self) -> str:
+        return self._testnet_check_status
 
     @Property(str, notify=testnetCheckChanged)
     def testnetCheckDetail(self) -> str:
@@ -802,6 +816,10 @@ class AppController(QObject):
         return self._status_display(self._ai_provider_health_status)
 
     @Property(str, notify=aiProviderChanged)
+    def aiProviderHealthState(self) -> str:
+        return self._ai_provider_health_status
+
+    @Property(str, notify=aiProviderChanged)
     def aiProviderHealthDetail(self) -> str:
         return self._ai_provider_health_detail
 
@@ -820,6 +838,10 @@ class AppController(QObject):
     @Property(str, notify=localAiDiscoveryChanged)
     def localAiDiscoveryStatus(self) -> str:
         return self._status_display(self._local_ai_discovery_status)
+
+    @Property(str, notify=localAiDiscoveryChanged)
+    def localAiDiscoveryState(self) -> str:
+        return self._local_ai_discovery_status
 
     @Property(str, notify=localAiDiscoveryChanged)
     def localAiDiscoveryDetail(self) -> str:
@@ -955,6 +977,10 @@ class AppController(QObject):
     @Property(str, notify=connectionChanged)
     def binanceConnectionStatus(self) -> str:
         return self._status_display(self._connection_status)
+
+    @Property(str, notify=connectionChanged)
+    def binanceConnectionState(self) -> str:
+        return self._connection_status
 
     @Property(str, notify=connectionChanged)
     def binanceConnectionDetail(self) -> str:
@@ -2559,11 +2585,12 @@ class AppController(QObject):
 
         return cards
 
-    def _setup_check(self, name: str) -> dict[str, str]:
+    def _setup_check(self, code: str) -> dict[str, str]:
+        # Matched on the stable code: `name` is translated.
         for item in self._setup_snapshot.checks:
-            if item.get("name") == name:
+            if item.get("code") == code:
                 return dict(item)
-        return {"name": name, "status": "WARN", "detail": "Not configured", "group": "Setup"}
+        return {"code": code, "name": code, "status": "WARN", "detail": "", "group": ""}
 
     def _refresh_readiness(self) -> None:
         self._readiness_snapshot = self._readiness_service.inspect(

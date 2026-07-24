@@ -61,6 +61,9 @@ def _set_trade_state(controller: AppController, action: str, *, live_enabled: bo
     controller._setup_snapshot = SetupSnapshot(
         checks=(
             {
+                # `code` mirrors SetupService: lookups match on it, not the
+                # translated name.
+                "code": "BINANCE_LIVE",
                 "name": "Binance live trading",
                 "status": "PASS" if key_ready else "WARN",
                 "detail": "Test key state.",

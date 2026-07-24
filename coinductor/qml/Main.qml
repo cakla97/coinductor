@@ -894,8 +894,8 @@ ApplicationWindow {
                                         rowSpacing: 12
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: (appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 760 : 690) : 460) + (appController.localAiDiscoveredModels.length > 0 ? 50 + Math.min(appController.localAiDiscoveredModels.length, 4) * 40 : (appController.discoveringAiModels || appController.localAiDiscoveryStatus === "BLOCK" ? 90 : 0))
-                                            Layout.minimumHeight: (appController.localAiModelRecommendations.length > 0 ? 660 : 430) + (appController.localAiDiscoveredModels.length > 0 || appController.discoveringAiModels || appController.localAiDiscoveryStatus === "BLOCK" ? 90 : 0)
+                                            Layout.preferredHeight: (appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 760 : 690) : 460) + (appController.localAiDiscoveredModels.length > 0 ? 50 + Math.min(appController.localAiDiscoveredModels.length, 4) * 40 : (appController.discoveringAiModels || appController.localAiDiscoveryState === "BLOCK" ? 90 : 0))
+                                            Layout.minimumHeight: (appController.localAiModelRecommendations.length > 0 ? 660 : 430) + (appController.localAiDiscoveredModels.length > 0 || appController.discoveringAiModels || appController.localAiDiscoveryState === "BLOCK" ? 90 : 0)
                                             radius: radiusMd
                                             color: panelRaised
                                             border.color: border
@@ -969,7 +969,7 @@ ApplicationWindow {
                                                 }
                                                 Text { Layout.fillWidth: true; text: appController.localAiHardwareSummary; color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap }
                                                 Rectangle {
-                                                    visible: appController.localAiDiscoveredModels.length > 0 || appController.discoveringAiModels || appController.localAiDiscoveryStatus === "BLOCK"
+                                                    visible: appController.localAiDiscoveredModels.length > 0 || appController.discoveringAiModels || appController.localAiDiscoveryState === "BLOCK"
                                                     Layout.fillWidth: true
                                                     Layout.bottomMargin: 10
                                                     Layout.minimumHeight: 90
@@ -992,7 +992,7 @@ ApplicationWindow {
                                                             visible: appController.localAiDiscoveredModels.length === 0
                                                             Layout.fillWidth: true
                                                             text: appController.localAiDiscoveryDetail
-                                                            color: appController.localAiDiscoveryStatus === "BLOCK" ? warning : textSecondary
+                                                            color: appController.localAiDiscoveryState === "BLOCK" ? warning : textSecondary
                                                             font.pixelSize: 10
                                                             wrapMode: Text.WordWrap
                                                         }
@@ -1225,19 +1225,25 @@ ApplicationWindow {
                                         StatusPill {
                                             Layout.alignment: Qt.AlignVCenter
                                             label: appController.binanceConnectionStatus
-                                            tone: appController.binanceConnectionStatus === "Connected" ? "success"
-                                                : appController.binanceConnectionStatus === "Blocked" ? "danger" : "neutral"
+                                            tone: appController.binanceConnectionState === "Connected" ? "success"
+                                                : appController.binanceConnectionState === "Blocked" ? "danger" : "neutral"
                                         }
                                     }
                                     Text { Layout.fillWidth: true; text: appController.binanceConnectionDetail; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 232
+                                        // Content-driven: a fixed height pushed the
+                                        // wrapped description and status detail
+                                        // outside the card in longer translations.
+                                        Layout.preferredHeight: testnetPanelContent.implicitHeight + 32
                                         radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         ColumnLayout {
-                                            anchors.fill: parent
+                                            id: testnetPanelContent
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
                                             anchors.margins: 16
                                             spacing: 8
                                             RowLayout {
@@ -1279,8 +1285,8 @@ ApplicationWindow {
                                                 StatusPill {
                                                     Layout.alignment: Qt.AlignVCenter
                                                     label: appController.testnetCheckStatus
-                                                    tone: appController.testnetCheckStatus === "Verified" ? "success"
-                                                        : appController.testnetCheckStatus === "Blocked" ? "danger" : "neutral"
+                                                    tone: appController.testnetCheckState === "Verified" ? "success"
+                                                        : appController.testnetCheckState === "Blocked" ? "danger" : "neutral"
                                                 }
                                             }
                                             Text { Layout.fillWidth: true; text: appController.testnetCheckDetail; color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
@@ -1288,13 +1294,19 @@ ApplicationWindow {
                                     }
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 72
+                                        // Content-driven: a fixed height clipped the
+                                        // wrapped note in longer translations.
+                                        Layout.preferredHeight: liveTradeNoteRow.implicitHeight + 28
                                         radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         RowLayout {
-                                            anchors.fill: parent
-                                            anchors.margins: 14
+                                            id: liveTradeNoteRow
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            anchors.leftMargin: 14
+                                            anchors.rightMargin: 14
                                             spacing: 12
                                             Text {
                                                 Layout.fillWidth: true
@@ -1690,9 +1702,9 @@ ApplicationWindow {
                                 width: 8
                                 height: 8
                                 radius: 4
-                                color: appController.binanceConnectionStatus === "Connected" ? accent
-                                    : appController.binanceConnectionStatus === "Checking" ? warning
-                                    : appController.binanceConnectionStatus === "Blocked" ? "#ee6b6e" : textSecondary
+                                color: appController.binanceConnectionState === "Connected" ? accent
+                                    : appController.binanceConnectionState === "Checking" ? warning
+                                    : appController.binanceConnectionState === "Blocked" ? "#ee6b6e" : textSecondary
                                 anchors.verticalCenter: parent.verticalCenter
                             }
                             Text { text: appController.binanceConnectionStatus; color: textPrimary; font.pixelSize: 13 }
@@ -3207,7 +3219,7 @@ ApplicationWindow {
                             Layout.preferredHeight: liveApiSummaryContent.implicitHeight + 24
                             radius: radiusSm
                             color: panelRaised
-                            border.color: appController.liveTradingCheckStatus === "Verified" ? accent : border
+                            border.color: appController.liveTradingCheckState === "Verified" ? accent : border
                             RowLayout {
                                 id: liveApiSummaryContent
                                 anchors.fill: parent
@@ -3220,7 +3232,7 @@ ApplicationWindow {
                                     Text {
                                         Layout.fillWidth: true
                                         text: (appController.liveTradingKeyStatus === "PASS" ? appController.appText.live_api_credentials_configured : appController.appText.live_api_credentials_not_configured)
-                                            + "  |  " + (appController.liveTradingCheckStatus === "Verified" ? appController.appText.live_api_permissions_verified : appController.appText.live_api_permissions_not_verified)
+                                            + "  |  " + (appController.liveTradingCheckState === "Verified" ? appController.appText.live_api_permissions_verified : appController.appText.live_api_permissions_not_verified)
                                         color: textSecondary
                                         font.pixelSize: 11
                                         wrapMode: Text.WordWrap
@@ -3228,8 +3240,8 @@ ApplicationWindow {
                                 }
                                 StatusPill {
                                     Layout.alignment: Qt.AlignVCenter
-                                    label: appController.liveTradingCheckStatus === "Verified" ? "VERIFIED" : appController.liveTradingKeyStatus === "PASS" ? "CONFIGURED" : "LOCKED"
-                                    tone: appController.liveTradingCheckStatus === "Verified" ? "success" : "warning"
+                                    label: appController.liveTradingCheckState === "Verified" ? "VERIFIED" : appController.liveTradingKeyStatus === "PASS" ? "CONFIGURED" : "LOCKED"
+                                    tone: appController.liveTradingCheckState === "Verified" ? "success" : "warning"
                                 }
                                 Button {
                                     text: appController.appText.manage_live_api_button
@@ -3313,12 +3325,12 @@ ApplicationWindow {
                                 text: appController.appText.safety_arm_button
                                 enabled: appController.safetyStageCode === "PREVIEW_ONLY"
                                     && appController.hasReadyLivePreview
-                                    && appController.liveTradingCheckStatus === "Verified"
+                                    && appController.liveTradingCheckState === "Verified"
                                 onClicked: window.openSafetyStageConfirmation("ARMED", "Arm guarded actions")
                             }
                             Button {
                                 text: appController.appText.safety_enable_submit_button
-                                enabled: appController.safetyStageCode === "ARMED" && appController.liveTradingCheckStatus === "Verified"
+                                enabled: appController.safetyStageCode === "ARMED" && appController.liveTradingCheckState === "Verified"
                                 onClicked: window.openSafetyStageConfirmation("LIVE_ENABLED", "Enable guarded live submit")
                             }
                             Button {
@@ -3417,9 +3429,9 @@ ApplicationWindow {
                         StatusPill {
                             Layout.alignment: Qt.AlignVCenter
                             label: appController.binanceConnectionStatus
-                            tone: appController.binanceConnectionStatus === "Connected" ? "success"
-                                : appController.binanceConnectionStatus === "Checking" ? "warning"
-                                : appController.binanceConnectionStatus === "Blocked" ? "danger" : "neutral"
+                            tone: appController.binanceConnectionState === "Connected" ? "success"
+                                : appController.binanceConnectionState === "Checking" ? "warning"
+                                : appController.binanceConnectionState === "Blocked" ? "danger" : "neutral"
                         }
                         Button {
                             text: appController.checkingConnection ? appController.appText.settings_checking_status : appController.appText.check_readonly_access_button
@@ -3457,9 +3469,9 @@ ApplicationWindow {
                             StatusPill {
                                 Layout.alignment: Qt.AlignVCenter
                                 label: appController.aiProviderHealthStatus
-                                tone: appController.aiProviderHealthStatus === "Connected" ? "success"
-                                    : appController.aiProviderHealthStatus === "Checking" ? "warning"
-                                    : appController.aiProviderHealthStatus === "Blocked" ? "danger" : "neutral"
+                                tone: appController.aiProviderHealthState === "Connected" ? "success"
+                                    : appController.aiProviderHealthState === "Checking" ? "warning"
+                                    : appController.aiProviderHealthState === "Blocked" ? "danger" : "neutral"
                             }
                             Button {
                                 text: appController.checkingAiProvider ? appController.appText.settings_checking_status : appController.appText.settings_check_ai_provider_button
@@ -4508,8 +4520,8 @@ ApplicationWindow {
                     }
                     Item { Layout.fillWidth: true }
                     StatusPill {
-                        label: appController.liveTradingCheckStatus === "Verified" ? "VERIFIED" : appController.liveTradingKeyStatus === "PASS" ? "CONFIGURED" : "LOCKED"
-                        tone: appController.liveTradingCheckStatus === "Verified" ? "success" : "warning"
+                        label: appController.liveTradingCheckState === "Verified" ? "VERIFIED" : appController.liveTradingKeyStatus === "PASS" ? "CONFIGURED" : "LOCKED"
+                        tone: appController.liveTradingCheckState === "Verified" ? "success" : "warning"
                     }
                 }
                 Text {
@@ -5267,10 +5279,19 @@ ApplicationWindow {
         standardButtons: Dialog.Close
 
         ScrollView {
+            id: guideScroll
             anchors.fill: parent
             clip: true
+            // Size to the available width (which excludes the vertical
+            // scrollbar) so content never overflows sideways and raises a
+            // horizontal scrollbar over the last line.
+            contentWidth: availableWidth
+            contentHeight: guideDialogContent.implicitHeight + 24
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
             ColumnLayout {
-                width: guideDialog.width - 48
+                id: guideDialogContent
+                width: guideScroll.availableWidth
                 spacing: 14
                 StatusPill {
                     label: activeGuide.section || appController.appText.guide_section_fallback

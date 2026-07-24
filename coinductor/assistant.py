@@ -27,6 +27,33 @@ class AssistantResponse:
     proposed_action: dict[str, object] | None = None
 
 
+# Letters that exist in Slovak but never in Czech, plus common Slovak function
+# words with no Czech spelling. Used to catch a model drifting into Slovak on a
+# Czech question, which instructions alone do not reliably prevent.
+_SLOVAK_ONLY_LETTERS = "ôľŕĺä"
+_SLOVAK_ONLY_WORDS = frozenset(
+    {
+        "nie", "sú", "aj", "iba", "ktorý", "ktoré", "ktorá", "ktorých",
+        "môže", "podľa", "veľmi", "žiadne", "žiadny", "odporúčané", "súčasnosti",
+    }
+)
+
+
+def looks_slovak(text: str) -> bool:
+    """Heuristic: does this Czech-intended answer read as Slovak?
+
+    Conservative on purpose - a false positive costs one extra request, while a
+    false negative shows the user the wrong language.
+    """
+    if not text:
+        return False
+    lowered = text.lower()
+    if any(letter in lowered for letter in _SLOVAK_ONLY_LETTERS):
+        return True
+    words = {word.strip(".,;:!?()\"'") for word in lowered.split()}
+    return len(words & _SLOVAK_ONLY_WORDS) >= 2
+
+
 def _open_guide_action(guide_id: str, czech: bool) -> dict[str, object] | None:
     if not guide_id:
         return None
@@ -57,14 +84,17 @@ class ContextualHelpService:
 
         # Meta question about language. Answered deterministically so it never
         # reaches the model, which otherwise treats it as a portfolio question.
-        if any(
-            phrase in query
-            for phrase in (
-                "mluvit cesky", "povidat cesky", "umis cesky", "mluvis cesky", "domluvim se cesky",
-                "odpovidat cesky", "cesky s tebou", "do you speak czech", "can you speak czech",
-                "talk to you in czech", "answer in czech",
+        # Matched on stems so both "česky" and "v češtině" are covered, in
+        # questions ("můžu s tebou mluvit...") and imperatives ("mluv česky").
+        language_mentioned = any(stem in query for stem in ("cesky", "cestin", "czech"))
+        language_context = any(
+            word in query
+            for word in (
+                "mluv", "povid", "odpovid", "umis", "umite", "bavit", "dorozum", "rozumis",
+                "komunik", "pis ", "napis", "speak", "talk", "answer", "write", "reply",
             )
-        ):
+        )
+        if language_mentioned and language_context:
             if czech:
                 return (
                     "Ano, můžeme se bavit česky. Ptejte se česky a odpovím česky. "
@@ -633,6 +663,31 @@ class ProviderBackedAssistant:
             answer = self._request_answer(base_url, headers, retry_body, timeout)
         if not answer:
             raise RuntimeError("AI provider returned an empty answer after one plain-text retry.")
+        if czech and looks_slovak(answer):
+            # Instructions alone do not reliably stop a small model drifting into
+            # Slovak, so verify the output and retry once before giving up.
+            czech_only_body = {
+                "model": model,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "Odpovídej výhradně česky. Nepoužívej slovenštinu ani slovenská slova "
+                            "(nie, sú, aj, iba, ktorý, môže, podľa) a nikdy nepiš písmena ô, ľ, ŕ, ĺ, ä. "
+                            "Vrať stručnou odpověď v prostém textu, bez JSON."
+                        ),
+                    },
+                    {"role": "user", "content": user_content},
+                ],
+                "temperature": 0.1,
+            }
+            if _is_local_endpoint(base_url):
+                czech_only_body["reasoning_effort"] = "none"
+            retried = self._request_answer(base_url, headers, czech_only_body, timeout)
+            if retried and not looks_slovak(retried):
+                return retried
+            # Better a clean Czech fallback than an answer in the wrong language.
+            raise RuntimeError("Model odpověděl slovensky místo česky.")
         return answer
 
     def _request_answer(

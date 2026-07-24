@@ -713,6 +713,40 @@ def test_completed_answer_is_immediately_visible_in_chat_history(tmp_path, monke
     assert controller.assistantHistory[0]["title"] == "What does Refresh checks do?"
 
 
+def test_looks_slovak_flags_slovak_but_not_czech() -> None:
+    from coinductor.assistant import looks_slovak
+
+    slovak = (
+        "Vaša aktuálna stratégia je v režime HOLD, čo znamená, že žiadne aktívne "
+        "obchodovanie nie je odporúčané. V súčasnosti nie sú žiadne stratégie vhodné."
+    )
+    assert looks_slovak(slovak) is True
+
+    for czech in (
+        "Vaše aktuální strategie je v režimu HOLD, což znamená, že žádné aktivní obchodování není doporučeno.",
+        "Action Plan zobrazuje konkrétní další kroky z posledního běhu.",
+        "Ano, můžeme se bavit česky. Ptejte se česky a odpovím česky.",
+    ):
+        assert looks_slovak(czech) is False
+
+
+def test_language_meta_question_matches_noun_and_imperative_forms() -> None:
+    service = ContextualHelpService()
+
+    # "v češtině" and imperatives previously fell through to the model, which
+    # answered about trading strategy instead.
+    for question in (
+        "Můžu si s tebou povídat v češtině?",
+        "Mluv česky",
+        "Odpovídej mi v češtině",
+        "Umíš česky?",
+    ):
+        assert service.answer(question, {}) is not None, question
+
+    for unrelated in ("Jaká je cena BTC?", "Co je Action Plan?", "Kde najdu reporty?"):
+        assert service.answer(unrelated, {}) is None, unrelated
+
+
 def test_language_meta_question_is_answered_deterministically() -> None:
     service = ContextualHelpService()
 
@@ -821,3 +855,41 @@ def _snapshot() -> DesktopSnapshot:
         run_history=(),
     )
     return snapshot
+
+
+def test_slovak_answer_triggers_retry_then_clean_czech_fallback(tmp_path, monkeypatch) -> None:
+    """A model that keeps answering Slovak must never reach the user."""
+    calls: list[int] = []
+    slovak = "Vaša stratégia nie je vhodná, sú tu iba riziká podľa filtrov."
+
+    def always_slovak(request, timeout=0):
+        calls.append(1)
+
+        class _Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self):
+                return json.dumps({"choices": [{"message": {"content": json.dumps({"answer": slovak})}}]}).encode("utf-8")
+
+        return _Response()
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    (tmp_path / ".env").write_text("LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\n", encoding="utf-8")
+    monkeypatch.setattr(assistant_module.urllib.request, "urlopen", always_slovak)
+
+    result = ProviderBackedAssistant("config.toml", str(tmp_path / ".env")).answer(
+        "Co znamená Action Plan?", _snapshot()
+    )
+
+    # It retried once with a Czech-only instruction...
+    assert len(calls) >= 2
+    # ...and, still getting Slovak, returned clean Czech instead of the Slovak text.
+    from coinductor.assistant import looks_slovak
+
+    assert looks_slovak(result) is False
+    assert "nie je vhodná" not in result

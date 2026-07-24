@@ -197,3 +197,41 @@ def test_action_plan_surfaces_only_active_bots_requiring_attention(monkeypatch, 
     assert alert["actionCode"] == "OPEN_ACTIVE_STRATEGIES"
     assert "Core Basket" in alert["detail"]
     assert "BTC Grid" not in alert["detail"]
+
+
+def test_challenge_hold_outcome_states_whether_an_order_happened(monkeypatch, tmp_path) -> None:
+    """The old message only said the override "was evaluated", which left the
+    user unsure whether a trade had been placed."""
+    controller = _controller(monkeypatch, tmp_path)
+
+    controller._challenged_symbol = "BTCUSDC"
+    controller._decision = "HOLD"
+    rejected = controller._challenge_outcome_message()
+    assert "rejected" in rejected
+    assert "No order was placed" in rejected
+
+    controller._challenged_symbol = "BTCUSDC"
+    controller._decision = "BUY"
+    accepted = controller._challenge_outcome_message()
+    assert "BUY" in accepted
+    assert "Nothing was submitted" in accepted
+
+    # Consumed once, so an ordinary run keeps its own completion message.
+    assert controller._challenge_outcome_message() == ""
+
+
+def test_challenge_hold_keeps_the_user_on_the_current_page(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    controller._decision = "HOLD"
+    controller._manual_override_symbols = ["BTCUSDC"]
+    controller._current_page = 3
+    started: dict[str, object] = {}
+    monkeypatch.setattr(
+        controller, "_start_analysis", lambda *a, **kw: started.update(kw)
+    )
+
+    controller.challengeHold("BTCUSDC")
+
+    # Was hardcoded to the Action Plan, which navigated away from the dialog.
+    assert started["result_page"] == 3
+    assert started["manual_override_symbol"] == "BTCUSDC"

@@ -290,6 +290,7 @@ class AppController(QObject):
             }
         ]
         self._current_page = 0
+        self._challenged_symbol = ""
         self._pending_result_page = 3
         self._pending_completion_message = "Analysis complete. Review the Action Plan."
         self._onboarding_path = ""
@@ -1717,13 +1718,18 @@ class AppController(QObject):
         if normalized not in self._manual_override_symbols:
             self.notificationRequested.emit(f"{normalized} is not in the allowed trading symbols.")
             return
+        # Keep the user on the screen they launched this from; the detail dialog
+        # refreshes in place, so yanking them to the Action Plan only hid what
+        # had changed. The completion message is rewritten in _on_completed once
+        # the outcome is actually known.
+        self._challenged_symbol = normalized
         self._start_analysis(
             "REAL",
             True,
             True,
             True,
-            result_page=3,
-            completion_message=f"Manual override evaluated for {normalized}. Review the Action Plan.",
+            result_page=self._current_page,
+            completion_message=f"Manual override evaluated for {normalized}.",
             manual_override_symbol=normalized,
         )
 
@@ -2097,6 +2103,18 @@ class AppController(QObject):
         self._progress = percent
         self.stateChanged.emit()
 
+    def _challenge_outcome_message(self) -> str:
+        """Say whether the challenge changed the decision, not just that it ran."""
+        symbol = getattr(self, "_challenged_symbol", "")
+        if not symbol:
+            return ""
+        self._challenged_symbol = ""
+        if self._decision == "HOLD":
+            return service_text("challenge_rejected", self._wizard_language).format(symbol=symbol)
+        return service_text("challenge_accepted", self._wizard_language).format(
+            symbol=symbol, decision=self._decision
+        )
+
     @Slot(object)
     def _on_completed(self, result: DesktopRunResult) -> None:
         self._hydrate_run_result(result)
@@ -2111,7 +2129,11 @@ class AppController(QObject):
         self.stateChanged.emit()
         self.readinessChanged.emit()
         self.setCurrentPage(self._pending_result_page)
-        self.notificationRequested.emit(self._pending_completion_message)
+        outcome = self._challenge_outcome_message()
+        message = outcome or self._pending_completion_message
+        self._status_text = f"Run {result.run_id} completed - {message}"
+        self.stateChanged.emit()
+        self.notificationRequested.emit(message)
 
     @Slot(str)
     def _on_failed(self, message: str) -> None:

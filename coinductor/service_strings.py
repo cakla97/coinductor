@@ -488,6 +488,15 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     "card_why_watched": {"en": "Why watched?", "cs": "Proč jen sledovat?"},
     "card_show_blockers": {"en": "Show blockers", "cs": "Zobrazit blokátory"},
     "card_show_manual_setup": {"en": "Show manual setup", "cs": "Zobrazit ruční nastavení"},
+    # --- manual HOLD challenge outcome ---
+    "challenge_rejected": {
+        "en": "Challenge for {symbol} was rejected: the risk engine still returns HOLD. No order was placed.",
+        "cs": "Výzva pro {symbol} byla zamítnuta: rizikový engine stále vrací HOLD. Žádný příkaz nebyl zadán.",
+    },
+    "challenge_accepted": {
+        "en": "Challenge for {symbol} passed the checks: the decision is now {decision}. Nothing was submitted - review it and confirm explicitly.",
+        "cs": "Výzva pro {symbol} prošla kontrolami: rozhodnutí je nyní {decision}. Nic nebylo odesláno – zkontrolujte a výslovně potvrďte.",
+    },
     # --- setup service check names ---
     "setup_check_python": {"en": "Python", "cs": "Python"},
     "setup_check_configuration": {"en": "Configuration", "cs": "Konfigurace"},

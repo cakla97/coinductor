@@ -63,6 +63,23 @@ ApplicationWindow {
     property string fundingCurrency: "USDC"
     property var activeGuide: ({})
     property var activeActionPlanItem: ({})
+    // Remembered so the open dialog can re-resolve its item after a run
+    // rebuilds the list; otherwise it keeps showing pre-run data.
+    property string activeActionPlanCode: ""
+    property string activeActionPlanTitle: ""
+
+    function refreshActiveActionPlanItem() {
+        if (!actionPlanDetailDialog.visible || activeActionPlanCode === "")
+            return
+        var items = appController.actionPlanItems
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].actionCode === activeActionPlanCode && items[i].title === activeActionPlanTitle) {
+                activeActionPlanItem = items[i]
+                return
+            }
+        }
+    }
+
     property var activeStrategyItem: ({})
     property string pendingSafetyTarget: ""
     property string pendingSafetyPhrase: ""
@@ -213,6 +230,9 @@ ApplicationWindow {
         }
         function onOpenGuideRequested(guideId) {
             window.openGuide(guideId)
+        }
+        function onActionsChanged() {
+            window.refreshActiveActionPlanItem()
         }
     }
 
@@ -1803,6 +1823,10 @@ ApplicationWindow {
                             elide: Text.ElideRight
                         }
                     }
+                    BusyDots {
+                        Layout.alignment: Qt.AlignVCenter
+                        visible: appController.busy
+                    }
                     Button {
                         text: appController.busy ? appController.appText.running_status : appController.appText.overview_run_analysis_button
                         enabled: !appController.busy
@@ -2394,6 +2418,8 @@ ApplicationWindow {
                                     enabled: modelData.actionCode !== "NONE"
                                     highlighted: modelData.tone === "ready"
                                     onClicked: {
+                                        window.activeActionPlanCode = modelData.actionCode || ""
+                                        window.activeActionPlanTitle = modelData.title || ""
                                         window.activeActionPlanItem = modelData
                                         actionPlanDetailDialog.open()
                                     }
@@ -3158,10 +3184,16 @@ ApplicationWindow {
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
                                 }
-                                Button {
-                                    text: appController.busy ? appController.appText.running_status : appController.appText.prepare_trade_preview_button
-                                    enabled: !appController.busy
-                                    onClicked: appController.prepareTradePreview()
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+                                    Button {
+                                        text: appController.busy ? appController.appText.running_status : appController.appText.prepare_trade_preview_button
+                                        enabled: !appController.busy
+                                        onClicked: appController.prepareTradePreview()
+                                    }
+                                    BusyDots { Layout.alignment: Qt.AlignVCenter; visible: appController.busy }
+                                    Item { Layout.fillWidth: true }
                                 }
                             }
                             ColumnLayout {
@@ -3176,10 +3208,16 @@ ApplicationWindow {
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
                                 }
-                                Button {
-                                    text: appController.busy ? appController.appText.running_status : appController.appText.prepare_bot_plan_button
-                                    enabled: !appController.busy
-                                    onClicked: appController.prepareBotPlan()
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: 8
+                                    Button {
+                                        text: appController.busy ? appController.appText.running_status : appController.appText.prepare_bot_plan_button
+                                        enabled: !appController.busy
+                                        onClicked: appController.prepareBotPlan()
+                                    }
+                                    BusyDots { Layout.alignment: Qt.AlignVCenter; visible: appController.busy }
+                                    Item { Layout.fillWidth: true }
                                 }
                             }
                             ColumnLayout {
@@ -4897,12 +4935,25 @@ ApplicationWindow {
                             Button {
                                 text: appController.busy ? appController.appText.running_status : appController.appText.challenge_hold_button
                                 enabled: !appController.busy && appController.manualOverrideSymbols.length > 0
-                                onClicked: {
-                                    appController.challengeHold(challengeHoldSymbol.currentText)
-                                    actionPlanDetailDialog.close()
-                                }
+                                // Deliberately does not close the dialog: closing it
+                                // dropped the user on the Action Plan with no idea
+                                // whether anything was happening. The dialog stays
+                                // open, shows progress, and refreshes in place.
+                                onClicked: appController.challengeHold(challengeHoldSymbol.currentText)
                             }
-                            Item { Layout.fillWidth: true }
+                            BusyDots {
+                                Layout.alignment: Qt.AlignVCenter
+                                visible: appController.busy
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                visible: appController.busy
+                                text: appController.statusText
+                                color: textSecondary
+                                font.pixelSize: 11
+                                elide: Text.ElideRight
+                            }
+                            Item { Layout.fillWidth: true; visible: !appController.busy }
                         }
                     }
                 }
@@ -5719,6 +5770,35 @@ ApplicationWindow {
             color: "#09110e"
             x: appLogo.markCx + appLogo.ringRadius * 0.34 - width / 2
             y: appLogo.markCy - height / 2
+        }
+    }
+
+    // Animated "something is happening" marker. A static "Running..." label
+    // left users unsure whether the app had actually started working.
+    component BusyDots: Row {
+        id: busyDots
+        property color dotColor: accent
+        property int dotSize: 5
+        spacing: 3
+        visible: true
+        Repeater {
+            model: 3
+            delegate: Rectangle {
+                required property int index
+                width: busyDots.dotSize
+                height: busyDots.dotSize
+                radius: width / 2
+                color: busyDots.dotColor
+                opacity: 0.25
+                SequentialAnimation on opacity {
+                    running: busyDots.visible
+                    loops: Animation.Infinite
+                    PauseAnimation { duration: index * 160 }
+                    NumberAnimation { to: 1.0; duration: 240 }
+                    NumberAnimation { to: 0.25; duration: 240 }
+                    PauseAnimation { duration: (2 - index) * 160 }
+                }
+            }
         }
     }
 

@@ -235,3 +235,23 @@ def test_challenge_hold_keeps_the_user_on_the_current_page(monkeypatch, tmp_path
     # Was hardcoded to the Action Plan, which navigated away from the dialog.
     assert started["result_page"] == 3
     assert started["manual_override_symbol"] == "BTCUSDC"
+
+
+def test_challenge_outcome_is_set_before_listeners_are_notified(monkeypatch, tmp_path) -> None:
+    """challengeOutcome is notified by actionsChanged.
+
+    Setting it after emitting left QML's text binding on the stale empty value
+    while the visibility binding had already flipped true, rendering an empty
+    banner.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    controller._challenged_symbol = "BTCUSDC"
+    controller._decision = "HOLD"
+    seen: list[str] = []
+    controller.actionsChanged.connect(lambda: seen.append(controller.challengeOutcome))
+
+    controller._on_completed(_run("HOLD"))
+
+    assert seen, "actionsChanged was not emitted"
+    assert seen[0] != "", "listeners saw an empty outcome"
+    assert "rejected" in seen[0]

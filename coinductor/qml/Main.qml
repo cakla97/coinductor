@@ -4961,7 +4961,9 @@ ApplicationWindow {
                         Rectangle {
                             Layout.fillWidth: true
                             Layout.preferredHeight: challengeOutcomeText.implicitHeight + 20
-                            visible: !appController.busy && appController.challengeOutcome.length > 0
+                            // Keyed off the label's own text so visibility and
+                            // content can never disagree and show an empty box.
+                            visible: !appController.busy && challengeOutcomeText.text.length > 0
                             radius: radiusSm
                             color: accentSoft
                             border.color: accent

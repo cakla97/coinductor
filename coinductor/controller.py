@@ -2128,21 +2128,22 @@ class AppController(QObject):
     @Slot(object)
     def _on_completed(self, result: DesktopRunResult) -> None:
         self._hydrate_run_result(result)
-        self._status_text = f"Run {result.run_id} completed - {self._pending_completion_message}"
         self._progress = 100
         self._snapshot = DesktopStore().load()
         self._asset_role_overrides = self._asset_policy_store.load()
         self._apply_snapshot()
         self._refresh_readiness()
+        # Resolve the outcome before emitting: challengeOutcome is notified by
+        # actionsChanged, so setting it afterwards left the QML text binding on
+        # the stale empty value while `visible` (which also reads busy) had
+        # already flipped true - an empty banner.
+        message = self._challenge_outcome_message() or self._pending_completion_message
+        self._status_text = f"Run {result.run_id} completed - {message}"
         self.actionsChanged.emit()
         self.dataChanged.emit()
         self.stateChanged.emit()
         self.readinessChanged.emit()
         self.setCurrentPage(self._pending_result_page)
-        outcome = self._challenge_outcome_message()
-        message = outcome or self._pending_completion_message
-        self._status_text = f"Run {result.run_id} completed - {message}"
-        self.stateChanged.emit()
         self.notificationRequested.emit(message)
 
     @Slot(str)

@@ -39,6 +39,26 @@ def test_every_credential_key_is_managed() -> None:
         assert key in SECRET_KEYS
 
 
+def test_disable_flag_keeps_the_real_keychain_out_of_tests(monkeypatch, tmp_path) -> None:
+    """conftest sets this for the whole suite.
+
+    Without it a test run resolves the developer's real credentials, so results
+    depend on machine state and a health check can reach a live endpoint.
+    """
+    monkeypatch.setenv("COINDUCTOR_DISABLE_KEYCHAIN", "1")
+    assert secret_store_module._keyring() is None
+
+    env = tmp_path / ".env"
+    env.write_text("BINANCE_API_KEY=only-from-env\n", encoding="utf-8")
+    store = SecretStore(env)
+    assert store.available() is False
+    assert store.get("BINANCE_API_KEY") == "only-from-env"
+
+    monkeypatch.setenv("COINDUCTOR_DISABLE_KEYCHAIN", "0")
+    # "0" means enabled, so the flag cannot be left on by accident.
+    assert secret_store_module._keyring() is not None
+
+
 def test_keychain_value_wins_over_env_file(monkeypatch, tmp_path) -> None:
     fake = FakeKeyring()
     fake.set_password("Coinductor", "BINANCE_API_KEY", "from-keychain")

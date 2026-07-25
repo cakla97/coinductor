@@ -44,7 +44,13 @@ def _keyring():
 
     Import and backend probing are both guarded: a missing dependency or an
     unsupported backend must degrade, never crash the app at startup.
+
+    ``COINDUCTOR_DISABLE_KEYCHAIN=1`` forces the .env-only path. Tests set it so
+    a run can never read or write the developer's real credential store, which
+    would otherwise make results depend on machine state.
     """
+    if os.environ.get("COINDUCTOR_DISABLE_KEYCHAIN", "").strip() not in ("", "0"):
+        return None
     try:
         import keyring  # noqa: PLC0415
 

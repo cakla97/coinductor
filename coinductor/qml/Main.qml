@@ -1949,7 +1949,14 @@ ApplicationWindow {
                     MetricCard { title: appController.appText.metric_portfolio_title; value: appController.portfolioValue; accentColor: accent; helpText: appController.appText.metric_portfolio_help }
                     MetricCard { title: appController.appText.metric_liquid_title; value: appController.liquidValue; accentColor: "#5aa9e6"; helpText: appController.appText.metric_liquid_help }
                     MetricCard { title: appController.appText.metric_locked_title; value: appController.lockedValue; accentColor: warning; helpText: appController.appText.metric_locked_help }
-                    MetricCard { title: appController.appText.metric_risk_gate_title; value: appController.riskState; accentColor: "#d66b75"; helpText: appController.appText.metric_risk_gate_help }
+                    // The reason is repeated in the tooltip so it stays fully
+                    // readable even when the card has to truncate it.
+                    MetricCard {
+                        title: appController.appText.metric_risk_gate_title
+                        value: appController.riskState
+                        accentColor: "#d66b75"
+                        helpText: appController.appText.metric_risk_gate_help + "\n\n" + appController.riskState
+                    }
                 }
 
                 Rectangle {
@@ -5747,29 +5754,39 @@ ApplicationWindow {
     }
 
     component MetricCard: Rectangle {
+        id: metricCard
         required property string title
         required property string value
         required property color accentColor
         property string helpText: ""
         Layout.fillWidth: true
-        Layout.preferredHeight: 104
+        // Most values are short ("829.06 USDC"), but the risk gate holds a
+        // sentence. Grow instead of truncating it to one unreadable line;
+        // cards in a row share the tallest height, so they stay aligned.
+        Layout.preferredHeight: Math.max(104, metricCardContent.implicitHeight + spacingLg * 2)
         radius: radiusMd
         color: panel
         border.color: border
         Column {
-            anchors.fill: parent
+            id: metricCardContent
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
             anchors.margins: spacingLg
             spacing: spacingSm
-            Text { text: title; color: textSecondary; font.pixelSize: textSizeCaption; font.bold: true }
+            Text { text: metricCard.title; color: textSecondary; font.pixelSize: textSizeCaption; font.bold: true }
             Text {
                 width: parent.width
-                text: value
+                text: metricCard.value
                 color: textPrimary
-                font.pixelSize: 18
+                // Long prose drops a size so it stays readable when wrapped.
+                font.pixelSize: metricCard.value.length > 28 ? 14 : 18
                 font.bold: true
+                wrapMode: Text.WordWrap
+                maximumLineCount: 3
                 elide: Text.ElideRight
             }
-            Rectangle { width: 28; height: 3; radius: 2; color: accentColor }
+            Rectangle { width: 28; height: 3; radius: 2; color: metricCard.accentColor }
         }
         MouseArea {
             anchors.fill: parent

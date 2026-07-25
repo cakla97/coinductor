@@ -137,3 +137,51 @@ def test_store_degrades_quietly_without_a_backend(monkeypatch, tmp_path) -> None
     assert store.available() is False
     assert store.stored_keys() == ()
     store.delete()  # must not raise
+
+
+def test_status_panels_see_keychain_only_values(monkeypatch, tmp_path) -> None:
+    """Status readers must consult the keychain, not just os.environ/.env.
+
+    They previously read only those two, so a value saved to the keychain and
+    never written to .env - which is now the normal case - showed as missing:
+    a configured vision model reported "not configured".
+    """
+    from coinductor.ai_provider import AiProviderService
+    from coinductor.setup_service import SetupService
+
+    fake = FakeKeyring()
+    fake.set_password("Coinductor", "LLM_BASE_URL", "http://127.0.0.1:11434/v1")
+    fake.set_password("Coinductor", "LLM_MODEL", "qwen3:14b")
+    fake.set_password("Coinductor", "LLM_VISION_MODEL", "qwen3-vl:8b-thinking")
+    fake.set_password("Coinductor", "BINANCE_API_KEY", "k")
+    fake.set_password("Coinductor", "BINANCE_API_SECRET", "s")
+    _use(monkeypatch, fake)
+
+    monkeypatch.chdir(tmp_path)
+    for key in ("LLM_BASE_URL", "LLM_MODEL", "LLM_VISION_MODEL", "BINANCE_API_KEY", "BINANCE_API_SECRET"):
+        monkeypatch.delenv(key, raising=False)
+    config = tmp_path / "config.toml"
+    config.write_text(
+        """
+[app]
+mode = "DRY_RUN"
+mock_data = true
+database_path = "work/t.sqlite3"
+reports_dir = "outputs/reports"
+
+[strategy]
+allowed_symbols = ["BTCUSDC"]
+
+[ai]
+enabled = true
+""",
+        encoding="utf-8",
+    )
+    env = tmp_path / ".env"  # deliberately absent
+
+    snapshot = AiProviderService(config, env).inspect()
+    assert snapshot.vision_model == "qwen3-vl:8b-thinking"
+    assert AiProviderService(config, env).vision_support()[0] is True
+
+    checks = {c["code"]: c for c in SetupService(config, env).inspect().checks if c["code"]}
+    assert checks["BINANCE_READONLY"]["status"] == "PASS"

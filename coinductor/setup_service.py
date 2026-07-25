@@ -8,6 +8,7 @@ from trading_agent.config import default_config_path, load_config
 from trading_agent.config_validator import ConfigValidator
 
 from .models import SetupSnapshot
+from .secret_store import SecretStore
 from .service_strings import service_text
 
 
@@ -159,7 +160,8 @@ class SetupService:
         return values
 
     def _value(self, env: dict[str, str], key: str) -> str:
-        return os.getenv(key, "") or env.get(key, "")
+        # Include the keychain, or a credential stored only there reads as missing.
+        return os.getenv(key, "") or env.get(key, "") or SecretStore(self.env_path).get(key)
 
     def _add(
         self,

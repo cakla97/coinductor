@@ -986,8 +986,9 @@ ApplicationWindow {
                                                         enabled: !appController.discoveringAiModels
                                                         onClicked: appController.discoverLocalAiModels(localAiBaseUrl.text)
                                                     }
+                                                    // No anchors here: this is a Flow, and anchoring a
+                                                    // child breaks the whole layout.
                                                     BusyDots {
-                                                        anchors.verticalCenter: parent.verticalCenter
                                                         visible: appController.discoveringAiModels
                                                     }
                                                 }

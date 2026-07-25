@@ -8,7 +8,7 @@ import urllib.request
 from trading_agent.config import default_config_path, load_config
 
 from .models import AiModelDiscoveryResult, AiProviderHealthResult, AiProviderSnapshot
-from .secret_store import load_secrets
+from .secret_store import SecretStore, load_secrets
 from .service_strings import service_text
 
 
@@ -244,7 +244,10 @@ class AiProviderService:
         return values
 
     def _value(self, env: dict[str, str], key: str) -> str:
-        return os.getenv(key, "") or env.get(key, "")
+        # The keychain has to be consulted here too: a value saved only there
+        # (never written to .env) is otherwise invisible to the status panels,
+        # which is how a configured vision model looked "not configured".
+        return os.getenv(key, "") or env.get(key, "") or SecretStore(self.env_path).get(key)
 
     def _redact_url(self, value: str) -> str:
         if not value:

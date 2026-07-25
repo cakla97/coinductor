@@ -301,12 +301,22 @@ class AssistantIntentService:
         return None
 
     def _role_action(self, query: str, snapshot: DesktopSnapshot) -> AssistantResponse | None:
-        if not any(word in query for word in ("role", "policy", "reclass", "classif", "presun", "zmen", "nastav")):
+        # "role"/"classif" name the feature outright. The verbs below do not:
+        # "nastav" matches any Czech phrasing about settings, so on its own it
+        # made unrelated questions ("je to dobre nastavene?") return canned
+        # role-change instructions instead of falling through to a real answer.
+        names_feature = any(word in query for word in ("role", "policy", "reclass", "classif"))
+        verb_only = any(word in query for word in ("presun", "zmen", "nastav"))
+        if not (names_feature or verb_only):
             return None
         assets = {str(item.get("asset", "")).upper() for item in snapshot.portfolio_assets}
         asset = next((item for item in sorted(assets, key=len, reverse=True) if re.search(rf"\b{re.escape(item.lower())}\b", query)), "")
         role = next((value for alias, value in self._ROLE_ALIASES.items() if alias in query), "")
         if not asset or not role:
+            # Only claim the question when a role change was plainly intended;
+            # otherwise let the rest of the pipeline answer it.
+            if not (names_feature or asset or role):
+                return None
             return AssistantResponse(
                 "To prepare a role change, name one asset from the loaded portfolio and one exact role, for example: "
                 "Change BNB role to Grid candidate."

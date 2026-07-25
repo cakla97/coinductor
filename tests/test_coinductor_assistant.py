@@ -1044,3 +1044,34 @@ def test_thinking_models_answering_in_the_reasoning_field_are_read(tmp_path, mon
     answer = ProviderBackedAssistant("config.toml", ".env").answer("Explain risk", _snapshot())
 
     assert answer == "The screenshot shows the Action Plan page."
+
+
+def test_role_intent_does_not_hijack_generic_settings_questions() -> None:
+    """"nastav" matches any Czech phrasing about settings.
+
+    As a standalone trigger it made unrelated questions return canned
+    role-change instructions instead of a real answer.
+    """
+    service = AssistantIntentService()
+    snapshot = _snapshot()
+
+    for question in (
+        "ok, mam to spravne nastavene nebo bys doporucil jine nastaveni?",
+        "je to dobre nastavene?",
+        "zmen mi nastaveni aplikace",
+    ):
+        assert service.propose(question, snapshot) is None, question
+
+
+def test_role_intent_still_handles_real_role_requests() -> None:
+    service = AssistantIntentService()
+    snapshot = _snapshot()
+
+    action = service.propose("Change BTC role to Grid candidate", snapshot)
+    assert action is not None and action.proposed_action is not None
+    assert action.proposed_action["type"] == "SET_ASSET_ROLE"
+    assert action.proposed_action["asset"] == "BTC"
+
+    # Naming the feature without both parts still gets the guidance.
+    partial = service.propose("what does the role mean?", snapshot)
+    assert partial is not None and "name one asset" in partial.text

@@ -945,3 +945,60 @@ def test_image_questions_send_a_lean_payload(tmp_path, monkeypatch) -> None:
     assert "image" in captured["system"].lower()
     guidance = " ".join(payload["guidance"]).lower()
     assert "visible in the image" in guidance
+
+
+def test_image_questions_bypass_the_text_only_matchers(tmp_path, monkeypatch) -> None:
+    """A keyword in an image question must not hijack it.
+
+    "Co znamena kdyz mam takto nastaveny profil?" asked about a screenshot came
+    back as canned role-change instructions, because the deterministic text
+    matchers ran first and cannot see the attached image.
+    """
+    reached_provider = {"yes": False}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self) -> bytes:
+            reached_provider["yes"] = True
+            return json.dumps(
+                {"choices": [{"message": {"content": json.dumps({"answer": "The screenshot shows the decision profile."})}}]}
+            ).encode("utf-8")
+
+    monkeypatch.chdir(tmp_path)
+    for key in ("LLM_BASE_URL", "LLM_MODEL", "LLM_VISION_MODEL"):
+        monkeypatch.delenv(key, raising=False)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\nLLM_VISION_MODEL=qwen3-vl:8b\n",
+        encoding="utf-8",
+    )
+    image = tmp_path / "profile.png"
+    image.write_bytes(b"fake-png")
+    monkeypatch.setattr(assistant_module.urllib.request, "urlopen", lambda request, timeout: FakeResponse())
+
+    response = ProviderBackedAssistant("config.toml", ".env").respond(
+        "What does it mean when I have the profile and role set like this?",
+        _snapshot(),
+        image_path=str(image),
+    )
+
+    assert reached_provider["yes"], "an image question was answered without the vision model"
+    assert "screenshot" in response.text.lower()
+
+
+def test_text_questions_still_use_the_deterministic_matchers(tmp_path, monkeypatch) -> None:
+    """The bypass must apply only when an image is attached."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+
+    response = ProviderBackedAssistant("config.toml", str(tmp_path / ".env")).respond(
+        "Can I talk to you in Czech?", _snapshot()
+    )
+
+    assert response.text.startswith("Yes, I can answer in Czech")

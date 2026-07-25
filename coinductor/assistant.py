@@ -530,6 +530,14 @@ class ProviderBackedAssistant:
         conversation: tuple[dict[str, str], ...] = (),
         image_path: str = "",
     ) -> AssistantResponse:
+        # With an image attached the question is about that image, so the
+        # text-only matchers below must not answer it. They cannot see the
+        # picture, and a keyword like "profile" or "role" would otherwise hijack
+        # the question and return canned text about an unrelated feature.
+        if image_path:
+            return AssistantResponse(
+                self.answer(question, snapshot, app_context, conversation, image_path)
+            )
         deterministic = AssistantIntentService().propose(question, snapshot)
         if deterministic is not None:
             return deterministic

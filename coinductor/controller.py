@@ -24,7 +24,7 @@ from .diagnostics_service import DiagnosticsService
 from .guide_service import GuideService
 from .local_data_reset import LocalDataResetService
 from .local_ai_recommender import LocalAiRecommender
-from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
+from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions, SafetySnapshot
 from .readiness_service import ReadinessService
 from .risk_profile import STYLE_GATES, apply_style_to_config, describe_gates
 from .safety_service import SafetyService
@@ -395,7 +395,7 @@ class AppController(QObject):
         self._app_tour_step = 0
         self._app_tour_visible = self._user_profile_snapshot.configured and not self._app_tour_service.is_completed()
         self._safety_service = SafetyService(language=self._wizard_language)
-        self._safety_snapshot = self._safety_service.inspect()
+        self._safety_snapshot = self._inspect_safety()
         self._readiness_service = ReadinessService(language=self._wizard_language)
         self._readiness_snapshot = self._readiness_service.inspect(
             self._setup_snapshot,
@@ -567,6 +567,26 @@ class AppController(QObject):
     def wizardText(self) -> dict[str, str]:
         return UiStringsService().wizard_text(self._wizard_language)
 
+    def _automation_allows_submit(self) -> bool:
+        """Whether the profile's automation level permits submitting anything.
+
+        RECOMMEND_ONLY promises the user that Coinductor "will explain and
+        recommend actions, but you decide what to do", so it vetoes every
+        submit. Nothing here can grant a permission the safety stage withholds.
+        """
+        profile = self._user_profile_service.store.load()
+        if profile is None:
+            return False
+        return str(profile.automation_level).strip().upper() == "GUARDED_AUTOMATION"
+
+    def _inspect_safety(self) -> SafetySnapshot:
+        self._safety_service.automation_allows_submit = self._automation_allows_submit()
+        return self._safety_service.inspect()
+
+    @Property(bool, notify=safetyChanged)
+    def automationAllowsSubmit(self) -> bool:
+        return self._safety_service.automation_allows_submit
+
     @Property("QVariantMap", notify=wizardLanguageChanged)
     def styleGateHints(self) -> dict[str, str]:
         """What each management style changes, keyed by the stored style code."""
@@ -635,7 +655,7 @@ class AppController(QObject):
         self._user_profile_service.language = normalized
         self._user_profile_snapshot = self._user_profile_service.inspect()
         self._safety_service.language = normalized
-        self._safety_snapshot = self._safety_service.inspect()
+        self._safety_snapshot = self._inspect_safety()
         self._local_data_reset_snapshot = LocalDataResetService(language=normalized).preview()
         self._readiness_service.language = normalized
         self._refresh_readiness()
@@ -1090,7 +1110,7 @@ class AppController(QObject):
         if not self._user_profile_snapshot.configured:
             self._onboarding_wizard_visible = True
             self._app_tour_visible = False
-        self._safety_snapshot = self._safety_service.inspect()
+        self._safety_snapshot = self._inspect_safety()
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
         self.setupChanged.emit()
@@ -1117,16 +1137,19 @@ class AppController(QObject):
     def useSafeDefaultProfile(self) -> None:
         path = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
         self._user_profile_snapshot = self._user_profile_service.save_safe_default(path)
+        self._safety_snapshot = self._inspect_safety()
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
         self.userProfileChanged.emit()
         self.readinessChanged.emit()
         self.firstPortfolioPlanChanged.emit()
         self.onboardingWizardChanged.emit()
+        self.safetyChanged.emit()
 
     @Slot()
     def deleteUserProfile(self) -> None:
         self._user_profile_snapshot = self._user_profile_service.delete_profile()
+        self._safety_snapshot = self._inspect_safety()
         self._app_tour_service.reset()
         self._app_tour_visible = False
         self._onboarding_wizard_visible = True
@@ -1137,6 +1160,7 @@ class AppController(QObject):
         self.firstPortfolioPlanChanged.emit()
         self.onboardingWizardChanged.emit()
         self.appTourChanged.emit()
+        self.safetyChanged.emit()
 
     @Slot("QVariantList", str, result=bool)
     def executeLocalDataReset(self, codes, confirmation: str) -> bool:
@@ -1206,12 +1230,16 @@ class AppController(QObject):
                         style=management_style.title(), changes=detail
                     )
                 )
+        # The automation level vetoes live submit, so the safety snapshot has to
+        # be recomputed here rather than waiting for the next refreshSetup().
+        self._safety_snapshot = self._inspect_safety()
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
         self.userProfileChanged.emit()
         self.readinessChanged.emit()
         self.firstPortfolioPlanChanged.emit()
         self.onboardingWizardChanged.emit()
+        self.safetyChanged.emit()
 
     @Slot()
     def checkBinanceReadOnly(self) -> None:
@@ -1410,6 +1438,7 @@ class AppController(QObject):
         if normalized_target == "ARMED" and not self._snapshot.has_ready_live_preview:
             self.notificationRequested.emit("Review at least one PREVIEW_READY live trade result before arming guarded actions.")
             return
+        self._safety_service.automation_allows_submit = self._automation_allows_submit()
         try:
             self._safety_snapshot = self._safety_service.transition(
                 normalized_target,
@@ -1442,6 +1471,7 @@ class AppController(QObject):
 
     @Slot()
     def lockLiveSubmit(self) -> None:
+        self._safety_service.automation_allows_submit = self._automation_allows_submit()
         self._safety_snapshot = self._safety_service.lock_live_submit()
         self._refresh_readiness()
         self._action_plan_items = self._build_action_plan_items()

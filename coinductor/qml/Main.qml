@@ -3327,6 +3327,28 @@ ApplicationWindow {
                         }
                         Text { Layout.fillWidth: true; text: appController.safetyDetail; color: textSecondary; font.pixelSize: 12; wrapMode: Text.WordWrap }
                         Rectangle {
+                            // The profile can lock submit even when the stage allows it,
+                            // so say so here rather than leaving buttons quietly absent.
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: automationLockText.implicitHeight + 20
+                            visible: !appController.automationAllowsSubmit
+                            radius: radiusSm
+                            color: panelRaised
+                            border.color: warning
+                            Text {
+                                id: automationLockText
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 12
+                                text: appController.appText.automation_locks_submit
+                                color: warning
+                                font.pixelSize: 11
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                        Rectangle {
                             Layout.fillWidth: true
                             Layout.preferredHeight: liveApiSummaryContent.implicitHeight + 24
                             radius: radiusSm

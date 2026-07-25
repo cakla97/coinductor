@@ -49,6 +49,47 @@ def test_safety_service_rejects_live_transition_without_verified_key(tmp_path) -
         raise AssertionError("ARMED transition should require a verified live key")
 
 
+def test_recommend_only_profile_vetoes_submit_even_when_live_enabled(tmp_path) -> None:
+    """RECOMMEND_ONLY promises Coinductor never acts, so it overrides the stage."""
+    path = tmp_path / "state" / "app_safety_state.toml"
+    SafetyStateStore(path).save(SafetyState(stage="LIVE_ENABLED", detail="Live."))
+    service = SafetyService(path)
+    service.automation_allows_submit = False
+
+    snapshot = service.inspect()
+
+    assert snapshot.stage == "LIVE_ENABLED"
+    assert snapshot.allows_live_preview is True, "previews are still recommendations"
+    assert snapshot.allows_live_submit is False
+    orders = next(item for item in snapshot.checks if item["name"] == "Orders")
+    assert orders["status"] == "LOCKED"
+    # The user armed the stage, so the detail must point at the real blocker.
+    assert "profile" in orders["detail"].lower()
+
+
+def test_automation_veto_cannot_grant_submit_the_stage_withholds(tmp_path) -> None:
+    service = SafetyService(tmp_path / "state" / "app_safety_state.toml")
+    service.automation_allows_submit = True
+
+    assert service.inspect().allows_live_submit is False
+
+
+def test_recommend_only_profile_blocks_arming_live_submit(tmp_path) -> None:
+    service = SafetyService(tmp_path / "state" / "app_safety_state.toml")
+    service.transition("PREVIEW_ONLY", "Enable mainnet preview", live_key_verified=False)
+    service.transition("ARMED", "Arm guarded actions", live_key_verified=True)
+    service.automation_allows_submit = False
+
+    try:
+        service.transition("LIVE_ENABLED", "Enable guarded live submit", live_key_verified=True)
+    except ValueError as exc:
+        assert "Recommendations only" in str(exc)
+    else:
+        raise AssertionError("LIVE_ENABLED must not be reachable under RECOMMEND_ONLY")
+
+    assert SafetyStateStore(service.store.path).load().stage == "ARMED"
+
+
 def test_safety_service_lock_returns_to_preview_only(tmp_path) -> None:
     service = SafetyService(tmp_path / "state" / "app_safety_state.toml")
     service.transition("PREVIEW_ONLY", "Enable mainnet preview", live_key_verified=False)

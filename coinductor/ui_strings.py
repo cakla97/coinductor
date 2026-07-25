@@ -629,6 +629,10 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Safety stage",
         "cs": "Bezpečnostní stupeň",
     },
+    "automation_locks_submit": {
+        "en": "Your profile is set to Recommendations only, so Coinductor never submits orders - it only explains and recommends. Switch Automation to Guarded automation in the setup wizard to unlock guarded live submit.",
+        "cs": "Váš profil je nastaven na Pouze doporučení, takže Coinductor nikdy neodesílá příkazy - pouze vysvětluje a doporučuje. Pro odemčení zabezpečeného živého odesílání přepněte Automatizaci na Zabezpečená automatizace v průvodci nastavením.",
+    },
     "live_api_title": {
         "en": "Live API",
         "cs": "Live API",

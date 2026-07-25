@@ -208,6 +208,10 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Live order submit is disabled",
         "cs": "Odesílání živých příkazů je vypnuté",
     },
+    "safety_check_orders_recommend_only": {
+        "en": "Locked by your profile: automation level is Recommendations only",
+        "cs": "Uzamčeno vaším profilem: úroveň automatizace je Pouze doporučení",
+    },
     "safety_check_orders_available": {
         "en": "Guarded live submit workflows may be shown",
         "cs": "Zabezpečené postupy živého odeslání se mohou zobrazit",
@@ -243,6 +247,10 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     "safety_stage_detail_LIVE_ENABLED": {
         "en": "Guarded live submissions are enabled with fresh validation and explicit per-action confirmation.",
         "cs": "Zabezpečená živá odeslání jsou povolena s čerstvou validací a výslovným potvrzením u každé akce.",
+    },
+    "safety_stage_detail_recommend_only": {
+        "en": "The stage would allow guarded live submissions, but your profile keeps Coinductor on recommendations only, so nothing can be submitted.",
+        "cs": "Stupeň by zabezpečená živá odeslání dovolil, ale váš profil drží Coinductor na pouhých doporučeních, takže nelze nic odeslat.",
     },
     # --- connection checks ---
     "conn_missing_config": {"en": "Missing config: {path}", "cs": "Chybí konfigurace: {path}"},

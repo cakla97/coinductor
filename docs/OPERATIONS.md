@@ -11,11 +11,27 @@ relying on them. Coinductor is a personal portfolio tool, not financial advice.
 
 Coinductor uses up to three separate keys, each with the narrowest permissions needed:
 
-| Key (`.env`) | Purpose | Permissions to enable | Never enable |
+| Key | Purpose | Permissions to enable | Never enable |
 |---|---|---|---|
 | `BINANCE_API_KEY` / `_SECRET` | Read-only portfolio analysis | Reading only | Spot/margin trading, withdrawals, transfers, futures |
 | `BINANCE_TESTNET_API_KEY` / `_SECRET` | Spot Testnet practice | Testnet spot trading | (testnet has no real funds) |
 | `BINANCE_LIVE_TRADE_API_KEY` / `_SECRET` | Guarded live spot submit only | Reading + spot trading | Withdrawals, transfers, margin, futures |
+
+### Where keys are stored
+
+Keys you save in the wizard or Settings go to the **OS keychain** (Windows Credential
+Manager), not to a plaintext file. Two consequences worth knowing:
+
+- The keychain is tied to your Windows user account on that machine, so copying the app
+  folder elsewhere does **not** carry your keys with it. Enter them again there. This is
+  deliberate: exchange credentials should not travel with a copied folder.
+- A pre-existing `.env` still works. Coinductor reads the keychain first and falls back to
+  `.env`, and never edits or deletes that file. To get an old key out of plaintext, save it
+  once more in the app (that stores it in the keychain), then delete the line from `.env`
+  yourself. Keychain values take precedence, so the leftover line is inert until you do.
+
+If no keychain is available, Coinductor falls back to writing `.env` as before and says so
+in the message shown after saving.
 
 Coinductor independently checks permissions before it does anything: the read-only key is
 rejected if trading/withdrawal/transfer/margin/futures permissions are enabled, and guarded
@@ -73,8 +89,8 @@ A fully headless, always-on worker with notifications is future scope (see
 ## AI provider presets
 
 The AI assistant is optional; deterministic help works with no provider configured. When you
-do connect one, it must be an OpenAI-compatible endpoint. Set these in `.env` (or via the
-in-app wizard / Settings):
+do connect one, it must be an OpenAI-compatible endpoint. Set these in the in-app wizard or
+Settings (stored in the OS keychain), or in `.env` for a source checkout:
 
 | Provider | `LLM_BASE_URL` | `LLM_API_KEY` | `LLM_MODEL` (example) | Notes |
 |---|---|---|---|---|

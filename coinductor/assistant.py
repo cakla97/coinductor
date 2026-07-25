@@ -76,6 +76,53 @@ def _open_guide_action(guide_id: str, czech: bool) -> dict[str, object] | None:
     }
 
 
+# Pure pleasantries. Matched only when the message contains nothing else, so
+# "Ahoj, jak funguje Grid?" still reaches the real answer path.
+_GREETING_PHRASES_CS = ("dobry den", "dobre rano", "dobry vecer", "jak se mas", "jak se mate", "ahoj", "cau", "cus", "zdravim", "nazdar")
+_GREETING_PHRASES_EN = ("hello", "hi", "hey", "good morning", "good afternoon", "good evening", "how are you", "whats up")
+_THANKS_PHRASES_CS = ("dekuji", "dekuju", "diky", "dik")
+_THANKS_PHRASES_EN = ("thanks", "thank you", "thx", "cheers")
+_GREETING_PHRASES = _GREETING_PHRASES_CS + _GREETING_PHRASES_EN
+_THANKS_PHRASES = _THANKS_PHRASES_CS + _THANKS_PHRASES_EN
+_CZECH_SMALL_TALK = frozenset(_GREETING_PHRASES_CS + _THANKS_PHRASES_CS)
+# Words that may surround a greeting without turning it into a question.
+_SMALL_TALK_FILLER = frozenset({
+    "a", "ty", "tobe", "vam", "te", "se", "moc", "vsem", "pekne", "mockrat",
+    "there", "you", "so", "much", "very", "ok", "okay", "again", "all",
+})
+
+
+def _small_talk_kind(query: str) -> tuple[str, bool] | None:
+    """(kind, is_czech) or None when the message carries real content.
+
+    The language comes from the phrase that matched: is_czech() keys off Czech
+    letters and words, so a bare "Ahoj" would otherwise be answered in English.
+    """
+    stripped = re.sub(r"[^\w\s]", " ", query)
+    remainder = f" {stripped} "
+    matched_thanks = False
+    matched_greeting = False
+    czech = False
+    # Longest first so "jak se mas" is consumed before "ahoj"-style fragments.
+    for phrase in sorted(_THANKS_PHRASES + _GREETING_PHRASES, key=len, reverse=True):
+        padded = f" {phrase} "
+        if padded in remainder:
+            remainder = remainder.replace(padded, " ")
+            if phrase in _THANKS_PHRASES:
+                matched_thanks = True
+            else:
+                matched_greeting = True
+            if phrase in _CZECH_SMALL_TALK:
+                czech = True
+    if not (matched_thanks or matched_greeting):
+        return None
+    # Anything left that is not filler means the user asked something as well.
+    if any(word not in _SMALL_TALK_FILLER for word in remainder.split()):
+        return None
+    kind = "thanks" if matched_thanks and not matched_greeting else "greeting"
+    return kind, czech
+
+
 class ContextualHelpService:
     def answer(self, question: str, app_context: dict[str, object]) -> str | None:
         query = _normalize(question)
@@ -103,6 +150,31 @@ class ContextualHelpService:
             return (
                 "Yes, I can answer in Czech. Ask in Czech and I will reply in Czech. "
                 "The app interface language is switched in Settings under App language."
+            )
+
+        # Pleasantries would otherwise fall through to the model together with
+        # the portfolio prompt, which tells it to answer from that context - so
+        # "Jak se mas?" came back as a lecture about HOLD strategies.
+        small_talk = _small_talk_kind(query)
+        if small_talk is not None:
+            kind, small_talk_czech = small_talk
+            czech = czech or small_talk_czech
+        if small_talk is not None and kind == "thanks":
+            return (
+                "Rádo se stalo. Kdyby bylo potřeba cokoliv dalšího, stačí se zeptat."
+                if czech
+                else "You're welcome. Ask any time if you need something else."
+            )
+        if small_talk is not None and kind == "greeting":
+            if czech:
+                return (
+                    "Zdravím, mám se dobře. Jsem asistent Coinductoru pro čtení a vysvětlování. "
+                    "Zeptejte se třeba na poslední běh, role v portfoliu, bezpečnostní fáze nebo na to, "
+                    "co dělá konkrétní obrazovka."
+                )
+            return (
+                "Hello, I'm doing well. I'm Coinductor's read-only assistant. "
+                "Ask me about the latest run, portfolio roles, safety stages, or what a particular screen does."
             )
 
         if any(

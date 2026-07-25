@@ -1130,3 +1130,41 @@ def test_stale_thread_cleanup_does_not_clear_a_running_request(monkeypatch, tmp_
     controller._clear_assistant_worker(1)
 
     assert controller.assistantBusy is True, "an old thread cleared the new request's busy state"
+
+
+def test_greetings_and_thanks_are_answered_without_the_model() -> None:
+    """They otherwise reached the model with the portfolio prompt, which tells
+    it to answer from that context, so "Jak se mas?" produced a HOLD lecture."""
+    service = ContextualHelpService()
+
+    for question in ("Ahoj", "Cau", "Dobry den", "Jak se mas?", "Zdravim"):
+        answer = service.answer(question, {})
+        assert answer is not None and answer.startswith("Zdravím"), question
+
+    for question in ("Hello", "Hi there", "How are you?", "Good morning"):
+        answer = service.answer(question, {})
+        assert answer is not None and answer.startswith("Hello, I'm doing well"), question
+
+    assert service.answer("Diky moc", {}).startswith("Rádo se stalo")
+    assert service.answer("Thank you very much", {}).startswith("You're welcome")
+
+
+def test_small_talk_does_not_hijack_a_real_question() -> None:
+    """A greeting in front of a question must not swallow the question."""
+    service = ContextualHelpService()
+
+    for question in (
+        "Ahoj, jak funguje Grid bot?",
+        "Dobry den, co je Action Plan?",
+        "Diky, ale co znamena HOLD?",
+        "Hi, what does the risk gate mean?",
+    ):
+        assert service.answer(question, {}) is None, question
+
+
+def test_greeting_language_comes_from_the_phrase_not_the_letters() -> None:
+    """"Ahoj" has no Czech-specific letters, so is_czech alone answered in English."""
+    service = ContextualHelpService()
+
+    assert service.answer("Ahoj", {}).startswith("Zdravím")
+    assert service.answer("Hello", {}).startswith("Hello")

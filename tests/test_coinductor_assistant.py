@@ -1002,3 +1002,45 @@ def test_text_questions_still_use_the_deterministic_matchers(tmp_path, monkeypat
     )
 
     assert response.text.startswith("Yes, I can answer in Czech")
+
+
+def test_thinking_models_answering_in_the_reasoning_field_are_read(tmp_path, monkeypatch) -> None:
+    """qwen3-vl:*-thinking returns content="" and puts the answer in `reasoning`.
+
+    Reading `content` alone reported "AI provider returned an empty answer"
+    for a model that had actually replied.
+    """
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self) -> bytes:
+            return json.dumps(
+                {
+                    "choices": [
+                        {
+                            "message": {
+                                "role": "assistant",
+                                "content": "",
+                                "reasoning": json.dumps({"answer": "The screenshot shows the Action Plan page."}),
+                            }
+                        }
+                    ]
+                }
+            ).encode("utf-8")
+
+    monkeypatch.chdir(tmp_path)
+    for key in ("LLM_BASE_URL", "LLM_MODEL"):
+        monkeypatch.delenv(key, raising=False)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(assistant_module.urllib.request, "urlopen", lambda request, timeout: FakeResponse())
+
+    answer = ProviderBackedAssistant("config.toml", ".env").answer("Explain risk", _snapshot())
+
+    assert answer == "The screenshot shows the Action Plan page."

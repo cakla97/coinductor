@@ -744,7 +744,17 @@ class ProviderBackedAssistant:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             response_payload = json.loads(response.read().decode("utf-8"))
         message = response_payload["choices"][0]["message"]
-        return _extract_provider_answer(message.get("content"))
+        answer = _extract_provider_answer(message.get("content"))
+        if answer:
+            return answer
+        # Thinking models (e.g. qwen3-vl:*-thinking) return an empty `content`
+        # and put the real answer in a reasoning field, so reading `content`
+        # alone reported "empty answer" for a model that had in fact replied.
+        for key in ("reasoning_content", "reasoning"):
+            answer = _extract_provider_answer(message.get(key))
+            if answer:
+                return answer
+        return ""
 
     def _snapshot_payload(self, snapshot: DesktopSnapshot) -> dict:
         latest = snapshot.latest_run

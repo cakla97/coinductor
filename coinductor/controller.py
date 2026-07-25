@@ -1283,6 +1283,10 @@ class AppController(QObject):
         self._ai_model_discovery_worker = None
         self._ai_model_discovery_thread = None
         self._discovering_ai_models = False
+        # Without this the button stays on "Detecting..." forever: the flag
+        # clears here, after the completion handler's emit, so QML never
+        # re-evaluates it. Matches the other check workers.
+        self.localAiDiscoveryChanged.emit()
 
     def _saved_detail(self, backend: str, context_key: str) -> str:
         """Where the credential landed, plus the next step."""

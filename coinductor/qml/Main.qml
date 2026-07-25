@@ -909,14 +909,19 @@ ApplicationWindow {
                                         rowSpacing: 12
                                         Rectangle {
                                             Layout.fillWidth: true
-                                            Layout.preferredHeight: (appController.localAiModelRecommendations.length > 0 ? (aiProviderGrid.columns === 1 ? 760 : 690) : 460) + (appController.localAiDiscoveredModels.length > 0 ? 50 + Math.min(appController.localAiDiscoveredModels.length, 4) * 40 : (appController.discoveringAiModels || appController.localAiDiscoveryState === "BLOCK" ? 90 : 0))
-                                            Layout.minimumHeight: (appController.localAiModelRecommendations.length > 0 ? 660 : 430) + (appController.localAiDiscoveredModels.length > 0 || appController.discoveringAiModels || appController.localAiDiscoveryState === "BLOCK" ? 90 : 0)
+                                            // Content-driven. This used to be hand-computed
+                                            // arithmetic over model/recommendation counts,
+                                            // which under-reported and let the detected-models
+                                            // panel collide with the card's bottom edge.
+                                            Layout.preferredHeight: localAiCardContent.implicitHeight + 32
                                             radius: radiusMd
                                             color: panelRaised
                                             border.color: border
-                                            clip: true
                                             ColumnLayout {
-                                                anchors.fill: parent
+                                                id: localAiCardContent
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
+                                                anchors.top: parent.top
                                                 anchors.margins: 16
                                                 spacing: 10
                                                 Text { text: "Local AI with Ollama"; color: textPrimary; font.pixelSize: 15; font.bold: true }
@@ -981,6 +986,10 @@ ApplicationWindow {
                                                         enabled: !appController.discoveringAiModels
                                                         onClicked: appController.discoverLocalAiModels(localAiBaseUrl.text)
                                                     }
+                                                    BusyDots {
+                                                        anchors.verticalCenter: parent.verticalCenter
+                                                        visible: appController.discoveringAiModels
+                                                    }
                                                 }
                                                 Text {
                                                     Layout.fillWidth: true
@@ -994,8 +1003,12 @@ ApplicationWindow {
                                                     visible: appController.localAiDiscoveredModels.length > 0 || appController.discoveringAiModels || appController.localAiDiscoveryState === "BLOCK"
                                                     Layout.fillWidth: true
                                                     Layout.bottomMargin: 10
+                                                    // Row height follows the buttons, so a per-row
+                                                    // pixel estimate clipped the last entry.
                                                     Layout.minimumHeight: 90
-                                                    Layout.preferredHeight: appController.localAiDiscoveredModels.length > 0 ? 60 + Math.min(appController.localAiDiscoveredModels.length, 4) * 40 : 90
+                                                    Layout.preferredHeight: appController.localAiDiscoveredModels.length > 0
+                                                        ? 60 + Math.min(appController.localAiDiscoveredModels.length, 4) * 54
+                                                        : 90
                                                     radius: radiusSm
                                                     color: "#10161d"
                                                     border.color: border
@@ -1031,26 +1044,35 @@ ApplicationWindow {
                                                             delegate: Rectangle {
                                                                 required property string modelData
                                                                 width: ListView.view.width - 12
-                                                                height: 34
+                                                                height: modelRow.implicitHeight + 8
                                                                 radius: radiusSm
                                                                 color: "#141a21"
                                                                 border.color: border
                                                                 RowLayout {
+                                                                    id: modelRow
                                                                     anchors.fill: parent
                                                                     anchors.leftMargin: 10
                                                                     anchors.rightMargin: 6
                                                                     spacing: 6
-                                                                    Text { Layout.fillWidth: true; text: modelData; color: accent; font.pixelSize: 11; elide: Text.ElideRight }
+                                                                    Text { Layout.fillWidth: true; Layout.minimumWidth: 0; text: modelData; color: accent; font.pixelSize: 11; elide: Text.ElideRight }
+                                                                    // No implicitHeight override: forcing one collapses
+                                                                    // the label in the Material style and the buttons
+                                                                    // render as empty pills. minimumWidth stops the
+                                                                    // layout squeezing them in the narrow grid column.
                                                                     Button {
                                                                         text: "Use as text"
                                                                         font.pixelSize: 9
-                                                                        implicitHeight: 24
+                                                                        leftPadding: 10
+                                                                        rightPadding: 10
+                                                                        Layout.minimumWidth: implicitWidth
                                                                         onClicked: localAiModel.text = modelData
                                                                     }
                                                                     Button {
                                                                         text: "Use as vision"
                                                                         font.pixelSize: 9
-                                                                        implicitHeight: 24
+                                                                        leftPadding: 10
+                                                                        rightPadding: 10
+                                                                        Layout.minimumWidth: implicitWidth
                                                                         onClicked: localAiVisionModel.text = modelData
                                                                     }
                                                                 }
@@ -1162,6 +1184,7 @@ ApplicationWindow {
                                                     enabled: cloudAiBaseUrl.text.trim().length > 0 && cloudAiModel.text.trim().length > 0 && cloudAiKey.text.trim().length > 0
                                                     onClicked: {
                                                         appController.saveCloudAiProvider(cloudAiBaseUrl.text, cloudAiModel.text, cloudAiVisionModel.text, cloudAiKey.text)
+                                                        cloudAiKey.text = ""
                                                         window.showToast("Cloud AI settings saved")
                                                     }
                                                 }
@@ -1229,6 +1252,9 @@ ApplicationWindow {
                                                     enabled: binanceReadKey.text.trim().length > 0 && binanceReadSecret.text.trim().length > 0
                                                     onClicked: {
                                                         appController.saveBinanceReadOnlyCredentials(binanceReadKey.text, binanceReadSecret.text)
+                                                        // Clear both: the value is stored, and leaving a
+                                                        // credential on screen is needless exposure.
+                                                        binanceReadKey.text = ""
                                                         binanceReadSecret.text = ""
                                                         window.showToast("Read-only Binance key saved")
                                                     }
@@ -1291,6 +1317,7 @@ ApplicationWindow {
                                                     enabled: binanceTestnetKey.text.trim().length > 0 && binanceTestnetSecret.text.trim().length > 0
                                                     onClicked: {
                                                         appController.saveBinanceTestnetCredentials(binanceTestnetKey.text, binanceTestnetSecret.text)
+                                                        binanceTestnetKey.text = ""
                                                         binanceTestnetSecret.text = ""
                                                         window.showToast("Testnet key saved")
                                                     }

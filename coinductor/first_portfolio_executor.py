@@ -4,13 +4,14 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from trading_agent.binance_client import BinanceApiError
 from trading_agent.config import default_config_path, load_config
-from trading_agent.env import load_env_file
 from trading_agent.live_preview import LivePreviewExecutor
 from trading_agent.models import FirstPortfolioTrancheResult, TradeProposal
 from trading_agent.order_journal import OrderIntentFactory
 from trading_agent.risk_engine import RiskEngine
 from trading_agent.storage import Storage
 from trading_agent.testnet_executor import TestnetExecutor
+
+from .secret_store import load_secrets
 
 TESTNET_QUOTE_ASSET = "USDT"
 
@@ -46,7 +47,7 @@ class FirstPortfolioExecutor:
         if tranches_total <= 0 or not (1 <= tranche_index <= tranches_total):
             raise ValueError("tranche_index must be between 1 and tranches_total.")
 
-        load_env_file(self.env_path)
+        load_secrets(self.env_path)
         config = load_config(self.config_path)
         quote_asset = TESTNET_QUOTE_ASSET if mode == "TESTNET" else str(
             config.raw.get("live_confirm", {}).get("quote_asset", "USDC")

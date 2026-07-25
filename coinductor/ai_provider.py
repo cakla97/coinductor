@@ -6,9 +6,9 @@ from pathlib import Path
 import urllib.request
 
 from trading_agent.config import default_config_path, load_config
-from trading_agent.env import load_env_file
 
 from .models import AiModelDiscoveryResult, AiProviderHealthResult, AiProviderSnapshot
+from .secret_store import load_secrets
 from .service_strings import service_text
 
 
@@ -120,7 +120,7 @@ class AiProviderService:
         if not self.config_path.exists():
             return AiProviderHealthResult("BLOCK", f"Missing config: {self.config_path}")
 
-        load_env_file(self.env_path)
+        load_secrets(self.env_path)
         config = load_config(self.config_path).raw
         ai = config.get("ai", {})
         base_url = os.getenv(str(ai.get("base_url_env", "LLM_BASE_URL")), "").rstrip("/")

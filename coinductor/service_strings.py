@@ -497,6 +497,35 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Challenge for {symbol} passed the checks: the decision is now {decision}. Nothing was submitted - review it and confirm explicitly.",
         "cs": "Výzva pro {symbol} prošla kontrolami: rozhodnutí je nyní {decision}. Nic nebylo odesláno – zkontrolujte a výslovně potvrďte.",
     },
+    # --- credential storage ---
+    "creds_stored_keychain": {
+        "en": "Stored in the OS keychain, not in a plaintext file.",
+        "cs": "Uloženo do systémového úložiště přihlašovacích údajů, ne do souboru v čitelné podobě.",
+    },
+    "creds_stored_env": {
+        "en": "No OS keychain is available, so this was stored in the local .env file.",
+        "cs": "Systémové úložiště přihlašovacích údajů není dostupné, uloženo do lokálního souboru .env.",
+    },
+    "creds_readonly_saved": {
+        "en": "Run the read-only check to verify the credentials.",
+        "cs": "Spusťte read-only kontrolu pro ověření přihlašovacích údajů.",
+    },
+    "creds_live_saved": {
+        "en": "Credentials changed. Verify live-key permissions again.",
+        "cs": "Přihlašovací údaje se změnily. Znovu ověřte oprávnění živého klíče.",
+    },
+    "creds_testnet_saved": {
+        "en": "Run the Testnet check to verify the credentials.",
+        "cs": "Spusťte kontrolu Testnetu pro ověření přihlašovacích údajů.",
+    },
+    "creds_ai_local_saved": {
+        "en": "Run the AI provider check to verify the endpoint.",
+        "cs": "Spusťte kontrolu poskytovatele AI pro ověření endpointu.",
+    },
+    "creds_ai_cloud_saved": {
+        "en": "Run the AI provider check before using it.",
+        "cs": "Před použitím spusťte kontrolu poskytovatele AI.",
+    },
     # --- setup service check names ---
     "setup_check_python": {"en": "Python", "cs": "Python"},
     "setup_check_configuration": {"en": "Configuration", "cs": "Konfigurace"},

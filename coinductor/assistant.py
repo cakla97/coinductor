@@ -13,11 +13,11 @@ from urllib.parse import urlparse
 
 from trading_agent.binance_client import BinanceApiError, BinanceClient
 from trading_agent.config import default_config_path, load_config
-from trading_agent.env import load_env_file
 
 from .ai_provider import AiProviderService
 from .guide_service import GuideService
 from .models import DesktopSnapshot
+from .secret_store import load_secrets
 from .ui_knowledge import UiKnowledgeService, is_czech
 
 
@@ -424,7 +424,7 @@ class MarketDataAssistant:
         return None
 
     def _fetch(self, asset: str) -> tuple[str, str, dict]:
-        load_env_file()
+        load_secrets()
         config = load_config(self.config_path).raw
         client = BinanceClient(config)
         quote_assets = [str(item).upper() for item in config.get("portfolio", {}).get("pricing_quote_assets", ["USDC", "USDT"])]
@@ -555,7 +555,7 @@ class ProviderBackedAssistant:
         conversation: tuple[dict[str, str], ...],
         image_path: str,
     ) -> str:
-        load_env_file(self.env_path)
+        load_secrets(self.env_path)
         config = load_config(self.config_path).raw
         ai = config.get("ai", {})
         base_url = os.getenv(str(ai.get("base_url_env", "LLM_BASE_URL")), "").rstrip("/")

@@ -4,9 +4,9 @@ from pathlib import Path
 
 from trading_agent.binance_client import BinanceApiError, BinanceClient
 from trading_agent.config import default_config_path, load_config
-from trading_agent.env import load_env_file
 
 from .models import ConnectionCheckResult
+from .secret_store import load_secrets
 from .service_strings import service_text
 
 
@@ -31,7 +31,7 @@ class ConnectionCheckService:
             return ConnectionCheckResult("BLOCK", self._t("conn_missing_env_readonly"))
 
         try:
-            load_env_file(self.env_path)
+            load_secrets(self.env_path)
             config = load_config(self.config_path)
             BinanceClient(config.raw).assert_read_only_permissions()
         except BinanceApiError as exc:
@@ -63,7 +63,7 @@ class LiveTradingCheckService:
             return ConnectionCheckResult("BLOCK", self._t("conn_missing_env_live"))
 
         try:
-            load_env_file(self.env_path)
+            load_secrets(self.env_path)
             config = load_config(self.config_path)
             BinanceClient(config.raw, credential_profile="live_trade").assert_live_spot_permissions()
         except BinanceApiError as exc:
@@ -98,7 +98,7 @@ class TestnetCheckService:
             return ConnectionCheckResult("BLOCK", self._t("conn_missing_env_testnet"))
 
         try:
-            load_env_file(self.env_path)
+            load_secrets(self.env_path)
             config = load_config(self.config_path)
             BinanceClient(config.raw, use_testnet=True).testnet_account_ping()
         except BinanceApiError as exc:

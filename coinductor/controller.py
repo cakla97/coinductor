@@ -18,7 +18,6 @@ from .assistant_history import AssistantHistoryStore
 from .asset_policy_store import AssetPolicyStore
 from .connection_check import ConnectionCheckService, LiveTradingCheckService, TestnetCheckService
 from .desktop_store import DesktopStore
-from .env_writer import EnvWriter
 from .first_portfolio_executor import FirstPortfolioExecutor
 from .first_portfolio_planner import FirstPortfolioPlanner
 from .diagnostics_service import DiagnosticsService
@@ -28,6 +27,7 @@ from .local_ai_recommender import LocalAiRecommender
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
 from .readiness_service import ReadinessService
 from .safety_service import SafetyService
+from .secret_store import SecretStore
 from .service_strings import service_text
 from .setup_service import SetupService
 from .strategy_registration import StrategyRegistrationService
@@ -1284,29 +1284,37 @@ class AppController(QObject):
         self._ai_model_discovery_thread = None
         self._discovering_ai_models = False
 
+    def _saved_detail(self, backend: str, context_key: str) -> str:
+        """Where the credential landed, plus the next step."""
+        where = service_text(
+            "creds_stored_keychain" if backend == "keychain" else "creds_stored_env",
+            self._wizard_language,
+        )
+        return f"{where} {service_text(context_key, self._wizard_language)}"
+
     @Slot(str, str)
     def saveBinanceReadOnlyCredentials(self, api_key: str, api_secret: str) -> None:
-        EnvWriter().update(
+        backend = SecretStore().set_many(
             {
                 "BINANCE_API_KEY": api_key,
                 "BINANCE_API_SECRET": api_secret,
             }
         )
         self._connection_status = "Not checked"
-        self._connection_detail = "Read-only credentials were saved locally. Run the read-only check to verify them."
+        self._connection_detail = self._saved_detail(backend, "creds_readonly_saved")
         self.refreshSetup()
         self.connectionChanged.emit()
 
     @Slot(str, str)
     def saveBinanceLiveTradingCredentials(self, api_key: str, api_secret: str) -> None:
-        EnvWriter().update(
+        backend = SecretStore().set_many(
             {
                 "BINANCE_LIVE_TRADE_API_KEY": api_key,
                 "BINANCE_LIVE_TRADE_API_SECRET": api_secret,
             }
         )
         self._live_trading_check_status = "Not checked"
-        self._live_trading_check_detail = "Credentials changed. Verify live-key permissions again."
+        self._live_trading_check_detail = self._saved_detail(backend, "creds_live_saved")
         self.refreshSetup()
         self.liveTradingCheckChanged.emit()
 
@@ -1333,14 +1341,14 @@ class AppController(QObject):
 
     @Slot(str, str)
     def saveBinanceTestnetCredentials(self, api_key: str, api_secret: str) -> None:
-        EnvWriter().update(
+        backend = SecretStore().set_many(
             {
                 "BINANCE_TESTNET_API_KEY": api_key,
                 "BINANCE_TESTNET_API_SECRET": api_secret,
             }
         )
         self._testnet_check_status = "Not checked"
-        self._testnet_check_detail = "Testnet credentials were saved locally. Run the Testnet check to verify them."
+        self._testnet_check_detail = self._saved_detail(backend, "creds_testnet_saved")
         self.refreshSetup()
         self.testnetCheckChanged.emit()
 
@@ -1416,7 +1424,7 @@ class AppController(QObject):
 
     @Slot(str, str, str)
     def saveLocalAiProvider(self, base_url: str, model: str, vision_model: str) -> None:
-        EnvWriter().update(
+        backend = SecretStore().set_many(
             {
                 "LLM_BASE_URL": base_url,
                 "LLM_MODEL": model,
@@ -1424,13 +1432,13 @@ class AppController(QObject):
             }
         )
         self._ai_provider_health_status = "Not checked"
-        self._ai_provider_health_detail = "Local AI settings were saved. Run the AI provider check to verify the endpoint."
+        self._ai_provider_health_detail = self._saved_detail(backend, "creds_ai_local_saved")
         self.refreshSetup()
         self.aiProviderChanged.emit()
 
     @Slot(str, str, str, str)
     def saveCloudAiProvider(self, base_url: str, model: str, vision_model: str, api_key: str) -> None:
-        EnvWriter().update(
+        backend = SecretStore().set_many(
             {
                 "LLM_BASE_URL": base_url,
                 "LLM_MODEL": model,
@@ -1439,7 +1447,7 @@ class AppController(QObject):
             }
         )
         self._ai_provider_health_status = "Not checked"
-        self._ai_provider_health_detail = "Cloud AI settings were saved locally. Run the AI provider check before using it."
+        self._ai_provider_health_detail = self._saved_detail(backend, "creds_ai_cloud_saved")
         self.refreshSetup()
         self.aiProviderChanged.emit()
 

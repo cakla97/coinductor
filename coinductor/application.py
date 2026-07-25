@@ -4,10 +4,10 @@ from collections.abc import Callable
 
 from trading_agent.config import load_config
 from trading_agent.config_validator import ConfigValidator
-from trading_agent.env import load_env_file
 from trading_agent.runner import AgentRunner
 
 from .models import DesktopRunResult, RunOptions
+from .secret_store import load_secrets
 from .report_summary import ReportSummaryReader
 
 
@@ -25,7 +25,7 @@ class CoinductorApplication:
     ) -> DesktopRunResult:
         notify = progress or (lambda _message, _percent: None)
         notify("Loading configuration", 8)
-        load_env_file()
+        load_secrets()
         config = load_config(options.config_path)
         self._apply_options(config.raw, options)
 

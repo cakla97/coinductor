@@ -714,6 +714,13 @@ ApplicationWindow {
                                             Layout.fillWidth: true
                                             Text { text: appController.wizardText.field_management_style; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardStyle; Layout.fillWidth: true; model: window.styleOptions; textRole: "label"; valueRole: "value"; currentIndex: 1; onActivated: window.markProfileEdited() }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: appController.styleGateHints[wizardStyle.currentValue] || ""
+                                                color: textSecondary
+                                                font.pixelSize: 10
+                                                wrapMode: Text.WordWrap
+                                            }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true

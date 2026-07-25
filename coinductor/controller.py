@@ -26,6 +26,7 @@ from .local_data_reset import LocalDataResetService
 from .local_ai_recommender import LocalAiRecommender
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions
 from .readiness_service import ReadinessService
+from .risk_profile import STYLE_GATES, apply_style_to_config, describe_gates
 from .safety_service import SafetyService
 from .secret_store import SecretStore
 from .service_strings import service_text
@@ -565,6 +566,13 @@ class AppController(QObject):
     @Property("QVariantMap", notify=wizardLanguageChanged)
     def wizardText(self) -> dict[str, str]:
         return UiStringsService().wizard_text(self._wizard_language)
+
+    @Property("QVariantMap", notify=wizardLanguageChanged)
+    def styleGateHints(self) -> dict[str, str]:
+        """What each management style changes, keyed by the stored style code."""
+        return {
+            style: describe_gates(style, self._wizard_language) for style in STYLE_GATES
+        }
 
     @Property("QVariantMap", notify=wizardLanguageChanged)
     def appText(self) -> dict[str, str]:
@@ -1174,6 +1182,7 @@ class AppController(QObject):
         planned_deposit_amount: float,
     ) -> None:
         path = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
+        previous_style = getattr(self._user_profile_service.current_profile(path), "management_style", "")
         self._user_profile_snapshot = self._user_profile_service.save_guided(
             onboarding_path=path,
             management_style=management_style,
@@ -1186,6 +1195,17 @@ class AppController(QObject):
             max_drawdown_comfort_pct=max_drawdown_comfort_pct,
             planned_deposit_amount=planned_deposit_amount,
         )
+        # Only on a deliberate change of style, so re-saving the profile does not
+        # silently revert values the user hand-tuned in config.toml.
+        if management_style.strip().upper() != str(previous_style).strip().upper():
+            changed = apply_style_to_config(default_config_path(), management_style)
+            if changed:
+                detail = ", ".join(f"{key} {value}" for key, value in changed.items())
+                self.notificationRequested.emit(
+                    service_text("style_gates_updated", self._wizard_language).format(
+                        style=management_style.title(), changes=detail
+                    )
+                )
         self._refresh_readiness()
         self._refresh_first_portfolio_plan()
         self.userProfileChanged.emit()

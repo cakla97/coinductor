@@ -501,6 +501,24 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Question stopped. The answer will be discarded when it arrives.",
         "cs": "Dotaz zastaven. Odpověď bude po dokončení zahozena.",
     },
+    "style_gates_updated": {
+        "en": "{style} style applied to the trend filter: {changes}. Loss limits, stop-loss and confirmations are unchanged.",
+        "cs": "Styl {style} promítnut do trendového filtru: {changes}. Limity ztrát, stop-loss a potvrzení zůstávají beze změny.",
+    },
+    # Filled with the real numbers from risk_profile.STYLE_GATES so the wizard
+    # cannot drift from the gates it actually writes into config.toml.
+    "style_hint_risk_on": {
+        "en": "Considers a buy only while the market regime is RISK_ON and RSI 14 sits between {min} and {max}. Price must still be above the EMA200.",
+        "cs": "Nákup zvažuje jen v režimu RISK_ON a při RSI 14 mezi {min} a {max}. Cena musí být stále nad EMA200.",
+    },
+    "style_hint_any_regime": {
+        "en": "Considers a buy in any regime while RSI 14 sits between {min} and {max}. Price must still be above the EMA200.",
+        "cs": "Nákup zvažuje v jakémkoli režimu při RSI 14 mezi {min} a {max}. Cena musí být stále nad EMA200.",
+    },
+    "style_hint_shared": {
+        "en": "Loss limits, stop-loss, kill switch and confirmations are identical at every level.",
+        "cs": "Limity ztrát, stop-loss, kill switch a potvrzení jsou na všech úrovních stejné.",
+    },
     # --- credential storage ---
     "creds_stored_keychain": {
         "en": "Stored in the OS keychain, not in a plaintext file.",

@@ -300,6 +300,10 @@ class AppController(QObject):
         self._checking_testnet = False
         self._checking_ai_provider = False
         self._assistant_busy = False
+        # Identifies the in-flight assistant request so a cancelled or
+        # superseded reply can be discarded when it eventually arrives.
+        self._assistant_token = 0
+        self._assistant_accept_token = 0
         self._local_ai_model_recommendations: list[dict[str, str]] = []
         self._discovering_ai_models = False
         self._wizard_language = DEFAULT_LANGUAGE
@@ -1519,6 +1523,10 @@ class AppController(QObject):
         self._assistant_busy = True
         self.assistantChanged.emit()
 
+        self._assistant_token += 1
+        token = self._assistant_token
+        self._assistant_accept_token = token
+
         self._assistant_thread = QThread(self)
         self._assistant_worker = AssistantWorker(
             text,
@@ -1529,14 +1537,33 @@ class AppController(QObject):
         )
         self._assistant_worker.moveToThread(self._assistant_thread)
         self._assistant_thread.started.connect(self._assistant_worker.run)
-        self._assistant_worker.completed.connect(self._on_assistant_completed)
+        self._assistant_worker.completed.connect(
+            lambda response, request=token: self._on_assistant_completed(response, request)
+        )
         self._assistant_worker.finished.connect(self._assistant_thread.quit)
         self._assistant_worker.finished.connect(self._assistant_worker.deleteLater)
         self._assistant_thread.finished.connect(self._assistant_thread.deleteLater)
-        self._assistant_thread.finished.connect(self._clear_assistant_worker)
+        self._assistant_thread.finished.connect(lambda request=token: self._clear_assistant_worker(request))
         self._assistant_thread.start()
         self._assistant_attachment = {}
         self.assistantChanged.emit()
+
+    @Slot()
+    def cancelAssistant(self) -> None:
+        """Give the chat back to the user without waiting for the answer.
+
+        A blocking HTTP read cannot be interrupted safely, so the request is
+        left to finish in the background and its result is discarded instead.
+        """
+        if not self._assistant_busy:
+            return
+        self._assistant_accept_token = 0
+        if self._assistant_messages and self._assistant_messages[-1].get("role") == "typing":
+            self._assistant_messages.pop()
+        self._assistant_busy = False
+        self._assistant_pending_action = {}
+        self.assistantChanged.emit()
+        self.notificationRequested.emit(service_text("assistant_cancelled", self._wizard_language))
 
     @Slot(str)
     def attachAssistantImage(self, image_url: str) -> None:
@@ -2220,7 +2247,11 @@ class AppController(QObject):
         self.aiProviderChanged.emit()
 
     @Slot(object)
-    def _on_assistant_completed(self, response: AssistantResponse) -> None:
+    def _on_assistant_completed(self, response: AssistantResponse, token: int | None = None) -> None:
+        # A cancelled or superseded request still finishes in the background;
+        # its answer must not land in the conversation.
+        if token is not None and token != self._assistant_accept_token:
+            return
         answer = response.text
         self._assistant_pending_action = dict(response.proposed_action or {})
         if self._assistant_messages and self._assistant_messages[-1].get("role") == "typing":
@@ -2270,7 +2301,9 @@ class AppController(QObject):
         self.aiProviderChanged.emit()
 
     @Slot()
-    def _clear_assistant_worker(self) -> None:
+    def _clear_assistant_worker(self, token: int | None = None) -> None:
+        if token is not None and token != self._assistant_token:
+            return  # a newer request owns the state now
         self._assistant_worker = None
         self._assistant_thread = None
         self._assistant_busy = False

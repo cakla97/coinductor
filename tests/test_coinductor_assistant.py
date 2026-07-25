@@ -1075,3 +1075,58 @@ def test_role_intent_still_handles_real_role_requests() -> None:
     # Naming the feature without both parts still gets the guidance.
     partial = service.propose("what does the role mean?", snapshot)
     assert partial is not None and "name one asset" in partial.text
+
+
+def _busy_controller(monkeypatch, tmp_path):
+    monkeypatch.chdir(tmp_path)
+    controller = AppController()
+    controller._assistant_messages = [{"role": "user", "text": "slow question"}, {"role": "typing", "text": ""}]
+    controller._assistant_busy = True
+    controller._assistant_token = 1
+    controller._assistant_accept_token = 1
+    return controller
+
+
+def test_cancelling_a_question_frees_the_chat_and_drops_the_late_answer(monkeypatch, tmp_path) -> None:
+    """The HTTP read cannot be interrupted, so the reply still arrives later.
+
+    It must not be appended to the conversation the user has moved on from.
+    """
+    controller = _busy_controller(monkeypatch, tmp_path)
+
+    controller.cancelAssistant()
+
+    assert controller.assistantBusy is False
+    assert all(m.get("role") != "typing" for m in controller._assistant_messages)
+
+    # The abandoned worker finishes afterwards.
+    controller._on_assistant_completed(AssistantResponse("late answer"), 1)
+
+    assert all("late answer" not in m.get("text", "") for m in controller._assistant_messages)
+
+
+def test_a_new_question_after_cancelling_keeps_its_own_answer(monkeypatch, tmp_path) -> None:
+    controller = _busy_controller(monkeypatch, tmp_path)
+    controller.cancelAssistant()
+
+    # Second question, as if askAssistant had issued the next token.
+    controller._assistant_token = 2
+    controller._assistant_accept_token = 2
+    controller._assistant_busy = True
+    controller._assistant_messages.append({"role": "typing", "text": ""})
+
+    controller._on_assistant_completed(AssistantResponse("stale first answer"), 1)
+    controller._on_assistant_completed(AssistantResponse("correct second answer"), 2)
+
+    texts = [m.get("text", "") for m in controller._assistant_messages]
+    assert "correct second answer" in texts
+    assert "stale first answer" not in texts
+
+
+def test_stale_thread_cleanup_does_not_clear_a_running_request(monkeypatch, tmp_path) -> None:
+    controller = _busy_controller(monkeypatch, tmp_path)
+    controller._assistant_token = 2  # a newer request is in flight
+
+    controller._clear_assistant_worker(1)
+
+    assert controller.assistantBusy is True, "an old thread cleared the new request's busy state"

@@ -989,6 +989,10 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Send",
         "cs": "Odeslat",
     },
+    "assistant_stop_button": {
+        "en": "Stop",
+        "cs": "Zastavit",
+    },
     "help_guides_title": {
         "en": "Help & Guides",
         "cs": "Nápověda a návody",

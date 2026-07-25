@@ -3058,10 +3058,18 @@ ApplicationWindow {
                             }
                         }
                     }
+                    BusyDots { visible: appController.assistantBusy }
+                    // Replaces Send while a question is running, so a slow answer
+                    // can be abandoned and the question reworded.
                     Button {
+                        visible: appController.assistantBusy
+                        text: appController.appText.assistant_stop_button
+                        onClicked: appController.cancelAssistant()
+                    }
+                    Button {
+                        visible: !appController.assistantBusy
                         text: appController.appText.assistant_send_button
-                        enabled: !appController.assistantBusy
-                                 && (assistantInput.text.trim().length > 0 || Object.keys(appController.assistantAttachment).length > 0)
+                        enabled: (assistantInput.text.trim().length > 0 || Object.keys(appController.assistantAttachment).length > 0)
                                  && (Object.keys(appController.assistantAttachment).length === 0 || appController.assistantVisionAvailable)
                         onClicked: {
                             appController.askAssistant(assistantInput.text)

@@ -497,6 +497,10 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Challenge for {symbol} passed the checks: the decision is now {decision}. Nothing was submitted - review it and confirm explicitly.",
         "cs": "Výzva pro {symbol} prošla kontrolami: rozhodnutí je nyní {decision}. Nic nebylo odesláno – zkontrolujte a výslovně potvrďte.",
     },
+    "assistant_cancelled": {
+        "en": "Question stopped. The answer will be discarded when it arrives.",
+        "cs": "Dotaz zastaven. Odpověď bude po dokončení zahozena.",
+    },
     # --- credential storage ---
     "creds_stored_keychain": {
         "en": "Stored in the OS keychain, not in a plaintext file.",

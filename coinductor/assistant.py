@@ -614,23 +614,53 @@ class ProviderBackedAssistant:
                 raise RuntimeError("The attached image is missing or exceeds the 10 MB limit.")
             mime_type = mimetypes.guess_type(image_file.name)[0] or "image/png"
             encoded = base64.b64encode(image_file.read_bytes()).decode("ascii")
+            # A far leaner payload than the text path. The full component
+            # catalogue is ~15k characters and its boundaries tell the model to
+            # answer *from the catalogue*, which buries a small vision model and
+            # steers it away from the picture it was asked about. Keep only the
+            # few relevant components so it can still name Coinductor controls.
+            vision_payload = {
+                "task": "Look at the attached image and answer the user's question about it.",
+                "response_language": response_language,
+                "guidance": [
+                    *language_rules,
+                    "Base the answer on what is actually visible in the image. Describe it concretely.",
+                    "Do not invent screens, controls, or values that are not shown.",
+                    "If it is a Coinductor screen, use most_relevant_ui_components to name controls correctly, "
+                    "and say what the screen shows and what the user can do there.",
+                    "If the image is not related to Coinductor, just answer the question about the image.",
+                    "Do not claim that you changed settings, placed orders, or created Binance bots.",
+                ],
+                "most_relevant_ui_components": UiKnowledgeService().relevant_context(question),
+                "current_app_context": app_context,
+                "question": question,
+                "image_attached": True,
+                "schema": {"answer": "plain-language answer about the image, max 180 words"},
+            }
             user_content = [
-                {"type": "text", "text": json.dumps(payload, default=str)},
+                {"type": "text", "text": json.dumps(vision_payload, default=str)},
                 {"type": "image_url", "image_url": {"url": f"data:{mime_type};base64,{encoded}"}},
             ]
+        system_prompt = (
+            "You are Coinductor's read-only assistant. Use the supplied application knowledge manifest, "
+            "dynamic screen state, snapshot, and recent conversation as authoritative context. Resolve natural "
+            "follow-up references from conversation. Match the user's language exactly, never guess undocumented "
+            "behavior, and never use uncertain wording for documented controls. You cannot execute actions. "
+            "Return JSON only."
+        )
+        if image_path:
+            # The text-path prompt tells the model to answer from the manifest,
+            # which is the wrong instinct when the user attached a picture.
+            system_prompt = (
+                "You are Coinductor's read-only assistant, answering about an image the user attached. "
+                "Look at the image and describe what is actually in it. Do not invent content that is not visible. "
+                "If it shows a Coinductor screen, explain what that screen is for using the supplied components. "
+                "You cannot execute actions. Return JSON only."
+            )
         request_body: dict[str, object] = {
             "model": model,
             "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "You are Coinductor's read-only assistant. Use the supplied application knowledge manifest, "
-                        "dynamic screen state, snapshot, and recent conversation as authoritative context. Resolve natural "
-                        "follow-up references from conversation. Match the user's language exactly, never guess undocumented "
-                        "behavior, and never use uncertain wording for documented controls. You cannot execute actions. "
-                        "Return JSON only."
-                    ),
-                },
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
             ],
             "temperature": 0.2,

@@ -893,3 +893,55 @@ def test_slovak_answer_triggers_retry_then_clean_czech_fallback(tmp_path, monkey
 
     assert looks_slovak(result) is False
     assert "nie je vhodná" not in result
+
+
+def test_image_questions_send_a_lean_payload(tmp_path, monkeypatch) -> None:
+    """The text path ships a ~15k-char component catalogue and tells the model
+    to answer *from the catalogue*. Sent alongside a picture that buries a small
+    vision model and steers it away from the image."""
+    captured: dict[str, object] = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self) -> bytes:
+            return json.dumps({"choices": [{"message": {"content": json.dumps({"answer": "ok"})}}]}).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        body = json.loads(request.data.decode("utf-8"))
+        content = body["messages"][1]["content"]
+        captured["system"] = body["messages"][0]["content"]
+        captured["payload"] = json.loads(content[0]["text"] if isinstance(content, list) else content)
+        return FakeResponse()
+
+    monkeypatch.chdir(tmp_path)
+    for key in ("LLM_BASE_URL", "LLM_MODEL", "LLM_VISION_MODEL"):
+        monkeypatch.delenv(key, raising=False)
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    (tmp_path / ".env").write_text(
+        "LLM_BASE_URL=http://127.0.0.1:11434/v1\nLLM_MODEL=qwen3:14b\nLLM_VISION_MODEL=qwen3-vl:8b\n",
+        encoding="utf-8",
+    )
+    image = tmp_path / "shot.png"
+    image.write_bytes(b"fake-png")
+    monkeypatch.setattr(assistant_module.urllib.request, "urlopen", fake_urlopen)
+
+    ProviderBackedAssistant("config.toml", ".env").answer(
+        "What do you see on this picture?", _snapshot(), image_path=str(image)
+    )
+
+    payload = captured["payload"]
+    assert payload["image_attached"] is True
+    # The bulky catalogue is dropped; the small relevant subset is kept so the
+    # model can still name Coinductor controls.
+    assert "ui_component_catalog" not in payload
+    assert "most_relevant_ui_components" in payload
+    assert "snapshot" not in payload
+    # The instructions must point at the image, not at the manifest.
+    assert "image" in captured["system"].lower()
+    guidance = " ".join(payload["guidance"]).lower()
+    assert "visible in the image" in guidance

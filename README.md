@@ -173,8 +173,7 @@ certificate. If it is useful to you:
 The network is stated on purpose: sending coins across the wrong one loses them, and
 "BTC" on BNB Smart Chain is BTCB, a wrapped token, not native bitcoin.
 
-<!-- TODO before publishing: put your own address here, or delete this section. -->
-- **Bitcoin** (BTC network, native): `<your bc1... address here>`
+- **Bitcoin** (BTC network, native segwit): `bc1qqmfafr7wmxe37lwhh2cl5f8dj93r52z70kl2df`
 
 ## License
 

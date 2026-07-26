@@ -3,19 +3,38 @@ from __future__ import annotations
 from decimal import Decimal
 import hashlib
 import hmac
+import http.client
 import json
 import os
 import ssl
 import time
-from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.parse import urlencode, urlsplit
 
 from .models import Balance, MarketSnapshot, SymbolRules
+
+# Binance answers 429 when a request exceeds a rate limit and escalates to 418
+# (temporary IP ban) when 429s keep coming. 5xx means the request status is
+# unknown rather than rejected, so those are replayed for reads only.
+_RATE_LIMITED_STATUS = 429
+_IP_BANNED_STATUS = 418
 
 
 class BinanceApiError(RuntimeError):
     pass
+
+
+class BinanceRateLimitError(BinanceApiError):
+    """Binance refused the request because a rate limit was exceeded."""
+
+
+class _HttpStatusError(Exception):
+    """Internal carrier for a non-2xx response, handled by the retry loop."""
+
+    def __init__(self, code: int, body: str, retry_after: str | None):
+        super().__init__(f"HTTP {code}")
+        self.code = code
+        self.body = body
+        self.retry_after = retry_after
 
 
 class BinanceClient:
@@ -27,9 +46,16 @@ class BinanceClient:
         self.api_key = os.getenv(key_env, "")
         self.api_secret = os.getenv(secret_env, "")
         base_key = "testnet_api_base_url" if use_testnet else "api_base_url"
-        self.base_url = str(config["binance"].get(base_key, "https://api.binance.com")).rstrip("/")
+        binance_config = config["binance"]
+        self.base_url = str(binance_config.get(base_key, "https://api.binance.com")).rstrip("/")
         self.ssl_context = self._ssl_context()
         self._server_time_offset_ms: int | None = None
+        self._timeout_seconds = int(binance_config.get("timeout_seconds", 30))
+        self._max_retries = max(0, int(binance_config.get("max_retries", 3)))
+        self._retry_backoff_seconds = float(binance_config.get("retry_backoff_seconds", 1.0))
+        self._max_retry_wait_seconds = float(binance_config.get("max_retry_wait_seconds", 30.0))
+        self._symbol_rules_cache: dict[str, SymbolRules] = {}
+        self._http_connection: http.client.HTTPConnection | None = None
 
     def _credential_env_names(self) -> tuple[str, str]:
         if self.credential_profile == "testnet":
@@ -39,15 +65,6 @@ class BinanceClient:
         return "BINANCE_API_KEY", "BINANCE_API_SECRET"
 
     def get_balances(self) -> list[Balance]:
-        if self.config["app"].get("mock_data", True):
-            return [
-                Balance(asset="USDC", spot_free=Decimal("12"), flexible_amount=Decimal("250")),
-                Balance(asset="USDT", spot_free=Decimal("0"), flexible_amount=Decimal("0")),
-                Balance(asset="BTC", spot_free=Decimal("0.0000"), flexible_amount=Decimal("0.003"), locked_amount=Decimal("0.01")),
-                Balance(asset="ETH", spot_free=Decimal("0.000"), flexible_amount=Decimal("0.05")),
-                Balance(asset="BNB", spot_free=Decimal("0.00"), flexible_amount=Decimal("0.2")),
-            ]
-
         self.assert_read_only_permissions()
         spot_balances = self._get_spot_balances()
         flexible_balances = self._get_flexible_balances()
@@ -65,60 +82,30 @@ class BinanceClient:
         ]
 
     def get_market_snapshots(self, symbols: list[str]) -> list[MarketSnapshot]:
-        if self.config["app"].get("mock_data", True):
-            prices = {
-                "BTCUSDT": Decimal("104000"),
-                "BTCUSDC": Decimal("104000"),
-                "ETHUSDT": Decimal("3600"),
-                "ETHUSDC": Decimal("3600"),
-                "BNBUSDT": Decimal("650"),
-                "BNBUSDC": Decimal("650"),
-                "SOLUSDC": Decimal("150"),
-                "WLDUSDC": Decimal("3"),
-            }
-            return [
-                MarketSnapshot(
-                    symbol=symbol,
-                    price=prices.get(symbol, Decimal("1")),
-                    ema20=prices.get(symbol, Decimal("1")) * Decimal("1.01"),
-                    ema50=prices.get(symbol, Decimal("1")) * Decimal("0.99"),
-                    ema200=prices.get(symbol, Decimal("1")) * Decimal("0.90"),
-                    rsi14=Decimal("58"),
-                    atr14=prices.get(symbol, Decimal("1")) * Decimal("0.025"),
-                    volume_trend="rising",
-                    trend_regime="RISK_ON",
-                )
-                for symbol in symbols
-            ]
         return [self._get_market_snapshot(symbol) for symbol in symbols]
 
     def get_asset_prices_usdt(self, assets: list[str]) -> dict[str, Decimal]:
-        if self.config["app"].get("mock_data", True):
-            return {
-                "USDT": Decimal("1"),
-                "USDC": Decimal("1"),
-                "BTC": Decimal("104000"),
-                "ETH": Decimal("3600"),
-                "WBETH": Decimal("3700"),
-                "BNB": Decimal("650"),
-                "SOL": Decimal("150"),
-                "WLD": Decimal("3"),
-            }
         tickers = self._public_get("/api/v3/ticker/price")
         ticker_map = {row["symbol"]: Decimal(row["price"]) for row in tickers}
         return self._price_assets_from_tickers({asset.upper() for asset in assets}, ticker_map)
 
     def get_symbol_rules(self, symbol: str) -> SymbolRules:
-        payload = self._public_get("/api/v3/exchangeInfo", {"symbol": symbol.upper()})
+        # Exchange filters do not change within a run, and nine call sites ask for
+        # them, so the answer is memoised for the lifetime of the client.
+        cache_key = symbol.upper()
+        cached = self._symbol_rules_cache.get(cache_key)
+        if cached is not None:
+            return cached
+        payload = self._public_get("/api/v3/exchangeInfo", {"symbol": cache_key})
         symbols = payload.get("symbols", [])
         if not symbols:
-            raise BinanceApiError(f"Symbol {symbol.upper()} was not found in exchangeInfo.")
+            raise BinanceApiError(f"Symbol {cache_key} was not found in exchangeInfo.")
         row = symbols[0]
         filters = {item["filterType"]: item for item in row.get("filters", [])}
         lot_size = filters.get("LOT_SIZE", {})
         price_filter = filters.get("PRICE_FILTER", {})
         notional_filter = filters.get("NOTIONAL") or filters.get("MIN_NOTIONAL") or {}
-        return SymbolRules(
+        rules = SymbolRules(
             symbol=row["symbol"],
             status=row.get("status", ""),
             base_asset=row.get("baseAsset", ""),
@@ -130,6 +117,8 @@ class BinanceClient:
             min_notional=Decimal(str(notional_filter.get("minNotional", "0"))),
             tick_size=Decimal(str(price_filter.get("tickSize", "0"))),
         )
+        self._symbol_rules_cache[cache_key] = rules
+        return rules
 
     def get_symbol_price(self, symbol: str) -> Decimal:
         payload = self._public_get("/api/v3/ticker/price", {"symbol": symbol.upper()})
@@ -389,15 +378,87 @@ class BinanceClient:
         headers = {"User-Agent": "binance-trading-agent/0.1"}
         if signed:
             headers["X-MBX-APIKEY"] = self.api_key
-        request = Request(f"{self.base_url}{path_with_query}", headers=headers, method=method)
+        # Only GET is ever replayed. A POST that fails in transit may already have
+        # reached the matching engine, so retrying it could duplicate a live order.
+        replayable = method == "GET"
+        attempt = 0
+        while True:
+            try:
+                return self._perform(method, path_with_query, headers, reuse=replayable)
+            except _HttpStatusError as status:
+                if status.code == _IP_BANNED_STATUS:
+                    raise BinanceRateLimitError(
+                        "Binance API HTTP 418: this IP is temporarily banned for exceeding rate "
+                        f"limits. Wait before running again. {status.body}"
+                    ) from status
+                retryable = status.code == _RATE_LIMITED_STATUS or 500 <= status.code < 600
+                if not retryable or attempt >= self._max_retries:
+                    if status.code == _RATE_LIMITED_STATUS:
+                        raise BinanceRateLimitError(f"Binance API HTTP 429: {status.body}") from status
+                    raise BinanceApiError(f"Binance API HTTP {status.code}: {status.body}") from status
+                self._wait_before_retry(attempt, status.retry_after)
+            except OSError as exc:
+                self._close_connection()
+                if not replayable or attempt >= self._max_retries:
+                    raise BinanceApiError(f"Binance API connection failed: {exc}") from exc
+                self._wait_before_retry(attempt, None)
+            attempt += 1
+
+    def _perform(self, method: str, path_with_query: str, headers: dict[str, str], reuse: bool) -> list | dict:
+        if not reuse:
+            # Never send an order over a possibly-stale pooled socket.
+            self._close_connection()
+        connection = self._ensure_connection()
         try:
-            with urlopen(request, timeout=int(self.config["binance"].get("timeout_seconds", 30)), context=self.ssl_context) as response:
-                return json.loads(response.read().decode("utf-8"))
-        except HTTPError as exc:
-            body = exc.read().decode("utf-8", errors="replace")
-            raise BinanceApiError(f"Binance API HTTP {exc.code}: {body}") from exc
-        except URLError as exc:
-            raise BinanceApiError(f"Binance API connection failed: {exc.reason}") from exc
+            connection.request(method, path_with_query, headers=headers)
+            response = connection.getresponse()
+            body = response.read().decode("utf-8", errors="replace")
+            status = response.status
+            keep_alive = reuse and response.getheader("Connection", "").lower() != "close"
+        except Exception:
+            self._close_connection()
+            raise
+        if not keep_alive:
+            self._close_connection()
+        if status >= 400:
+            raise _HttpStatusError(status, body, response.getheader("Retry-After"))
+        return json.loads(body)
+
+    def _ensure_connection(self) -> http.client.HTTPConnection:
+        if self._http_connection is None:
+            parts = urlsplit(self.base_url)
+            host = parts.hostname or parts.path
+            if parts.scheme == "http":
+                self._http_connection = http.client.HTTPConnection(host, parts.port, timeout=self._timeout_seconds)
+            else:
+                self._http_connection = http.client.HTTPSConnection(
+                    host,
+                    parts.port,
+                    timeout=self._timeout_seconds,
+                    context=self.ssl_context,
+                )
+        return self._http_connection
+
+    def _close_connection(self) -> None:
+        if self._http_connection is not None:
+            try:
+                self._http_connection.close()
+            except OSError:
+                pass
+            self._http_connection = None
+
+    def close(self) -> None:
+        """Release the pooled HTTP connection. Safe to call more than once."""
+        self._close_connection()
+
+    def _wait_before_retry(self, attempt: int, retry_after: str | None) -> None:
+        delay = self._retry_backoff_seconds * (2**attempt)
+        if retry_after:
+            try:
+                delay = max(delay, float(retry_after))
+            except ValueError:
+                pass
+        time.sleep(min(delay, self._max_retry_wait_seconds))
 
     def _require_api_keys(self) -> None:
         if not self.api_key or not self.api_secret:

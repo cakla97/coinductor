@@ -1,3 +1,5 @@
+import pytest
+
 from trading_agent.binance_client import BinanceApiError, BinanceClient
 
 
@@ -34,8 +36,5 @@ def test_get_symbol_market_snapshot_rejects_a_non_dict_response(monkeypatch) -> 
     client = _client()
     monkeypatch.setattr(client, "_public_get", lambda path, params=None: [])
 
-    try:
+    with pytest.raises(BinanceApiError, match="BTCUSDC"):
         client.get_symbol_market_snapshot("BTCUSDC")
-        assert False, "expected BinanceApiError"
-    except BinanceApiError as exc:
-        assert "BTCUSDC" in str(exc)

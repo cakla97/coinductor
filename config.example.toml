@@ -40,6 +40,12 @@ api_base_url = "https://api.binance.com"
 testnet_api_base_url = "https://testnet.binance.vision"
 recv_window_ms = 5000
 timeout_seconds = 30
+# Reads are replayed on 429/5xx/dropped connections with exponential backoff.
+# Order submissions are never replayed, because a failed POST may already have
+# reached the matching engine.
+max_retries = 3
+retry_backoff_seconds = 1.0
+max_retry_wait_seconds = 30.0
 
 [ai]
 enabled = false

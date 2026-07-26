@@ -6,11 +6,13 @@ from .binance_client import BinanceApiError, BinanceClient
 from .decimal_utils import money
 from .models import Balance, EarnRedeemPlan, LiquidityDecision, TradingBankrollReport
 from .order_journal import OrderIntentFactory
+from .runtime_flags import RuntimeFlags
 
 
 class EarnLiquidityManager:
     def __init__(self, config: dict):
         self.config = config
+        self.runtime = RuntimeFlags.from_config(config)
         self.client = BinanceClient(config)
         self.live_client = BinanceClient(config, credential_profile="live_trade")
 
@@ -103,8 +105,7 @@ class EarnLiquidityManager:
                 message="Flexible Earn redeem is ready but was not submitted.",
             )
 
-        confirm = str(self.config.get("_runtime", {}).get("earn_redeem_confirm", ""))
-        if confirm != "CONFIRM_EARN_REDEEM":
+        if self.runtime.earn_redeem_confirm != "CONFIRM_EARN_REDEEM":
             return EarnRedeemPlan(
                 intent_id=intent_id,
                 enabled=True,
@@ -163,7 +164,7 @@ class EarnLiquidityManager:
         return candidates[0]
 
     def _submit_requested(self) -> bool:
-        return bool(self.config.get("_runtime", {}).get("earn_redeem_submit", False))
+        return self.runtime.earn_redeem_submit
 
     def _empty(self, message: str) -> EarnRedeemPlan:
         return EarnRedeemPlan("", False, None, Decimal("0"), "NOT_NEEDED", "", "", False, False, "CONFIRM_EARN_REDEEM", message)

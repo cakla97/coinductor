@@ -6,11 +6,13 @@ from decimal import Decimal, ROUND_CEILING
 from .binance_client import BinanceApiError, BinanceClient
 from .models import LiveOrderPreview, LivePreviewReport, RiskDecision, SymbolRules, TradeProposal, TradingBankrollReport
 from .order_journal import OrderIntentFactory
+from .runtime_flags import RuntimeFlags
 
 
 class LivePreviewExecutor:
     def __init__(self, config: dict):
         self.config = config
+        self.runtime = RuntimeFlags.from_config(config)
         self.client = BinanceClient(config, credential_profile="live_trade")
 
     def preview_spot_proposal(
@@ -195,12 +197,10 @@ class LivePreviewExecutor:
         return f"Bankroll policy blocked live order: {bankroll.summary}"
 
     def _submit_requested(self) -> bool:
-        runtime = self.config.get("_runtime", {})
-        return bool(runtime.get("live_submit", False))
+        return self.runtime.live_submit
 
     def _submit_market_buy(self, symbol: str, quote_amount: Decimal, intent_id: str) -> dict[str, object]:
-        confirm = str(self.config.get("_runtime", {}).get("mainnet_confirm", ""))
-        if confirm != "CONFIRM_MAINNET_ORDER":
+        if self.runtime.mainnet_confirm != "CONFIRM_MAINNET_ORDER":
             return {
                 "submitted": False,
                 "status": "SUBMIT_SKIPPED",

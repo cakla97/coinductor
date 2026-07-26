@@ -5,6 +5,7 @@ from collections.abc import Callable
 from trading_agent.config import load_config
 from trading_agent.config_validator import ConfigValidator
 from trading_agent.runner import AgentRunner
+from trading_agent.runtime_flags import RuntimeFlags
 
 from .models import DesktopRunResult, RunOptions
 from .secret_store import load_secrets
@@ -56,16 +57,15 @@ class CoinductorApplication:
         config["ai"]["commentary_enabled"] = bool(options.ai_summary)
         config["ai"]["enabled"] = bool(options.ai_proposals)
         config["live_confirm"]["enabled"] = bool(options.live_preview or options.live_submit)
-        config.setdefault("_runtime", {})
-        config["_runtime"].update(
-            {
-                "live_submit": bool(options.live_submit),
-                "mainnet_confirm": options.live_confirm if options.live_submit else "",
-                "earn_redeem_submit": bool(options.earn_redeem_submit),
-                "earn_redeem_confirm": options.earn_redeem_confirm if options.earn_redeem_submit else "",
-                "manual_override_symbol": options.manual_override_symbol.strip().upper(),
-                "oco_protection_submit": bool(options.oco_submit),
-                "mainnet_oco_confirm": options.oco_confirm if options.oco_submit else "",
-                "testnet_confirm": "",
-            }
-        )
+        # Confirmation strings are only carried when the matching submit was
+        # actually requested, so a stale string cannot authorise a later run.
+        RuntimeFlags(
+            live_submit=bool(options.live_submit),
+            mainnet_confirm=options.live_confirm if options.live_submit else "",
+            earn_redeem_submit=bool(options.earn_redeem_submit),
+            earn_redeem_confirm=options.earn_redeem_confirm if options.earn_redeem_submit else "",
+            oco_protection_submit=bool(options.oco_submit),
+            mainnet_oco_confirm=options.oco_confirm if options.oco_submit else "",
+            testnet_confirm="",
+            manual_override_symbol=options.manual_override_symbol.strip().upper(),
+        ).store_in(config)

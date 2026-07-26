@@ -5,11 +5,13 @@ from decimal import Decimal, ROUND_CEILING, ROUND_DOWN
 from .binance_client import BinanceApiError, BinanceClient
 from .decimal_utils import floor_to_step
 from .models import Balance, LivePositionSummary, OcoProtectionPreviewItem, OcoProtectionPreviewReport
+from .runtime_flags import RuntimeFlags
 
 
 class OcoProtectionPreviewBuilder:
     def __init__(self, config: dict):
         self.config = config
+        self.runtime = RuntimeFlags.from_config(config)
         self.client = BinanceClient(config)
         self.live_client = BinanceClient(config, credential_profile="live_trade")
 
@@ -133,9 +135,9 @@ class OcoProtectionPreviewBuilder:
     def _maybe_submit(self, item: OcoProtectionPreviewItem, existing_intents: set[str]) -> OcoProtectionPreviewItem:
         if item.intent_id in existing_intents:
             return self._replace_item(item, status="BLOCKED", reason=f"OCO intent {item.intent_id} was already submitted before.")
-        if not self.config.get("_runtime", {}).get("oco_protection_submit", False):
+        if not self.runtime.oco_protection_submit:
             return item
-        if str(self.config.get("_runtime", {}).get("mainnet_oco_confirm", "")) != "CONFIRM_MAINNET_OCO":
+        if self.runtime.mainnet_oco_confirm != "CONFIRM_MAINNET_OCO":
             return self._replace_item(item, status="SUBMIT_SKIPPED", message="OCO submit requested but confirmation string did not match CONFIRM_MAINNET_OCO.")
 
         list_client_id = self._client_order_id("OCOL", item.intent_id)

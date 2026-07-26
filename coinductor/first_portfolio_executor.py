@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal, ROUND_HALF_UP
 
 from trading_agent.binance_client import BinanceApiError
@@ -8,6 +9,7 @@ from trading_agent.live_preview import LivePreviewExecutor
 from trading_agent.models import FirstPortfolioTrancheResult, TradeProposal
 from trading_agent.order_journal import OrderIntentFactory
 from trading_agent.risk_engine import RiskEngine
+from trading_agent.runtime_flags import RuntimeFlags
 from trading_agent.storage import Storage
 from trading_agent.testnet_executor import TestnetExecutor
 
@@ -212,9 +214,13 @@ class FirstPortfolioExecutor:
         submit: bool,
         confirm: str,
     ) -> FirstPortfolioTrancheResult:
-        config.setdefault("_runtime", {})
-        config["_runtime"]["live_submit"] = bool(submit)
-        config["_runtime"]["mainnet_confirm"] = confirm if submit else ""
+        # replace() rather than a fresh RuntimeFlags: this narrows authority to the
+        # live buy for this tranche without disturbing any other flag already set.
+        replace(
+            RuntimeFlags.from_config(config),
+            live_submit=bool(submit),
+            mainnet_confirm=confirm if submit else "",
+        ).store_in(config)
         config.setdefault("live_confirm", {})
         config["live_confirm"]["enabled"] = True
         report = LivePreviewExecutor(config).preview_spot_proposal(

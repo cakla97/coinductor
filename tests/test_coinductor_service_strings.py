@@ -53,8 +53,8 @@ allowed_symbols = ["BTCUSDC"]
     english = SetupService(config, tmp_path / ".env", language="en").inspect()
     czech = SetupService(config, tmp_path / ".env", language="cs").inspect()
 
-    assert any(check["name"] == "Environment file" for check in english.checks)
-    assert any(check["name"] == "Soubor s proměnnými prostředí" for check in czech.checks)
+    assert any(check["name"] == "Credential storage" for check in english.checks)
+    assert any(check["name"] == "Úložiště přihlašovacích údajů" for check in czech.checks)
 
 
 def test_user_profile_fields_are_localized(tmp_path) -> None:

@@ -255,16 +255,16 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     # --- connection checks ---
     "conn_missing_config": {"en": "Missing config: {path}", "cs": "Chybí konfigurace: {path}"},
     "conn_missing_env_readonly": {
-        "en": "Missing .env with Binance read-only keys",
-        "cs": "Chybí .env s read-only klíči pro Binance",
+        "en": "Binance read-only keys are not configured",
+        "cs": "Read-only klíče pro Binance nejsou nastaveny",
     },
     "conn_missing_env_live": {
-        "en": "Missing .env with Binance live trading keys",
-        "cs": "Chybí .env s klíči pro živé obchodování na Binance",
+        "en": "Binance live trading keys are not configured",
+        "cs": "Klíče pro živé obchodování na Binance nejsou nastaveny",
     },
     "conn_missing_env_testnet": {
-        "en": "Missing .env with Binance Spot Testnet keys",
-        "cs": "Chybí .env s klíči pro Binance Spot Testnet",
+        "en": "Binance Spot Testnet keys are not configured",
+        "cs": "Klíče pro Binance Spot Testnet nejsou nastaveny",
     },
     "conn_readonly_failed": {
         "en": "Connection check failed: {error}",
@@ -331,10 +331,14 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Locally stored AI Assistant conversations and screenshots pasted from the clipboard. The newest 20 chats and up to 40 pasted images are retained until this data group is removed.",
         "cs": "Lokálně uložené konverzace s AI Assistant a snímky obrazovky vložené ze schránky. Do odstranění této skupiny se uchovává 20 nejnovějších chatů a až 40 vložených obrázků.",
     },
-    "reset_group_env": {"en": "API keys and local environment", "cs": "API klíče a lokální prostředí"},
-    "reset_group_env_detail": {
-        "en": ".env file with Binance keys and optional AI provider settings. Only delete this when you want a completely clean app setup.",
-        "cs": "Soubor .env s klíči k Binance a volitelným nastavením poskytovatele AI. Mažte jej jen tehdy, když chcete úplně čisté nastavení aplikace.",
+    "reset_group_credentials": {"en": "API keys", "cs": "API klíče"},
+    "reset_group_credentials_detail": {
+        "en": "Your Binance and AI keys, removed from the operating system's credential store and from any local .env file. Choose this when you are removing Coinductor for good - the uninstaller does not touch your keys.",
+        "cs": "Vaše klíče k Binance a AI se odstraní ze systémového úložiště pověření i z případného lokálního souboru .env. Zvolte, když Coinductor odstraňujete natrvalo - odinstalátor se vašich klíčů nedotkne.",
+    },
+    "reset_keychain_entry": {
+        "en": "{count} key(s) from the OS credential store",
+        "cs": "{count} klíč(ů) ze systémového úložiště pověření",
     },
     # --- readiness steps (step codes and action codes stay identifiers) ---
     "readiness_summary": {
@@ -384,8 +388,8 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Pro skutečnou analýzu portfolia jsou nutné read-only API klíče.",
     },
     "readiness_binance_blocked_action": {
-        "en": "Create read-only Binance keys and add them to .env.",
-        "cs": "Vytvořte read-only klíče Binance a přidejte je do .env.",
+        "en": "Create read-only Binance keys and save them in the setup wizard.",
+        "cs": "Vytvořte read-only klíče Binance a uložte je v průvodci nastavením.",
     },
     "readiness_step_classification": {"en": "Portfolio classification", "cs": "Klasifikace portfolia"},
     "readiness_classification_ready_detail": {
@@ -531,6 +535,42 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "{action} is locked by your profile: automation level is Recommendations only. Switch it to Guarded automation in the setup wizard first.",
         "cs": "{action} je uzamčeno vaším profilem: úroveň automatizace je Pouze doporučení. Nejprve ji v průvodci nastavením přepněte na Zabezpečená automatizace.",
     },
+    # --- Privacy & data (Settings) ---
+    "privacy_binance_name": {"en": "Binance account data", "cs": "Data účtu Binance"},
+    "privacy_binance_value": {"en": "Read when you run checks", "cs": "Čtena při spuštění kontrol"},
+    "privacy_binance_detail": {
+        "en": "Balances, Earn/Spot positions, order history and strategy status are read to build local reports. Coinductor never requests withdrawal permission.",
+        "cs": "Zůstatky, pozice Earn/Spot, historie příkazů a stav strategií se čtou pro sestavení lokálních reportů. Coinductor nikdy nežádá oprávnění k výběru.",
+    },
+    "privacy_credentials_name": {"en": "API keys", "cs": "API klíče"},
+    "privacy_credentials_keychain": {"en": "Windows Credential Manager", "cs": "Správce pověření Windows"},
+    "privacy_credentials_keychain_detail": {
+        "en": "Your Binance and AI keys are held by the operating system's credential store, not in a plaintext file. Coinductor reads them at startup and never writes them into reports, logs or the database.",
+        "cs": "Klíče k Binance a AI drží úložiště pověření operačního systému, ne soubor v čitelné podobě. Coinductor je načte při startu a nikdy je nezapisuje do reportů, logů ani databáze.",
+    },
+    "privacy_credentials_envfile": {"en": "Local .env file", "cs": "Lokální soubor .env"},
+    "privacy_credentials_envfile_detail": {
+        "en": "No OS credential store is available on this system, so keys fall back to a plaintext .env file in {folder}. Protect that folder accordingly.",
+        "cs": "Na tomto systému není dostupné úložiště pověření, klíče proto končí v čitelném souboru .env ve složce {folder}. Podle toho tuto složku chraňte.",
+    },
+    "privacy_local_files_name": {"en": "Local files", "cs": "Lokální soubory"},
+    "privacy_local_files_value": {"en": "Stored on this PC", "cs": "Uloženy na tomto počítači"},
+    "privacy_local_files_detail": {
+        "en": "SQLite state, reports, research notes, safety stage and your onboarding profile stay in {folder} and are never uploaded.",
+        "cs": "Stav v SQLite, reporty, výzkumné poznámky, bezpečnostní stupeň a váš profil zůstávají ve složce {folder} a nikam se neodesílají.",
+    },
+    "privacy_cloud_ai_name": {"en": "Cloud AI", "cs": "Cloudová AI"},
+    "privacy_cloud_ai_value": {"en": "Optional", "cs": "Volitelná"},
+    "privacy_cloud_ai_detail": {
+        "en": "Everything stays local unless you configure a cloud AI provider. If you do, the selected prompt and report context is sent to that provider - nothing else, and never your API keys.",
+        "cs": "Bez nastaveného cloudového poskytovatele AI zůstává vše lokální. Pokud jej nastavíte, odešle se mu vybraný dotaz a kontext reportu - nic dalšího, a nikdy vaše API klíče.",
+    },
+    "privacy_execution_name": {"en": "Execution", "cs": "Provádění"},
+    "privacy_execution_value": {"en": "Guarded", "cs": "Zabezpečené"},
+    "privacy_execution_detail": {
+        "en": "Coinductor cannot withdraw funds, and never submits a live order without the safety stage, your profile and an explicit typed confirmation all allowing it.",
+        "cs": "Coinductor neumí vybírat prostředky a nikdy neodešle živý příkaz, dokud to nedovolí bezpečnostní stupeň, váš profil i výslovné napsané potvrzení zároveň.",
+    },
     # --- AI provider health check and model discovery ---
     "aiph_missing_config": {"en": "Missing config: {path}", "cs": "Chybí konfigurace: {path}"},
     "aiph_no_base_url": {"en": "{key} is not set.", "cs": "{key} není nastaveno."},
@@ -634,7 +674,7 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     # --- setup service check names ---
     "setup_check_python": {"en": "Python", "cs": "Python"},
     "setup_check_configuration": {"en": "Configuration", "cs": "Konfigurace"},
-    "setup_check_env_file": {"en": "Environment file", "cs": "Soubor s proměnnými prostředí"},
+    "setup_check_credential_store": {"en": "Credential storage", "cs": "Úložiště přihlašovacích údajů"},
     "setup_check_binance_readonly": {"en": "Binance read-only", "cs": "Binance read-only"},
     "setup_check_binance_testnet": {"en": "Binance Spot Testnet", "cs": "Binance Spot Testnet"},
     "setup_check_binance_live": {"en": "Binance live trading", "cs": "Binance živé obchodování"},
@@ -664,10 +704,17 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Configured model: {model}",
         "cs": "Nastavený model: {model}",
     },
-    "setup_env_present": {"en": "Present", "cs": "Přítomen"},
-    "setup_env_missing": {
-        "en": "Create .env before connecting services",
-        "cs": "Před připojením služeb vytvořte .env",
+    "setup_creds_keychain": {
+        "en": "OS credential store (keys are not kept in a plaintext file)",
+        "cs": "Systémové úložiště pověření (klíče nejsou v čitelném souboru)",
+    },
+    "setup_creds_envfile": {
+        "en": "Local .env file - no OS credential store is available here",
+        "cs": "Lokální soubor .env - systémové úložiště pověření zde není dostupné",
+    },
+    "setup_creds_none": {
+        "en": "Not configured yet. Add your keys in the setup wizard.",
+        "cs": "Zatím nenastaveno. Klíče přidejte v průvodci nastavením.",
     },
     "setup_credentials_configured": {"en": "Configured", "cs": "Nastaveno"},
     "setup_binance_readonly_missing": {

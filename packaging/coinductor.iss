@@ -53,3 +53,55 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: deskto
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+
+[Code]
+// Uninstalling removes the program only. Portfolio state, reports and API keys
+// survive on purpose, so reinstalling or upgrading does not wipe a user's
+// history - but leaving Binance credentials in the OS vault after someone
+// removed the app would be a nasty surprise, so offer to clear them too.
+//
+// The keys must match secret_store.MANAGED_KEYS; a test holds the two together.
+const
+  ManagedKeys =
+    'BINANCE_API_KEY,BINANCE_API_SECRET,' +
+    'BINANCE_TESTNET_API_KEY,BINANCE_TESTNET_API_SECRET,' +
+    'BINANCE_LIVE_TRADE_API_KEY,BINANCE_LIVE_TRADE_API_SECRET,' +
+    'LLM_API_KEY,LLM_BASE_URL,LLM_MODEL,LLM_VISION_MODEL';
+
+procedure DeleteStoredCredentials();
+var
+  Keys: TArrayOfString;
+  ResultCode, I: Integer;
+begin
+  Keys := StringSplit(ManagedKeys, [','], stExcludeEmpty);
+  for I := 0 to GetArrayLength(Keys) - 1 do
+    Exec(ExpandConstant('{cmd}'), '/C cmdkey /delete:' + Keys[I] + '@{#AppName}',
+         '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  // keyring also writes one bare service-named entry.
+  Exec(ExpandConstant('{cmd}'), '/C cmdkey /delete:{#AppName}',
+       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+var
+  DataDir: String;
+begin
+  if CurUninstallStep <> usPostUninstall then
+    Exit;
+  if UninstallSilent then
+    Exit;
+
+  DataDir := ExpandConstant('{localappdata}\{#AppName}');
+  if MsgBox(
+       'Also delete your Coinductor data and API keys?' + #13#10#13#10 +
+       'This removes:' + #13#10 +
+       '  - ' + DataDir + #13#10 +
+       '    (portfolio state, run history, reports, your profile and config)' + #13#10 +
+       '  - your Binance and AI keys from Windows Credential Manager' + #13#10#13#10 +
+       'Choose No to keep everything, for example if you plan to reinstall.',
+       mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
+  begin
+    DelTree(DataDir, True, True, True);
+    DeleteStoredCredentials();
+  end;
+end;

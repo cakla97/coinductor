@@ -24,6 +24,16 @@ def resolve_data_dir() -> Path | None:
     return Path.home() / ".coinductor"
 
 
+def data_dir_label() -> str:
+    """Where local data actually lives, for showing the user.
+
+    An installed build keeps it under %LOCALAPPDATA%, not next to the exe, so
+    "the project folder" is only true for a source checkout.
+    """
+    resolved = resolve_data_dir()
+    return str(resolved) if resolved is not None else str(Path.cwd())
+
+
 def _bundled_root() -> Path:
     meipass = getattr(sys, "_MEIPASS", None)
     if meipass:

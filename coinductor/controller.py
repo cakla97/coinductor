@@ -21,6 +21,7 @@ from .diagnostics_service import DiagnosticsService
 from .guide_service import GuideService
 from .local_data_reset import LocalDataResetService
 from .local_ai_recommender import LocalAiRecommender
+from .paths import data_dir_label
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions, SafetySnapshot
 from .readiness_service import ReadinessService
 from .profile_choices import profile_choices, toggle_help
@@ -594,30 +595,39 @@ class AppController(QObject):
             for check in self._setup_snapshot.checks
         )
 
-    @Property("QVariantList", constant=True)
+    @Property("QVariantList", notify=wizardLanguageChanged)
     def privacyDataItems(self) -> list[dict[str, str]]:
+        # Was a constant English list that still described .env as where secrets
+        # live. API keys now go to the OS keychain, so this has to be resolved
+        # per language and reflect where the data actually is.
+        keychain_available = SecretStore().available()
         return [
-            {
-                "name": "Binance account data",
-                "value": "Read when you run checks",
-                "detail": "Balances, Earn/Spot positions, order history, and strategy status are used to build local reports.",
-            },
-            {
-                "name": "Local files",
-                "value": "Stored on this PC",
-                "detail": ".env secrets, SQLite state, reports, research notes, safety state, and your onboarding profile stay in the project folder.",
-            },
-            {
-                "name": "Cloud AI",
-                "value": "Optional",
-                "detail": "Data stays local unless you configure a cloud AI provider; then only the selected prompt/report context is sent to that provider.",
-            },
-            {
-                "name": "Execution",
-                "value": "Guarded",
-                "detail": "Coinductor does not withdraw funds and does not submit live orders from the desktop UI without explicit guarded workflows.",
-            },
+            self._privacy_item("privacy_binance"),
+            self._privacy_item(
+                "privacy_credentials",
+                value_key="privacy_credentials_keychain"
+                if keychain_available
+                else "privacy_credentials_envfile",
+                detail_key="privacy_credentials_keychain_detail"
+                if keychain_available
+                else "privacy_credentials_envfile_detail",
+            ),
+            self._privacy_item("privacy_local_files"),
+            self._privacy_item("privacy_cloud_ai"),
+            self._privacy_item("privacy_execution"),
         ]
+
+    def _privacy_item(
+        self, key: str, *, value_key: str = "", detail_key: str = ""
+    ) -> dict[str, str]:
+        language = self._wizard_language
+        return {
+            "name": service_text(f"{key}_name", language),
+            "value": service_text(value_key or f"{key}_value", language),
+            "detail": service_text(detail_key or f"{key}_detail", language).format(
+                folder=data_dir_label()
+            ),
+        }
 
     @Property("QVariantList", notify=wizardLanguageChanged)
     def guides(self) -> list[dict[str, str]]:

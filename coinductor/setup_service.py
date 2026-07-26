@@ -53,11 +53,19 @@ class SetupService:
             self._add(checks, self._t("setup_check_configuration"), "PASS", self._t("setup_config_valid"), self._t("setup_group_runtime"))
 
         env = self._env_values()
+        # Credential storage, not file presence: with an OS keychain there is
+        # deliberately no .env, so checking for the file would warn the user to
+        # create something they must not need.
+        keychain = SecretStore(env_path=self.env_path).available()
         self._add(
             checks,
-            self._t("setup_check_env_file"),
-            "PASS" if self.env_path.exists() else "WARN",
-            self._t("setup_env_present") if self.env_path.exists() else self._t("setup_env_missing"),
+            self._t("setup_check_credential_store"),
+            "PASS" if keychain or self.env_path.exists() else "WARN",
+            self._t("setup_creds_keychain")
+            if keychain
+            else self._t("setup_creds_envfile")
+            if self.env_path.exists()
+            else self._t("setup_creds_none"),
             self._t("setup_group_runtime"),
         )
         self._credential_check(

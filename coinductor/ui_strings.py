@@ -349,8 +349,8 @@ WIZARD_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Uložit klíč",
     },
     "key_storage_note": {
-        "en": "The key is stored in the local .env file in this project folder. It is not sent anywhere by the wizard.",
-        "cs": "Klíč se ukládá do lokálního souboru .env ve složce projektu. Průvodce jej nikam neodesílá.",
+        "en": "The key goes to your operating system's credential store, not a plaintext file. If no credential store is available it falls back to a local .env. Either way the wizard sends it nowhere.",
+        "cs": "Klíč se uloží do systémového úložiště pověření, ne do čitelného souboru. Pokud úložiště není dostupné, použije se lokální .env. V obou případech jej průvodce nikam neodesílá.",
     },
     "check_readonly_button": {
         "en": "Check read-only access",

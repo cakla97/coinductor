@@ -28,6 +28,8 @@ class LocalDataResetService:
         for group in self._groups():
             if group["code"] not in selected:
                 continue
+            if group.get("clears_keychain"):
+                removed.extend(self._clear_keychain())
             for raw_path in group["paths"]:
                 target = (self.root / raw_path).resolve()
                 if target == root:
@@ -95,7 +97,10 @@ class LocalDataResetService:
                 "name": self._t("reset_group_reports"),
                 "detail": self._t("reset_group_reports_detail"),
                 "default": False,
-                "paths": ("reports",),
+                # app.reports_dir is "outputs/reports"; this group used to list
+                # only "reports", so selecting it deleted nothing at all. The
+                # bare name is kept for older layouts that used it.
+                "paths": ("outputs/reports", "reports"),
             },
             {
                 "code": "RESEARCH",
@@ -112,17 +117,47 @@ class LocalDataResetService:
                 "paths": ("state/assistant_history.json", "state/assistant_attachments"),
             },
             {
-                "code": "ENV",
-                "name": self._t("reset_group_env"),
-                "detail": self._t("reset_group_env_detail"),
+                "code": "CREDENTIALS",
+                "name": self._t("reset_group_credentials"),
+                "detail": self._t("reset_group_credentials_detail"),
                 "default": False,
                 "paths": (".env",),
+                # .env is usually absent because keys live in the OS keychain.
+                # Deleting only the file would leave the single most sensitive
+                # thing behind for someone removing the app for good.
+                "clears_keychain": True,
             },
         )
+
+    def _clear_keychain(self) -> list[str]:
+        """Remove the app's keys from the OS credential store.
+
+        Returns what was actually held, so the summary can name it. Failure to
+        reach a keychain is not an error: there may simply not be one.
+        """
+        from .secret_store import SecretStore  # noqa: PLC0415
+
+        store = SecretStore(env_path=self.root / ".env")
+        try:
+            held = store.stored_keys()
+            if not held:
+                return []
+            store.clear(held)
+            return [self._t("reset_keychain_entry").format(count=len(held))]
+        except Exception:
+            return []
 
     def _preview_item(self, group: dict[str, object]) -> dict[str, str]:
         paths = group["paths"]
         existing = [path for path in paths if (self.root / path).exists()]
+        if group.get("clears_keychain"):
+            try:
+                from .secret_store import SecretStore  # noqa: PLC0415
+
+                if SecretStore(env_path=self.root / ".env").stored_keys():
+                    existing.append("keychain")
+            except Exception:
+                pass
         return {
             "code": str(group["code"]),
             "name": str(group["name"]),

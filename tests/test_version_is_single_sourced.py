@@ -37,3 +37,25 @@ def test_installer_version_matches_the_package() -> None:
     assert match.group(1) == trading_agent.__version__, (
         "packaging/coinductor.iss is out of step with trading_agent.__version__"
     )
+
+
+def test_installer_clears_exactly_the_managed_credentials() -> None:
+    """The uninstaller's key list cannot drift from the one the app writes.
+
+    It is Pascal in an .iss file, so nothing else would catch a key added to
+    MANAGED_KEYS but not here - and the failure mode is silent: a Binance
+    secret left in the OS vault after the user asked for everything to go.
+    """
+    from coinductor.secret_store import MANAGED_KEYS
+
+    script = (_ROOT / "packaging" / "coinductor.iss").read_text(encoding="utf-8")
+
+    block = re.search(r"ManagedKeys\s*=(.*?);", script, re.DOTALL)
+    assert block is not None, "coinductor.iss no longer defines ManagedKeys"
+    listed = {key for key in re.findall(r"[A-Z_]{4,}", block.group(1))}
+
+    assert listed == set(MANAGED_KEYS), (
+        f"installer/app credential lists differ: "
+        f"only in installer={listed - set(MANAGED_KEYS)}, "
+        f"only in app={set(MANAGED_KEYS) - listed}"
+    )

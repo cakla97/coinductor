@@ -45,7 +45,9 @@ def test_connection_check_blocks_missing_env(tmp_path) -> None:
     result = ConnectionCheckService(tmp_path / "config.toml", tmp_path / ".env").check_binance_read_only()
 
     assert result.status == "BLOCK"
-    assert ".env" in result.detail
+    # Keys may live in the OS keychain rather than a file, so the message names
+    # the missing capability, not a filename the user may never have.
+    assert "not configured" in result.detail
 
 
 def test_live_trading_check_passes_without_exposing_secrets(tmp_path, monkeypatch) -> None:
@@ -94,4 +96,6 @@ def test_testnet_check_blocks_missing_env(tmp_path) -> None:
     result = TestnetCheckService(tmp_path / "config.toml", tmp_path / ".env").check_binance_testnet()
 
     assert result.status == "BLOCK"
-    assert ".env" in result.detail
+    # Keys may live in the OS keychain rather than a file, so the message names
+    # the missing capability, not a filename the user may never have.
+    assert "not configured" in result.detail

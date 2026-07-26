@@ -39,6 +39,19 @@ class EnvWriter:
 
         self.path.write_text("\n".join(rendered) + "\n", encoding="utf-8")
 
+    def remove(self, keys: tuple[str, ...]) -> None:
+        """Drop keys from the file and from this process's environment."""
+        for key in keys:
+            os.environ.pop(key, None)
+        if not self.path.exists():
+            return
+        kept = [
+            line
+            for line in self.path.read_text(encoding="utf-8").splitlines()
+            if "=" not in line or line.split("=", 1)[0].strip() not in keys
+        ]
+        self.path.write_text("\n".join(kept) + "\n", encoding="utf-8")
+
     def _quote(self, value: str) -> str:
         if any(char.isspace() for char in value) or "#" in value:
             escaped = value.replace('"', '\\"')

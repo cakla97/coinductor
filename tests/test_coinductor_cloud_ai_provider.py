@@ -13,6 +13,7 @@ while staying entirely on the loopback interface. No network access.
 from __future__ import annotations
 
 import json
+import os
 import socket
 import socketserver
 import threading
@@ -165,3 +166,27 @@ def test_provider_errors_are_described_in_czech_too() -> None:
 def test_mainstream_cloud_vision_models_are_recognized() -> None:
     for model in ("gpt-4o", "gpt-4.1", "claude-sonnet-4-5", "gemini-2.0-flash"):
         assert supports_vision_model(model), model
+
+
+def test_switching_to_a_local_provider_clears_the_cloud_api_key(tmp_path, monkeypatch) -> None:
+    """A paid key must not survive a switch back to Ollama.
+
+    Both wizard panels write the same LLM_* variables, and every request builder
+    attaches LLM_API_KEY whenever it is set - so a leftover key would be sent as
+    an Authorization header to whatever is listening on localhost.
+    """
+    from coinductor.secret_store import SecretStore
+
+    monkeypatch.setenv("COINDUCTOR_DISABLE_KEYCHAIN", "1")
+    env_file = tmp_path / ".env"
+    env_file.write_text("", encoding="utf-8")
+    store = SecretStore(env_path=env_file)
+
+    store.set_many({"LLM_BASE_URL": "https://api.openai.com/v1", "LLM_API_KEY": "sk-paid-key"})
+    assert os.environ.get("LLM_API_KEY") == "sk-paid-key"
+
+    store.set_many({"LLM_BASE_URL": "http://127.0.0.1:11434/v1"})
+    store.clear(("LLM_API_KEY",))
+
+    assert os.environ.get("LLM_API_KEY") is None, "key still exported to the process"
+    assert "LLM_API_KEY" not in env_file.read_text(encoding="utf-8"), "key still in .env"

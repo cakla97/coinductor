@@ -122,6 +122,18 @@ class SecretStore:
                 # Not stored, or the backend refused: nothing to remove.
                 continue
 
+    def clear(self, keys: tuple[str, ...]) -> None:
+        """Remove keys everywhere they are read from: keychain, .env, environ.
+
+        `delete` only touches the keychain, which is not enough when a value
+        must stop being *used* - a leftover .env entry or an already-exported
+        variable would keep it alive for the rest of the session.
+        """
+        self.delete(keys)
+        EnvWriter(self.env_path).remove(keys)
+        for key in keys:
+            os.environ.pop(key, None)
+
     def stored_keys(self) -> tuple[str, ...]:
         """Managed keys currently held in the keychain."""
         keyring = _keyring()

@@ -1377,13 +1377,19 @@ class AppController(QObject):
 
     @Slot(str, str, str)
     def saveLocalAiProvider(self, base_url: str, model: str, vision_model: str) -> None:
-        backend = SecretStore().set_many(
+        store = SecretStore()
+        backend = store.set_many(
             {
                 "LLM_BASE_URL": base_url,
                 "LLM_MODEL": model,
                 "LLM_VISION_MODEL": vision_model,
             }
         )
+        # Both panels write the same LLM_* variables, so switching to local
+        # would otherwise leave a cloud API key behind - and every request
+        # builder attaches it whenever it is set, sending a paid key to
+        # whatever is listening on localhost.
+        store.clear(("LLM_API_KEY",))
         self._ai_provider_health_status = "Not checked"
         self._ai_provider_health_detail = self._saved_detail(backend, "creds_ai_local_saved")
         self.refreshSetup()

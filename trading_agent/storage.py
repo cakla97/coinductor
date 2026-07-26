@@ -6,6 +6,81 @@ import sqlite3
 
 from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, FirstPortfolioTrancheResult, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluation, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
+# Columns that every reader filters on. Indexed on whichever tables carry them.
+_INDEXED_COLUMNS = ("run_id", "intent_id")
+
+# Per-run tables that retention must NOT prune. These hold the intent ids that
+# stop an already-executed action from being submitted a second time
+# (get_existing_first_portfolio_intents, get_existing_oco_intents) plus the OCO
+# status history the desktop reads to close a cycle. Dropping a row here would
+# let a filled tranche or a live OCO be re-sent, so they outlive run retention.
+_RETENTION_EXEMPT_TABLES = frozenset(
+    {
+        "first_portfolio_tranches",
+        "oco_protection_orders",
+        "oco_status_checks",
+    }
+)
+
+
+def apply_connection_pragmas(connection: sqlite3.Connection) -> None:
+    """Settings every connection to the journal needs.
+
+    WAL lets the desktop UI read while a run is writing; under the default
+    rollback journal a concurrent reader fails with "database is locked".
+    ``synchronous`` is deliberately left at its default so a crash cannot lose
+    an acknowledged order record.
+    """
+    connection.execute("pragma journal_mode=WAL")
+    connection.execute("pragma busy_timeout=10000")
+
+
+def table_exists(connection: sqlite3.Connection, table: str) -> bool:
+    """Whether a table is present in this database.
+
+    Readers need this because a journal written by an older build predates some
+    of the tables ``Storage._migrate`` now creates, and the desktop opens the
+    file without migrating it.
+    """
+    row = connection.execute(
+        "select 1 from sqlite_master where type = 'table' and name = ?", (table,)
+    ).fetchone()
+    return row is not None
+
+
+def table_columns(connection: sqlite3.Connection, table: str) -> set[str]:
+    return {str(row["name"]) for row in connection.execute(f"pragma table_info({table})")}
+
+
+def column_or_null(columns: set[str], column: str) -> str:
+    """A select expression that yields NULL when an older journal lacks the column.
+
+    Lives next to the schema on purpose: this and ``_ensure_column`` are two
+    halves of the same compatibility promise, and they used to sit in different
+    packages where nothing tied them together.
+    """
+    return column if column in columns else f"null as {column}"
+
+
+def run_scoped_tables(connection: sqlite3.Connection) -> list[str]:
+    """Tables holding per-run rows, derived from the live schema.
+
+    Reading this from ``sqlite_master`` rather than a hardcoded list means a new
+    table is picked up by retention and indexing without a second edit.
+    """
+    tables = [
+        str(row["name"])
+        for row in connection.execute(
+            "select name from sqlite_master where type = 'table' and name not like 'sqlite_%' order by name"
+        )
+    ]
+    scoped = []
+    for table in tables:
+        columns = {row["name"] for row in connection.execute(f"pragma table_info({table})")}
+        if "run_id" in columns:
+            scoped.append(table)
+    return scoped
+
 
 class Storage:
     def __init__(self, database_path: Path):
@@ -13,6 +88,7 @@ class Storage:
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
         self.connection = sqlite3.connect(self.database_path)
         self.connection.row_factory = sqlite3.Row
+        apply_connection_pragmas(self.connection)
         self._migrate()
 
     def _migrate(self) -> None:
@@ -454,7 +530,28 @@ class Storage:
         self._ensure_column("active_grid_evaluations", "age_days", "text")
         self._ensure_column("ai_commentaries", "rebalancing_assessment", "text")
         self._ensure_column("earn_redeem_plans", "intent_id", "text")
+        self._ensure_indexes()
         self.connection.commit()
+
+    def _ensure_indexes(self) -> None:
+        """Index the columns every read filters on.
+
+        Driven by the schema rather than a fixed list, so a table added later is
+        indexed on the next start without touching this method. Every per-run
+        table is queried as ``where run_id = ?`` and the order tables resolve
+        intents by id, including a correlated subquery that is quadratic without
+        an index.
+        """
+        for row in self.connection.execute(
+            "select name from sqlite_master where type = 'table' and name not like 'sqlite_%'"
+        ).fetchall():
+            table = str(row["name"])
+            columns = {item["name"] for item in self.connection.execute(f"pragma table_info({table})")}
+            for column in _INDEXED_COLUMNS:
+                if column in columns:
+                    self.connection.execute(
+                        f"create index if not exists idx_{table}_{column} on {table}({column})"
+                    )
 
     def _ensure_column(self, table: str, column: str, definition: str) -> None:
         columns = {row["name"] for row in self.connection.execute(f"pragma table_info({table})")}
@@ -1680,36 +1777,13 @@ class Storage:
         if not old_ids:
             return 0
         placeholders = ",".join("?" for _ in old_ids)
+        # Derived from the schema rather than listed by hand: a table added later
+        # would otherwise keep its rows forever with nothing to flag it. The
+        # exemptions are deliberate and documented above.
         tables = [
-            "balances",
-            "portfolio_valuations",
-            "portfolio_summaries",
-            "market_snapshots",
-            "market_research_reports",
-            "market_research_symbols",
-            "ai_proposals",
-            "shadow_signals",
-            "risk_decisions",
-            "live_risk_states",
-            "paper_orders",
-            "testnet_orders",
-            "live_orders",
-            "grid_recommendations",
-            "rebalancing_bot_recommendations",
-            "rebalancing_bot_assets",
-            "strategy_decisions",
-            "capital_sourcing_plans",
-            "capital_sourcing_items",
-            "trading_bankroll_reports",
-            "earn_redeem_plans",
-            "next_run_recommendations",
-            "recommended_actions",
-            "execution_checklist_items",
-            "ai_commentaries",
-            "research_notes",
-            "research_statuses",
-            "active_grid_evaluations",
-            "active_rebalancing_evaluations",
+            table
+            for table in run_scoped_tables(self.connection)
+            if table != "runs" and table not in _RETENTION_EXEMPT_TABLES
         ]
         for table in tables:
             self.connection.execute(f"delete from {table} where run_id in ({placeholders})", old_ids)

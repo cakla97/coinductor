@@ -1,10 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, UTC
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import re
 import sqlite3
+
+from trading_agent.storage import apply_connection_pragmas, column_or_null, table_columns, table_exists
 
 from .models import DesktopSnapshot
 from .report_summary import ReportSummaryReader
@@ -25,6 +27,9 @@ class DesktopStore:
             return DesktopSnapshot(None, (), (), ())
         connection = sqlite3.connect(self.database_path)
         connection.row_factory = sqlite3.Row
+        # The UI reads while a run may be writing; without WAL and a busy timeout
+        # that read fails outright with "database is locked".
+        apply_connection_pragmas(connection)
         try:
             latest = self._latest_real_run(connection)
             latest_result = None
@@ -594,7 +599,7 @@ class DesktopStore:
                         market_conditions.append(item)
 
         scheduled_at = self._scheduled_review(started_at, hours)
-        due_now = scheduled_at is not None and scheduled_at <= datetime.now(timezone.utc)
+        due_now = scheduled_at is not None and scheduled_at <= datetime.now(UTC)
         if manual_steps:
             status = "Manual step before rerun"
             tone = "blocked"
@@ -634,8 +639,8 @@ class DesktopStore:
         except ValueError:
             return None
         if started.tzinfo is None:
-            started = started.replace(tzinfo=timezone.utc)
-        return started.astimezone(timezone.utc) + timedelta(hours=hours)
+            started = started.replace(tzinfo=UTC)
+        return started.astimezone(UTC) + timedelta(hours=hours)
 
     def _format_scheduled_review(self, value: datetime | None) -> str:
         if value is None:
@@ -861,19 +866,17 @@ class DesktopStore:
         right = "" if high in (None, "") else str(high)
         return " - ".join(part for part in (left, right) if part)
 
+    # Schema introspection is delegated to trading_agent.storage, which owns the
+    # schema these reads depend on. Kept as thin methods so the existing call
+    # sites and their tests stay unchanged.
     def _table_exists(self, connection: sqlite3.Connection, table: str) -> bool:
-        row = connection.execute(
-            "select name from sqlite_master where type = 'table' and name = ?",
-            (table,),
-        ).fetchone()
-        return row is not None
+        return table_exists(connection, table)
 
     def _columns(self, connection: sqlite3.Connection, table: str) -> set[str]:
-        rows = connection.execute(f"pragma table_info({table})").fetchall()
-        return {str(row["name"]) for row in rows}
+        return table_columns(connection, table)
 
     def _column_expr(self, columns: set[str], column: str) -> str:
-        return column if column in columns else f"null as {column}"
+        return column_or_null(columns, column)
 
     def _money(self, value: object) -> str:
         try:

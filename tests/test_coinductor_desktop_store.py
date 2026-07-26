@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, UTC
 import sqlite3
 
 from coinductor.desktop_store import DesktopStore
@@ -238,7 +238,7 @@ def test_next_review_waits_for_market_conditions_without_manual_blocker(tmp_path
     review = DesktopStore(database, tmp_path)._next_review(
         connection,
         7,
-        datetime.now(timezone.utc).isoformat(),
+        datetime.now(UTC).isoformat(),
         strategies,
     )
     connection.close()

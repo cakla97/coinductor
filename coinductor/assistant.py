@@ -6,6 +6,7 @@ import mimetypes
 import os
 import re
 import unicodedata
+import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -595,14 +596,13 @@ class ProviderBackedAssistant:
         except Exception as exc:
             czech = is_czech(question)
             detail = _describe_provider_error(exc, czech=czech)
-            if czech:
-                return (
-                    "Lokální AI model tentokrát nevrátil použitelnou odpověď. "
-                    "Zdokumentované funkce aplikace mohu vysvětlit přímo; u obecného dotazu jej zkuste formulovat konkrétněji. "
-                    f"Technický detail: {detail}"
-                )
+            # Both languages get the offline answer. The Czech branch used to
+            # return an apology only, so a Czech user lost the built-in help
+            # exactly when the provider was down. "Local" is also wrong now that
+            # a cloud provider is a first-class choice.
             offline = self.fallback.answer(question, snapshot)
-            return f"{offline}\n\nAI provider fallback: {detail}"
+            label = "Poskytovatel AI selhal" if czech else "AI provider fallback"
+            return f"{offline}\n\n{label}: {detail}"
 
     def respond(
         self,
@@ -891,6 +891,17 @@ def _extract_provider_answer(content: object) -> str:
 def _describe_provider_error(exc: Exception, *, czech: bool) -> str:
     if isinstance(exc, RuntimeError):
         return str(exc)
+    # HTTPError subclasses OSError, so it has to be handled first. With a cloud
+    # provider the usual failure is a rejected key, and reporting that as
+    # "connection failed" would send the user chasing their network instead.
+    if isinstance(exc, urllib.error.HTTPError):
+        hint = _HTTP_HINTS.get(exc.code)
+        detail = f" {hint[czech]}" if hint else ""
+        return (
+            f"poskytovatel AI odpověděl HTTP {exc.code}.{detail}"
+            if czech
+            else f"the AI provider returned HTTP {exc.code}.{detail}"
+        )
     if isinstance(exc, OSError):
         return (
             "AI endpoint se nepodařilo kontaktovat (spojení selhalo nebo vypršel časový limit)."
@@ -902,6 +913,27 @@ def _describe_provider_error(exc: Exception, *, czech: bool) -> str:
         if czech
         else f"unexpected error ({type(exc).__name__})."
     )
+
+
+# (Czech, English) hints for the statuses a cloud provider actually returns.
+_HTTP_HINTS: dict[int, dict[bool, str]] = {
+    401: {
+        True: "Klíč API byl odmítnut - zkontrolujte LLM_API_KEY.",
+        False: "The API key was rejected - check LLM_API_KEY.",
+    },
+    403: {
+        True: "Přístup zamítnut - klíč nemá oprávnění k tomuto modelu.",
+        False: "Access denied - the key is not allowed to use this model.",
+    },
+    404: {
+        True: "Endpoint nebo model neexistuje - zkontrolujte LLM_BASE_URL a LLM_MODEL.",
+        False: "Endpoint or model not found - check LLM_BASE_URL and LLM_MODEL.",
+    },
+    429: {
+        True: "Vyčerpán limit požadavků nebo kredit - zkuste to za chvíli.",
+        False: "Rate limit or quota reached - try again shortly.",
+    },
+}
 
 
 def _is_local_endpoint(base_url: str) -> bool:

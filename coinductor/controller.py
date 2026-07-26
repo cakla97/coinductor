@@ -11,14 +11,11 @@ from trading_agent.config import default_config_path, load_config
 from trading_agent.storage import Storage
 
 from .ai_provider import AiProviderService
-from .application import CoinductorApplication
 from .app_tour_service import AppTourService
-from .assistant import AssistantResponse, ProviderBackedAssistant
+from .assistant import AssistantResponse
 from .assistant_history import AssistantHistoryStore
 from .asset_policy_store import AssetPolicyStore
-from .connection_check import ConnectionCheckService, LiveTradingCheckService, TestnetCheckService
 from .desktop_store import DesktopStore
-from .first_portfolio_executor import FirstPortfolioExecutor
 from .first_portfolio_planner import FirstPortfolioPlanner
 from .diagnostics_service import DiagnosticsService
 from .guide_service import GuideService
@@ -39,203 +36,16 @@ from .setup_service import SetupService
 from .strategy_registration import StrategyRegistrationService
 from .ui_strings import DEFAULT_LANGUAGE, UiStringsService
 from .user_profile_service import UserProfileService
-
-
-class AnalysisWorker(QObject):
-    progress = Signal(str, int)
-    completed = Signal(object)
-    failed = Signal(str)
-    finished = Signal()
-
-    def __init__(self, options: RunOptions):
-        super().__init__()
-        self.options = options
-
-    @Slot()
-    def run(self) -> None:
-        try:
-            result = CoinductorApplication().run_analysis(
-                self.options,
-                lambda message, percent: self.progress.emit(message, percent),
-            )
-            self.completed.emit(result)
-        except Exception as exc:
-            self.failed.emit(str(exc))
-        finally:
-            self.finished.emit()
-
-
-class ConnectionCheckWorker(QObject):
-    completed = Signal(object)
-    failed = Signal(str)
-    finished = Signal()
-
-    def __init__(self, language: str = "en"):
-        super().__init__()
-        self.language = language
-
-    @Slot()
-    def run(self) -> None:
-        try:
-            self.completed.emit(ConnectionCheckService(language=self.language).check_binance_read_only())
-        except Exception as exc:
-            self.failed.emit(str(exc))
-        finally:
-            self.finished.emit()
-
-
-class LiveTradingCheckWorker(QObject):
-    completed = Signal(object)
-    failed = Signal(str)
-    finished = Signal()
-
-    def __init__(self, language: str = "en"):
-        super().__init__()
-        self.language = language
-
-    @Slot()
-    def run(self) -> None:
-        try:
-            self.completed.emit(LiveTradingCheckService(language=self.language).check_binance_live_trading())
-        except Exception as exc:
-            self.failed.emit(str(exc))
-        finally:
-            self.finished.emit()
-
-
-class TestnetCheckWorker(QObject):
-    completed = Signal(object)
-    failed = Signal(str)
-    finished = Signal()
-
-    def __init__(self, language: str = "en"):
-        super().__init__()
-        self.language = language
-
-    @Slot()
-    def run(self) -> None:
-        try:
-            self.completed.emit(TestnetCheckService(language=self.language).check_binance_testnet())
-        except Exception as exc:
-            self.failed.emit(str(exc))
-        finally:
-            self.finished.emit()
-
-
-class FirstPortfolioTrancheWorker(QObject):
-    completed = Signal(object)
-    failed = Signal(str)
-    finished = Signal()
-
-    def __init__(
-        self,
-        asset: str,
-        target_pct: Decimal,
-        total_budget: Decimal,
-        tranche_index: int,
-        tranches_total: int,
-        mode: str,
-        submit: bool,
-        confirm: str,
-    ):
-        super().__init__()
-        self.asset = asset
-        self.target_pct = target_pct
-        self.total_budget = total_budget
-        self.tranche_index = tranche_index
-        self.tranches_total = tranches_total
-        self.mode = mode
-        self.submit = submit
-        self.confirm = confirm
-
-    @Slot()
-    def run(self) -> None:
-        try:
-            result = FirstPortfolioExecutor().run_tranche(
-                asset=self.asset,
-                target_pct=self.target_pct,
-                total_budget=self.total_budget,
-                tranche_index=self.tranche_index,
-                tranches_total=self.tranches_total,
-                mode=self.mode,
-                submit=self.submit,
-                confirm=self.confirm,
-            )
-            self.completed.emit(result)
-        except Exception as exc:
-            self.failed.emit(str(exc))
-        finally:
-            self.finished.emit()
-
-
-class AiProviderHealthWorker(QObject):
-    completed = Signal(object)
-    failed = Signal(str)
-    finished = Signal()
-
-    @Slot()
-    def run(self) -> None:
-        try:
-            self.completed.emit(AiProviderService().health_check())
-        except Exception as exc:
-            self.failed.emit(str(exc))
-        finally:
-            self.finished.emit()
-
-
-class AiModelDiscoveryWorker(QObject):
-    completed = Signal(object)
-    failed = Signal(str)
-    finished = Signal()
-
-    def __init__(self, base_url: str, api_key: str = ""):
-        super().__init__()
-        self.base_url = base_url
-        self.api_key = api_key
-
-    @Slot()
-    def run(self) -> None:
-        try:
-            self.completed.emit(AiProviderService().discover_models(self.base_url, self.api_key))
-        except Exception as exc:
-            self.failed.emit(str(exc))
-        finally:
-            self.finished.emit()
-
-
-class AssistantWorker(QObject):
-    completed = Signal(object)
-    finished = Signal()
-
-    def __init__(
-        self,
-        question: str,
-        snapshot,
-        app_context: dict[str, object],
-        conversation: tuple[dict[str, str], ...],
-        image_path: str,
-    ):
-        super().__init__()
-        self.question = question
-        self.snapshot = snapshot
-        self.app_context = app_context
-        self.conversation = conversation
-        self.image_path = image_path
-
-    @Slot()
-    def run(self) -> None:
-        try:
-            self.completed.emit(
-                ProviderBackedAssistant().respond(
-                    self.question,
-                    self.snapshot,
-                    self.app_context,
-                    self.conversation,
-                    self.image_path,
-                )
-            )
-        finally:
-            self.finished.emit()
+from .workers import (
+    AiModelDiscoveryWorker,
+    AiProviderHealthWorker,
+    AnalysisWorker,
+    AssistantWorker,
+    ConnectionCheckWorker,
+    FirstPortfolioTrancheWorker,
+    LiveTradingCheckWorker,
+    TestnetCheckWorker,
+)
 
 
 class AppController(QObject):
@@ -1340,6 +1150,23 @@ class AppController(QObject):
             service_text(key, self._wizard_language).format(changes=detail, **extra)
         )
 
+    def _start_worker(self, worker: QObject, cleanup) -> QThread:
+        """Run a worker on its own thread and tear both down when it finishes.
+
+        Every background job in this controller has the same lifecycle, so it
+        lives here once. Connect the worker's own result signals before calling
+        this; the thread is only started at the end.
+        """
+        thread = QThread(self)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.finished.connect(thread.quit)
+        worker.finished.connect(worker.deleteLater)
+        thread.finished.connect(thread.deleteLater)
+        thread.finished.connect(cleanup)
+        thread.start()
+        return thread
+
     @Slot()
     def checkBinanceReadOnly(self) -> None:
         if self._checking_connection:
@@ -1349,17 +1176,10 @@ class AppController(QObject):
         self._connection_detail = "Testing Binance read-only permissions..."
         self.connectionChanged.emit()
 
-        self._connection_thread = QThread(self)
         self._connection_worker = ConnectionCheckWorker(self._wizard_language)
-        self._connection_worker.moveToThread(self._connection_thread)
-        self._connection_thread.started.connect(self._connection_worker.run)
         self._connection_worker.completed.connect(self._on_connection_completed)
         self._connection_worker.failed.connect(self._on_connection_failed)
-        self._connection_worker.finished.connect(self._connection_thread.quit)
-        self._connection_worker.finished.connect(self._connection_worker.deleteLater)
-        self._connection_thread.finished.connect(self._connection_thread.deleteLater)
-        self._connection_thread.finished.connect(self._clear_connection_worker)
-        self._connection_thread.start()
+        self._connection_thread = self._start_worker(self._connection_worker, self._clear_connection_worker)
 
     @Slot()
     def checkAiProvider(self) -> None:
@@ -1370,17 +1190,10 @@ class AppController(QObject):
         self._ai_provider_health_detail = "Testing the configured AI /models endpoint..."
         self.aiProviderChanged.emit()
 
-        self._ai_provider_thread = QThread(self)
         self._ai_provider_worker = AiProviderHealthWorker()
-        self._ai_provider_worker.moveToThread(self._ai_provider_thread)
-        self._ai_provider_thread.started.connect(self._ai_provider_worker.run)
         self._ai_provider_worker.completed.connect(self._on_ai_provider_completed)
         self._ai_provider_worker.failed.connect(self._on_ai_provider_failed)
-        self._ai_provider_worker.finished.connect(self._ai_provider_thread.quit)
-        self._ai_provider_worker.finished.connect(self._ai_provider_worker.deleteLater)
-        self._ai_provider_thread.finished.connect(self._ai_provider_thread.deleteLater)
-        self._ai_provider_thread.finished.connect(self._clear_ai_provider_worker)
-        self._ai_provider_thread.start()
+        self._ai_provider_thread = self._start_worker(self._ai_provider_worker, self._clear_ai_provider_worker)
 
     @Slot()
     def scanLocalAiHardware(self) -> None:
@@ -1404,17 +1217,12 @@ class AppController(QObject):
         self._local_ai_discovery_detail = "Asking the endpoint which models are installed..."
         self.localAiDiscoveryChanged.emit()
 
-        self._ai_model_discovery_thread = QThread(self)
         self._ai_model_discovery_worker = AiModelDiscoveryWorker(base_url)
-        self._ai_model_discovery_worker.moveToThread(self._ai_model_discovery_thread)
-        self._ai_model_discovery_thread.started.connect(self._ai_model_discovery_worker.run)
         self._ai_model_discovery_worker.completed.connect(self._on_ai_model_discovery_completed)
         self._ai_model_discovery_worker.failed.connect(self._on_ai_model_discovery_failed)
-        self._ai_model_discovery_worker.finished.connect(self._ai_model_discovery_thread.quit)
-        self._ai_model_discovery_worker.finished.connect(self._ai_model_discovery_worker.deleteLater)
-        self._ai_model_discovery_thread.finished.connect(self._ai_model_discovery_thread.deleteLater)
-        self._ai_model_discovery_thread.finished.connect(self._clear_ai_model_discovery_worker)
-        self._ai_model_discovery_thread.start()
+        self._ai_model_discovery_thread = self._start_worker(
+            self._ai_model_discovery_worker, self._clear_ai_model_discovery_worker
+        )
 
     @Slot(object)
     def _on_ai_model_discovery_completed(self, result) -> None:
@@ -1482,17 +1290,12 @@ class AppController(QObject):
         self._live_trading_check_detail = "Checking live-key permissions without placing an order..."
         self.liveTradingCheckChanged.emit()
 
-        self._live_trading_check_thread = QThread(self)
         self._live_trading_check_worker = LiveTradingCheckWorker(self._wizard_language)
-        self._live_trading_check_worker.moveToThread(self._live_trading_check_thread)
-        self._live_trading_check_thread.started.connect(self._live_trading_check_worker.run)
         self._live_trading_check_worker.completed.connect(self._on_live_trading_check_completed)
         self._live_trading_check_worker.failed.connect(self._on_live_trading_check_failed)
-        self._live_trading_check_worker.finished.connect(self._live_trading_check_thread.quit)
-        self._live_trading_check_worker.finished.connect(self._live_trading_check_worker.deleteLater)
-        self._live_trading_check_thread.finished.connect(self._live_trading_check_thread.deleteLater)
-        self._live_trading_check_thread.finished.connect(self._clear_live_trading_check_worker)
-        self._live_trading_check_thread.start()
+        self._live_trading_check_thread = self._start_worker(
+            self._live_trading_check_worker, self._clear_live_trading_check_worker
+        )
 
     @Slot(str, str)
     def saveBinanceTestnetCredentials(self, api_key: str, api_secret: str) -> None:
@@ -1516,17 +1319,10 @@ class AppController(QObject):
         self._testnet_check_detail = "Checking Spot Testnet access with virtual funds..."
         self.testnetCheckChanged.emit()
 
-        self._testnet_check_thread = QThread(self)
         self._testnet_check_worker = TestnetCheckWorker(self._wizard_language)
-        self._testnet_check_worker.moveToThread(self._testnet_check_thread)
-        self._testnet_check_thread.started.connect(self._testnet_check_worker.run)
         self._testnet_check_worker.completed.connect(self._on_testnet_check_completed)
         self._testnet_check_worker.failed.connect(self._on_testnet_check_failed)
-        self._testnet_check_worker.finished.connect(self._testnet_check_thread.quit)
-        self._testnet_check_worker.finished.connect(self._testnet_check_worker.deleteLater)
-        self._testnet_check_thread.finished.connect(self._testnet_check_thread.deleteLater)
-        self._testnet_check_thread.finished.connect(self._clear_testnet_check_worker)
-        self._testnet_check_thread.start()
+        self._testnet_check_thread = self._start_worker(self._testnet_check_worker, self._clear_testnet_check_worker)
 
     @Slot(str, str)
     def promoteSafetyStage(self, target: str, confirmation: str) -> None:
@@ -1618,7 +1414,6 @@ class AppController(QObject):
         self._wizard_assistant_answer = ""
         self.wizardAssistantChanged.emit()
 
-        self._wizard_assistant_thread = QThread(self)
         self._wizard_assistant_worker = AssistantWorker(
             text,
             self._snapshot,
@@ -1626,14 +1421,10 @@ class AppController(QObject):
             (),
             "",
         )
-        self._wizard_assistant_worker.moveToThread(self._wizard_assistant_thread)
-        self._wizard_assistant_thread.started.connect(self._wizard_assistant_worker.run)
         self._wizard_assistant_worker.completed.connect(self._on_wizard_assistant_completed)
-        self._wizard_assistant_worker.finished.connect(self._wizard_assistant_thread.quit)
-        self._wizard_assistant_worker.finished.connect(self._wizard_assistant_worker.deleteLater)
-        self._wizard_assistant_thread.finished.connect(self._wizard_assistant_thread.deleteLater)
-        self._wizard_assistant_thread.finished.connect(self._clear_wizard_assistant_worker)
-        self._wizard_assistant_thread.start()
+        self._wizard_assistant_thread = self._start_worker(
+            self._wizard_assistant_worker, self._clear_wizard_assistant_worker
+        )
 
     @Slot(object)
     def _on_wizard_assistant_completed(self, response) -> None:
@@ -1676,7 +1467,6 @@ class AppController(QObject):
         token = self._assistant_token
         self._assistant_accept_token = token
 
-        self._assistant_thread = QThread(self)
         self._assistant_worker = AssistantWorker(
             text,
             self._snapshot,
@@ -1684,16 +1474,14 @@ class AppController(QObject):
             conversation,
             attachment.get("path", ""),
         )
-        self._assistant_worker.moveToThread(self._assistant_thread)
-        self._assistant_thread.started.connect(self._assistant_worker.run)
         self._assistant_worker.completed.connect(
             lambda response, request=token: self._on_assistant_completed(response, request)
         )
-        self._assistant_worker.finished.connect(self._assistant_thread.quit)
-        self._assistant_worker.finished.connect(self._assistant_worker.deleteLater)
-        self._assistant_thread.finished.connect(self._assistant_thread.deleteLater)
-        self._assistant_thread.finished.connect(lambda request=token: self._clear_assistant_worker(request))
-        self._assistant_thread.start()
+        # The token keeps a superseded request from clearing a newer one's state.
+        self._assistant_thread = self._start_worker(
+            self._assistant_worker,
+            lambda request=token: self._clear_assistant_worker(request),
+        )
         self._assistant_attachment = {}
         self.assistantChanged.emit()
 
@@ -1969,7 +1757,6 @@ class AppController(QObject):
         self._status_text = f"Running first portfolio tranche {tranche_index}/{tranches_total} for {asset_normalized}..."
         self.stateChanged.emit()
 
-        self._first_portfolio_tranche_thread = QThread(self)
         self._first_portfolio_tranche_worker = FirstPortfolioTrancheWorker(
             asset=asset_normalized,
             target_pct=Decimal(str(target_pct)),
@@ -1980,15 +1767,11 @@ class AppController(QObject):
             submit=submit,
             confirm=confirm,
         )
-        self._first_portfolio_tranche_worker.moveToThread(self._first_portfolio_tranche_thread)
-        self._first_portfolio_tranche_thread.started.connect(self._first_portfolio_tranche_worker.run)
         self._first_portfolio_tranche_worker.completed.connect(self._on_first_portfolio_tranche_completed)
         self._first_portfolio_tranche_worker.failed.connect(self._on_first_portfolio_tranche_failed)
-        self._first_portfolio_tranche_worker.finished.connect(self._first_portfolio_tranche_thread.quit)
-        self._first_portfolio_tranche_worker.finished.connect(self._first_portfolio_tranche_worker.deleteLater)
-        self._first_portfolio_tranche_thread.finished.connect(self._first_portfolio_tranche_thread.deleteLater)
-        self._first_portfolio_tranche_thread.finished.connect(self._clear_first_portfolio_tranche_worker)
-        self._first_portfolio_tranche_thread.start()
+        self._first_portfolio_tranche_thread = self._start_worker(
+            self._first_portfolio_tranche_worker, self._clear_first_portfolio_tranche_worker
+        )
 
     @Slot(object)
     def _on_first_portfolio_tranche_completed(self, result) -> None:
@@ -2047,18 +1830,11 @@ class AppController(QObject):
             earn_redeem_confirm=earn_redeem_confirm.strip(),
             manual_override_symbol=manual_override_symbol.strip(),
         )
-        self._thread = QThread(self)
         self._worker = AnalysisWorker(options)
-        self._worker.moveToThread(self._thread)
-        self._thread.started.connect(self._worker.run)
         self._worker.progress.connect(self._on_progress)
         self._worker.completed.connect(self._on_completed)
         self._worker.failed.connect(self._on_failed)
-        self._worker.finished.connect(self._thread.quit)
-        self._worker.finished.connect(self._worker.deleteLater)
-        self._thread.finished.connect(self._thread.deleteLater)
-        self._thread.finished.connect(self._clear_worker)
-        self._thread.start()
+        self._thread = self._start_worker(self._worker, self._clear_worker)
 
     @Slot(str)
     def submitGuardedTrade(self, confirmation: str) -> None:

@@ -170,8 +170,11 @@ That produces the bundle, a portable ZIP, an installer (if Inno Setup 6 is prese
 Coinductor is free and unsigned, which is a polite way of saying nobody is paying for the
 certificate. If it is useful to you:
 
+The network is stated on purpose: sending coins across the wrong one loses them, and
+"BTC" on BNB Smart Chain is BTCB, a wrapped token, not native bitcoin.
+
 <!-- TODO before publishing: put your own address here, or delete this section. -->
-- BTC: `<your address here>`
+- **Bitcoin** (BTC network, native): `<your bc1... address here>`
 
 ## License
 

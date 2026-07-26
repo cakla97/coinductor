@@ -5,6 +5,8 @@ import tomllib
 
 from coinductor.risk_profile import (
     STYLE_GATES,
+    apply_bots_to_config,
+    apply_drawdown_to_config,
     apply_style_to_config,
     describe_gates,
     gates_for,
@@ -129,3 +131,57 @@ def test_the_wizard_hint_matches_the_gates_it_writes() -> None:
 
 def test_missing_config_is_not_an_error(tmp_path) -> None:
     assert apply_style_to_config(tmp_path / "absent.toml", "ACTIVE") == {}
+    assert apply_drawdown_to_config(tmp_path / "absent.toml", 20) == {}
+    assert apply_bots_to_config(tmp_path / "absent.toml", True) == {}
+
+
+def test_drawdown_moves_only_the_loss_caps(tmp_path) -> None:
+    path = _config(tmp_path)
+    before = tomllib.loads(path.read_text(encoding="utf-8"))
+
+    apply_drawdown_to_config(path, 20)
+
+    after = tomllib.loads(path.read_text(encoding="utf-8"))
+    assert after["risk"]["max_daily_loss_pct"] == 2.0
+    assert after["risk"]["max_weekly_loss_pct"] == 6.0
+    # The rest of the loss protection is not reachable from the wizard.
+    assert after["risk"]["kill_switch_enabled"] == before["risk"]["kill_switch_enabled"]
+    assert after["risk"]["max_risk_per_trade_pct"] == before["risk"]["max_risk_per_trade_pct"]
+    assert after["risk"]["max_position_pct_per_asset"] == before["risk"]["max_position_pct_per_asset"]
+    assert after["consensus"] == before["consensus"]
+
+
+def test_drawdown_off_leaves_the_loss_caps_alone(tmp_path) -> None:
+    path = _config(tmp_path)
+    apply_drawdown_to_config(path, 20)
+    armed = tomllib.loads(path.read_text(encoding="utf-8"))["risk"]
+
+    assert apply_drawdown_to_config(path, 0) == {}
+
+    assert tomllib.loads(path.read_text(encoding="utf-8"))["risk"] == armed
+
+
+def test_no_drawdown_level_exceeds_the_table(tmp_path) -> None:
+    """The wizard must never be able to push the daily cap past the table."""
+    path = _config(tmp_path)
+    for level in (-100, 0, 5, 10, 15, 20, 999):
+        apply_drawdown_to_config(path, level)
+        risk = tomllib.loads(path.read_text(encoding="utf-8"))["risk"]
+        assert risk["max_daily_loss_pct"] <= 2.0, level
+        assert risk["max_weekly_loss_pct"] <= 6.0, level
+
+
+def test_bots_toggle_moves_only_the_enabled_flag(tmp_path) -> None:
+    path = _config(tmp_path)
+    before = tomllib.loads(path.read_text(encoding="utf-8"))["grid_bot"]
+
+    changed = apply_bots_to_config(path, False)
+
+    after = tomllib.loads(path.read_text(encoding="utf-8"))["grid_bot"]
+    assert changed == {"enabled": "true -> false"}
+    assert after["enabled"] is False
+    # recommend_only and the capital caps must stay put: turning bots on must
+    # never turn a recommendation into something that places an order.
+    assert after["recommend_only"] == before["recommend_only"] is True
+    assert after["max_grid_capital_usdt"] == before["max_grid_capital_usdt"]
+    assert apply_bots_to_config(path, False) == {}

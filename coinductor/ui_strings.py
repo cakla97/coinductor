@@ -122,6 +122,82 @@ WIZARD_STRINGS: dict[str, dict[str, str]] = {
         "en": "This short profile tells Coinductor how cautious, active, and hands-on recommendations should be. It does not place orders.",
         "cs": "Tento krátký profil řekne Coinductoru, jak opatrná, aktivní a osobní mají být doporučení. Nezadává žádné příkazy.",
     },
+    # --- decision profile options ---
+    # Labels are display text; the values they carry (CONSERVATIVE, WEEKLY, ...)
+    # stay English identifiers in profile_choices and are never translated.
+    "opt_style_conservative": {"en": "Conservative", "cs": "Konzervativní"},
+    "opt_style_balanced": {"en": "Balanced", "cs": "Vyvážený"},
+    "opt_style_active": {"en": "Active", "cs": "Aktivní"},
+    "opt_automation_recommend": {"en": "Recommendations only", "cs": "Pouze doporučení"},
+    "opt_automation_guarded": {"en": "Guarded automation", "cs": "Zabezpečená automatizace"},
+    "opt_cadence_weekly": {"en": "Weekly", "cs": "Týdně"},
+    "opt_cadence_twice_weekly": {"en": "Twice weekly", "cs": "Dvakrát týdně"},
+    "opt_cadence_daily": {"en": "Daily", "cs": "Denně"},
+    "opt_cadence_manual": {"en": "Manual / irregular", "cs": "Ručně / nepravidelně"},
+    "opt_drawdown_off": {"en": "Off - do not change limits", "cs": "Vypnuto - neměnit limity"},
+    "opt_drawdown_low": {"en": "Low - 10%", "cs": "Nízká - 10 %"},
+    "opt_drawdown_medium": {"en": "Medium - 15%", "cs": "Střední - 15 %"},
+    "opt_drawdown_high": {"en": "High - 20%", "cs": "Vysoká - 20 %"},
+    "opt_budget_auto": {"en": "Auto", "cs": "Automaticky"},
+    # Help text says what the choice changes, not what the word means.
+    "help_automation_recommend": {
+        "en": "Coinductor never submits anything. It analyses, explains and recommends; every order stays in your hands. This is the safest mode and the right one until you trust the recommendations.",
+        "cs": "Coinductor nikdy nic neodešle. Analyzuje, vysvětluje a doporučuje; každý příkaz zůstává ve vašich rukou. Nejbezpečnější režim a správná volba, dokud doporučením nedůvěřujete.",
+    },
+    "help_automation_guarded": {
+        "en": "Unlocks the guarded submit buttons, so Coinductor can place an order after you confirm it. It still cannot bypass the safety stage, loss limits, stop-loss or the per-action confirmation phrase. Pick this only once live keys are verified.",
+        "cs": "Odemkne tlačítka zabezpečeného odeslání, takže Coinductor může po vašem potvrzení zadat příkaz. Stále nemůže obejít bezpečnostní stupeň, limity ztrát, stop-loss ani potvrzovací frázi u každé akce. Volte až po ověření živých klíčů.",
+    },
+    "help_cadence_weekly": {
+        "en": "Written into the Action Plan as your intended review rhythm; it is a reminder, not a scheduler. Coinductor never runs on its own - you always start each analysis.",
+        "cs": "Zapíše se do Action Planu jako váš zamýšlený rytmus kontrol; je to připomínka, ne plánovač. Coinductor se nikdy nespustí sám - každou analýzu spouštíte vy.",
+    },
+    "help_cadence_twice_weekly": {
+        "en": "Written into the Action Plan as your intended review rhythm; it is a reminder, not a scheduler. Coinductor never runs on its own - you always start each analysis.",
+        "cs": "Zapíše se do Action Planu jako váš zamýšlený rytmus kontrol; je to připomínka, ne plánovač. Coinductor se nikdy nespustí sám - každou analýzu spouštíte vy.",
+    },
+    "help_cadence_daily": {
+        "en": "Written into the Action Plan as your intended review rhythm; it is a reminder, not a scheduler. Coinductor never runs on its own - you always start each analysis.",
+        "cs": "Zapíše se do Action Planu jako váš zamýšlený rytmus kontrol; je to připomínka, ne plánovač. Coinductor se nikdy nespustí sám - každou analýzu spouštíte vy.",
+    },
+    "help_cadence_manual": {
+        "en": "Written into the Action Plan as your intended review rhythm; it is a reminder, not a scheduler. Coinductor never runs on its own - you always start each analysis.",
+        "cs": "Zapíše se do Action Planu jako váš zamýšlený rytmus kontrol; je to připomínka, ne plánovač. Coinductor se nikdy nespustí sám - každou analýzu spouštíte vy.",
+    },
+    "help_locale": {
+        "en": "Sets your fiat currency and regional funding route for deposit guidance. It does not change the app language - use the English / Cestina switch at the top for that.",
+        "cs": "Nastavuje vaši fiat měnu a regionální cestu financování pro pokyny k vkladům. Nemění jazyk aplikace - k tomu slouží přepínač English / Čeština nahoře.",
+    },
+    "value_on": {"en": "On", "cs": "Zapnuto"},
+    "value_off": {"en": "Off", "cs": "Vypnuto"},
+    "help_budget_existing": {
+        "en": "Optional context only: your existing Binance holdings define what Coinductor manages, not this number. Leave it on Auto unless you plan to add fresh capital.",
+        "cs": "Pouze doplňující kontext: co Coinductor spravuje, určuje váš skutečný zůstatek na Binance, ne toto číslo. Nechte Automaticky, pokud neplánujete přidat nový kapitál.",
+    },
+    "help_budget_auto": {
+        "en": "Auto means Coinductor will not assume fresh capital. It will use discovered balances and conservative defaults until real funding is known.",
+        "cs": "Automaticky znamená, že Coinductor nepředpokládá žádný nový kapitál. Použije zjištěné zůstatky a konzervativní výchozí hodnoty, dokud nezná skutečné financování.",
+    },
+    "help_budget_amount": {
+        "en": "Starting budget is the approximate operating capital Coinductor uses for first-portfolio planning and funding recommendations.",
+        "cs": "Počáteční rozpočet je přibližný provozní kapitál, se kterým Coinductor plánuje první portfolio a doporučení k financování.",
+    },
+    "help_bots_on": {
+        "en": "Turns on grid_bot in config.toml, so Coinductor works out Grid and Rebalancing parameters for you to enter on Binance by hand. Binance has no public API for creating bots, so nothing is created automatically.",
+        "cs": "Zapne grid_bot v config.toml, takže vám Coinductor spočítá parametry pro Grid a Rebalancing, které pak na Binance zadáte ručně. Binance nemá veřejné API pro zakládání botů, takže se nic nevytvoří automaticky.",
+    },
+    "help_bots_off": {
+        "en": "Turns off grid_bot in config.toml. Coinductor stops working out bot parameters; existing bots on Binance are untouched.",
+        "cs": "Vypne grid_bot v config.toml. Coinductor přestane počítat parametry botů; už založených botů na Binance se to nedotkne.",
+    },
+    "help_spot_on": {
+        "en": "Lets the guarded submit actually place a spot buy, once the safety stage is LIVE_ENABLED and you type the confirmation phrase. Leave it off to keep Coinductor out of opening positions while still using bots and rebalancing.",
+        "cs": "Umožní zabezpečenému odeslání skutečně zadat spotový nákup, jakmile je bezpečnostní stupeň LIVE_ENABLED a napíšete potvrzovací frázi. Nechte vypnuté, pokud nechcete, aby Coinductor otevíral pozice, a přesto chcete používat boty a rebalancing.",
+    },
+    "help_spot_off": {
+        "en": "Coinductor will refuse to submit a spot buy even at LIVE_ENABLED. Bots, rebalancing and protective OCO orders still work.",
+        "cs": "Coinductor odmítne odeslat spotový nákup i na stupni LIVE_ENABLED. Boti, rebalancing a ochranné OCO příkazy fungují dál.",
+    },
     "field_management_style": {
         "en": "Management style",
         "cs": "Styl správy",

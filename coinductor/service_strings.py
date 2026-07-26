@@ -523,6 +523,28 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Considers a buy in any regime while RSI 14 sits between {min} and {max}. Price must still be above the EMA200.",
         "cs": "Nákup zvažuje v jakémkoli režimu při RSI 14 mezi {min} a {max}. Cena musí být stále nad EMA200.",
     },
+    "spot_trades_locked_by_profile": {
+        "en": "Guarded spot trades are switched off in your profile, so Coinductor will not submit this buy. Enable them in the setup wizard if you want it to.",
+        "cs": "Zabezpečené spotové obchody máte v profilu vypnuté, takže Coinductor tento nákup neodešle. Pokud chcete, zapněte je v průvodci nastavením.",
+    },
+    "drawdown_hint": {
+        "en": "Pauses trading after a {daily}% loss in a day or {weekly}% in a week. The kill switch, stop-loss and position caps do not move.",
+        "cs": "Pozastaví obchodování po ztrátě {daily} % za den nebo {weekly} % za týden. Kill switch, stop-loss a limity pozic se nemění.",
+    },
+    "drawdown_hint_off": {
+        "en": "Off: the wizard leaves the loss limits in config.toml exactly as you set them.",
+        "cs": "Vypnuto: průvodce nechá limity ztrát v config.toml přesně tak, jak jste je nastavili.",
+    },
+    "drawdown_limits_updated": {
+        "en": "Drawdown comfort applied to the loss limits: {changes}.",
+        "cs": "Tolerance k propadu promítnuta do limitů ztrát: {changes}.",
+    },
+    "bots_state_enabled": {"en": "enabled", "cs": "zapnuta"},
+    "bots_state_disabled": {"en": "disabled", "cs": "vypnuta"},
+    "bots_config_updated": {
+        "en": "Grid bot recommendations {state}: {changes}.",
+        "cs": "Doporučení grid botů {state}: {changes}.",
+    },
     "style_hint_shared": {
         "en": "Loss limits, stop-loss, kill switch and confirmations are identical at every level.",
         "cs": "Limity ztrát, stop-loss, kill switch a potvrzení jsou na všech úrovních stejné.",

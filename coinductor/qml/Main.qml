@@ -148,35 +148,21 @@ ApplicationWindow {
         { label: "Binance", value: "BINANCE" },
         { label: "Coinbase", value: "COINBASE" }
     ]
-    property var styleOptions: [
-        { label: "Conservative", value: "CONSERVATIVE" },
-        { label: "Balanced", value: "BALANCED" },
-        { label: "Active", value: "ACTIVE" }
-    ]
-    property var automationOptions: [
-        { label: "Recommendations only", value: "RECOMMEND_ONLY" },
-        { label: "Guarded automation", value: "GUARDED_AUTOMATION" }
-    ]
-    property var cadenceOptions: [
-        { label: "Weekly", value: "WEEKLY" },
-        { label: "Twice weekly", value: "TWICE_WEEKLY" },
-        { label: "Daily", value: "DAILY" },
-        { label: "Manual / irregular", value: "MANUAL" }
-    ]
-    property var drawdownOptions: [
-        { label: "Low - 10%", value: 10 },
-        { label: "Medium - 15%", value: 15 },
-        { label: "High - 20%", value: 20 }
-    ]
-    property var budgetOptions: [
-        { label: "Auto", value: 0 },
-        { label: "250", value: 250 },
-        { label: "500", value: 500 },
-        { label: "1,000", value: 1000 },
-        { label: "2,000", value: 2000 },
-        { label: "10,000", value: 10000 },
-        { label: "25,000", value: 25000 }
-    ]
+    // Labels and help text come from the backend so both languages, and the
+    // numbers each choice writes into config.toml, have a single source.
+    property var styleOptions: appController.profileChoices.style
+    property var automationOptions: appController.profileChoices.automation
+    property var cadenceOptions: appController.profileChoices.cadence
+    property var drawdownOptions: appController.profileChoices.drawdown
+    property var budgetOptions: appController.profileChoices.budget
+
+    function optionHelp(options, value) {
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === value)
+                return options[i].help
+        }
+        return ""
+    }
 
     function showToast(message) {
         toastText = message
@@ -242,60 +228,73 @@ ApplicationWindow {
         }
     }
 
-    function styleHelp(value) {
-        if (value === "CONSERVATIVE")
-            return "Coinductor protects more capital, prefers smaller suggestions, keeps more reserve, and is less likely to recommend active trades."
-        if (value === "ACTIVE")
-            return "Coinductor can surface more frequent opportunities, but deterministic risk limits, protected assets, and confirmations still apply."
-        return "Balanced keeps the default middle ground: useful recommendations without pushing the portfolio into aggressive automation."
-    }
-
-    function automationHelp(value) {
-        if (value === "GUARDED_AUTOMATION")
-            return "Coinductor may prepare guarded workflows after checks pass. It still cannot bypass limits, confirmations, stop-loss rules, or safety stages."
-        return "Coinductor will explain and recommend actions, but you decide what to do. This is the safest starting mode."
-    }
-
-    function cadenceHelp(value) {
-        if (value === "DAILY")
-            return "Best when you want closer monitoring and are willing to open Coinductor often."
-        if (value === "WEEKLY")
-            return "Best for passive portfolio management with fewer interventions."
-        if (value === "MANUAL")
-            return "Coinductor assumes irregular runs and will avoid workflows that require frequent check-ins."
-        return "A practical middle ground for active but not daily portfolio review."
-    }
-
-    function drawdownHelp(value) {
-        if (value <= 10)
-            return "Low comfort means Coinductor should keep suggestions conservative and preserve more dry powder."
-        if (value >= 20)
-            return "High comfort allows more growth-oriented recommendations, but this is not a guarantee or a hard stop-loss."
-        return "Medium comfort is the default: risk-aware without making the portfolio completely passive."
-    }
+    function styleHelp(value) { return optionHelp(styleOptions, value) }
+    function automationHelp(value) { return optionHelp(automationOptions, value) }
+    function cadenceHelp(value) { return optionHelp(cadenceOptions, value) }
+    function drawdownHelp(value) { return optionHelp(drawdownOptions, value) }
 
     function budgetHelp(value) {
         if (appController.onboardingPath !== "FIRST_PORTFOLIO")
-            return "Optional context only: your existing Binance holdings define what Coinductor manages, not this number. Leave it on Auto unless you plan to add fresh capital."
+            return appController.wizardText.help_budget_existing
         if (value === 0)
-            return "Auto means Coinductor will not assume fresh capital. It will use discovered balances and conservative defaults until real funding is known."
-        return "Starting budget is the approximate operating capital Coinductor uses for first-portfolio planning and funding recommendations."
+            return appController.wizardText.help_budget_auto
+        return appController.wizardText.help_budget_amount
     }
 
     function botHelp(enabled) {
-        return enabled
-            ? "Binance bot recommendations lets Coinductor prepare Grid/Rebalancing parameters for manual setup where Binance has no public creation API."
-            : "Bot recommendations stay hidden unless you later enable them in your profile."
+        return appController.profileToggleHelp[enabled ? "bots_on" : "bots_off"]
     }
 
     function spotTradeHelp(enabled) {
-        return enabled
-            ? "Guarded spot trades means Coinductor may prepare live trade workflows only after deterministic checks and confirmations."
-            : "Spot trades remain recommendations only. This is safer for the first setup pass."
+        return appController.profileToggleHelp[enabled ? "spot_on" : "spot_off"]
     }
 
     function markProfileEdited() {
         profileChoicesEdited = true
+    }
+
+    // One row per choice: what it is, what you picked, and what that changes.
+    function profileSummaryRows() {
+        let t = appController.wizardText
+        return [
+            { label: t.field_management_style, value: wizardStyle.currentText, effect: window.styleHelp(wizardStyle.currentValue) },
+            { label: t.field_automation, value: wizardAutomation.currentText, effect: window.automationHelp(wizardAutomation.currentValue) },
+            { label: t.field_drawdown_comfort, value: wizardDrawdown.currentText, effect: window.drawdownHelp(wizardDrawdown.currentValue) },
+            { label: t.field_review_rhythm, value: wizardCadence.currentText, effect: window.cadenceHelp(wizardCadence.currentValue) },
+            { label: t.checkbox_use_bots, value: wizardUseBots.checked ? t.value_on : t.value_off, effect: window.botHelp(wizardUseBots.checked) },
+            { label: t.checkbox_allow_spot, value: wizardAllowSpot.checked ? t.value_on : t.value_off, effect: window.spotTradeHelp(wizardAllowSpot.checked) }
+        ]
+    }
+
+    function indexOfValue(options, value) {
+        for (let i = 0; i < options.length; i++) {
+            if (options[i].value === value)
+                return i
+        }
+        return -1
+    }
+
+    // Reopening the wizard used to show the hardcoded defaults regardless of
+    // what was saved, which made it look like the profile had been reset.
+    function restoreSavedProfileChoices() {
+        let saved = appController.savedProfileChoices
+        if (!saved || saved.style === undefined)
+            return
+        let apply = function (combo, options, value) {
+            let index = window.indexOfValue(options, value)
+            if (index >= 0)
+                combo.currentIndex = index
+        }
+        apply(wizardStyle, window.styleOptions, saved.style)
+        apply(wizardAutomation, window.automationOptions, saved.automation)
+        apply(wizardCadence, window.cadenceOptions, saved.cadence)
+        apply(wizardDrawdown, window.drawdownOptions, saved.drawdown)
+        apply(wizardBudget, window.budgetOptions, saved.budget)
+        let localeIndex = wizardLocale.model.indexOf(saved.locale)
+        if (localeIndex >= 0)
+            wizardLocale.currentIndex = localeIndex
+        wizardUseBots.checked = saved.useBots
+        wizardAllowSpot.checked = saved.allowSpotTrades
     }
 
     function openGuide(guideId) {
@@ -351,6 +350,10 @@ ApplicationWindow {
     Item {
         anchors.fill: parent
         visible: appController.onboardingWizardVisible
+        // Load the saved profile once the controls exist, and again whenever the
+        // wizard is reopened, so it never shows defaults over a saved profile.
+        Component.onCompleted: window.restoreSavedProfileChoices()
+        onVisibleChanged: if (visible) window.restoreSavedProfileChoices()
 
         Rectangle {
             anchors.fill: parent
@@ -716,7 +719,7 @@ ApplicationWindow {
                                             ComboBox { id: wizardStyle; Layout.fillWidth: true; model: window.styleOptions; textRole: "label"; valueRole: "value"; currentIndex: 1; onActivated: window.markProfileEdited() }
                                             Text {
                                                 Layout.fillWidth: true
-                                                text: appController.styleGateHints[wizardStyle.currentValue] || ""
+                                                text: window.styleHelp(wizardStyle.currentValue)
                                                 color: textSecondary
                                                 font.pixelSize: 10
                                                 wrapMode: Text.WordWrap
@@ -726,16 +729,37 @@ ApplicationWindow {
                                             Layout.fillWidth: true
                                             Text { text: appController.wizardText.field_automation; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardAutomation; Layout.fillWidth: true; model: window.automationOptions; textRole: "label"; valueRole: "value"; onActivated: window.markProfileEdited() }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: window.automationHelp(wizardAutomation.currentValue)
+                                                color: textSecondary
+                                                font.pixelSize: 10
+                                                wrapMode: Text.WordWrap
+                                            }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
                                             Text { text: appController.wizardText.field_review_rhythm; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardCadence; Layout.fillWidth: true; model: window.cadenceOptions; textRole: "label"; valueRole: "value"; currentIndex: 1; onActivated: window.markProfileEdited() }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: window.cadenceHelp(wizardCadence.currentValue)
+                                                color: textSecondary
+                                                font.pixelSize: 10
+                                                wrapMode: Text.WordWrap
+                                            }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
                                             Text { text: appController.wizardText.field_language_region; color: textPrimary; font.pixelSize: 12; font.bold: true }
                                             ComboBox { id: wizardLocale; Layout.fillWidth: true; model: ["en-US", "es-ES", "cs-CZ", "pt-BR"]; onActivated: window.markProfileEdited() }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: appController.wizardText.help_locale
+                                                color: textSecondary
+                                                font.pixelSize: 10
+                                                wrapMode: Text.WordWrap
+                                            }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
@@ -772,7 +796,14 @@ ApplicationWindow {
                                         ColumnLayout {
                                             Layout.preferredWidth: 300
                                             Text { text: appController.wizardText.field_drawdown_comfort; color: textPrimary; font.pixelSize: 12; font.bold: true }
-                                            ComboBox { id: wizardDrawdown; Layout.fillWidth: true; model: window.drawdownOptions; textRole: "label"; valueRole: "value"; currentIndex: 1; onActivated: window.markProfileEdited() }
+                                            ComboBox { id: wizardDrawdown; Layout.fillWidth: true; model: window.drawdownOptions; textRole: "label"; valueRole: "value"; currentIndex: 2; onActivated: window.markProfileEdited() }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: window.drawdownHelp(wizardDrawdown.currentValue)
+                                                color: textSecondary
+                                                font.pixelSize: 10
+                                                wrapMode: Text.WordWrap
+                                            }
                                         }
                                         ColumnLayout {
                                             Layout.fillWidth: true
@@ -793,14 +824,19 @@ ApplicationWindow {
                                     }
 
                                     Rectangle {
+                                        // Height follows the content: the summary lists every choice and
+                                        // Czech runs longer than English, so a fixed height would clip it.
                                         Layout.fillWidth: true
                                         radius: radiusSm
                                         color: panelRaised
-                                        Layout.preferredHeight: 128
+                                        Layout.preferredHeight: currentSelectionContent.implicitHeight + 24
                                         ColumnLayout {
-                                            anchors.fill: parent
+                                            id: currentSelectionContent
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.top: parent.top
                                             anchors.margins: 12
-                                            spacing: 5
+                                            spacing: 6
                                             Text { text: appController.wizardText.current_selection_title; color: textPrimary; font.pixelSize: 13; font.bold: true }
                                             Text {
                                                 Layout.fillWidth: true
@@ -810,9 +846,39 @@ ApplicationWindow {
                                                 font.pixelSize: 12
                                                 wrapMode: Text.WordWrap
                                             }
-                                            Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardStyle.currentText + " management style - " + window.styleHelp(wizardStyle.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
-                                            Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardAutomation.currentText + " - " + window.automationHelp(wizardAutomation.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
-                                            Text { Layout.fillWidth: true; visible: window.profileChoicesEdited || appController.userProfileConfigured; text: wizardCadence.currentText + " review rhythm - " + window.cadenceHelp(wizardCadence.currentValue); color: textSecondary; font.pixelSize: 11; wrapMode: Text.WordWrap }
+                                            Repeater {
+                                                model: window.profileChoicesEdited || appController.userProfileConfigured
+                                                    ? window.profileSummaryRows()
+                                                    : []
+                                                delegate: RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    Text {
+                                                        Layout.preferredWidth: 150
+                                                        Layout.alignment: Qt.AlignTop
+                                                        text: modelData.label
+                                                        color: textPrimary
+                                                        font.pixelSize: 11
+                                                        font.bold: true
+                                                        wrapMode: Text.WordWrap
+                                                    }
+                                                    Text {
+                                                        Layout.preferredWidth: 130
+                                                        Layout.alignment: Qt.AlignTop
+                                                        text: modelData.value
+                                                        color: accent
+                                                        font.pixelSize: 11
+                                                        wrapMode: Text.WordWrap
+                                                    }
+                                                    Text {
+                                                        Layout.fillWidth: true
+                                                        text: modelData.effect
+                                                        color: textSecondary
+                                                        font.pixelSize: 11
+                                                        wrapMode: Text.WordWrap
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                     RowLayout {

@@ -28,9 +28,48 @@ STYLE_GATES: dict[str, dict[str, object]] = {
 
 DEFAULT_STYLE = "BALANCED"
 
+# Drawdown comfort answers "how big a drop can you live with", so it maps onto
+# the loss caps that pause trading. The table is the whole range: nothing the
+# user picks in the wizard can push the daily cap past 2%, and 0 means "leave
+# config.toml alone", for people who tuned these numbers by hand.
+DRAWDOWN_LIMITS: dict[int, dict[str, object]] = {
+    10: {"max_daily_loss_pct": 1.0, "max_weekly_loss_pct": 3.0},
+    15: {"max_daily_loss_pct": 1.5, "max_weekly_loss_pct": 4.5},
+    20: {"max_daily_loss_pct": 2.0, "max_weekly_loss_pct": 6.0},
+}
+
+DRAWDOWN_OFF = 0
+
 
 def gates_for(style: str) -> dict[str, object]:
     return dict(STYLE_GATES.get(str(style).strip().upper(), STYLE_GATES[DEFAULT_STYLE]))
+
+
+def limits_for(drawdown_pct: object) -> dict[str, object]:
+    """Loss caps for a drawdown comfort level; empty when the control is off."""
+    try:
+        value = int(float(drawdown_pct))
+    except (TypeError, ValueError):
+        return dict(DRAWDOWN_LIMITS[15])
+    if value == DRAWDOWN_OFF:
+        return {}
+    # Snap to the nearest offered level so a hand-edited profile still maps.
+    nearest = min(DRAWDOWN_LIMITS, key=lambda level: abs(level - value))
+    return dict(DRAWDOWN_LIMITS[nearest])
+
+
+def apply_drawdown_to_config(config_path: str | Path, drawdown_pct: object) -> dict[str, str]:
+    """Write the drawdown comfort's loss caps into [risk]; return what changed."""
+    return _apply(config_path, "risk", limits_for(drawdown_pct))
+
+
+def apply_bots_to_config(config_path: str | Path, use_bots: bool) -> dict[str, str]:
+    """Turn the grid bot recommendations on or off in [grid_bot].
+
+    Only ``enabled`` moves: the capital caps and the recommend_only guard stay
+    exactly as configured, so this can never make a bot place anything.
+    """
+    return _apply(config_path, "grid_bot", {"enabled": bool(use_bots)})
 
 
 def describe_gates(style: str, language: str) -> str:
@@ -49,6 +88,18 @@ def describe_gates(style: str, language: str) -> str:
     return f"{trend} {service_text('style_hint_shared', language)}"
 
 
+def describe_drawdown(drawdown_pct: object, language: str) -> str:
+    """One sentence naming the loss caps this comfort level writes."""
+    from .service_strings import service_text
+
+    limits = limits_for(drawdown_pct)
+    if not limits:
+        return service_text("drawdown_hint_off", language)
+    return service_text("drawdown_hint", language).format(
+        daily=_trim(limits["max_daily_loss_pct"]), weekly=_trim(limits["max_weekly_loss_pct"])
+    )
+
+
 def _trim(value: object) -> str:
     return str(int(value)) if float(value) == int(float(value)) else str(value)
 
@@ -60,14 +111,19 @@ def _render(value: object) -> str:
 
 
 def apply_style_to_config(config_path: str | Path, style: str) -> dict[str, str]:
-    """Write the style's trend gates into [consensus]; return what changed.
+    """Write the style's trend gates into [consensus]; return what changed."""
+    return _apply(config_path, "consensus", gates_for(style))
+
+
+def _apply(config_path: str | Path, section_name: str, values: dict[str, object]) -> dict[str, str]:
+    """Set ``values`` on existing keys of one config section; return what changed.
 
     Edits line by line rather than re-serialising the file so comments, key
-    order, and every unrelated setting survive untouched.
+    order, and every unrelated setting survive untouched. Only keys that already
+    exist are touched, so a config cannot grow settings behind the user's back.
     """
     path = Path(config_path)
-    gates = gates_for(style)
-    if not path.exists():
+    if not values or not path.exists():
         return {}
 
     lines = path.read_text(encoding="utf-8").splitlines()
@@ -78,12 +134,12 @@ def apply_style_to_config(config_path: str | Path, style: str) -> dict[str, str]
         if stripped.startswith("[") and stripped.endswith("]"):
             section = stripped[1:-1]
             continue
-        if section != "consensus" or "=" not in line or stripped.startswith("#"):
+        if section != section_name or "=" not in line or stripped.startswith("#"):
             continue
         key = line.split("=", 1)[0].strip()
-        if key not in gates:
+        if key not in values:
             continue
-        rendered = _render(gates[key])
+        rendered = _render(values[key])
         current = line.split("=", 1)[1].split("#", 1)[0].strip()
         if current == rendered:
             continue

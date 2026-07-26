@@ -83,3 +83,52 @@ def test_guided_profile_recommend_only_blocks_spot_trades() -> None:
     assert profile.use_grid is True
     assert profile.allow_spot_trades is False
     assert profile.max_drawdown_comfort_pct == 25.0
+
+
+def test_use_bots_survives_a_save_load_round_trip(tmp_path) -> None:
+    """The wizard checkbox used to be lost, so reopening it showed a default."""
+    store = UserProfileStore(tmp_path / "user_profile.toml")
+    store.save_guided(
+        onboarding_path="EXISTING_PORTFOLIO",
+        management_style="BALANCED",
+        automation_level="GUARDED_AUTOMATION",
+        run_cadence="DAILY",
+        base_currency="USDC",
+        use_bots=True,
+        allow_spot_trades=True,
+        max_drawdown_comfort_pct=20,
+    )
+
+    loaded = store.load()
+
+    assert loaded.use_bots is True
+    # use_grid stays narrower: bots asked for, but not an Active style.
+    assert loaded.use_grid is False
+    assert loaded.allow_spot_trades is True
+    assert loaded.max_drawdown_comfort_pct == 20.0
+
+
+def test_drawdown_off_is_stored_rather_than_clamped() -> None:
+    profile = guided_profile(
+        onboarding_path="EXISTING_PORTFOLIO",
+        management_style="BALANCED",
+        automation_level="RECOMMEND_ONLY",
+        run_cadence="WEEKLY",
+        base_currency="USDC",
+        use_bots=False,
+        allow_spot_trades=False,
+        max_drawdown_comfort_pct=0,
+    )
+
+    assert profile.max_drawdown_comfort_pct == 0.0
+    assert profile.use_bots is False
+
+
+def test_profiles_written_before_use_bots_fall_back_to_use_grid(tmp_path) -> None:
+    path = tmp_path / "user_profile.toml"
+    path.write_text(
+        '[user_profile]\nversion = 1\nmanagement_style = "ACTIVE"\nuse_grid = true\n',
+        encoding="utf-8",
+    )
+
+    assert UserProfileStore(path).load().use_bots is True

@@ -26,7 +26,12 @@ from .local_data_reset import LocalDataResetService
 from .local_ai_recommender import LocalAiRecommender
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions, SafetySnapshot
 from .readiness_service import ReadinessService
-from .risk_profile import STYLE_GATES, apply_style_to_config, describe_gates
+from .profile_choices import profile_choices, toggle_help
+from .risk_profile import (
+    apply_bots_to_config,
+    apply_drawdown_to_config,
+    apply_style_to_config,
+)
 from .safety_service import SafetyService
 from .secret_store import SecretStore
 from .service_strings import service_text
@@ -579,6 +584,15 @@ class AppController(QObject):
             return False
         return str(profile.automation_level).strip().upper() == "GUARDED_AUTOMATION"
 
+    def _spot_trades_allowed(self) -> bool:
+        """Whether the profile lets Coinductor submit a spot buy at all."""
+        profile = self._user_profile_service.store.load()
+        return bool(profile is not None and profile.allow_spot_trades)
+
+    @Property(bool, notify=userProfileChanged)
+    def spotTradesAllowed(self) -> bool:
+        return self._spot_trades_allowed()
+
     def _inspect_safety(self) -> SafetySnapshot:
         self._safety_service.automation_allows_submit = self._automation_allows_submit()
         return self._safety_service.inspect()
@@ -587,12 +601,34 @@ class AppController(QObject):
     def automationAllowsSubmit(self) -> bool:
         return self._safety_service.automation_allows_submit
 
-    @Property("QVariantMap", notify=wizardLanguageChanged)
-    def styleGateHints(self) -> dict[str, str]:
-        """What each management style changes, keyed by the stored style code."""
+    @Property("QVariantMap", notify=userProfileChanged)
+    def savedProfileChoices(self) -> dict[str, object]:
+        """The stored profile in wizard terms, so reopening it shows the truth.
+
+        Empty when nothing is saved yet; the wizard then keeps its own defaults.
+        """
+        profile = self._user_profile_service.store.load()
+        if profile is None:
+            return {}
         return {
-            style: describe_gates(style, self._wizard_language) for style in STYLE_GATES
+            "style": profile.management_style,
+            "automation": profile.automation_level,
+            "cadence": profile.run_cadence,
+            "locale": profile.locale,
+            "drawdown": int(profile.max_drawdown_comfort_pct),
+            "budget": int(profile.planned_deposit_amount),
+            "useBots": profile.use_bots,
+            "allowSpotTrades": profile.allow_spot_trades,
         }
+
+    @Property("QVariantMap", notify=wizardLanguageChanged)
+    def profileChoices(self) -> dict[str, list[dict[str, object]]]:
+        """Decision-profile dropdowns: localized labels plus per-option help."""
+        return profile_choices(self._wizard_language)
+
+    @Property("QVariantMap", notify=wizardLanguageChanged)
+    def profileToggleHelp(self) -> dict[str, str]:
+        return toggle_help(self._wizard_language)
 
     @Property("QVariantMap", notify=wizardLanguageChanged)
     def appText(self) -> dict[str, str]:
@@ -1206,7 +1242,7 @@ class AppController(QObject):
         planned_deposit_amount: float,
     ) -> None:
         path = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
-        previous_style = getattr(self._user_profile_service.current_profile(path), "management_style", "")
+        previous = self._user_profile_service.current_profile(path)
         self._user_profile_snapshot = self._user_profile_service.save_guided(
             onboarding_path=path,
             management_style=management_style,
@@ -1219,17 +1255,12 @@ class AppController(QObject):
             max_drawdown_comfort_pct=max_drawdown_comfort_pct,
             planned_deposit_amount=planned_deposit_amount,
         )
-        # Only on a deliberate change of style, so re-saving the profile does not
-        # silently revert values the user hand-tuned in config.toml.
-        if management_style.strip().upper() != str(previous_style).strip().upper():
-            changed = apply_style_to_config(default_config_path(), management_style)
-            if changed:
-                detail = ", ".join(f"{key} {value}" for key, value in changed.items())
-                self.notificationRequested.emit(
-                    service_text("style_gates_updated", self._wizard_language).format(
-                        style=management_style.title(), changes=detail
-                    )
-                )
+        self._apply_profile_to_config(
+            previous,
+            management_style=management_style,
+            drawdown_pct=max_drawdown_comfort_pct,
+            use_bots=use_bots,
+        )
         # The automation level vetoes live submit, so the safety snapshot has to
         # be recomputed here rather than waiting for the next refreshSetup().
         self._safety_snapshot = self._inspect_safety()
@@ -1240,6 +1271,51 @@ class AppController(QObject):
         self.firstPortfolioPlanChanged.emit()
         self.onboardingWizardChanged.emit()
         self.safetyChanged.emit()
+
+    def _apply_profile_to_config(
+        self,
+        previous,
+        *,
+        management_style: str,
+        drawdown_pct: float,
+        use_bots: bool,
+    ) -> None:
+        """Materialise the profile choices that own a config value.
+
+        Each choice is written only when it actually changed, so re-saving the
+        profile never reverts numbers the user hand-tuned in config.toml.
+        """
+        config_path = default_config_path()
+        language = self._wizard_language
+
+        if management_style.strip().upper() != str(getattr(previous, "management_style", "")).strip().upper():
+            changed = apply_style_to_config(config_path, management_style)
+            if changed:
+                self._notify_config_change(
+                    "style_gates_updated", changed, style=management_style.title()
+                )
+
+        if float(drawdown_pct or 0) != float(getattr(previous, "max_drawdown_comfort_pct", -1)):
+            changed = apply_drawdown_to_config(config_path, drawdown_pct)
+            if changed:
+                self._notify_config_change("drawdown_limits_updated", changed)
+
+        if bool(use_bots) != bool(getattr(previous, "use_bots", not use_bots)):
+            changed = apply_bots_to_config(config_path, use_bots)
+            if changed:
+                self._notify_config_change(
+                    "bots_config_updated",
+                    changed,
+                    state=service_text(
+                        "bots_state_enabled" if use_bots else "bots_state_disabled", language
+                    ),
+                )
+
+    def _notify_config_change(self, key: str, changed: dict[str, str], **extra: str) -> None:
+        detail = ", ".join(f"{name} {value}" for name, value in changed.items())
+        self.notificationRequested.emit(
+            service_text(key, self._wizard_language).format(changes=detail, **extra)
+        )
 
     @Slot()
     def checkBinanceReadOnly(self) -> None:
@@ -1967,6 +2043,15 @@ class AppController(QObject):
             return
         if not self._safety_snapshot.allows_live_submit:
             self.notificationRequested.emit("Live submit is locked by the Safety stage. Keep reviewing previews until LIVE_ENABLED is explicit.")
+            return
+        # The profile's spot-trade switch is a separate lock from the stage: a
+        # user can arm guarded automation for bots and rebalancing while still
+        # keeping Coinductor out of opening spot positions. OCO is deliberately
+        # not gated here - it protects a position that is already open.
+        if not self._spot_trades_allowed():
+            self.notificationRequested.emit(
+                service_text("spot_trades_locked_by_profile", self._wizard_language)
+            )
             return
         latest_trade = self._snapshot.latest_run.trade_proposal if self._snapshot.latest_run is not None else None
         action = str(latest_trade.get("action", self._decision) if latest_trade else self._decision).upper()

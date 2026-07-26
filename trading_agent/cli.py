@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from decimal import Decimal
 import json
 import os
@@ -10,6 +10,7 @@ import sys
 import urllib.request
 
 from .binance_client import BinanceApiError, BinanceClient
+from .binance_clients import create_binance_client
 from .config import AppConfig, default_config_path, load_config
 from .config_validator import ConfigValidator
 from .env import load_env_file
@@ -19,6 +20,7 @@ from .portfolio_analyzer import PortfolioAnalyzer
 from .readiness import ReadinessChecker
 from .research import ResearchLoader
 from .runner import AgentRunner
+from .runtime_flags import RuntimeFlags
 from .storage import Storage
 from .testnet_executor import TestnetExecutor
 from .models import ActiveGridBot, ActiveRebalancingBot, TestnetExecutedOrder, TestnetExecutionReport
@@ -257,8 +259,6 @@ def _load_and_apply_config(args: argparse.Namespace, parser: argparse.ArgumentPa
         config.raw["testnet_execution"]["enabled"] = True
     if getattr(args, "no_testnet_execution", False):
         config.raw["testnet_execution"]["enabled"] = False
-    config.raw.setdefault("_runtime", {})
-    config.raw["_runtime"]["testnet_confirm"] = getattr(args, "confirm_testnet_order", "")
     if getattr(args, "live_confirm_preview", False) and getattr(args, "no_live_confirm_preview", False):
         parser.error("--live-confirm-preview and --no-live-confirm-preview cannot be used together")
     config.raw.setdefault("live_confirm", {})
@@ -268,12 +268,16 @@ def _load_and_apply_config(args: argparse.Namespace, parser: argparse.ArgumentPa
         config.raw["live_confirm"]["enabled"] = False
     if getattr(args, "live_confirm_submit", False):
         config.raw["live_confirm"]["enabled"] = True
-    config.raw["_runtime"]["live_submit"] = bool(getattr(args, "live_confirm_submit", False))
-    config.raw["_runtime"]["mainnet_confirm"] = getattr(args, "confirm_mainnet_order", "")
-    config.raw["_runtime"]["earn_redeem_submit"] = bool(getattr(args, "earn_redeem_submit", False))
-    config.raw["_runtime"]["earn_redeem_confirm"] = getattr(args, "confirm_earn_redeem", "")
-    config.raw["_runtime"]["oco_protection_submit"] = bool(getattr(args, "oco_protection_submit", False))
-    config.raw["_runtime"]["mainnet_oco_confirm"] = getattr(args, "confirm_mainnet_oco", "")
+    # Execution authority comes only from explicit switches on this invocation.
+    RuntimeFlags(
+        live_submit=bool(getattr(args, "live_confirm_submit", False)),
+        mainnet_confirm=str(getattr(args, "confirm_mainnet_order", "") or ""),
+        earn_redeem_submit=bool(getattr(args, "earn_redeem_submit", False)),
+        earn_redeem_confirm=str(getattr(args, "confirm_earn_redeem", "") or ""),
+        oco_protection_submit=bool(getattr(args, "oco_protection_submit", False)),
+        mainnet_oco_confirm=str(getattr(args, "confirm_mainnet_oco", "") or ""),
+        testnet_confirm=str(getattr(args, "confirm_testnet_order", "") or ""),
+    ).store_in(config.raw)
     return config
 
 
@@ -375,7 +379,7 @@ def _research_request_command(args: argparse.Namespace) -> int:
     if validation.has_errors:
         print("Config validation failed. Fix errors before generating research request.")
         return 2
-    client = BinanceClient(config.raw)
+    client = create_binance_client(config.raw)
     balances = client.get_balances()
     portfolio_assets = sorted(
         {balance.asset for balance in balances}
@@ -460,7 +464,7 @@ def _testnet_market_sell_command(args: argparse.Namespace, parser: argparse.Argu
         if not args.quantity:
             parser.error("--quantity is required unless --from-last-buy is used")
         quantity = Decimal(str(args.quantity))
-        intent_id = f"manual-sell-{symbol.lower()}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+        intent_id = f"manual-sell-{symbol.lower()}-{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
         source = "CLI quantity"
     if quantity <= 0:
         parser.error("--quantity must be greater than zero")
@@ -571,7 +575,7 @@ def _testnet_order_status_command(args: argparse.Namespace, parser: argparse.Arg
 
 def _grid_register_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     config = load_config(args.config)
-    created_at = args.created_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    created_at = args.created_at or datetime.now(UTC).isoformat(timespec="seconds")
     try:
         bot = ActiveGridBot(
             name=str(args.name),
@@ -633,7 +637,7 @@ def _grid_set_status_command(args: argparse.Namespace) -> int:
 
 def _rebalancing_register_command(args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
     config = load_config(args.config)
-    created_at = args.created_at or datetime.now(timezone.utc).isoformat(timespec="seconds")
+    created_at = args.created_at or datetime.now(UTC).isoformat(timespec="seconds")
     try:
         assets = tuple(item.strip().upper() for item in str(args.assets).split(",") if item.strip())
         weights = tuple(Decimal(item.strip()) for item in str(args.target_weights).split(",") if item.strip())
@@ -692,7 +696,7 @@ def _rebalancing_set_status_command(args: argparse.Namespace) -> int:
 
 
 def _default_testnet_client_order_id(symbol: str) -> str:
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     return f"bta-{symbol.lower()}-{timestamp}"
 
 

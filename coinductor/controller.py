@@ -584,6 +584,16 @@ class AppController(QObject):
             return False
         return str(profile.automation_level).strip().upper() == "GUARDED_AUTOMATION"
 
+    def _submit_locked_reason(self, action: str) -> str:
+        """Name the lock that is actually holding, not just the stage.
+
+        The automation level vetoes submit through the same flag as the stage,
+        so blaming the stage would send a RECOMMEND_ONLY user to the wrong place.
+        """
+        if not self._automation_allows_submit():
+            return service_text("submit_locked_by_profile", self._wizard_language).format(action=action)
+        return service_text("submit_locked_by_stage", self._wizard_language).format(action=action)
+
     def _spot_trades_allowed(self) -> bool:
         """Whether the profile lets Coinductor submit a spot buy at all."""
         profile = self._user_profile_service.store.load()
@@ -2042,7 +2052,7 @@ class AppController(QObject):
         if self._busy:
             return
         if not self._safety_snapshot.allows_live_submit:
-            self.notificationRequested.emit("Live submit is locked by the Safety stage. Keep reviewing previews until LIVE_ENABLED is explicit.")
+            self.notificationRequested.emit(self._submit_locked_reason("Live submit"))
             return
         # The profile's spot-trade switch is a separate lock from the stage: a
         # user can arm guarded automation for bots and rebalancing while still
@@ -2184,7 +2194,7 @@ class AppController(QObject):
             return
         if not self._safety_snapshot.allows_live_submit:
             self.notificationRequested.emit(
-                "OCO submit is locked by the Safety stage. Promote it to LIVE_ENABLED only after preview review."
+                self._submit_locked_reason("OCO submit")
             )
             return
         protection = self._snapshot.position_protection or {}
@@ -2211,7 +2221,7 @@ class AppController(QObject):
             return
         if not self._safety_snapshot.allows_live_submit:
             self.notificationRequested.emit(
-                "Earn redeem submit is locked by the Safety stage. Promote it to LIVE_ENABLED only after preview review."
+                self._submit_locked_reason("Earn redeem submit")
             )
             return
         earn_redeem = self._snapshot.earn_redeem or {}

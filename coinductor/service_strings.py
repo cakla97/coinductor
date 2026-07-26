@@ -523,6 +523,14 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Considers a buy in any regime while RSI 14 sits between {min} and {max}. Price must still be above the EMA200.",
         "cs": "Nákup zvažuje v jakémkoli režimu při RSI 14 mezi {min} a {max}. Cena musí být stále nad EMA200.",
     },
+    "submit_locked_by_stage": {
+        "en": "{action} is locked by the Safety stage. Keep reviewing previews until LIVE_ENABLED is explicit.",
+        "cs": "{action} je uzamčeno bezpečnostním stupněm. Zůstaňte u náhledů, dokud výslovně nenastavíte LIVE_ENABLED.",
+    },
+    "submit_locked_by_profile": {
+        "en": "{action} is locked by your profile: automation level is Recommendations only. Switch it to Guarded automation in the setup wizard first.",
+        "cs": "{action} je uzamčeno vaším profilem: úroveň automatizace je Pouze doporučení. Nejprve ji v průvodci nastavením přepněte na Zabezpečená automatizace.",
+    },
     "spot_trades_locked_by_profile": {
         "en": "Guarded spot trades are switched off in your profile, so Coinductor will not submit this buy. Enable them in the setup wizard if you want it to.",
         "cs": "Zabezpečené spotové obchody máte v profilu vypnuté, takže Coinductor tento nákup neodešle. Pokud chcete, zapněte je v průvodci nastavením.",

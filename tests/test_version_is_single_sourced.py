@@ -59,3 +59,13 @@ def test_installer_clears_exactly_the_managed_credentials() -> None:
         f"only in installer={listed - set(MANAGED_KEYS)}, "
         f"only in app={set(MANAGED_KEYS) - listed}"
     )
+
+
+def test_the_changelog_documents_the_current_version() -> None:
+    """Tagging a release with no changelog entry is easy to do and annoying to
+    discover afterwards, when the release notes are already published."""
+    changelog = (_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+
+    assert f"## [{trading_agent.__version__}]" in changelog, (
+        f"CHANGELOG.md has no '## [{trading_agent.__version__}]' section"
+    )

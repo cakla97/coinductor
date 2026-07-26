@@ -1,0 +1,99 @@
+name: Release
+
+# Tag-driven: pushing v0.1.0 builds and publishes that release.
+# Also runnable by hand for a dry run that builds the artifacts without
+# publishing anything.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a GitHub Release (otherwise just build and upload artifacts)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # Windows is the shipping platform; the bundle has to be built on it.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,desktop,build]"
+
+      # Never ship something the test suite has not passed.
+      - name: Lint
+        run: python -m ruff check trading_agent coinductor tests
+
+      - name: Test
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python -m pytest -q
+
+      - name: Check the tag matches the package version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}".TrimStart("v")
+          $version = python -c "import trading_agent; print(trading_agent.__version__)"
+          Write-Host "tag=$tag package=$version"
+          if ($tag -ne $version) {
+            throw "Tag $tag does not match trading_agent.__version__ ($version)"
+          }
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build release artifacts
+        run: python packaging/build_release.py
+
+      # A build that runs on the runner is worth more than one that merely links.
+      - name: Smoke-test the built app
+        shell: pwsh
+        run: |
+          $data = Join-Path $env:RUNNER_TEMP "coinductor-smoke"
+          New-Item -ItemType Directory -Path $data -Force | Out-Null
+          $env:COINDUCTOR_DATA_DIR = $data
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $p = Start-Process -FilePath "dist\Coinductor\Coinductor.exe" -PassThru
+          Start-Sleep -Seconds 25
+          if ($p.HasExited) { throw "Coinductor.exe exited early with code $($p.ExitCode)" }
+          Stop-Process -Id $p.Id -Force
+          if (-not (Test-Path (Join-Path $data "work"))) {
+            throw "the app did not create its data directory"
+          }
+          Write-Host "started, stayed up, and created its data directory"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coinductor-release
+          path: |
+            dist/*.zip
+            dist/installer/*.exe
+            dist/SHA256SUMS.txt
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          body_path: CHANGELOG.md
+          files: |
+            dist/*.zip
+            dist/installer/*.exe
+            dist/SHA256SUMS.txt

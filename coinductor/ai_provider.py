@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
+import urllib.error
 import urllib.request
+from urllib.parse import urlparse
 
 from trading_agent.config import default_config_path, load_config
 
@@ -118,24 +121,25 @@ class AiProviderService:
 
     def health_check(self) -> AiProviderHealthResult:
         if not self.config_path.exists():
-            return AiProviderHealthResult("BLOCK", f"Missing config: {self.config_path}")
+            return AiProviderHealthResult("BLOCK", self._t("aiph_missing_config").format(path=self.config_path))
 
         load_secrets(self.env_path)
         config = load_config(self.config_path).raw
         ai = config.get("ai", {})
-        base_url = os.getenv(str(ai.get("base_url_env", "LLM_BASE_URL")), "").rstrip("/")
+        base_url_key = str(ai.get("base_url_env", "LLM_BASE_URL"))
+        model_key = str(ai.get("model_env", "LLM_MODEL"))
+        base_url = os.getenv(base_url_key, "").rstrip("/")
         api_key = os.getenv(str(ai.get("api_key_env", "LLM_API_KEY")), "")
-        text_model = os.getenv(str(ai.get("model_env", "LLM_MODEL")), "").strip()
+        text_model = os.getenv(model_key, "").strip()
         vision_model_key = str(ai.get("vision_model_env", "LLM_VISION_MODEL"))
         vision_model = os.getenv(vision_model_key, "").strip()
         if not base_url:
-            return AiProviderHealthResult("BLOCK", "LLM_BASE_URL is not set.")
+            return AiProviderHealthResult("BLOCK", self._t("aiph_no_base_url").format(key=base_url_key))
         if not text_model:
-            return AiProviderHealthResult("BLOCK", "LLM_MODEL is not set.")
+            return AiProviderHealthResult("BLOCK", self._t("aiph_no_model").format(key=model_key))
         if vision_model and not supports_vision_model(vision_model):
             return AiProviderHealthResult(
-                "BLOCK",
-                f"Configured vision model {vision_model} is not recognized as vision-capable.",
+                "BLOCK", self._t("aiph_vision_not_capable").format(model=vision_model)
             )
 
         headers: dict[str, str] = {}
@@ -146,7 +150,11 @@ class AiProviderService:
             with urllib.request.urlopen(request, timeout=10) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except Exception as exc:
-            return AiProviderHealthResult("BLOCK", f"AI endpoint check failed: {exc}")
+            # Described rather than str(exc): a raw HTTPError reads as a network
+            # fault, and with a cloud key a 401 is the likeliest failure.
+            return AiProviderHealthResult(
+                "BLOCK", self._t("aiph_endpoint_failed").format(reason=self._describe(exc))
+            )
 
         models = payload.get("data", []) if isinstance(payload, dict) else []
         model_count = len(models) if isinstance(models, list) else 0
@@ -157,28 +165,26 @@ class AiProviderService:
         }
         if text_model.lower() not in model_ids:
             return AiProviderHealthResult(
-                "BLOCK",
-                f"Endpoint reachable, but text model {text_model} was not reported by /models.",
+                "BLOCK", self._t("aiph_text_model_missing").format(model=text_model)
             )
         if vision_model and vision_model.lower() not in model_ids:
             return AiProviderHealthResult(
-                "BLOCK",
-                f"Text model ready, but vision model {vision_model} was not reported by /models.",
+                "BLOCK", self._t("aiph_vision_model_missing").format(model=vision_model)
             )
         vision_detail = (
-            f" Vision model ready: {vision_model}."
+            self._t("aiph_vision_ready").format(model=vision_model)
             if vision_model
-            else " Vision model is optional and not configured."
+            else self._t("aiph_vision_absent")
         )
         return AiProviderHealthResult(
             "PASS",
-            f"Endpoint reachable; {model_count} model(s) reported. Text model ready: {text_model}.{vision_detail}",
+            self._t("aiph_ok").format(count=model_count, model=text_model, vision=vision_detail),
         )
 
     def discover_models(self, base_url: str, api_key: str = "") -> AiModelDiscoveryResult:
         normalized_url = base_url.strip().rstrip("/")
         if not normalized_url:
-            return AiModelDiscoveryResult("BLOCK", "Enter the endpoint URL before detecting models.")
+            return AiModelDiscoveryResult("BLOCK", self._t("aidisc_no_url"))
 
         headers: dict[str, str] = {}
         if api_key:
@@ -188,7 +194,12 @@ class AiProviderService:
             with urllib.request.urlopen(request, timeout=10) as response:
                 payload = json.loads(response.read().decode("utf-8"))
         except Exception as exc:
-            return AiModelDiscoveryResult("BLOCK", f"Could not reach {self._redact_url(normalized_url)}: {exc}")
+            return AiModelDiscoveryResult(
+                "BLOCK",
+                self._t("aidisc_unreachable").format(
+                    url=self._redact_url(normalized_url), reason=self._describe(exc)
+                ),
+            )
 
         entries = payload.get("data", []) if isinstance(payload, dict) else []
         model_ids = sorted(
@@ -200,13 +211,17 @@ class AiProviderService:
         )
         if not model_ids:
             return AiModelDiscoveryResult(
-                "BLOCK",
-                f"{self._redact_url(normalized_url)} responded, but reported no installed models.",
+                "BLOCK", self._t("aidisc_no_models").format(url=self._redact_url(normalized_url))
             )
         return AiModelDiscoveryResult(
             "PASS",
-            f"{len(model_ids)} model(s) reported by {self._redact_url(normalized_url)}.",
+            self._t("aidisc_ok").format(count=len(model_ids), url=self._redact_url(normalized_url)),
             tuple(model_ids),
+        )
+
+    def _describe(self, exc: Exception) -> str:
+        return _describe_provider_error(
+            exc, czech=self.language.lower().startswith("cs"), technical=True
         )
 
     def vision_support(self) -> tuple[bool, str]:
@@ -278,11 +293,98 @@ class AiProviderService:
         )
 
 
+def _describe_provider_error(exc: Exception, *, czech: bool, technical: bool = False) -> str:
+    """Explain a provider failure.
+
+    ``technical`` picks the audience. Settings and the AI provider check are
+    diagnostic surfaces where the raw OS reason is the most useful thing on
+    screen ("connection refused" means Ollama is not running). The assistant
+    chat is a conversation, where "[WinError 10061]" is noise - it gets the
+    plain sentence instead.
+    """
+    if isinstance(exc, RuntimeError):
+        return str(exc)
+    # HTTPError subclasses OSError, so it has to be handled first. With a cloud
+    # provider the usual failure is a rejected key, and reporting that as
+    # "connection failed" would send the user chasing their network instead.
+    if isinstance(exc, urllib.error.HTTPError):
+        hint = _HTTP_HINTS.get(exc.code)
+        detail = f" {hint[czech]}" if hint else ""
+        return (
+            f"poskytovatel AI odpověděl HTTP {exc.code}.{detail}"
+            if czech
+            else f"the AI provider returned HTTP {exc.code}.{detail}"
+        )
+    if isinstance(exc, OSError):
+        base = (
+            "AI endpoint se nepodařilo kontaktovat"
+            if czech
+            else "the AI endpoint could not be reached"
+        )
+        if not technical:
+            return (
+                f"{base} (spojení selhalo nebo vypršel časový limit)."
+                if czech
+                else f"{base} (connection failed or timed out)."
+            )
+        # Unwrap URLError, whose str() is the noisy "<urlopen error ...>" form.
+        # Socket-level text, so it cannot carry the API key (that is a header).
+        inner = getattr(exc, "reason", None)
+        source = inner if isinstance(inner, BaseException) else exc
+        reason = (getattr(source, "strerror", "") or str(source)).strip()
+        return f"{base} ({reason})." if reason else f"{base}."
+    return (
+        f"neočekávaná chyba ({type(exc).__name__})."
+        if czech
+        else f"unexpected error ({type(exc).__name__})."
+    )
+
+
+# (Czech, English) hints for the statuses a cloud provider actually returns.
+_HTTP_HINTS: dict[int, dict[bool, str]] = {
+    401: {
+        True: "Klíč API byl odmítnut - zkontrolujte LLM_API_KEY.",
+        False: "The API key was rejected - check LLM_API_KEY.",
+    },
+    403: {
+        True: "Přístup zamítnut - klíč nemá oprávnění k tomuto modelu.",
+        False: "Access denied - the key is not allowed to use this model.",
+    },
+    404: {
+        True: "Endpoint nebo model neexistuje - zkontrolujte LLM_BASE_URL a LLM_MODEL.",
+        False: "Endpoint or model not found - check LLM_BASE_URL and LLM_MODEL.",
+    },
+    429: {
+        True: "Vyčerpán limit požadavků nebo kredit - zkuste to za chvíli.",
+        False: "Rate limit or quota reached - try again shortly.",
+    },
+}
+
+
+def provider_kind(base_url: str) -> str:
+    """Which provider the LLM_* variables currently point at: LOCAL/CLOUD/NONE.
+
+    There is only one set of LLM_* variables, so exactly one provider can be
+    active; saving either wizard panel replaces the other. The UI needs to say
+    so, because two side-by-side panels read as two independent settings.
+    """
+    if not base_url.strip():
+        return "NONE"
+    host = (urlparse(base_url).hostname or "").lower()
+    return "LOCAL" if host in {"127.0.0.1", "localhost", "::1"} else "CLOUD"
+
+
 def supports_vision_model(model: str) -> bool:
     normalized = model.strip().lower().replace("_", "-")
     markers = (
         "vision", "llava", "moondream", "minicpm-v", "qwen2-vl", "qwen2.5-vl", "qwen2.5vl",
         "qwen3-vl", "qwen3vl", "pixtral", "gemma3", "gemma-3", "gpt-4o", "gpt-4.1", "gpt-5",
+        "gpt-4-turbo", "gpt-4.5",
         "claude-3", "claude-4", "claude-sonnet", "claude-opus", "gemini-1.5", "gemini-2", "gemini-3",
     )
-    return any(marker in normalized for marker in markers)
+    if any(marker in normalized for marker in markers):
+        return True
+    # OpenAI's reasoning models accept images but carry no marker in the name,
+    # and a substring match on "o3"/"o4" would fire on unrelated tags, so they
+    # are matched against the whole name (with an optional -mini/-pro suffix).
+    return bool(re.fullmatch(r"o[1345](-(mini|pro))?", normalized))

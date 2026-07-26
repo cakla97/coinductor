@@ -170,6 +170,28 @@ WIZARD_STRINGS: dict[str, dict[str, str]] = {
     },
     "value_on": {"en": "On", "cs": "Zapnuto"},
     "value_off": {"en": "Off", "cs": "Vypnuto"},
+    # One set of LLM_* variables means one provider at a time; two side-by-side
+    # panels would otherwise read as two independent, coexisting settings.
+    "ai_one_provider_notice": {
+        "en": "Only one AI provider is active at a time. Saving either panel replaces the other - the text and vision models move together.",
+        "cs": "Aktivní může být vždy jen jeden poskytovatel AI. Uložením kterékoli karty nahradíte tu druhou - textový i vision model se mění společně.",
+    },
+    "ai_active_local": {
+        "en": "Active now: local AI. Your prompts stay on this computer.",
+        "cs": "Nyní aktivní: lokální AI. Vaše dotazy zůstávají na tomto počítači.",
+    },
+    "ai_active_cloud": {
+        "en": "Active now: cloud AI. Selected report and portfolio context leaves this computer.",
+        "cs": "Nyní aktivní: cloudová AI. Vybraný report a kontext portfolia opouští tento počítač.",
+    },
+    "ai_active_none": {
+        "en": "No AI provider is configured yet. Coinductor works without one.",
+        "cs": "Zatím není nastaven žádný poskytovatel AI. Coinductor funguje i bez něj.",
+    },
+    "ai_switch_to_local_clears_key": {
+        "en": "Saving the local panel also deletes the stored cloud API key, so it can never be sent to a local endpoint.",
+        "cs": "Uložením lokální karty se zároveň smaže uložený cloudový API klíč, aby se nikdy nemohl odeslat na lokální endpoint.",
+    },
     "help_budget_existing": {
         "en": "Optional context only: your existing Binance holdings define what Coinductor manages, not this number. Leave it on Auto unless you plan to add fresh capital.",
         "cs": "Pouze doplňující kontext: co Coinductor spravuje, určuje váš skutečný zůstatek na Binance, ne toto číslo. Nechte Automaticky, pokud neplánujete přidat nový kapitál.",

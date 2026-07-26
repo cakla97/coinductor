@@ -974,6 +974,42 @@ ApplicationWindow {
                                             }
                                         }
                                     }
+                                    Rectangle {
+                                        // The two panels below are alternatives, not
+                                        // independent settings: they write the same
+                                        // LLM_* variables, so one replaces the other.
+                                        Layout.fillWidth: true
+                                        Layout.preferredHeight: aiProviderNoticeColumn.implicitHeight + 20
+                                        radius: radiusSm
+                                        color: panelRaised
+                                        border.color: appController.activeAiProviderKind === "CLOUD" ? warning : border
+                                        ColumnLayout {
+                                            id: aiProviderNoticeColumn
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            anchors.leftMargin: 12
+                                            anchors.rightMargin: 12
+                                            spacing: 3
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: appController.activeAiProviderKind === "LOCAL" ? appController.wizardText.ai_active_local
+                                                    : appController.activeAiProviderKind === "CLOUD" ? appController.wizardText.ai_active_cloud
+                                                    : appController.wizardText.ai_active_none
+                                                color: appController.activeAiProviderKind === "CLOUD" ? warning : accent
+                                                font.pixelSize: 11
+                                                font.bold: true
+                                                wrapMode: Text.WordWrap
+                                            }
+                                            Text {
+                                                Layout.fillWidth: true
+                                                text: appController.wizardText.ai_one_provider_notice
+                                                color: textSecondary
+                                                font.pixelSize: 10
+                                                wrapMode: Text.WordWrap
+                                            }
+                                        }
+                                    }
                                     GridLayout {
                                         id: aiProviderGrid
                                         Layout.fillWidth: true
@@ -989,7 +1025,8 @@ ApplicationWindow {
                                             Layout.preferredHeight: localAiCardContent.implicitHeight + 32
                                             radius: radiusMd
                                             color: panelRaised
-                                            border.color: border
+                                            // Accent marks the provider actually in use.
+                                            border.color: appController.activeAiProviderKind === "LOCAL" ? accent : border
                                             ColumnLayout {
                                                 id: localAiCardContent
                                                 anchors.left: parent.left
@@ -1013,7 +1050,8 @@ ApplicationWindow {
                                                         id: localAiBaseUrl
                                                         Layout.fillWidth: true
                                                         placeholderText: "Local endpoint"
-                                                        text: appController.aiProviderBaseUrl.length > 0 ? appController.aiProviderBaseUrl : "http://127.0.0.1:11434/v1"
+                                                        text: appController.activeAiProviderKind === "LOCAL" && appController.aiProviderBaseUrl.length > 0
+                                                            ? appController.aiProviderBaseUrl : "http://127.0.0.1:11434/v1"
                                                     }
                                                 }
                                                 RowLayout {
@@ -1027,14 +1065,15 @@ ApplicationWindow {
                                                         // card clips them.
                                                         Layout.minimumWidth: 120
                                                         placeholderText: "Text model, e.g. qwen3:14b"
-                                                        text: appController.aiTextModel.length > 0 ? appController.aiTextModel : "qwen3:14b"
+                                                        text: appController.activeAiProviderKind === "LOCAL" && appController.aiTextModel.length > 0
+                                                            ? appController.aiTextModel : "qwen3:14b"
                                                     }
                                                     TextField {
                                                         id: localAiVisionModel
                                                         Layout.fillWidth: true
                                                         Layout.minimumWidth: 120
                                                         placeholderText: "Vision model (optional)"
-                                                        text: appController.aiVisionModel
+                                                        text: appController.activeAiProviderKind === "LOCAL" ? appController.aiVisionModel : ""
                                                     }
                                                 }
                                                 // Flow, not RowLayout: three buttons do not fit
@@ -1045,6 +1084,8 @@ ApplicationWindow {
                                                     spacing: 8
                                                     Button {
                                                         text: "Save local AI"
+                                                        ToolTip.visible: hovered
+                                                        ToolTip.text: appController.wizardText.ai_switch_to_local_clears_key
                                                         onClicked: {
                                                             appController.saveLocalAiProvider(localAiBaseUrl.text, localAiModel.text, localAiVisionModel.text)
                                                             window.showToast("Local AI settings saved")
@@ -1212,7 +1253,7 @@ ApplicationWindow {
                                             Layout.minimumHeight: 410
                                             radius: radiusMd
                                             color: panelRaised
-                                            border.color: border
+                                            border.color: appController.activeAiProviderKind === "CLOUD" ? accent : border
                                             clip: true
                                             ColumnLayout {
                                                 anchors.fill: parent
@@ -1244,13 +1285,16 @@ ApplicationWindow {
                                                 RowLayout {
                                                     Layout.fillWidth: true
                                                     spacing: 8
-                                                    TextField { id: cloudAiBaseUrl; Layout.fillWidth: true; placeholderText: "https://api.openai.com/v1" }
+                                                    TextField { id: cloudAiBaseUrl; Layout.fillWidth: true; placeholderText: "https://api.openai.com/v1"
+                                                        text: appController.activeAiProviderKind === "CLOUD" ? appController.aiProviderBaseUrl : "" }
                                                 }
                                                 RowLayout {
                                                     Layout.fillWidth: true
                                                     spacing: 8
-                                                    TextField { id: cloudAiModel; Layout.fillWidth: true; placeholderText: "Text model" }
-                                                    TextField { id: cloudAiVisionModel; Layout.fillWidth: true; placeholderText: "Vision model (optional)" }
+                                                    TextField { id: cloudAiModel; Layout.fillWidth: true; placeholderText: "Text model"
+                                                        text: appController.activeAiProviderKind === "CLOUD" ? appController.aiTextModel : "" }
+                                                    TextField { id: cloudAiVisionModel; Layout.fillWidth: true; placeholderText: "Vision model (optional)"
+                                                        text: appController.activeAiProviderKind === "CLOUD" ? appController.aiVisionModel : "" }
                                                 }
                                                 TextField { id: cloudAiKey; Layout.fillWidth: true; placeholderText: "API key"; echoMode: TextInput.Password }
                                                 Button {

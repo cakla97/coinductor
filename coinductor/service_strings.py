@@ -531,6 +531,51 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "{action} is locked by your profile: automation level is Recommendations only. Switch it to Guarded automation in the setup wizard first.",
         "cs": "{action} je uzamčeno vaším profilem: úroveň automatizace je Pouze doporučení. Nejprve ji v průvodci nastavením přepněte na Zabezpečená automatizace.",
     },
+    # --- AI provider health check and model discovery ---
+    "aiph_missing_config": {"en": "Missing config: {path}", "cs": "Chybí konfigurace: {path}"},
+    "aiph_no_base_url": {"en": "{key} is not set.", "cs": "{key} není nastaveno."},
+    "aiph_no_model": {"en": "{key} is not set.", "cs": "{key} není nastaveno."},
+    "aiph_vision_not_capable": {
+        "en": "Configured vision model {model} is not recognized as vision-capable.",
+        "cs": "Nastavený vision model {model} není rozpoznán jako model s podporou obrázků.",
+    },
+    "aiph_endpoint_failed": {
+        "en": "AI endpoint check failed: {reason}",
+        "cs": "Kontrola AI endpointu selhala: {reason}",
+    },
+    "aiph_text_model_missing": {
+        "en": "Endpoint reachable, but text model {model} was not reported by /models.",
+        "cs": "Endpoint je dostupný, ale textový model {model} nebyl v /models nahlášen.",
+    },
+    "aiph_vision_model_missing": {
+        "en": "Text model ready, but vision model {model} was not reported by /models.",
+        "cs": "Textový model je připraven, ale vision model {model} nebyl v /models nahlášen.",
+    },
+    "aiph_vision_ready": {"en": " Vision model ready: {model}.", "cs": " Vision model připraven: {model}."},
+    "aiph_vision_absent": {
+        "en": " Vision model is optional and not configured.",
+        "cs": " Vision model je volitelný a není nastaven.",
+    },
+    "aiph_ok": {
+        "en": "Endpoint reachable; {count} model(s) reported. Text model ready: {model}.{vision}",
+        "cs": "Endpoint je dostupný; nahlášeno {count} model(ů). Textový model připraven: {model}.{vision}",
+    },
+    "aidisc_no_url": {
+        "en": "Enter the endpoint URL before detecting models.",
+        "cs": "Před detekcí modelů zadejte URL endpointu.",
+    },
+    "aidisc_unreachable": {
+        "en": "Could not reach {url}: {reason}",
+        "cs": "Nepodařilo se kontaktovat {url}: {reason}",
+    },
+    "aidisc_no_models": {
+        "en": "{url} responded, but reported no installed models.",
+        "cs": "{url} odpovědělo, ale nenahlásilo žádné nainstalované modely.",
+    },
+    "aidisc_ok": {
+        "en": "{count} model(s) reported by {url}.",
+        "cs": "{url} nahlásilo {count} model(ů).",
+    },
     "spot_trades_locked_by_profile": {
         "en": "Guarded spot trades are switched off in your profile, so Coinductor will not submit this buy. Enable them in the setup wizard if you want it to.",
         "cs": "Zabezpečené spotové obchody máte v profilu vypnuté, takže Coinductor tento nákup neodešle. Pokud chcete, zapněte je v průvodci nastavením.",

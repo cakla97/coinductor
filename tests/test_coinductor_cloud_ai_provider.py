@@ -190,3 +190,27 @@ def test_switching_to_a_local_provider_clears_the_cloud_api_key(tmp_path, monkey
 
     assert os.environ.get("LLM_API_KEY") is None, "key still exported to the process"
     assert "LLM_API_KEY" not in env_file.read_text(encoding="utf-8"), "key still in .env"
+
+
+@pytest.mark.parametrize(
+    ("base_url", "kind"),
+    [
+        ("", "NONE"),
+        ("http://127.0.0.1:11434/v1", "LOCAL"),
+        ("http://localhost:11434/v1", "LOCAL"),
+        ("https://api.openai.com/v1", "CLOUD"),
+        ("http://192.168.0.5:11434/v1", "CLOUD"),
+    ],
+)
+def test_provider_kind_drives_the_active_panel_badge(base_url, kind) -> None:
+    from coinductor.ai_provider import provider_kind
+
+    assert provider_kind(base_url) == kind
+
+
+def test_openai_reasoning_models_count_as_vision_capable() -> None:
+    for model in ("o3", "o4-mini", "o3-pro", "gpt-4-turbo"):
+        assert supports_vision_model(model), model
+    # A bare "o3"/"o4" substring must not match unrelated names.
+    for model in ("o3-custom-text", "llama3.3", "nomic-embed", "qwen3:14b"):
+        assert not supports_vision_model(model), model

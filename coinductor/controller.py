@@ -10,7 +10,7 @@ from PySide6.QtGui import QDesktopServices, QGuiApplication, QImageReader
 from trading_agent.config import default_config_path, load_config
 from trading_agent.storage import Storage
 
-from .ai_provider import AiProviderService
+from .ai_provider import AiProviderService, provider_kind
 from .app_tour_service import AppTourService
 from .assistant import AssistantResponse
 from .assistant_history import AssistantHistoryStore
@@ -701,6 +701,11 @@ class AppController(QObject):
     @Property(str, notify=aiProviderChanged)
     def aiProviderBaseUrl(self) -> str:
         return self._ai_provider_snapshot.base_url
+
+    @Property(str, notify=aiProviderChanged)
+    def activeAiProviderKind(self) -> str:
+        """LOCAL, CLOUD or NONE. Untranslated: QML compares it."""
+        return provider_kind(self._ai_provider_snapshot.base_url)
 
     @Property(str, notify=aiProviderChanged)
     def aiTextModel(self) -> str:

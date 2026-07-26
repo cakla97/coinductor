@@ -6,7 +6,6 @@ import mimetypes
 import os
 import re
 import unicodedata
-import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,7 +14,7 @@ from urllib.parse import urlparse
 from trading_agent.binance_client import BinanceApiError, BinanceClient
 from trading_agent.config import default_config_path, load_config
 
-from .ai_provider import AiProviderService
+from .ai_provider import AiProviderService, _describe_provider_error  # noqa: F401
 from .guide_service import GuideService
 from .models import DesktopSnapshot
 from .secret_store import load_secrets
@@ -886,54 +885,6 @@ def _extract_provider_answer(content: object) -> str:
                 return value.strip()
         return ""
     return cleaned
-
-
-def _describe_provider_error(exc: Exception, *, czech: bool) -> str:
-    if isinstance(exc, RuntimeError):
-        return str(exc)
-    # HTTPError subclasses OSError, so it has to be handled first. With a cloud
-    # provider the usual failure is a rejected key, and reporting that as
-    # "connection failed" would send the user chasing their network instead.
-    if isinstance(exc, urllib.error.HTTPError):
-        hint = _HTTP_HINTS.get(exc.code)
-        detail = f" {hint[czech]}" if hint else ""
-        return (
-            f"poskytovatel AI odpověděl HTTP {exc.code}.{detail}"
-            if czech
-            else f"the AI provider returned HTTP {exc.code}.{detail}"
-        )
-    if isinstance(exc, OSError):
-        return (
-            "AI endpoint se nepodařilo kontaktovat (spojení selhalo nebo vypršel časový limit)."
-            if czech
-            else "the AI endpoint could not be reached (connection failed or timed out)."
-        )
-    return (
-        f"neočekávaná chyba ({type(exc).__name__})."
-        if czech
-        else f"unexpected error ({type(exc).__name__})."
-    )
-
-
-# (Czech, English) hints for the statuses a cloud provider actually returns.
-_HTTP_HINTS: dict[int, dict[bool, str]] = {
-    401: {
-        True: "Klíč API byl odmítnut - zkontrolujte LLM_API_KEY.",
-        False: "The API key was rejected - check LLM_API_KEY.",
-    },
-    403: {
-        True: "Přístup zamítnut - klíč nemá oprávnění k tomuto modelu.",
-        False: "Access denied - the key is not allowed to use this model.",
-    },
-    404: {
-        True: "Endpoint nebo model neexistuje - zkontrolujte LLM_BASE_URL a LLM_MODEL.",
-        False: "Endpoint or model not found - check LLM_BASE_URL and LLM_MODEL.",
-    },
-    429: {
-        True: "Vyčerpán limit požadavků nebo kredit - zkuste to za chvíli.",
-        False: "Rate limit or quota reached - try again shortly.",
-    },
-}
 
 
 def _is_local_endpoint(base_url: str) -> bool:

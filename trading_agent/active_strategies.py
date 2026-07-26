@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
@@ -183,6 +183,6 @@ class ActiveStrategiesTracker:
         except ValueError:
             return None
         if created.tzinfo is None:
-            created = created.replace(tzinfo=timezone.utc)
-        seconds = (datetime.now(timezone.utc) - created.astimezone(timezone.utc)).total_seconds()
+            created = created.replace(tzinfo=UTC)
+        seconds = (datetime.now(UTC) - created.astimezone(UTC)).total_seconds()
         return max(Decimal("0"), Decimal(str(seconds)) / Decimal("86400"))

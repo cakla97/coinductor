@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 import tomllib
 
@@ -57,7 +57,7 @@ class AssetPolicyStore:
                 [
                     f"[overrides.{asset}]",
                     f'role = "{overrides[asset]}"',
-                    f'updated_at = "{datetime.now(timezone.utc).isoformat()}"',
+                    f'updated_at = "{datetime.now(UTC).isoformat()}"',
                     "",
                 ]
             )

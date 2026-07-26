@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from decimal import Decimal
 from pathlib import Path
 
@@ -170,10 +170,10 @@ class StrategyRegistrationService:
 
     def _created_at(self, value: str) -> str:
         if not value.strip():
-            return datetime.now(timezone.utc).isoformat(timespec="seconds")
+            return datetime.now(UTC).isoformat(timespec="seconds")
         parsed = datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
         if parsed.tzinfo is None:
-            parsed = parsed.replace(tzinfo=timezone.utc)
+            parsed = parsed.replace(tzinfo=UTC)
         return parsed.isoformat(timespec="seconds")
 
     def _friendly_error(self, error: Exception) -> str:

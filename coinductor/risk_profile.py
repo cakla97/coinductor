@@ -16,7 +16,6 @@ alone, which is what the Active description promises.
 from __future__ import annotations
 
 from pathlib import Path
-import re
 
 # require_price_above_ema200 is intentionally absent: it stays as configured at
 # every level, because it is the main protection against buying into a downtrend.

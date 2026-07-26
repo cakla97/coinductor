@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 import platform
 import sqlite3
@@ -36,7 +36,7 @@ class DiagnosticsService:
         lines: list[str] = []
         lines.append("Coinductor diagnostics bundle")
         lines.append("This report contains no API keys, secrets, balances, or holdings.")
-        lines.append(f"Generated: {datetime.now(timezone.utc).isoformat(timespec='seconds')}")
+        lines.append(f"Generated: {datetime.now(UTC).isoformat(timespec='seconds')}")
         lines.append("")
         self._system_section(lines)
         self._setup_section(lines)
@@ -48,7 +48,7 @@ class DiagnosticsService:
     def write_bundle(self, directory: str | Path = "outputs/diagnostics") -> Path:
         target_dir = Path(directory)
         target_dir.mkdir(parents=True, exist_ok=True)
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
         path = target_dir / f"coinductor-diagnostics-{stamp}.txt"
         path.write_text(self.generate_report(), encoding="utf-8")
         return path

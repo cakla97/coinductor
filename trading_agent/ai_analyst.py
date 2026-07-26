@@ -402,8 +402,6 @@ class AiAnalyst:
     ) -> TradeProposal:
         ai_config = self.config["ai"]
         base_url = os.getenv(ai_config["base_url_env"], "").rstrip("/")
-        api_key = os.getenv(ai_config["api_key_env"], "")
-        model = os.getenv(ai_config["model_env"], "qwen3:14b")
         if not base_url:
             return self._mock_proposal(snapshots)
 

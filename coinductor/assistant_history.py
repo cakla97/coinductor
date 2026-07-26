@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 import json
 from pathlib import Path
 
@@ -53,7 +53,7 @@ class AssistantHistoryStore:
                 "id": conversation_id,
                 "title": _truncate(first_user, 72),
                 "contextPage": context_page,
-                "updatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "updatedAt": datetime.now(UTC).isoformat(timespec="seconds"),
                 "messages": normalized,
             },
         )

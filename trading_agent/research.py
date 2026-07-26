@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from pathlib import Path
 from decimal import Decimal, ROUND_HALF_UP
 import json
@@ -98,7 +98,7 @@ class ResearchLoader:
         if not files:
             return None
         latest = max(path.stat().st_mtime for path in files)
-        age_seconds = datetime.now(timezone.utc).timestamp() - latest
+        age_seconds = datetime.now(UTC).timestamp() - latest
         return (Decimal(str(age_seconds)) / Decimal("3600")).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     def _notes_count(self, notes_dir: Path) -> int:

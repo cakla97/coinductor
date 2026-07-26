@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluationReport, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
+from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, DustConversionPlan, EarnRedeemPlan, ExecutionChecklistItem, GridRecommendation, LiquidityDecision, LiveExitPreviewReport, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancePlan, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluationReport, StrategyDecision, TestnetExecutionReport, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 
 class Reporter:

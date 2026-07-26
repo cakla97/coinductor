@@ -771,6 +771,19 @@ class AppController(QObject):
     def setupChecks(self) -> list[dict[str, str]]:
         return list(self._setup_snapshot.checks)
 
+    @Property(bool, notify=setupChanged)
+    def binanceReadOnlyConfigured(self) -> bool:
+        """Whether read-only credentials exist, regardless of this session's check.
+
+        A check result is deliberately not persisted - it is a live proof, not a
+        stored claim - so after a restart nothing has been verified yet. That is
+        not a setup gap, so the Finish setup banner must not call it one.
+        """
+        return any(
+            check.get("code") == "BINANCE_READONLY" and check.get("status") == "PASS"
+            for check in self._setup_snapshot.checks
+        )
+
     @Property("QVariantList", constant=True)
     def privacyDataItems(self) -> list[dict[str, str]]:
         return [

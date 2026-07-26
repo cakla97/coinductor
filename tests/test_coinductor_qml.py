@@ -283,3 +283,24 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.wizardText.welcome_title" in qml
     assert "appController.setWizardLanguage(\"cs\")" in qml
     assert "appController.wizardLanguage" in qml
+
+
+def test_qml_never_compares_against_a_localized_status() -> None:
+    """Comparisons must use the untranslated *State properties.
+
+    The *Status properties are display labels: in Czech "Connected" reads
+    "Pripojeno", so `binanceConnectionStatus !== "Connected"` is true even when
+    connected. That silently left the Finish setup banner up and kept telling a
+    verified user to verify their live key.
+    """
+    qml = (Path(__file__).parents[1] / "coinductor" / "qml" / "Main.qml").read_text(encoding="utf-8")
+
+    localized = ("binanceConnectionStatus", "liveTradingCheckStatus", "testnetCheckStatus")
+    offenders = [
+        line.strip()
+        for line in qml.splitlines()
+        for name in localized
+        if f"appController.{name}" in line and ("===" in line or "!==" in line)
+    ]
+
+    assert not offenders, f"compare against the *State property instead: {offenders}"

@@ -183,7 +183,7 @@ ApplicationWindow {
         if (appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview)
             return appController.appText.safety_next_action_prepare_preview
         if ((appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED")
-                && appController.liveTradingCheckStatus !== "Verified")
+                && appController.liveTradingCheckState !== "Verified")
             return appController.appText.safety_next_action_verify_api
         if (appController.safetyStageCode === "PREVIEW_ONLY")
             return appController.appText.safety_next_action_arm
@@ -200,7 +200,7 @@ ApplicationWindow {
         } else if (appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview) {
             appController.prepareTradePreview()
         } else if ((appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED")
-                   && appController.liveTradingCheckStatus !== "Verified") {
+                   && appController.liveTradingCheckState !== "Verified") {
             appController.checkBinanceLiveTrading()
         } else if (appController.safetyStageCode === "PREVIEW_ONLY") {
             openSafetyStageConfirmation("ARMED", "Arm guarded actions")
@@ -1875,7 +1875,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredHeight: finishSetupBannerColumn.implicitHeight + 28
                     visible: appController.userProfileConfigured
-                        && (appController.binanceConnectionStatus !== "Connected" || appController.aiProviderBaseUrl.length === 0)
+                        && (!appController.binanceReadOnlyConfigured || appController.aiProviderBaseUrl.length === 0)
                     radius: radiusLg
                     color: warningSoft
                     border.color: warning
@@ -1889,7 +1889,7 @@ ApplicationWindow {
                         Text { text: appController.appText.overview_finish_setup_title; color: warning; font.pixelSize: 14; font.bold: true }
                         RowLayout {
                             Layout.fillWidth: true
-                            visible: appController.binanceConnectionStatus !== "Connected"
+                            visible: !appController.binanceReadOnlyConfigured
                             spacing: 12
                             Text {
                                 Layout.fillWidth: true
@@ -3460,7 +3460,7 @@ ApplicationWindow {
                                 ? appController.appText.prerequisite_analysis
                                 : appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview
                                     ? appController.appText.prerequisite_preview
-                                    : (appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED") && appController.liveTradingCheckStatus !== "Verified"
+                                    : (appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED") && appController.liveTradingCheckState !== "Verified"
                                         ? appController.appText.prerequisite_verify_api
                                         : appController.appText.prerequisite_all_available
                             color: warning

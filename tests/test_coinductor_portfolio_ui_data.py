@@ -1,3 +1,7 @@
+import pytest
+
+pytest.importorskip("PySide6")
+
 from coinductor.controller import _humanize_policy_label, _parse_money_value, _role_help
 
 

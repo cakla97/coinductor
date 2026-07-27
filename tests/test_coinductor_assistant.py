@@ -3,6 +3,10 @@ import json
 
 import pytest
 
+# Imports coinductor.controller below, which pulls in PySide6. CI runs one
+# Linux leg without the desktop extra to keep the engine honest.
+pytest.importorskip("PySide6")
+
 from coinductor import assistant as assistant_module
 from coinductor.assistant import (
     AssistantIntentService,

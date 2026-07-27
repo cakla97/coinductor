@@ -42,6 +42,10 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Run an AI provider check after configuring LLM_BASE_URL and LLM_MODEL.",
         "cs": "Po nastavení LLM_BASE_URL a LLM_MODEL spusťte kontrolu poskytovatele AI.",
     },
+    "hardware_scanning": {
+        "en": "Reading RAM and GPU from OS tools...",
+        "cs": "Zjišťuji RAM a GPU ze systémových nástrojů...",
+    },
     "hardware_not_scanned": {
         "en": "Hardware has not been scanned yet.",
         "cs": "Hardware zatím nebyl naskenován.",

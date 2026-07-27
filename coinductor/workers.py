@@ -166,6 +166,28 @@ class AiProviderHealthWorker(QObject):
             self.finished.emit()
 
 
+class LocalAiHardwareWorker(QObject):
+    """Reads RAM/GPU by shelling out to OS tools, which can take seconds.
+
+    On the GUI thread that froze the whole window until it returned.
+    """
+
+    completed = Signal(object)
+    failed = Signal(str)
+    finished = Signal()
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            from .local_ai_recommender import LocalAiRecommender  # noqa: PLC0415
+
+            self.completed.emit(LocalAiRecommender().inspect())
+        except Exception as exc:
+            self.failed.emit(str(exc))
+        finally:
+            self.finished.emit()
+
+
 class AiModelDiscoveryWorker(QObject):
     completed = Signal(object)
     failed = Signal(str)

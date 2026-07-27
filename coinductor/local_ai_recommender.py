@@ -84,6 +84,11 @@ class LocalAiRecommender:
         ]
 
 
+
+# A packaged build has no console, so every subprocess.run here would flash a
+# black window on screen. CREATE_NO_WINDOW exists only on Windows.
+_NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
 def _system_ram_gb() -> float:
     if platform.system().lower() == "windows":
         class MemoryStatusEx(ctypes.Structure):
@@ -129,6 +134,7 @@ def _nvidia_gpu() -> tuple[str, float]:
             capture_output=True,
             text=True,
             timeout=5,
+            creationflags=_NO_WINDOW,
         )
     except (OSError, subprocess.SubprocessError):
         return "", 0.0
@@ -154,6 +160,7 @@ def _rocm_gpu() -> tuple[str, float]:
             capture_output=True,
             text=True,
             timeout=8,
+            creationflags=_NO_WINDOW,
         )
     except (OSError, subprocess.SubprocessError):
         return "", 0.0
@@ -192,6 +199,7 @@ def _windows_video_controller() -> tuple[str, float]:
             capture_output=True,
             text=True,
             timeout=8,
+            creationflags=_NO_WINDOW,
         )
     except (OSError, subprocess.SubprocessError):
         return "", 0.0

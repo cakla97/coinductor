@@ -20,7 +20,6 @@ from .first_portfolio_planner import FirstPortfolioPlanner
 from .diagnostics_service import DiagnosticsService
 from .guide_service import GuideService
 from .local_data_reset import LocalDataResetService
-from .local_ai_recommender import LocalAiRecommender
 from .paths import data_dir_label
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions, SafetySnapshot
 from .readiness_service import ReadinessService
@@ -45,6 +44,7 @@ from .workers import (
     ConnectionCheckWorker,
     FirstPortfolioTrancheWorker,
     LiveTradingCheckWorker,
+    LocalAiHardwareWorker,
     TestnetCheckWorker,
 )
 
@@ -247,6 +247,9 @@ class AppController(QObject):
         self._first_portfolio_tranche_worker: FirstPortfolioTrancheWorker | None = None
         self._ai_provider_thread: QThread | None = None
         self._ai_provider_worker: AiProviderHealthWorker | None = None
+        self._scanning_hardware = False
+        self._hardware_thread: QThread | None = None
+        self._hardware_worker: LocalAiHardwareWorker | None = None
         self._ai_model_discovery_thread: QThread | None = None
         self._ai_model_discovery_worker: AiModelDiscoveryWorker | None = None
         self._assistant_thread: QThread | None = None
@@ -724,6 +727,10 @@ class AppController(QObject):
     @Property(str, notify=aiProviderChanged)
     def aiVisionModel(self) -> str:
         return self._ai_provider_snapshot.vision_model
+
+    @Property(bool, notify=localAiRecommendationChanged)
+    def scanningLocalAiHardware(self) -> bool:
+        return self._scanning_hardware
 
     @Property(bool, notify=aiProviderChanged)
     def checkingAiProvider(self) -> bool:
@@ -1212,12 +1219,33 @@ class AppController(QObject):
 
     @Slot()
     def scanLocalAiHardware(self) -> None:
-        snapshot = LocalAiRecommender().inspect()
+        if self._scanning_hardware:
+            return
+        self._scanning_hardware = True
+        self._local_ai_hardware_summary = service_text("hardware_scanning", self._wizard_language)
+        self.localAiRecommendationChanged.emit()
+
+        self._hardware_worker = LocalAiHardwareWorker()
+        self._hardware_worker.completed.connect(self._on_hardware_scan_completed)
+        self._hardware_worker.failed.connect(self._on_hardware_scan_failed)
+        self._hardware_thread = self._start_worker(self._hardware_worker, self._clear_hardware_worker)
+
+    def _on_hardware_scan_completed(self, snapshot) -> None:
         self._local_ai_hardware_summary = snapshot.summary
         self._local_ai_model_recommendations = [
             {"model": item.model, "fit": item.fit, "reason": item.reason, "purpose": item.purpose}
             for item in snapshot.recommendations
         ]
+        self.localAiRecommendationChanged.emit()
+
+    def _on_hardware_scan_failed(self, message: str) -> None:
+        self._local_ai_hardware_summary = message
+        self.localAiRecommendationChanged.emit()
+
+    def _clear_hardware_worker(self) -> None:
+        self._scanning_hardware = False
+        self._hardware_thread = None
+        self._hardware_worker = None
         self.localAiRecommendationChanged.emit()
 
     @Slot(str)

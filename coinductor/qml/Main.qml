@@ -1092,7 +1092,12 @@ ApplicationWindow {
                                                         }
                                                     }
                                                     Button {
-                                                        text: "Scan hardware"
+                                                        // The scan shells out to OS tools and can take
+                                                        // seconds; say so instead of looking frozen.
+                                                        text: appController.scanningLocalAiHardware
+                                                            ? appController.wizardText.checking_status
+                                                            : "Scan hardware"
+                                                        enabled: !appController.scanningLocalAiHardware
                                                         onClicked: appController.scanLocalAiHardware()
                                                     }
                                                     Button {

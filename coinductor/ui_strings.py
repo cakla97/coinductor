@@ -804,6 +804,10 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Prepare trade preview",
         "cs": "Připravit náhled obchodu",
     },
+    "safety_next_action_add_live_key": {
+        "en": "Add live trading key",
+        "cs": "Přidat klíč pro živé obchodování",
+    },
     "safety_next_action_verify_api": {
         "en": "Verify live API permissions",
         "cs": "Ověřit oprávnění live API",

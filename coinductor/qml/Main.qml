@@ -180,11 +180,19 @@ ApplicationWindow {
     function safetyNextActionLabel() {
         if (appController.safetyStageCode === "SETUP")
             return appController.hasCompletedRealAnalysis ? appController.appText.safety_next_action_enable_preview : appController.appText.safety_next_action_run_analysis
-        if (appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview)
-            return appController.appText.safety_next_action_prepare_preview
+        // Key setup comes first because it does not depend on the market. A
+        // ready preview needs the analysis to return something tradable, so on
+        // a HOLD day this step never completes - and asking for it first left
+        // the recommended action re-running the same analysis forever with no
+        // other progress available.
+        if ((appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED")
+                && appController.liveTradingKeyStatus !== "PASS")
+            return appController.appText.safety_next_action_add_live_key
         if ((appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED")
                 && appController.liveTradingCheckState !== "Verified")
             return appController.appText.safety_next_action_verify_api
+        if (appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview)
+            return appController.appText.safety_next_action_prepare_preview
         if (appController.safetyStageCode === "PREVIEW_ONLY")
             return appController.appText.safety_next_action_arm
         if (appController.safetyStageCode === "ARMED")
@@ -197,11 +205,14 @@ ApplicationWindow {
             runDialog.open()
         } else if (appController.safetyStageCode === "SETUP") {
             openSafetyStageConfirmation("PREVIEW_ONLY", "Enable mainnet preview")
-        } else if (appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview) {
-            appController.prepareTradePreview()
+        } else if ((appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED")
+                   && appController.liveTradingKeyStatus !== "PASS") {
+            liveApiManagerDialog.open()
         } else if ((appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED")
                    && appController.liveTradingCheckState !== "Verified") {
             appController.checkBinanceLiveTrading()
+        } else if (appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview) {
+            appController.prepareTradePreview()
         } else if (appController.safetyStageCode === "PREVIEW_ONLY") {
             openSafetyStageConfirmation("ARMED", "Arm guarded actions")
         } else if (appController.safetyStageCode === "ARMED") {

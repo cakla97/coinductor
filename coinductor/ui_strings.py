@@ -685,16 +685,16 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Centrum zabezpečených akcí",
     },
     "guarded_action_center_description": {
-        "en": "Choose what kind of output you want. Coinductor runs the required analysis, then opens Action Plan with an updated summary.",
-        "cs": "Vyberte, jaký výstup chcete. Coinductor spustí potřebnou analýzu a poté otevře Action Plan s aktualizovaným shrnutím.",
+        "en": "All three run the same full analysis and fill the whole Action Plan - trade, Grid and Rebalancing. They differ only in whether a mainnet preview is prepared as well.",
+        "cs": "Všechny tři spustí tu samou úplnou analýzu a naplní celý Action Plan - obchod, Grid i Rebalancing. Liší se jen tím, zda se navíc připraví mainnet náhled.",
     },
     "trade_preview_title": {
         "en": "Trade preview",
         "cs": "Náhled obchodu",
     },
     "trade_preview_description": {
-        "en": "Prepare a guarded trade recommendation and open Action Plan with the latest decision.",
-        "cs": "Připravte zabezpečené obchodní doporučení a otevřete Action Plan s posledním rozhodnutím.",
+        "en": "Full analysis plus a mainnet preview: the trade is validated against Binance without submitting anything.",
+        "cs": "Úplná analýza plus mainnet náhled: obchod se ověří proti Binance, aniž by se cokoli odeslalo.",
     },
     "prepare_trade_preview_button": {
         "en": "Prepare trade preview",
@@ -705,8 +705,8 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Plán bota",
     },
     "bot_plan_description": {
-        "en": "Refresh Grid and Rebalancing recommendations and open Action Plan with setup details.",
-        "cs": "Aktualizujte doporučení pro Grid a Rebalancing a otevřete Action Plan s detaily nastavení.",
+        "en": "Full analysis without the mainnet preview. Use this when you only want refreshed recommendations.",
+        "cs": "Úplná analýza bez mainnet náhledu. Použijte, když chcete jen aktualizovaná doporučení.",
     },
     "prepare_bot_plan_button": {
         "en": "Prepare bot plan",
@@ -717,8 +717,8 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Vlastní analýza",
     },
     "custom_analysis_description": {
-        "en": "Open the same configurable run dialog used by Overview when you want custom parameters.",
-        "cs": "Otevřete stejné konfigurovatelné dialogové okno pro spuštění jako na Overview, pokud chcete vlastní parametry.",
+        "en": "The same analysis with the run dialog, so you can set the data mode, AI options and preview yourself.",
+        "cs": "Tatáž analýza s dialogem spuštění, kde si sami zvolíte režim dat, možnosti AI a náhled.",
     },
     "open_run_dialog_button": {
         "en": "Open run dialog",

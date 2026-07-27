@@ -3567,11 +3567,20 @@ ApplicationWindow {
                                 font.pixelSize: 11
                                 font.bold: true
                             }
-                            Button {
-                                text: window.safetyNextActionLabel()
-                                highlighted: true
-                                enabled: !appController.busy && !appController.checkingLiveTrading
-                                onClicked: window.runSafetyNextAction()
+                            RowLayout {
+                                spacing: 8
+                                Button {
+                                    // This starts the same long analysis as the
+                                    // Guarded Action Center buttons, which do show
+                                    // progress; greying out alone read as a freeze.
+                                    text: appController.busy
+                                        ? appController.appText.running_status
+                                        : window.safetyNextActionLabel()
+                                    highlighted: true
+                                    enabled: !appController.busy && !appController.checkingLiveTrading
+                                    onClicked: window.runSafetyNextAction()
+                                }
+                                BusyDots { Layout.alignment: Qt.AlignVCenter; visible: appController.busy }
                             }
                         }
                         GridLayout {

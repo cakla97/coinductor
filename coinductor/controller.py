@@ -2503,15 +2503,21 @@ class AppController(QObject):
         if top_action and top_action not in trade_detail:
             trade_detail = f"{trade_detail} Next: {top_action}"
 
+        language = self._wizard_language
         trade_parameters = [
-            {"label": "Action", "value": trade_status},
-            {"label": "Symbol", "value": str(latest_trade.get("symbol", "") if latest_trade else "")},
-            {"label": "Confidence", "value": str(latest_trade.get("confidence", "") if latest_trade else "")},
-            {"label": "Quote amount", "value": str(latest_trade.get("quoteAmount", "") if latest_trade else "")},
+            {"label": service_text("trade_param_action", language), "value": trade_status},
+            {"label": service_text("trade_param_symbol", language),
+             "value": str(latest_trade.get("symbol", "") if latest_trade else "")},
+            {"label": service_text("trade_param_confidence", language),
+             "value": str(latest_trade.get("confidence", "") if latest_trade else "")},
+            {"label": service_text("trade_param_quote", language),
+             "value": str(latest_trade.get("quoteAmount", "") if latest_trade else "")},
         ]
         if run_decision and run_decision != trade_status:
             # Keep it visible, but named for what it is.
-            trade_parameters.append({"label": "Run decision", "value": run_decision})
+            trade_parameters.append(
+                {"label": service_text("trade_param_run_decision", language), "value": run_decision}
+            )
         if latest_trade and latest_trade.get("reason"):
             trade_detail = str(latest_trade["reason"])
         trade_can_submit = trade_tone == "ready" and trade_action == "BUY"

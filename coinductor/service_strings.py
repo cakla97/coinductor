@@ -539,6 +539,12 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "{action} is locked by your profile: automation level is Recommendations only. Switch it to Guarded automation in the setup wizard first.",
         "cs": "{action} je uzamčeno vaším profilem: úroveň automatizace je Pouze doporučení. Nejprve ji v průvodci nastavením přepněte na Zabezpečená automatizace.",
     },
+    # --- Action Plan trade card ---
+    "trade_param_action": {"en": "Action", "cs": "Akce"},
+    "trade_param_symbol": {"en": "Symbol", "cs": "Symbol"},
+    "trade_param_confidence": {"en": "Confidence", "cs": "Jistota"},
+    "trade_param_quote": {"en": "Quote amount", "cs": "Objem v kotaci"},
+    "trade_param_run_decision": {"en": "Run decision", "cs": "Rozhodnutí běhu"},
     # --- Privacy & data (Settings) ---
     "privacy_binance_name": {"en": "Binance account data", "cs": "Data účtu Binance"},
     "privacy_binance_value": {"en": "Read when you run checks", "cs": "Čtena při spuštění kontrol"},

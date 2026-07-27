@@ -25,6 +25,18 @@ This is the part worth reading before installing anything that touches an exchan
   [the invariant](#the-invariant) below.
 - **It is not a 24/7 bot.** It runs when you open it and press a button.
 
+## Platform support
+
+| | Status |
+| --- | --- |
+| **Windows 10/11 (64-bit)** — installer or portable ZIP | Supported. This is the shipping platform. |
+| **Engine and CLI** (`trading_agent`) on Linux / macOS | Works. Pure Python 3.11+, and CI runs the full suite on Linux every push. |
+| **Desktop app** on Linux / macOS, from source | Untested. PySide6 is cross-platform so it may well run, but nothing here has been verified there and no packaged build exists. |
+
+Two things to expect if you try the desktop app off Windows: there is no installer, and
+without an OS credential store (Secret Service, Keychain) your API keys fall back to a
+plaintext `.env`. The app tells you which one is in use under *Settings → Privacy & data*.
+
 ## Install
 
 Windows 10/11, 64-bit. No Python needed for the packaged builds.

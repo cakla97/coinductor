@@ -1373,9 +1373,12 @@ class AppController(QObject):
         if normalized_target == "PREVIEW_ONLY" and self._snapshot.latest_run is None:
             self.notificationRequested.emit("Complete a real read-only analysis before enabling mainnet preview.")
             return
-        if normalized_target == "ARMED" and not self._snapshot.has_ready_live_preview:
-            self.notificationRequested.emit("Review at least one PREVIEW_READY live trade result before arming guarded actions.")
-            return
+        # Arming deliberately does not require a past PREVIEW_READY result. It
+        # protected nothing: LivePreview only submits when the preview it
+        # computes in that same run comes back PREVIEW_READY, validated against
+        # Binance, so a historical one adds no guarantee. What it did do was tie
+        # setup to market direction - on a HOLD day no preview is ever ready, so
+        # a user could not reach ARMED at all, for weeks.
         self._safety_service.automation_allows_submit = self._automation_allows_submit()
         try:
             self._safety_snapshot = self._safety_service.transition(

@@ -780,6 +780,10 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Next prerequisite: prepare and review a ready trade preview. Hold and blocked results do not unlock arming.",
         "cs": "Další předpoklad: připravit a zkontrolovat připravený náhled obchodu. Výsledky HOLD a blocked odjištění neodemknou.",
     },
+    "prerequisite_live_key": {
+        "en": "Next prerequisite: add a live trading key and verify its permissions.",
+        "cs": "Další předpoklad: přidejte klíč pro živé obchodování a ověřte jeho oprávnění.",
+    },
     "prerequisite_verify_api": {
         "en": "Next prerequisite: verify the live API permissions for this app session.",
         "cs": "Další předpoklad: ověřit oprávnění live API pro tuto relaci aplikace.",

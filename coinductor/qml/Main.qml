@@ -191,8 +191,8 @@ ApplicationWindow {
         if ((appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED")
                 && appController.liveTradingCheckState !== "Verified")
             return appController.appText.safety_next_action_verify_api
-        if (appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview)
-            return appController.appText.safety_next_action_prepare_preview
+        if (appController.safetyStageCode === "PREVIEW_ONLY")
+            return appController.appText.safety_next_action_arm
         if (appController.safetyStageCode === "PREVIEW_ONLY")
             return appController.appText.safety_next_action_arm
         if (appController.safetyStageCode === "ARMED")
@@ -211,8 +211,8 @@ ApplicationWindow {
         } else if ((appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED")
                    && appController.liveTradingCheckState !== "Verified") {
             appController.checkBinanceLiveTrading()
-        } else if (appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview) {
-            appController.prepareTradePreview()
+        } else if (appController.safetyStageCode === "PREVIEW_ONLY") {
+            openSafetyStageConfirmation("ARMED", "Arm guarded actions")
         } else if (appController.safetyStageCode === "PREVIEW_ONLY") {
             openSafetyStageConfirmation("ARMED", "Arm guarded actions")
         } else if (appController.safetyStageCode === "ARMED") {
@@ -2026,9 +2026,7 @@ ApplicationWindow {
                                         ? appController.hasCompletedRealAnalysis
                                             ? appController.appText.overview_safety_setup_with_analysis
                                             : appController.appText.overview_safety_setup_no_analysis
-                                        : appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview
-                                            ? appController.appText.overview_safety_preview_waiting
-                                            : appController.safetyDetail
+                                        : appController.safetyDetail
                                     color: textSecondary
                                     font.pixelSize: 12
                                     wrapMode: Text.WordWrap
@@ -3559,8 +3557,8 @@ ApplicationWindow {
                             Layout.fillWidth: true
                             text: appController.safetyStageCode === "SETUP" && !appController.hasCompletedRealAnalysis
                                 ? appController.appText.prerequisite_analysis
-                                : appController.safetyStageCode === "PREVIEW_ONLY" && !appController.hasReadyLivePreview
-                                    ? appController.appText.prerequisite_preview
+                                : (appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED") && appController.liveTradingKeyStatus !== "PASS"
+                                    ? appController.appText.prerequisite_live_key
                                     : (appController.safetyStageCode === "PREVIEW_ONLY" || appController.safetyStageCode === "ARMED") && appController.liveTradingCheckState !== "Verified"
                                         ? appController.appText.prerequisite_verify_api
                                         : appController.appText.prerequisite_all_available
@@ -3634,7 +3632,6 @@ ApplicationWindow {
                             Button {
                                 text: appController.appText.safety_arm_button
                                 enabled: appController.safetyStageCode === "PREVIEW_ONLY"
-                                    && appController.hasReadyLivePreview
                                     && appController.liveTradingCheckState === "Verified"
                                 onClicked: window.openSafetyStageConfirmation("ARMED", "Arm guarded actions")
                             }

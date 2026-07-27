@@ -102,7 +102,11 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.lockLiveSubmit" in qml
     assert "appController.appText.overview_safety_title" in qml
     assert "appController.hasCompletedRealAnalysis" in qml
-    assert "appController.hasReadyLivePreview" in qml
+    # Arming deliberately no longer waits for a PREVIEW_READY result: the
+    # engine only submits when the preview it computes in that same run is
+    # ready, so a historical one guaranteed nothing while making setup
+    # impossible on a HOLD day.
+    assert "appController.hasReadyLivePreview" not in qml
     assert "Layout.row: 2" in qml
     assert "Layout.row: 3" in qml
     assert "appController.appText.manage_live_api_dialog_title" in qml

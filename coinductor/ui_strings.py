@@ -635,6 +635,15 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "LIQUIDITY",
         "cs": "LIKVIDITA",
     },
+    "portfolio_empty_title": {
+        "en": "No portfolio loaded yet",
+        "cs": "Portfolio zatím není načtené",
+    },
+    "portfolio_empty_detail": {
+        "en": "Connecting a Binance key proves the app can read your account; it does not fetch anything by itself. This table shows the latest real analysis, so run one to populate it.",
+        "cs": "Připojením klíče k Binance se jen ověří, že aplikace umí číst váš účet; sama o sobě nic nestahuje. Tato tabulka ukazuje poslední skutečnou analýzu, takže ji naplníte jejím spuštěním.",
+    },
+    "portfolio_empty_action": {"en": "Run analysis", "cs": "Spustit analýzu"},
     "portfolio_col_source": {
         "en": "SOURCE",
         "cs": "ZDROJ",

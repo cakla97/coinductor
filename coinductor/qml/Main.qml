@@ -2270,9 +2270,50 @@ ApplicationWindow {
                     }
                 }
 
+                Rectangle {
+                    // Connecting a key proves access; it fetches nothing. The
+                    // table reads the latest real run, so before the first one
+                    // it is empty - which looked like a failure to load.
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: portfolioEmptyColumn.implicitHeight + 28
+                    visible: appController.portfolioAssets.length === 0
+                    radius: radiusSm
+                    color: panelRaised
+                    border.color: border
+                    ColumnLayout {
+                        id: portfolioEmptyColumn
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        spacing: 6
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.portfolio_empty_title
+                            color: textPrimary
+                            font.pixelSize: 13
+                            font.bold: true
+                            wrapMode: Text.WordWrap
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.portfolio_empty_detail
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                        Button {
+                            text: appController.appText.portfolio_empty_action
+                            onClicked: runDialog.open()
+                        }
+                    }
+                }
+
                 ListView {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: Math.max(420, contentHeight)
+                    Layout.preferredHeight: appController.portfolioAssets.length === 0 ? 0 : Math.max(420, contentHeight)
+                    visible: appController.portfolioAssets.length > 0
                     spacing: 6
                     model: appController.portfolioAssets
                     delegate: Rectangle {

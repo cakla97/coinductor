@@ -1,4 +1,6 @@
 import os
+import sys
+from types import SimpleNamespace
 
 from coinductor import secret_store as secret_store_module
 from coinductor.secret_store import MANAGED_KEYS, SECRET_KEYS, SecretStore
@@ -45,7 +47,14 @@ def test_disable_flag_keeps_the_real_keychain_out_of_tests(monkeypatch, tmp_path
     Without it a test run resolves the developer's real credentials, so results
     depend on machine state and a health check can reach a live endpoint.
     """
+    # Stand in for the keyring module so `import keyring` inside _keyring()
+    # succeeds regardless of the machine. CI's Linux legs install neither the
+    # desktop extra nor a Secret Service, so without this the assertions below
+    # would only be measuring what the runner happens to have installed.
+    monkeypatch.setitem(sys.modules, "keyring", SimpleNamespace(get_keyring=FakeKeyring))
+
     monkeypatch.setenv("COINDUCTOR_DISABLE_KEYCHAIN", "1")
+    # The flag has to win even though a usable backend is right there.
     assert secret_store_module._keyring() is None
 
     env = tmp_path / ".env"
@@ -55,15 +64,8 @@ def test_disable_flag_keeps_the_real_keychain_out_of_tests(monkeypatch, tmp_path
     assert store.get("BINANCE_API_KEY") == "only-from-env"
 
     monkeypatch.setenv("COINDUCTOR_DISABLE_KEYCHAIN", "0")
-    # "0" means enabled, so the flag cannot be left on by accident. What that
-    # then resolves to is the machine's business: a headless CI runner has no
-    # Secret Service, and _keyring() correctly degrades to None there. Assert
-    # against the platform's own answer so this checks our logic, not the OS.
-    import keyring
-
-    backend = keyring.get_keyring()
-    platform_has_one = backend is not None and "fail" not in type(backend).__module__.lower()
-    assert (secret_store_module._keyring() is not None) is platform_has_one
+    # "0" means enabled, so the flag cannot be left on by accident.
+    assert secret_store_module._keyring() is not None
 
 
 def test_keychain_value_wins_over_env_file(monkeypatch, tmp_path) -> None:

@@ -55,8 +55,15 @@ def test_disable_flag_keeps_the_real_keychain_out_of_tests(monkeypatch, tmp_path
     assert store.get("BINANCE_API_KEY") == "only-from-env"
 
     monkeypatch.setenv("COINDUCTOR_DISABLE_KEYCHAIN", "0")
-    # "0" means enabled, so the flag cannot be left on by accident.
-    assert secret_store_module._keyring() is not None
+    # "0" means enabled, so the flag cannot be left on by accident. What that
+    # then resolves to is the machine's business: a headless CI runner has no
+    # Secret Service, and _keyring() correctly degrades to None there. Assert
+    # against the platform's own answer so this checks our logic, not the OS.
+    import keyring
+
+    backend = keyring.get_keyring()
+    platform_has_one = backend is not None and "fail" not in type(backend).__module__.lower()
+    assert (secret_store_module._keyring() is not None) is platform_has_one
 
 
 def test_keychain_value_wins_over_env_file(monkeypatch, tmp_path) -> None:

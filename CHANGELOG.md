@@ -3,6 +3,32 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.1] — 2026-07-27
+
+Fixes found by installing 0.1.0 and using it as a new user would. 0.1.0 was
+never published; do not use it.
+
+### Fixed
+
+- **Connection checks could never pass on a fresh install.** Read-only, Testnet
+  and live checks all refused to run unless a `.env` file existed, then reported
+  "keys are not configured" - for keys sitting in Windows Credential Manager.
+  A packaged install has no `.env` at all. They now resolve credentials first
+  and report on what they actually found.
+- **An installed build analysed the example portfolio and presented it as a
+  result.** No `config.toml` was created, so the app fell back to the bundled
+  template, which ships `mock_data = true` so the repository runs offline. The
+  Action Plan therefore showed figures from a fixed sample portfolio while
+  Binance was not even connected. A real `config.toml` is now written on first
+  start, with `mock_data = false`, and the template is left untouched.
+- **Saving the decision profile edited the bundled template**, for the same
+  reason.
+- The test suite could reach the live Binance API: a throwaway `.env` written by
+  one test leaked into `os.environ` for every test after it. Credentials are now
+  cleared per test.
+- Two Qt test modules and one keychain test assumed a Windows machine, so the
+  suite could not run on Linux without the desktop extra.
+
 ## [0.1.0] — 2026-07-26
 
 First public release. Windows desktop app plus the headless engine and CLI.

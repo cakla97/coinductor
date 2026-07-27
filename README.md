@@ -1,14 +1,46 @@
 # Coinductor
 
-A local, offline-first portfolio assistant for Binance Spot. It reads your account,
-analyses it with deterministic rules, and explains what it would do — but it never
-places an order unless you have explicitly unlocked it and typed a confirmation.
+**Knowing *when* to act is the hard part of crypto. Coinductor works it out for you — and
+never acts without your say-so.**
 
 ![Coinductor setup wizard](docs/screenshot-wizard.png)
 
-Coinductor is a desktop app (Windows) with a headless Python engine underneath. Everything
-runs on your machine: your keys go to the operating system's credential store, your reports
-and history stay in a local SQLite file, and nothing is uploaded anywhere.
+Most people who want to hold crypto get stuck in the same place. Either they have never
+bought any and have no idea what a sensible first portfolio looks like, or they already
+hold a few coins and have no idea what to do next. Both end up doing nothing, or acting on
+a hunch at the worst possible moment.
+
+Coinductor is a desktop app that sits between those two. It reads your Binance account,
+runs a deterministic analysis over it, and tells you plainly what it would do and why —
+buy, hold, rebalance, set up a Grid bot, or nothing at all. You decide how far it goes:
+recommendations only, or guarded automation where it prepares the order and you confirm it.
+
+## Who it is for
+
+### Starting from zero
+
+Tell it your budget and how much risk you can live with. It proposes a first basket sized
+to that budget, in tranches rather than one nervous lump sum, and explains every allocation.
+From there the same analysis keeps running, so your first portfolio does not become a
+forgotten one.
+
+### Already holding
+
+It classifies what you own — core, stable, protected, dust — and looks for the next
+sensible move: rebalancing drift, a range worth running a Grid bot on, idle stablecoins that
+could be earning. Your protected assets stay protected; it will tell you it cannot fund
+something rather than quietly sell your BTC to do it.
+
+### If you do not trust your own timing
+
+That is the point. The decision to buy runs through a fixed set of checks — trend, EMA200,
+RSI band, loss limits, position caps — that do not change because the chart looks exciting.
+An AI model can propose; only deterministic code can approve. And nothing reaches your
+exchange account until you have unlocked it in stages and typed a confirmation for that
+specific action.
+
+Everything runs on your machine: keys in the operating system's credential store, history in
+a local SQLite file, nothing uploaded anywhere.
 
 ## What it will not do
 
@@ -61,7 +93,7 @@ Every release ships `SHA256SUMS.txt`. The binaries are **not code-signed** (see 
 the checksum is the only way to tell a genuine download from a tampered one:
 
 ```powershell
-Get-FileHash .\Coinductor-0.1.0-setup.exe -Algorithm SHA256
+Get-FileHash .\Coinductor-<version>-setup.exe -Algorithm SHA256
 ```
 
 Compare the result with the matching line in `SHA256SUMS.txt`.
@@ -76,6 +108,32 @@ To run it anyway: click **More info → Run anyway** on the SmartScreen dialog. 
 right-click it *before* extracting → **Properties** → tick **Unblock** → OK.
 
 Only do this if you trust the source. Check the SHA-256 first — that is what it is for.
+
+### If your antivirus blocks it
+
+Third-party antivirus reacts to the same thing SmartScreen does: an unsigned executable,
+freshly downloaded, that almost nobody else is running yet. Avast in particular has been
+observed to
+
+- refuse the installer with **"Unable to execute file in the temporary directory. Setup
+  aborted. Error 5"** — its CyberCapture holding the extracted setup stub, and
+- run the installed app and the uninstaller inside its **Autosandbox**, which makes the
+  install look like it finished while the app is nowhere to be found, and can leave an
+  uninstall only partly applied.
+
+Neither is a fault in the installer, and neither reports itself clearly. If any of it
+happens, add exclusions for the installer and the install folder:
+
+```text
+%USERPROFILE%\Downloads\Coinductor-<version>-setup.exe
+%LOCALAPPDATA%\Programs\Coinductor\
+```
+
+In Avast: *Menu → Settings → General → Exceptions*. Other products have an equivalent.
+Verify the SHA-256 before you exclude anything.
+
+Reporting the file to your vendor as a false positive helps everyone: once it is
+whitelisted, the next person does not have to do this at all.
 
 ### From source
 
@@ -102,8 +160,10 @@ account** — it only writes a local profile and shows what still needs verifyin
 
 Live trading stays locked until you deliberately walk the safety stages in **Live Actions**.
 
-Everything runs offline out of the box: `app.mock_data = true` serves a fixed example
-portfolio, so you can explore the whole app before giving it any key.
+An installed build starts with `app.mock_data = false`, so an analysis works on your real
+account or honestly fails - it will never present example figures as if they were yours. To
+explore the app before connecting anything, set `mock_data = true` in `config.toml`; that is
+also how the repository and the test suite run fully offline.
 
 `config.example.toml` is the tracked, neutral template. Copy it to `config.toml` (gitignored)
 and edit that; when a `config.toml` exists the CLI and the app both pick it up automatically.

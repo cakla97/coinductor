@@ -11,7 +11,7 @@
 ; code-signing certificate is added (out of scope for this step).
 
 #define AppName "Coinductor"
-#define AppVersion "0.1.1"
+#define AppVersion "0.1.2"
 #define AppPublisher "Coinductor"
 #define AppExeName "Coinductor.exe"
 
@@ -68,40 +68,131 @@ const
     'BINANCE_LIVE_TRADE_API_KEY,BINANCE_LIVE_TRADE_API_SECRET,' +
     'LLM_API_KEY,LLM_BASE_URL,LLM_MODEL,LLM_VISION_MODEL';
 
+var
+  DataCheckBox, KeysCheckBox: TNewCheckBox;
+  RemoveData, RemoveKeys: Boolean;
+
 procedure DeleteStoredCredentials();
 var
   Keys: TArrayOfString;
   ResultCode, I: Integer;
+  Command: String;
 begin
   Keys := StringSplit(ManagedKeys, [','], stExcludeEmpty);
+  // One shell invocation rather than eleven: fewer processes, and nothing to
+  // flicker on screen even if a shield blocks the hidden-window flag.
+  Command := '/C';
   for I := 0 to GetArrayLength(Keys) - 1 do
-    Exec(ExpandConstant('{cmd}'), '/C cmdkey /delete:' + Keys[I] + '@{#AppName}',
-         '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-  // keyring also writes one bare service-named entry.
-  Exec(ExpandConstant('{cmd}'), '/C cmdkey /delete:{#AppName}',
-       '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Command := Command + ' cmdkey /delete:' + Keys[I] + '@{#AppName} >nul 2>&1 &';
+  Command := Command + ' cmdkey /delete:{#AppName} >nul 2>&1';
+  Exec(ExpandConstant('{cmd}'), Command, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+// Asked once, up front, instead of a chain of Yes/No prompts where "No" read as
+// if it might cancel the whole uninstall. Nothing ticked removes the app only.
+function AskWhatElseToRemove(): Boolean;
+var
+  Form: TSetupForm;
+  Intro, Footer: TNewStaticText;
+  OkButton, KeepButton: TNewButton;
+begin
+  Form := CreateCustomForm(ScaleX(440), ScaleY(250), False, False);
+  try
+    Form.Caption := 'Uninstall {#AppName}';
+
+    Intro := TNewStaticText.Create(Form);
+    Intro.Parent := Form;
+    Intro.Left := ScaleX(16);
+    Intro.Top := ScaleY(16);
+    Intro.Width := Form.ClientWidth - ScaleX(32);
+    Intro.WordWrap := True;
+    Intro.AutoSize := True;
+    Intro.Caption :=
+      '{#AppName} will be removed.' + #13#10#13#10 +
+      'Tick anything you also want deleted. Leave both unticked to remove the' +
+      ' program only and keep everything else, for example if you plan to reinstall.';
+
+    DataCheckBox := TNewCheckBox.Create(Form);
+    DataCheckBox.Parent := Form;
+    DataCheckBox.Left := ScaleX(16);
+    DataCheckBox.Top := Intro.Top + Intro.Height + ScaleY(16);
+    DataCheckBox.Width := Form.ClientWidth - ScaleX(32);
+    DataCheckBox.Height := ScaleY(34);
+    DataCheckBox.Checked := False;
+    DataCheckBox.Caption :=
+      'Delete local data' + #13#10 +
+      ExpandConstant('{localappdata}\{#AppName}') +
+      ' - portfolio state, run history, reports, profile, config';
+
+    KeysCheckBox := TNewCheckBox.Create(Form);
+    KeysCheckBox.Parent := Form;
+    KeysCheckBox.Left := ScaleX(16);
+    KeysCheckBox.Top := DataCheckBox.Top + DataCheckBox.Height + ScaleY(10);
+    KeysCheckBox.Width := Form.ClientWidth - ScaleX(32);
+    KeysCheckBox.Height := ScaleY(34);
+    KeysCheckBox.Checked := False;
+    KeysCheckBox.Caption :=
+      'Delete API keys' + #13#10 +
+      'Your Binance and AI keys, from Windows Credential Manager';
+
+    Footer := TNewStaticText.Create(Form);
+    Footer.Parent := Form;
+    Footer.Left := ScaleX(16);
+    Footer.Top := KeysCheckBox.Top + KeysCheckBox.Height + ScaleY(10);
+    Footer.Width := Form.ClientWidth - ScaleX(32);
+    Footer.WordWrap := True;
+    Footer.AutoSize := True;
+    Footer.Caption :=
+      'Deleted API keys cannot be recovered here; Binance shows a secret only once.';
+
+    KeepButton := TNewButton.Create(Form);
+    KeepButton.Parent := Form;
+    KeepButton.Width := ScaleX(96);
+    KeepButton.Height := ScaleY(26);
+    KeepButton.Left := Form.ClientWidth - ScaleX(16) - KeepButton.Width;
+    KeepButton.Top := Form.ClientHeight - ScaleY(16) - KeepButton.Height;
+    KeepButton.Caption := 'Cancel';
+    KeepButton.ModalResult := mrCancel;
+    KeepButton.Cancel := True;
+
+    OkButton := TNewButton.Create(Form);
+    OkButton.Parent := Form;
+    OkButton.Width := ScaleX(96);
+    OkButton.Height := ScaleY(26);
+    OkButton.Left := KeepButton.Left - ScaleX(8) - OkButton.Width;
+    OkButton.Top := KeepButton.Top;
+    OkButton.Caption := 'Uninstall';
+    OkButton.ModalResult := mrOk;
+    OkButton.Default := True;
+
+    Form.FlipAndCenterIfNeeded(True, nil, False);
+    Result := Form.ShowModal = mrOk;
+    if Result then
+    begin
+      RemoveData := DataCheckBox.Checked;
+      RemoveKeys := KeysCheckBox.Checked;
+    end;
+  finally
+    Form.Free;
+  end;
+end;
+
+function InitializeUninstall(): Boolean;
+begin
+  RemoveData := False;
+  RemoveKeys := False;
+  if UninstallSilent then
+    Result := True
+  else
+    Result := AskWhatElseToRemove();
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
-var
-  DataDir: String;
 begin
   if CurUninstallStep <> usPostUninstall then
     Exit;
-  if UninstallSilent then
-    Exit;
-
-  DataDir := ExpandConstant('{localappdata}\{#AppName}');
-  if MsgBox(
-       'Also delete your Coinductor data and API keys?' + #13#10#13#10 +
-       'This removes:' + #13#10 +
-       '  - ' + DataDir + #13#10 +
-       '    (portfolio state, run history, reports, your profile and config)' + #13#10 +
-       '  - your Binance and AI keys from Windows Credential Manager' + #13#10#13#10 +
-       'Choose No to keep everything, for example if you plan to reinstall.',
-       mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
-  begin
-    DelTree(DataDir, True, True, True);
+  if RemoveData then
+    DelTree(ExpandConstant('{localappdata}\{#AppName}'), True, True, True);
+  if RemoveKeys then
     DeleteStoredCredentials();
-  end;
 end;

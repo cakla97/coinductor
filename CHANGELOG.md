@@ -3,6 +3,41 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.2] — 2026-07-27
+
+Found by installing 0.1.1 and walking it as a new user would.
+
+### Fixed
+
+- **The safety stages could not be reached at all on a quiet market.** Arming required a
+  past `PREVIEW_READY` live order, which only exists when the analysis returns something
+  tradable - so on a HOLD day a user could never progress to live, no matter what they did.
+  It guarded nothing: the engine submits only when the preview it computes in that same run
+  comes back ready, validated against Binance. Every real gate is unchanged.
+- **The guided next step had no way to add a live key.** It jumped straight to verifying
+  one, which without a key answers "not configured" and leaves the user to find the dialog
+  themselves. Key setup also no longer waits behind the market-dependent preview step.
+- **The Action Plan trade card showed the run's decision as the trade's verdict** - reading
+  `GRID_BOT_RECOMMENDATION` while Action said `HOLD`, colouring a plain HOLD as blocked, and
+  hiding the submit button for an approved BUY whenever a grid was recommended too.
+- **Scan hardware froze the window and flashed console windows.** It ran on the GUI thread
+  and shelled out without `CREATE_NO_WINDOW`.
+- **An empty Portfolio table looked like a failed load.** Connecting a key fetches nothing;
+  the table shows the latest real run. It now says so and offers the run.
+- The analysis button in Live Actions gave no sign it was working.
+- The Guarded Action Center implied three different jobs; all three run the same analysis
+  and differ only in whether a mainnet preview is prepared.
+- Trade card labels were hardcoded English in the Czech UI.
+
+### Changed
+
+- **The uninstaller asks once, up front, with checkboxes** for local data and API keys,
+  instead of a chain of Yes/No prompts where "No" read as if it might cancel the uninstall.
+  Nothing ticked removes the program only.
+- The README leads with what Coinductor is for, and documents third-party antivirus
+  behaviour - Avast blocking the installer or sandboxing it is a reputation signal for an
+  unsigned build, not a fault, and it does not explain itself.
+
 ## [0.1.1] — 2026-07-27
 
 Fixes found by installing 0.1.0 and using it as a new user would. 0.1.0 was

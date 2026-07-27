@@ -49,9 +49,9 @@ the folder accordingly.
 Switching the AI provider from cloud to local deletes the stored cloud API key, so it cannot
 be sent to a local endpoint.
 
-To remove keys: **Settings → Delete local data → API keys**, or accept the uninstaller's offer
-to delete them. Uninstalling *without* accepting leaves them in place deliberately, so an
-upgrade does not destroy your setup.
+To remove keys: **Settings → Delete local data → API keys**, or tick *Delete API keys* in
+the uninstaller. Leaving that box unticked keeps them deliberately, so an upgrade or a
+reinstall does not destroy your setup.
 
 ## What leaves your machine
 
@@ -83,6 +83,19 @@ published SHA-256 is what replaces it.
 
 If that trade-off is not acceptable for you, build from source; the process is in the README
 and needs only Python and `pip install -e ".[build]"`.
+
+## Antivirus false positives
+
+An unsigned, freshly published binary with no install base is exactly the profile
+heuristic scanners flag. Expect SmartScreen, and possibly a third-party product blocking
+the installer outright or running it sandboxed.
+
+That is a reputation signal, not a detection of anything in the code. Treat it the way you
+would treat any unsigned download: check the SHA-256 from `SHA256SUMS.txt` first, and only
+then add an exclusion. The README has the exact paths.
+
+If you believe a build genuinely is malicious rather than merely unsigned, please report it
+through the private advisory link above rather than opening an issue.
 
 ## Supported versions
 

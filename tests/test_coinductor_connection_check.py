@@ -99,3 +99,40 @@ def test_testnet_check_blocks_missing_env(tmp_path) -> None:
     # Keys may live in the OS keychain rather than a file, so the message names
     # the missing capability, not a filename the user may never have.
     assert "not configured" in result.detail
+
+
+def test_checks_find_credentials_in_the_keychain_without_a_dotenv(tmp_path, monkeypatch) -> None:
+    """Keys normally live in the OS keychain, so there is usually no .env.
+
+    All three checks used to refuse before even looking, reporting "keys are
+    not configured" for keys that were configured - which is exactly what a
+    fresh install looks like, and what deleting a migrated .env produces.
+    """
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    absent = tmp_path / ".env"
+    assert not absent.exists()
+
+    for name in ("BINANCE_API_KEY", "BINANCE_API_SECRET",
+                 "BINANCE_TESTNET_API_KEY", "BINANCE_TESTNET_API_SECRET",
+                 "BINANCE_LIVE_TRADE_API_KEY", "BINANCE_LIVE_TRADE_API_SECRET"):
+        monkeypatch.setenv(name, "resolved-from-keychain")
+
+    for service, method in (
+        (ConnectionCheckService, "check_binance_read_only"),
+        (TestnetCheckService, "check_binance_testnet"),
+    ):
+        result = getattr(service(tmp_path / "config.toml", absent), method)()
+        # It must get past the precondition and fail on the network instead.
+        assert "not configured" not in result.detail, f"{service.__name__}: {result.detail}"
+
+
+def test_checks_still_say_so_when_credentials_are_genuinely_absent(tmp_path, monkeypatch) -> None:
+    (tmp_path / "config.toml").write_text(VALID_CONFIG, encoding="utf-8")
+    monkeypatch.setenv("COINDUCTOR_DISABLE_KEYCHAIN", "1")
+    for name in ("BINANCE_API_KEY", "BINANCE_API_SECRET"):
+        monkeypatch.delenv(name, raising=False)
+
+    result = ConnectionCheckService(tmp_path / "config.toml", tmp_path / ".env").check_binance_read_only()
+
+    assert result.status == "BLOCK"
+    assert "not configured" in result.detail

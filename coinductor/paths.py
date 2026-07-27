@@ -55,6 +55,22 @@ def bootstrap_data_dir(data_dir: Path) -> None:
     (data_dir / "research" / "requests").mkdir(parents=True, exist_ok=True)
 
     template = _bundled_root() / "config.example.toml"
-    target = data_dir / "config.example.toml"
-    if not target.exists() and template.exists():
-        shutil.copy(template, target)
+    if not template.exists():
+        return
+
+    reference = data_dir / "config.example.toml"
+    if not reference.exists():
+        shutil.copy(template, reference)
+
+    # An installed build must get its own config.toml. Without one,
+    # default_config_path() falls back to the template - which ships
+    # mock_data = true so the repo and tests run offline - and the app would
+    # silently analyse the example portfolio and present it as a result.
+    # Writing config.toml also keeps the profile's style/limit writer off the
+    # template, which is meant to stay pristine.
+    config = data_dir / "config.toml"
+    if not config.exists():
+        text = template.read_text(encoding="utf-8").replace(
+            "mock_data = true", "mock_data = false", 1
+        )
+        config.write_text(text, encoding="utf-8")

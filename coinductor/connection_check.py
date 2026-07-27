@@ -10,6 +10,17 @@ from .secret_store import load_secrets
 from .service_strings import service_text
 
 
+def _configured(*names: str) -> bool:
+    """Whether these credentials resolved, wherever they are stored.
+
+    Call after load_secrets: keys normally live in the OS keychain, so the
+    presence of a .env file says nothing about whether they are configured.
+    """
+    import os  # noqa: PLC0415
+
+    return all(os.environ.get(name, "").strip() for name in names)
+
+
 class ConnectionCheckService:
     def __init__(
         self,
@@ -27,11 +38,11 @@ class ConnectionCheckService:
     def check_binance_read_only(self) -> ConnectionCheckResult:
         if not self.config_path.exists():
             return ConnectionCheckResult("BLOCK", self._t("conn_missing_config").format(path=self.config_path))
-        if not self.env_path.exists():
-            return ConnectionCheckResult("BLOCK", self._t("conn_missing_env_readonly"))
 
         try:
             load_secrets(self.env_path)
+            if not _configured("BINANCE_API_KEY", "BINANCE_API_SECRET"):
+                return ConnectionCheckResult("BLOCK", self._t("conn_missing_env_readonly"))
             config = load_config(self.config_path)
             BinanceClient(config.raw).assert_read_only_permissions()
         except BinanceApiError as exc:
@@ -59,11 +70,11 @@ class LiveTradingCheckService:
     def check_binance_live_trading(self) -> ConnectionCheckResult:
         if not self.config_path.exists():
             return ConnectionCheckResult("BLOCK", self._t("conn_missing_config").format(path=self.config_path))
-        if not self.env_path.exists():
-            return ConnectionCheckResult("BLOCK", self._t("conn_missing_env_live"))
 
         try:
             load_secrets(self.env_path)
+            if not _configured("BINANCE_LIVE_TRADE_API_KEY", "BINANCE_LIVE_TRADE_API_SECRET"):
+                return ConnectionCheckResult("BLOCK", self._t("conn_missing_env_live"))
             config = load_config(self.config_path)
             BinanceClient(config.raw, credential_profile="live_trade").assert_live_spot_permissions()
         except BinanceApiError as exc:
@@ -94,11 +105,11 @@ class TestnetCheckService:
     def check_binance_testnet(self) -> ConnectionCheckResult:
         if not self.config_path.exists():
             return ConnectionCheckResult("BLOCK", self._t("conn_missing_config").format(path=self.config_path))
-        if not self.env_path.exists():
-            return ConnectionCheckResult("BLOCK", self._t("conn_missing_env_testnet"))
 
         try:
             load_secrets(self.env_path)
+            if not _configured("BINANCE_TESTNET_API_KEY", "BINANCE_TESTNET_API_SECRET"):
+                return ConnectionCheckResult("BLOCK", self._t("conn_missing_env_testnet"))
             config = load_config(self.config_path)
             BinanceClient(config.raw, use_testnet=True).testnet_account_ping()
         except BinanceApiError as exc:

@@ -2454,23 +2454,35 @@ class AppController(QObject):
         ]
 
     def _build_action_plan_items(self) -> list[dict[str, object]]:
-        trade_status = self._decision or "NOT RUN"
+        # self._decision is the run's overall decision type, chosen across every
+        # strategy: a recommended grid wins over the trade verdict, so it reads
+        # GRID_BOT_RECOMMENDATION while the trade itself is HOLD. Showing that on
+        # the Trade card labelled it with something that is not the trade's
+        # verdict, coloured it "blocked" when the trade was a plain HOLD, and -
+        # because canSubmit was derived from it - hid the submit button for a
+        # genuinely approved BUY whenever a grid was recommended in the same run.
+        run_decision = self._decision or ""
+        latest_trade = self._snapshot.latest_run.trade_proposal if self._snapshot.latest_run is not None else None
+        trade_action = str(latest_trade.get("action", "") if latest_trade else "").upper()
+        trade_status = trade_action or ("NOT RUN" if not run_decision else "HOLD")
         trade_tone = "ready" if trade_status in {"BUY", "SELL"} else "watch" if trade_status == "HOLD" else "blocked"
+
         top_action = self._actions[0]["action"] if self._actions else "No follow-up action recorded yet."
         trade_detail = self._decision_summary or "Run a trade preview to load the latest decision."
         if top_action and top_action not in trade_detail:
             trade_detail = f"{trade_detail} Next: {top_action}"
 
-        latest_trade = self._snapshot.latest_run.trade_proposal if self._snapshot.latest_run is not None else None
         trade_parameters = [
-            {"label": "Action", "value": str(latest_trade.get("action", trade_status) if latest_trade else trade_status)},
+            {"label": "Action", "value": trade_status},
             {"label": "Symbol", "value": str(latest_trade.get("symbol", "") if latest_trade else "")},
             {"label": "Confidence", "value": str(latest_trade.get("confidence", "") if latest_trade else "")},
             {"label": "Quote amount", "value": str(latest_trade.get("quoteAmount", "") if latest_trade else "")},
         ]
+        if run_decision and run_decision != trade_status:
+            # Keep it visible, but named for what it is.
+            trade_parameters.append({"label": "Run decision", "value": run_decision})
         if latest_trade and latest_trade.get("reason"):
             trade_detail = str(latest_trade["reason"])
-        trade_action = str(latest_trade.get("action", trade_status) if latest_trade else trade_status).upper()
         trade_can_submit = trade_tone == "ready" and trade_action == "BUY"
         if not trade_can_submit:
             trade_submit_blocked = "Live submit appears only for BUY previews that pass deterministic checks."

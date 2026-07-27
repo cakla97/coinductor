@@ -255,3 +255,37 @@ def test_challenge_outcome_is_set_before_listeners_are_notified(monkeypatch, tmp
     assert seen, "actionsChanged was not emitted"
     assert seen[0] != "", "listeners saw an empty outcome"
     assert "rejected" in seen[0]
+
+
+def test_trade_card_reports_the_trade_verdict_not_the_run_decision(monkeypatch, tmp_path) -> None:
+    """A recommended grid wins the run's decision type across every strategy.
+
+    That value was rendered as the Trade card's own status, so a plain HOLD
+    showed "GRID_BOT_RECOMMENDATION" and was coloured blocked - and because
+    canSubmitLive was derived from it, an approved BUY lost its submit button
+    whenever a grid was recommended in the same run.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    state = _set_trade_state(controller, "BUY", live_enabled=True, key_ready=True)
+    controller._decision = "GRID_BOT_RECOMMENDATION"  # what a grid-positive run reports
+
+    card = next(item for item in controller._build_action_plan_items() if item["title"] == "Trade")
+
+    assert card["status"] == "BUY", "the card must state the trade verdict"
+    assert card["tone"] == "ready"
+    assert card["canSubmitLive"] is True, "an approved BUY must keep its submit path"
+    # The run-level decision stays visible, under a label that says what it is.
+    assert {"label": "Run decision", "value": "GRID_BOT_RECOMMENDATION"} in card["parameters"]
+    assert state is not None
+
+
+def test_trade_card_shows_hold_as_hold_when_a_grid_is_recommended(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    _set_trade_state(controller, "HOLD", live_enabled=False, key_ready=False)
+    controller._decision = "GRID_BOT_RECOMMENDATION"
+
+    card = next(item for item in controller._build_action_plan_items() if item["title"] == "Trade")
+
+    assert card["status"] == "HOLD"
+    assert card["tone"] == "watch", "a HOLD is watched, not blocked"
+    assert card["canSubmitLive"] is False

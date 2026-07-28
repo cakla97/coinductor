@@ -76,6 +76,14 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "{pending} registered strategy(s) awaiting a fresh evaluation.",
         "cs": "Registrovaných strategií čekajících na nové vyhodnocení: {pending}.",
     },
+    "manual_steps_copied": {
+        "en": "{count} setup steps copied. Paste them next to Binance and work down the list.",
+        "cs": "Zkopírováno {count} kroků nastavení. Vložte si je vedle Binance a projděte je shora dolů.",
+    },
+    "clipboard_unavailable": {
+        "en": "The clipboard is not available.",
+        "cs": "Schránka není k dispozici.",
+    },
     "run_report_missing": {
         "en": "That run's report file is no longer on disk.",
         "cs": "Soubor s reportem tohoto běhu už na disku není.",

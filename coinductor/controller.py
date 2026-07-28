@@ -1457,6 +1457,27 @@ class AppController(QObject):
         clipboard.setText(text)
         self.notificationRequested.emit("Confirmation phrase copied.")
 
+    @Slot("QVariantList")
+    def copyManualSteps(self, steps: list) -> None:
+        """Put the whole numbered procedure on the clipboard.
+
+        The dialog exists to be worked through against Binance in another
+        window, and every price and count in it had to be retyped by eye.
+        """
+        lines = [f"{index}. {step}" for index, step in enumerate(steps or (), start=1)]
+        if not lines:
+            return
+        clipboard = QGuiApplication.clipboard()
+        if clipboard is None:
+            self.notificationRequested.emit(
+                service_text("clipboard_unavailable", self._wizard_language)
+            )
+            return
+        clipboard.setText("\n".join(lines))
+        self.notificationRequested.emit(
+            service_text("manual_steps_copied", self._wizard_language).format(count=len(lines))
+        )
+
     @Slot()
     def lockLiveSubmit(self) -> None:
         self._safety_service.automation_allows_submit = self._automation_allows_submit()

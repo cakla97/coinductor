@@ -273,6 +273,17 @@ class GridBotAdvisor:
     # still hold a number the exchange will not accept.
     EXCHANGE_MIN_NOTIONAL_USDT = Decimal("5")
 
+    def _display_pair(self, symbol: str, quote_asset: str) -> str:
+        """Split the pair the way Binance's own picker shows it.
+
+        The API uses ETHUSDC; the screen the reader is looking at says ETH/USDC,
+        and they are matching one against the other by eye.
+        """
+        upper = symbol.upper()
+        if quote_asset and upper.endswith(quote_asset) and len(upper) > len(quote_asset):
+            return f"{upper[: -len(quote_asset)]}/{quote_asset}"
+        return upper
+
     def _min_quote_per_grid(self) -> Decimal:
         configured = Decimal(str(self.config["grid_bot"].get("min_quote_per_grid_usdt", "2.5")))
         return max(configured, self.EXCHANGE_MIN_NOTIONAL_USDT)
@@ -301,7 +312,7 @@ class GridBotAdvisor:
         return (
             ManualStep("bots_manual_because_no_api"),
             ManualStep("grid_open_menu"),
-            ManualStep("grid_select_symbol", {"symbol": symbol}),
+            ManualStep("grid_select_symbol", {"symbol": self._display_pair(symbol, quote_asset)}),
             ManualStep("grid_set_range", {"low": str(range_low), "high": str(range_high)}),
             ManualStep("grid_set_count", {"count": str(grid_count)}),
             ManualStep(

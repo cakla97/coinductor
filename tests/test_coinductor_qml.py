@@ -133,6 +133,11 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.refresh_monitoring_tooltip" in qml
     assert "appController.openRunReport(modelData.reportPath)" in qml
     assert "appController.appText.open_run_report_button" in qml
+    # The procedure exists to be worked through against Binance in another
+    # window; every price in it had to be retyped by eye.
+    assert "appController.copyManualSteps(activeActionPlanItem.manualSteps)" in qml
+    assert "appController.appText.copy_manual_steps_button" in qml
+    assert "selectByMouse: true" in qml
     assert "strategyRegistrationDialog.open()" in qml
     assert qml.count("text: appController.appText.import_latest_recommendation_button") == 2
     assert "appController.latestGridRegistrationSuggestion" in qml

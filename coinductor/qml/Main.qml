@@ -5026,11 +5026,22 @@ ApplicationWindow {
                     visible: (activeActionPlanItem.manualSteps || []).length > 0
                     spacing: 10
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: border }
-                    Text {
-                        text: appController.appText.manual_steps_title
-                        color: textPrimary
-                        font.pixelSize: 16
-                        font.bold: true
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.manual_steps_title
+                            color: textPrimary
+                            font.pixelSize: 16
+                            font.bold: true
+                        }
+                        // The whole point of this list is to be worked through
+                        // against Binance in another window, and every price and
+                        // count in it had to be retyped by eye.
+                        Button {
+                            text: appController.appText.copy_manual_steps_button
+                            onClicked: appController.copyManualSteps(activeActionPlanItem.manualSteps)
+                        }
                     }
                     Repeater {
                         model: window.toModel(activeActionPlanItem.manualSteps)
@@ -5047,12 +5058,19 @@ ApplicationWindow {
                                 font.pixelSize: 12
                                 font.bold: true
                             }
-                            Text {
+                            // TextEdit, not Text: read-only but selectable, so a
+                            // single price can be dragged out without copying
+                            // the entire procedure.
+                            TextEdit {
                                 Layout.fillWidth: true
                                 text: modelData
                                 color: textPrimary
                                 font.pixelSize: 12
-                                wrapMode: Text.WordWrap
+                                wrapMode: TextEdit.Wrap
+                                readOnly: true
+                                selectByMouse: true
+                                selectionColor: accent
+                                activeFocusOnPress: true
                             }
                         }
                     }

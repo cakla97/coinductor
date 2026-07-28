@@ -67,6 +67,7 @@ MANUAL_STEP_TEXT: dict[str, dict[str, str]] = {
         "cs": "Otevřete Binance Home > Trading Bots > Spot Grid.",
     },
     "grid_select_symbol": {
+        # Written as a pair, the way Binance's own picker shows it.
         "en": "Select {symbol} and choose Manual parameters.",
         "cs": "Vyberte {symbol} a zvolte Manual parameters.",
     },
@@ -118,14 +119,17 @@ MANUAL_STEP_TEXT: dict[str, dict[str, str]] = {
         "en": "Review Binance's estimated profit/grid and minimum investment before confirming.",
         "cs": "Před potvrzením zkontrolujte odhad zisku na grid a minimální investici podle Binance.",
     },
+    # This used to tell a desktop user to copy a TOML file by hand and fill in
+    # values. The app has had a dialog for it since active-strategy monitoring
+    # was added; the step was simply never updated to point at it.
     "grid_register_locally": {
         "en": (
-            "After creation, copy state/active_strategies.example.toml to "
-            "state/active_strategies.toml and enter the real values."
+            "After creation, register it in Coinductor: Active Strategies > Register active bot > "
+            "Import latest recommendation, then add the bot ID Binance gave you and save."
         ),
         "cs": (
-            "Po vytvoření zkopírujte state/active_strategies.example.toml na "
-            "state/active_strategies.toml a doplňte skutečné hodnoty."
+            "Po vytvoření ho zaregistrujte v Coinductoru: Aktivní strategie > Registrovat aktivního "
+            "bota > Importovat poslední doporučení, pak doplňte ID bota z Binance a uložte."
         ),
     },
     "grid_rerun_to_monitor": {

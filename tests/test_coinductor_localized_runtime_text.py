@@ -198,3 +198,30 @@ def test_opening_a_vanished_report_notifies_instead_of_failing(monkeypatch, tmp_
     controller.openRunReport("")
 
     assert seen == ["Soubor s reportem tohoto běhu už na disku není."] * 2
+
+
+def test_copying_the_steps_produces_a_numbered_block(monkeypatch, tmp_path) -> None:
+    """Every price and count had to be retyped by eye against Binance."""
+    from PySide6.QtGui import QGuiApplication
+
+    QGuiApplication.instance() or QGuiApplication([])
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("cs")
+    seen: list[str] = []
+    controller.notificationRequested.connect(seen.append)
+
+    controller.copyManualSteps(["Otevřete Binance Home.", "Vyberte ETH/USDC."])
+
+    clipboard = QGuiApplication.clipboard()
+    assert clipboard.text() == "1. Otevřete Binance Home.\n2. Vyberte ETH/USDC."
+    assert seen == ["Zkopírováno 2 kroků nastavení. Vložte si je vedle Binance a projděte je shora dolů."]
+
+
+def test_copying_nothing_says_nothing(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    seen: list[str] = []
+    controller.notificationRequested.connect(seen.append)
+
+    controller.copyManualSteps([])
+
+    assert seen == [], "an empty list is not a failure worth a toast"

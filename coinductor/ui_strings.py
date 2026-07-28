@@ -951,6 +951,10 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Refresh monitoring",
         "cs": "Obnovit sledování",
     },
+    "copy_manual_steps_button": {
+        "en": "Copy steps",
+        "cs": "Kopírovat kroky",
+    },
     "open_run_report_button": {
         "en": "Open report",
         "cs": "Otevřít report",

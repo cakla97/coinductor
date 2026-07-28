@@ -168,3 +168,25 @@ def test_empty_and_malformed_payloads_are_survivable() -> None:
     assert manual_steps_from_json("   ") == ()
     assert manual_steps_from_json('{"not": "a list"}') == ()
     assert manual_steps_from_json('[{"params": {}}]') == (), "a step with no key is unrenderable"
+
+
+def test_symbol_is_written_as_a_pair() -> None:
+    """The API says ETHUSDC; the Binance screen the reader is matching says ETH/USDC."""
+    steps = {step.key: step.params for step in _grid(blocked=False).manual_step_specs}
+
+    assert steps["grid_select_symbol"]["symbol"] == "BTC/USDC"
+    assert "/" in render_manual_step(
+        ManualStep("grid_select_symbol", steps["grid_select_symbol"]), "cs"
+    )
+
+
+def test_registration_step_points_at_the_dialog_not_a_toml_file() -> None:
+    """It told a desktop user to copy a TOML file and fill in values by hand.
+
+    The app has had a registration dialog since active-strategy monitoring was
+    added; the step was simply never updated to point at it.
+    """
+    for language in LANGUAGES:
+        text = render_manual_step(ManualStep("grid_register_locally"), language)
+        assert ".toml" not in text, f"{language} still sends the reader to a file"
+        assert "Coinductor" in text or "Aktivní strategie" in text

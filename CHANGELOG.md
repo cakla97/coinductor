@@ -3,6 +3,62 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.9] — 2026-07-28
+
+The Action Plan is in one language, and the reason it kept not being is fixed
+rather than patched again.
+
+### Changed
+
+- **The engine no longer writes finished sentences.** Every localization round
+  so far fixed one screen and revealed the next, because a sentence with its
+  numbers already baked in can only be re-translated by parsing English prose
+  back apart. The producers emit a key and its parameters instead, and the text
+  is composed once per reader — English for the Markdown report, your language
+  for the app. This now covers the grid's scoring line and both advisors'
+  blockers, the next-review reason and its triggers, and every recommended
+  action with the explanation under it.
+- **The Overview action list is read from the journal**, not parsed back out of
+  the report with a regex. By the time the report exists its sentences are
+  already English, which is why nothing in that list could ever be translated.
+- **Blockers are no longer squeezed into a parameter tile.** They are sentences,
+  and beside "Grids: 8" a sentence can only be cut off — which is why shortening
+  the text kept not being enough. They have their own full-width wrapping
+  section.
+
+### Fixed
+
+- The navigation, the Live Actions and Action Plan titles, and the safety
+  caption had Czech entries that were copies of their English. A copied string
+  passes every automated check there is, so it took someone reading the screen;
+  auditing all three tables at once found 34 such entries, about a dozen of them
+  real.
+- The recommended actions and the next-review panel were composed once when a
+  run loaded and never recomposed, so switching language left them in the
+  previous one. That makes four places with the same cause.
+
+### Added
+
+- Tests that read the producers rather than a list kept by hand: every message
+  key the engine can emit must have text, every parameter label and decision
+  type must be mapped, no table entry may be a silent copy of its English, and
+  no new prose may be assigned to a user-facing field in a converted module.
+  Each of these failure modes was invisible at runtime, because all of them fall
+  back to English rather than failing.
+
+### Upgrading
+
+Nine columns are added to the journal on first start; existing runs are left
+alone and keep displaying in English, since they were stored as finished
+sentences with no key left to translate. Run a fresh analysis to see the Action
+Plan in your language.
+
+### Known limitations
+
+- The risk engine's verdict and the active-strategy evaluator's advice are still
+  prose. Neither appears on the Action Plan — the first is behind "Why HOLD?",
+  the second only once a bot is registered.
+
 ## [0.1.8] — 2026-07-28
 
 0.1.7 was built but never published; use this instead.

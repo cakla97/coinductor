@@ -105,3 +105,51 @@ def test_every_urgency_and_cadence_value_is_translated() -> None:
         if not service_text(f"cadence_{value.lower()}", "cs").strip()
     ]
     assert missing == [], f"missing translations: {missing}"
+
+
+# Terms the reader has to find written exactly this way somewhere else - in
+# Binance's interface, in a config file, or as a product name. Translating them
+# would send someone hunting for something that does not exist under that name.
+_LITERAL_TERMS = {
+    "Portfolio", "Spot", "Testnet", "Mainnet", "Binance ID", "Binance bot ID",
+    "Symbol", "Symbol *", "Stop loss", "Stop loss *", "Take profit", "Take profit *",
+    "TP / SL", "Spot Grid", "Rebalancing", "Endpoint", "Model", "Grid", "Python",
+    "Binance Spot Testnet", "Coinductor", "Binance", "USDC", "OCO", "AI Assistant",
+    # Product and section names that read the same in Czech.
+    "BINANCE", "AI", "Binance API",
+}
+
+
+def _tables():
+    from coinductor.service_strings import SERVICE_STRINGS
+    from coinductor.ui_strings import APP_STRINGS, WIZARD_STRINGS
+
+    return (("APP_STRINGS", APP_STRINGS), ("WIZARD_STRINGS", WIZARD_STRINGS),
+            ("SERVICE_STRINGS", SERVICE_STRINGS))
+
+
+def test_no_table_entry_is_missing_a_translation() -> None:
+    missing = [
+        f"{name}.{key}"
+        for name, table in _tables()
+        for key, tr in table.items()
+        if not (tr.get("en") or "").strip() or not (tr.get("cs") or "").strip()
+    ]
+    assert missing == [], f"entries with an empty side: {missing}"
+
+
+def test_czech_is_not_silently_a_copy_of_the_english() -> None:
+    """The failure mode that kept reaching the user.
+
+    A copied string passes every presence check and looks translated to
+    anything automated, so it was only ever found by someone reading the
+    screen - the navigation sat in English for eight releases that way.
+    """
+    copied = [
+        f"{name}.{key} = {tr['en']!r}"
+        for name, table in _tables()
+        for key, tr in table.items()
+        if tr.get("en", "").strip() == tr.get("cs", "").strip()
+        and tr.get("en", "").strip() not in _LITERAL_TERMS
+    ]
+    assert copied == [], "Czech is a copy of the English for:\n  " + "\n  ".join(copied)

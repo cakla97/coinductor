@@ -156,8 +156,12 @@ def test_shipped_defaults_cannot_fund_a_grid_binance_would_accept() -> None:
     # And it is not inlined into the reason as well.
     assert "not enough grid capital" not in recommendation.reason
     assert len(recommendation.reason) < 200, "the reason grew back into a wall of text"
-    # What to do about it is a step, because this blocker is one the reader can clear.
-    assert any("default_investment_usdt" in step for step in recommendation.manual_steps)
+    # The steps say the grid is out of reach at this budget. They do not send a
+    # desktop user into a config file to change how much of their own money the
+    # app may commit - there is no control for that in the app yet.
+    assert any("more capital than your current budget" in step for step in recommendation.manual_steps)
+    assert not any("config.toml" in step for step in recommendation.manual_steps)
+    assert not any("default_investment_usdt" in step for step in recommendation.manual_steps)
     # Blocked grids still drop their parameters: the range is derived from
     # today's prices and would be stale by the time the capital is raised.
     assert not any("Investment currency dropdown" in step for step in recommendation.manual_steps)

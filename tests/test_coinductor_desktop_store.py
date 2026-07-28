@@ -231,7 +231,8 @@ def test_next_review_waits_for_market_conditions_without_manual_blocker(tmp_path
     strategies = (
         {
             "type": "Spot Grid",
-            "parameters": ({"label": "Blockers", "value": "Market status is WATCH."},),
+            "parameters": (),
+            "blockers": ("Market status is WATCH.",),
         },
     )
 

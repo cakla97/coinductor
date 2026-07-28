@@ -657,11 +657,11 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     },
     "portfolio_flexible_label": {
         "en": "Flexible",
-        "cs": "Flexible",
+        "cs": "Flexibilní",
     },
     "portfolio_locked_label": {
         "en": "Locked",
-        "cs": "Locked",
+        "cs": "Zamčeno",
     },
     "portfolio_policy_changed_toast": {
         "en": "Policy for {asset} changed to {role}",
@@ -673,7 +673,7 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     },
     "live_actions_title": {
         "en": "Live Actions",
-        "cs": "Live Actions",
+        "cs": "Živé akce",
     },
     "live_actions_subtitle": {
         "en": "Prepare guarded previews and manage live trading safety gates. Results open in Action Plan after each run.",
@@ -745,7 +745,7 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     },
     "live_api_title": {
         "en": "Live API",
-        "cs": "Live API",
+        "cs": "Živé API",
     },
     "live_api_credentials_configured": {
         "en": "Credentials configured",
@@ -877,7 +877,7 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     },
     "action_plan_title": {
         "en": "Action Plan",
-        "cs": "Action Plan",
+        "cs": "Plán akcí",
     },
     "action_plan_subtitle": {
         "en": "Latest trade, Grid, and Rebalancing decisions in one review list.",
@@ -954,6 +954,10 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     "click_to_copy_tooltip": {
         "en": "Click to copy",
         "cs": "Kliknutím zkopírujete",
+    },
+    "blockers_label": {
+        "en": "Blockers",
+        "cs": "Blokátory",
     },
     "copy_manual_steps_button": {
         "en": "Copy steps",
@@ -1083,7 +1087,7 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     },
     "assistant_title": {
         "en": "AI Assistant",
-        "cs": "AI Assistant",
+        "cs": "AI asistent",
     },
     "assistant_context_prefix": {
         "en": "Read-only help | Context:",
@@ -1763,7 +1767,7 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     },
     "sidebar_safety_caption": {
         "en": "SAFETY",
-        "cs": "SAFETY",
+        "cs": "BEZPEČNOST",
     },
     "sidebar_binance_caption": {
         "en": "BINANCE",
@@ -1783,11 +1787,11 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     },
     "nav_overview": {"en": "Overview", "cs": "Přehled"},
     "nav_portfolio": {"en": "Portfolio", "cs": "Portfolio"},
-    "nav_live_actions": {"en": "Live Actions", "cs": "Live Actions"},
-    "nav_action_plan": {"en": "Action Plan", "cs": "Action Plan"},
+    "nav_live_actions": {"en": "Live Actions", "cs": "Živé akce"},
+    "nav_action_plan": {"en": "Action Plan", "cs": "Plán akcí"},
     "nav_active_strategies": {"en": "Active Strategies", "cs": "Aktivní strategie"},
     "nav_run_history": {"en": "Run History", "cs": "Historie běhů"},
-    "nav_ai_assistant": {"en": "AI Assistant", "cs": "AI Assistant"},
+    "nav_ai_assistant": {"en": "AI Assistant", "cs": "AI asistent"},
     "nav_help_guides": {"en": "Help & Guides", "cs": "Nápověda a návody"},
     "nav_settings": {"en": "Settings", "cs": "Nastavení"},
 }

@@ -2577,6 +2577,31 @@ ApplicationWindow {
                                     }
                                 }
                             }
+                            // Full width and wrapping. A blocker is a sentence,
+                            // and in the tile grid beside "Grids: 8" it could
+                            // only ever be cut off mid-word.
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 3
+                                visible: (modelData.blockers || []).length > 0
+                                Text {
+                                    text: appController.appText.blockers_label
+                                    color: textSecondary
+                                    font.pixelSize: 10
+                                    font.bold: true
+                                }
+                                Repeater {
+                                    model: window.toModel(modelData.blockers)
+                                    delegate: Text {
+                                        required property var modelData
+                                        Layout.fillWidth: true
+                                        text: "- " + modelData
+                                        color: warning
+                                        font.pixelSize: 12
+                                        wrapMode: Text.WordWrap
+                                    }
+                                }
+                            }
                             Rectangle {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: tradeLifecycleSummary.implicitHeight + 22

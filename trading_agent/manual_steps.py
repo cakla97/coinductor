@@ -58,16 +58,18 @@ MANUAL_STEP_TEXT: dict[str, dict[str, str]] = {
         "en": "Do not create the grid while any deployment blocker remains.",
         "cs": "Nezakládejte grid, dokud trvá jakýkoli blokátor nasazení.",
     },
+    # No config file, no setting names. The app should not send a desktop user
+    # into a text editor to change how much of their own money it may commit;
+    # saying the grid is out of reach at the current budget is the honest end of
+    # the sentence until there is a control for it in the app.
     "grid_blocked_raise_capital": {
         "en": (
-            "If you want this bot, raise the grid capital in config.toml - grid_bot."
-            "default_investment_usdt and max_grid_capital_usdt - and run the analysis again. "
-            "Binance will then show its own minimum for the range, higher again."
+            "This grid needs more capital than your current budget allows for it, so there is "
+            "nothing to set up yet."
         ),
         "cs": (
-            "Pokud tohoto bota chcete, zvyšte kapitál pro grid v config.toml - grid_bot."
-            "default_investment_usdt a max_grid_capital_usdt - a spusťte analýzu znovu. "
-            "Binance pak u daného rozsahu ukáže vlastní minimum, ještě vyšší."
+            "Tento grid potřebuje víc kapitálu, než mu váš současný rozpočet dovoluje, takže "
+            "zatím není co nastavovat."
         ),
     },
     "grid_blocked_rerun": {

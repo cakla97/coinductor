@@ -174,8 +174,8 @@ class DesktopStore:
                             {"label": "Investment", "value": self._money(grid["investment_usdt"])},
                             {"label": "Spacing", "value": self._percent(grid["estimated_grid_spacing_pct"])},
                             {"label": "TP / SL", "value": self._range(grid["take_profit_price"], grid["stop_loss_price"])},
-                            {"label": "Blockers", "value": str(grid["blockers"] or "")},
                         ),
+                        "blockers": self._line_values(grid["blockers"]),
                         "manualSteps": self._manual_step_specs(grid["manual_steps"]),
                         "registrationSuggestion": {
                             "available": bool(symbol),
@@ -219,8 +219,8 @@ class DesktopStore:
                             {"label": "Investment", "value": self._money(rebalance["investment_usdt"])},
                             {"label": "Trigger", "value": f"By ratio {self._percent(rebalance['threshold_pct'])}"},
                             {"label": "Basket", "value": basket},
-                            {"label": "Blockers", "value": str(rebalance["blockers"] or "")},
                         ),
+                        "blockers": self._line_values(rebalance["blockers"]),
                         "manualSteps": self._manual_step_specs(rebalance["manual_steps"]),
                         "registrationSuggestion": self._rebalancing_registration_suggestion(
                             connection,
@@ -593,15 +593,15 @@ class DesktopStore:
         market_conditions: list[str] = []
         for strategy in strategies:
             strategy_type = str(strategy.get("type", "Strategy"))
-            for parameter in strategy.get("parameters", ()):
-                if str(parameter.get("label", "")) != "Blockers":
-                    continue
-                for blocker in self._line_values(parameter.get("value", "")):
-                    item = f"{strategy_type}: {blocker}"
-                    if any(term in blocker.lower() for term in structural_terms):
-                        manual_steps.append(item)
-                    else:
-                        market_conditions.append(item)
+            # Blockers used to be scanned out of the parameter tiles by label.
+            # They have their own key now, because a sentence cannot live in a
+            # fixed-width tile - this list is what the panel is built from.
+            for blocker in strategy.get("blockers", ()):
+                item = f"{strategy_type}: {blocker}"
+                if any(term in str(blocker).lower() for term in structural_terms):
+                    manual_steps.append(item)
+                else:
+                    market_conditions.append(item)
 
         scheduled_at = self._scheduled_review(started_at, hours)
         due_now = scheduled_at is not None and scheduled_at <= datetime.now(UTC)

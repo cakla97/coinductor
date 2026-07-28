@@ -2806,6 +2806,10 @@ class AppController(QObject):
                         "tone": tone,
                         "detail": detail or "No strategy detail was recorded for the latest run.",
                         "parameters": self._localized_parameters(item.get("parameters", ())),
+                        # Their own field, not a value in the tile grid: a
+                        # blocker is a sentence, and beside "Grids: 8" a
+                        # sentence can only be elided.
+                        "blockers": list(item.get("blockers", ())),
                         "manualSteps": self._rendered_manual_steps(item.get("manualSteps", ())),
                         "primaryLabel": service_text("card_show_manual_setup", self._wizard_language)
                         if tone == "ready"

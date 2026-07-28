@@ -2698,7 +2698,7 @@ class AppController(QObject):
     _DECISION_LABELS = {
         "GRID_BOT_RECOMMENDATION": "decision_grid_recommended",
         "REBALANCING_BOT_RECOMMENDATION": "decision_rebalancing_recommended",
-        "SPOT_TRADE": "decision_spot_trade",
+        "SPOT_TRADE_RECOMMENDATION": "decision_spot_trade",
         "HOLD": "decision_hold",
         "NO_ACTION": "decision_no_action",
     }

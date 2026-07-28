@@ -167,6 +167,7 @@ class RebalancingBotAdvisor:
             return tuple(steps)
         protected_note = ", ".join(sorted(protected)) or "none"
         return (
+            "Binance has no public API for creating trading bots, so Coinductor works out the parameters and you enter them yourself - it is not an unfinished feature.",
             "Open Binance Home > Trading Bots > Rebalancing Bot.",
             *form_steps,
             f"Invest no more than {self._money(investment)} USDC-equivalent.",

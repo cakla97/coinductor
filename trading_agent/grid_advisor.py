@@ -269,6 +269,7 @@ class GridBotAdvisor:
                 "Run the assistant again after the risk cooldown/kill switch and market-status blockers clear.",
             )
         return (
+            "Binance has no public API for creating trading bots, so Coinductor works out the parameters and you enter them yourself - it is not an unfinished feature.",
             "Open Binance Home > Trading Bots > Spot Grid.",
             f"Select {symbol} and choose Manual parameters.",
             f"Set lower price {range_low} and upper price {range_high}.",

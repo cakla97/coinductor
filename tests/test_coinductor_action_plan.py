@@ -289,3 +289,36 @@ def test_trade_card_shows_hold_as_hold_when_a_grid_is_recommended(monkeypatch, t
     assert card["status"] == "HOLD"
     assert card["tone"] == "watch", "a HOLD is watched, not blocked"
     assert card["canSubmitLive"] is False
+
+
+def test_bot_cards_say_why_setup_is_manual(monkeypatch, tmp_path) -> None:
+    """The card hands over parameters to retype on Binance.
+
+    Without the reason that reads as an unfinished feature - and the reason was
+    only ever in the report and a wizard hint seen once during setup. The steps
+    themselves are not persisted, so the app cannot show them.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    _set_trade_state(controller, "HOLD", live_enabled=False, key_ready=False)
+    controller._strategies = [
+        {"type": "Spot Grid", "status": "READY", "detail": "BTCUSDC scored 82.", "parameters": []},
+        {"type": "Rebalancing", "status": "BLOCKED", "detail": "Funding gap.", "parameters": []},
+    ]
+
+    cards = {item["title"]: item for item in controller._build_action_plan_items()}
+
+    for name in ("Spot Grid", "Rebalancing"):
+        assert "no public API" in cards[name]["detail"], name
+    # The trade card is not a bot; it must not carry the note.
+    assert "no public API" not in cards["Trade"]["detail"]
+
+
+def test_the_manual_setup_note_is_translated(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("cs")
+    _set_trade_state(controller, "HOLD", live_enabled=False, key_ready=False)
+    controller._strategies = [{"type": "Spot Grid", "status": "READY", "detail": "", "parameters": []}]
+
+    card = next(i for i in controller._build_action_plan_items() if i["title"] == "Spot Grid")
+
+    assert "veřejné API" in card["detail"], card["detail"]

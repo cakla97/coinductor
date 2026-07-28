@@ -548,6 +548,10 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Diagnostics bundle saved and opened: {path}",
         "cs": "Diagnostika uložena a otevřena: {path}",
     },
+    "bot_setup_is_manual": {
+        "en": "Binance has no public API for creating trading bots, so Coinductor works out the parameters and you enter them on Binance yourself. The full step-by-step is in the detailed report.",
+        "cs": "Binance nemá veřejné API pro zakládání obchodních botů, takže Coinductor spočítá parametry a vy je na Binance zadáte sami. Podrobný postup krok za krokem najdete v detailním reportu.",
+    },
     # --- Action Plan trade card ---
     "trade_param_action": {"en": "Action", "cs": "Akce"},
     "trade_param_symbol": {"en": "Symbol", "cs": "Symbol"},

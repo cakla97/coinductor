@@ -2569,6 +2569,12 @@ class AppController(QObject):
                 tone = "ready" if status_upper == "READY" else "blocked" if "BLOCK" in status_upper else "watch"
                 display_status = "Ready" if tone == "ready" else "Blocked" if tone == "blocked" else "Watched"
                 detail = str(item.get("detail", "")).strip()
+                # Bot cards hand the user parameters to enter on Binance by hand.
+                # The reason lived only in the report and a wizard hint seen once,
+                # so a list of numbers to retype read as an unfinished feature.
+                if str(item.get("type", "")) in ("Spot Grid", "Rebalancing"):
+                    note = service_text("bot_setup_is_manual", self._wizard_language)
+                    detail = f"{detail} {note}".strip() if detail else note
                 cards.append(
                     {
                         "title": str(item.get("type", "Strategy")),

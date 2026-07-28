@@ -116,17 +116,28 @@ freshly downloaded, that almost nobody else is running yet. Avast in particular 
 observed to
 
 - refuse the installer with **"Unable to execute file in the temporary directory. Setup
-  aborted. Error 5"** — its CyberCapture holding the extracted setup stub, and
+  aborted. Error 5"**, or Windows' own **"Windows cannot access the specified device, path,
+  or file"** — its CyberCapture holding the extracted setup stub, and
 - run the installed app and the uninstaller inside its **Autosandbox**, which makes the
   install look like it finished while the app is nowhere to be found, and can leave an
   uninstall only partly applied.
 
-Neither is a fault in the installer, and neither reports itself clearly. If any of it
-happens, add exclusions for the installer and the install folder:
+None of this is a fault in the installer, and none of it says so. It often clears on its own
+once the vendor's cloud check finishes — trying again a minute later frequently just works.
+
+To stop it happening, exclude the install folder. This is the one worth adding, because it
+covers the app itself and every version you ever install:
 
 ```text
-%USERPROFILE%\Downloads\Coinductor-<version>-setup.exe
 %LOCALAPPDATA%\Programs\Coinductor\
+```
+
+The installer is a separate file, and **its name changes with every release** — an exclusion
+for `Coinductor-0.1.2-setup.exe` does nothing for `0.1.3`. Either re-add it after each
+update, or use a wildcard if your product supports one:
+
+```text
+%USERPROFILE%\Downloads\Coinductor-*-setup.exe
 ```
 
 In Avast: *Menu → Settings → General → Exceptions*. Other products have an equivalent.

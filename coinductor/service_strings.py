@@ -96,6 +96,61 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "No action",
         "cs": "Žádná akce",
     },
+    "next_review_status_manual_step": {
+        "en": "Manual step before rerun",
+        "cs": "Ruční krok před dalším během",
+    },
+    "next_review_headline_manual_step": {
+        "en": "A fresh run can update market data, but it cannot remove the listed funding or configuration blocker.",
+        "cs": "Nový běh aktualizuje tržní data, ale uvedený blokátor financování ani konfigurace neodstraní.",
+    },
+    "next_review_timing_manual_step": {
+        "en": "After the manual step",
+        "cs": "Po ručním kroku",
+    },
+    "next_review_status_review_now": {
+        "en": "Review now",
+        "cs": "Zkontrolovat nyní",
+    },
+    "next_review_headline_review_now": {
+        "en": "The latest run produced an action that should be reviewed before waiting for another scheduled check.",
+        "cs": "Poslední běh vytvořil akci, kterou je vhodné zkontrolovat dřív, než přijde další naplánovaná kontrola.",
+    },
+    "next_review_timing_review_now": {
+        "en": "Now",
+        "cs": "Nyní",
+    },
+    "next_review_status_due_now": {
+        "en": "Review due now",
+        "cs": "Kontrola je na řadě",
+    },
+    "next_review_headline_due_now": {
+        "en": "The recommended review interval has elapsed. Run a fresh analysis when convenient.",
+        "cs": "Doporučený interval kontroly uplynul. Spusťte novou analýzu, až se vám to bude hodit.",
+    },
+    "next_review_timing_due_now": {
+        "en": "Now",
+        "cs": "Nyní",
+    },
+    "next_review_status_scheduled": {
+        "en": "Check again in {hours} hours",
+        "cs": "Další kontrola za {hours} h",
+    },
+    "next_review_headline_scheduled": {
+        "en": "No immediate action is required. Wait for the suggested interval unless an earlier trigger occurs.",
+        "cs": "Není potřeba nic dělat hned. Vyčkejte doporučený interval, pokud nenastane dřívější podnět.",
+    },
+    "next_review_timing_scheduled": {
+        "en": "In {hours} hours",
+        "cs": "Za {hours} h",
+    },
+    "cadence_daily": {"en": "Daily", "cs": "Denně"},
+    "cadence_twice_weekly": {"en": "Twice weekly", "cs": "Dvakrát týdně"},
+    "cadence_weekly": {"en": "Weekly", "cs": "Týdně"},
+    "cadence_manual": {"en": "Manual / irregular", "cs": "Ručně / nepravidelně"},
+    "urgency_normal": {"en": "Normal", "cs": "Běžná"},
+    "urgency_action_required": {"en": "Action required", "cs": "Vyžaduje zásah"},
+    "urgency_elevated": {"en": "Elevated", "cs": "Zvýšená"},
     "manual_steps_copied": {
         "en": "{count} setup steps copied. Paste them next to Binance and work down the list.",
         "cs": "Zkopírováno {count} kroků nastavení. Vložte si je vedle Binance a projděte je shora dolů.",
@@ -879,3 +934,45 @@ def service_text(key: str, language: str = "en") -> str:
 
 def normalize_language(language: str) -> str:
     return "cs" if str(language).strip().lower().startswith("cs") else "en"
+
+# Parameter labels composed in DesktopStore, which has no language of its
+# own. Stored English is the identifier; this is the display mapping, so a
+# label with no entry (or one added later) simply passes through.
+PARAMETER_LABELS: dict[str, str] = {
+    'Age': 'Stáří',
+    'Amount': 'Množství',
+    'Asset': 'Aktivum',
+    'Assets': 'Aktiva',
+    'BUY order ID': 'ID nákupní objednávky',
+    'Basket': 'Košík',
+    'Blockers': 'Blokátory',
+    'Current / exit price': 'Aktuální / výstupní cena',
+    'Current estimate': 'Aktuální odhad',
+    'Current price': 'Aktuální cena',
+    'Distance to range': 'Vzdálenost od rozsahu',
+    'Entry': 'Vstup',
+    'Entry price': 'Vstupní cena',
+    'Grid setup': 'Nastavení gridu',
+    'Grids': 'Počet gridů',
+    'Investment': 'Investice',
+    'Last synchronized': 'Naposledy synchronizováno',
+    'Maximum drift': 'Maximální odchylka',
+    'Mode': 'Režim',
+    'OCO exchange status': 'Stav OCO na burze',
+    'OCO list ID': 'ID OCO seznamu',
+    'PnL (fees excluded)': 'Zisk/ztráta (bez poplatků)',
+    'Product': 'Produkt',
+    'Quantity': 'Množství',
+    'Range': 'Rozsah',
+    'Rebalance threshold': 'Práh rebalancování',
+    'Redeem type': 'Typ výběru',
+    'SL estimate': 'Odhad při stop lossu',
+    'Spacing': 'Rozestup',
+    'Stop loss': 'Stop loss',
+    'Symbol': 'Symbol',
+    'TP / SL': 'TP / SL',
+    'TP estimate': 'Odhad při take profitu',
+    'Take profit': 'Take profit',
+    'Target basket': 'Cílový košík',
+    'Trigger': 'Spouštěč',
+}

@@ -605,24 +605,32 @@ class DesktopStore:
 
         scheduled_at = self._scheduled_review(started_at, hours)
         due_now = scheduled_at is not None and scheduled_at <= datetime.now(UTC)
+        # `state` is the identifier; status/headline/timing are its English
+        # rendering. The controller re-renders them in the user's language,
+        # which it cannot do from prose alone.
         if manual_steps:
+            state = "MANUAL_STEP"
             status = "Manual step before rerun"
             tone = "blocked"
             headline = "A fresh run can update market data, but it cannot remove the listed funding or configuration blocker."
         elif hours == 0:
+            state = "REVIEW_NOW"
             status = "Review now"
             tone = "watch"
             headline = "The latest run produced an action that should be reviewed before waiting for another scheduled check."
         elif due_now:
+            state = "DUE_NOW"
             status = "Review due now"
             tone = "watch"
             headline = "The recommended review interval has elapsed. Run a fresh analysis when convenient."
         else:
+            state = "SCHEDULED"
             status = f"Check again in {hours} hours"
             tone = "watch"
             headline = "No immediate action is required. Wait for the suggested interval unless an earlier trigger occurs."
 
         return {
+            "state": state,
             "status": status,
             "tone": tone,
             "headline": headline,

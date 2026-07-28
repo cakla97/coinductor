@@ -32,7 +32,7 @@ from .risk_profile import (
 )
 from .safety_service import SafetyService
 from .secret_store import SecretStore
-from .service_strings import service_text
+from .service_strings import PARAMETER_LABELS, service_text
 from .setup_service import SetupService
 from .strategy_registration import StrategyRegistrationService
 from .ui_strings import DEFAULT_LANGUAGE, UiStringsService
@@ -332,7 +332,10 @@ class AppController(QObject):
 
     @Property("QVariantList", notify=dataChanged)
     def activeStrategies(self) -> list[dict[str, object]]:
-        return self._active_strategies
+        return [
+            {**item, "parameters": self._localized_parameters(item.get("parameters", ()))}
+            for item in self._active_strategies
+        ]
 
     @Property(str, notify=dataChanged)
     def activeStrategiesSummary(self) -> str:
@@ -560,7 +563,14 @@ class AppController(QObject):
         # re-language them: switching left the card labels - and now the whole
         # Binance setup procedure - in the language of the last analysis.
         self._action_plan_items = self._build_action_plan_items()
+        # Both of these are composed once when a snapshot loads, so a language
+        # change left them showing whatever language the app started in.
+        self._next_review = self._enrich_next_review(self._snapshot.next_review)
         self.actionsChanged.emit()
+        # activeStrategiesSummary and the other data-backed properties compose
+        # their text at read time, so without this their bindings keep whatever
+        # they resolved to on the language the app started in.
+        self.dataChanged.emit()
         self.readinessChanged.emit()
         self.wizardLanguageChanged.emit()
         self.setupChanged.emit()
@@ -2493,6 +2503,26 @@ class AppController(QObject):
         self._action_plan_items = self._build_action_plan_items()
         self._refresh_onboarding_review()
 
+    def _localized_parameters(self, parameters: object) -> list[dict[str, object]]:
+        """Translate parameter labels on their way to the screen.
+
+        DesktopStore composes these and has no language of its own, which left
+        the Trade card reading "Akce / Symbol / Jistota" beside a Spot Grid card
+        reading "Symbol / Range / Grids" - the same screen in two languages. The
+        English label is the identifier; anything without an entry passes
+        through, so a new label is untranslated rather than missing.
+        """
+        localized: list[dict[str, object]] = []
+        for item in parameters or ():
+            if not isinstance(item, dict):
+                continue
+            row = dict(item)
+            label = str(row.get("label", ""))
+            if self._wizard_language.startswith("cs"):
+                row["label"] = PARAMETER_LABELS.get(label, label)
+            localized.append(row)
+        return localized
+
     def _rendered_manual_steps(self, steps: object) -> list[str]:
         """Compose the Binance setup procedure in the user's language.
 
@@ -2565,14 +2595,37 @@ class AppController(QObject):
         if review is None:
             return {}
         result = dict(review)
+        language = self._wizard_language
         profile = self._user_profile_service.current_profile("EXISTING_PORTFOLIO")
-        cadence_labels = {
-            "DAILY": "Daily",
-            "TWICE_WEEKLY": "Twice weekly",
-            "WEEKLY": "Weekly",
-            "MANUAL": "Manual / irregular",
-        }
-        result["profileCadence"] = cadence_labels.get(profile.run_cadence, profile.run_cadence.replace("_", " ").title())
+        cadence_key = {
+            "DAILY": "cadence_daily",
+            "TWICE_WEEKLY": "cadence_twice_weekly",
+            "WEEKLY": "cadence_weekly",
+            "MANUAL": "cadence_manual",
+        }.get(profile.run_cadence)
+        result["profileCadence"] = (
+            service_text(cadence_key, language)
+            if cadence_key
+            else profile.run_cadence.replace("_", " ").title()
+        )
+        # The store picks the branch and renders it in English; re-render it
+        # here, where the reader's language is known.
+        state = str(result.get("state", ""))
+        hours = int(result.get("hours", 0) or 0)
+        if state:
+            status = service_text(f"next_review_status_{state.lower()}", language)
+            headline = service_text(f"next_review_headline_{state.lower()}", language)
+            timing = service_text(f"next_review_timing_{state.lower()}", language)
+            if status:
+                result["status"] = status.format(hours=hours)
+            if headline:
+                result["headline"] = headline
+            if timing:
+                result["timing"] = timing.format(hours=hours)
+        urgency = str(result.get("urgency", "")).replace(" ", "_").upper()
+        urgency_text = service_text(f"urgency_{urgency.lower()}", language)
+        if urgency_text:
+            result["urgency"] = urgency_text
         return result
 
     def _refresh_onboarding_review(self) -> None:
@@ -2749,7 +2802,7 @@ class AppController(QObject):
                         "status": display_status,
                         "tone": tone,
                         "detail": detail or "No strategy detail was recorded for the latest run.",
-                        "parameters": list(item.get("parameters", ())),
+                        "parameters": self._localized_parameters(item.get("parameters", ())),
                         "manualSteps": self._rendered_manual_steps(item.get("manualSteps", ())),
                         "primaryLabel": service_text("card_show_manual_setup", self._wizard_language)
                         if tone == "ready"

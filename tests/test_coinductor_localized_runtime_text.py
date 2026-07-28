@@ -252,3 +252,79 @@ def test_run_decision_is_spelled_for_a_reader(monkeypatch, tmp_path) -> None:
     assert controller._decision_label("HOLD") == "Žádná akce"
     # An enum nobody has mapped yet still reads better than SHOUTING_SNAKE_CASE.
     assert controller._decision_label("SOME_NEW_TYPE") == "Some new type"
+
+
+def test_parameter_labels_are_translated_on_every_card(monkeypatch, tmp_path) -> None:
+    """DesktopStore composes these and has no language of its own.
+
+    The Trade card built its labels in the controller and was translated; the
+    bot cards took theirs from the store and were not, so one screen showed
+    "Akce / Symbol / Jistota" beside "Symbol / Range / Grids".
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("cs")
+    controller._strategies = [
+        {
+            "type": "Spot Grid",
+            "status": "READY",
+            "detail": "x",
+            "parameters": [
+                {"label": "Range", "value": "1675 - 2040"},
+                {"label": "Grids", "value": "10"},
+                {"label": "Blockers", "value": "-"},
+                {"label": "Totally New Label", "value": "y"},
+            ],
+            "manualSteps": (),
+        }
+    ]
+
+    card = next(i for i in controller._build_action_plan_items() if i["title"] == "Spot Grid")
+
+    labels = [p["label"] for p in card["parameters"]]
+    assert labels[:3] == ["Rozsah", "Počet gridů", "Blokátory"]
+    assert labels[3] == "Totally New Label", "an unmapped label passes through, it does not vanish"
+    assert [p["value"] for p in card["parameters"]][:2] == ["1675 - 2040", "10"]
+
+
+def test_english_keeps_the_stored_labels(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    controller._strategies = [
+        {"type": "Spot Grid", "status": "READY", "detail": "x",
+         "parameters": [{"label": "Range", "value": "1675 - 2040"}], "manualSteps": ()}
+    ]
+
+    card = next(i for i in controller._build_action_plan_items() if i["title"] == "Spot Grid")
+
+    assert card["parameters"][0]["label"] == "Range"
+
+
+def test_switching_language_relanguages_the_cached_next_review(monkeypatch, tmp_path) -> None:
+    """nextReview is composed once when a snapshot loads.
+
+    Nothing recomposed it on a language change, so the panel kept the language
+    the app started in - and the property it hangs on, dataChanged, was not
+    emitted either.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    controller._snapshot = replace_next_review(
+        controller._snapshot,
+        {"state": "MANUAL_STEP", "status": "Manual step before rerun", "tone": "blocked",
+         "headline": "A fresh run can update market data.", "hours": 0,
+         "timing": "After the manual step", "urgency": "Action Required"},
+    )
+    controller._next_review = controller._enrich_next_review(controller._snapshot.next_review)
+    seen: list[int] = []
+    controller.dataChanged.connect(lambda: seen.append(1))
+
+    controller.setWizardLanguage("cs")
+
+    assert controller.nextReview["status"] == "Ruční krok před dalším během"
+    assert controller.nextReview["timing"] == "Po ručním kroku"
+    assert controller.nextReview["urgency"] == "Vyžaduje zásah"
+    assert seen, "QML re-reads these only on dataChanged"
+
+
+def replace_next_review(snapshot, review):
+    from dataclasses import replace
+
+    return replace(snapshot, next_review=review)

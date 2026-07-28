@@ -927,6 +927,10 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Other - review-only, e.g. HOLD or blocked",
         "cs": "Other - jen ke kontrole, např. HOLD nebo blocked",
     },
+    "manual_steps_title": {
+        "en": "Manual setup on Binance",
+        "cs": "Ruční nastavení na Binance",
+    },
     "last_live_trade_label": {
         "en": "Last live trade",
         "cs": "Poslední live obchod",

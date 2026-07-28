@@ -322,3 +322,29 @@ def test_the_manual_setup_note_is_translated(monkeypatch, tmp_path) -> None:
     card = next(i for i in controller._build_action_plan_items() if i["title"] == "Spot Grid")
 
     assert "veřejné API" in card["detail"], card["detail"]
+
+
+def test_manual_steps_survive_the_whole_path_to_the_card(monkeypatch, tmp_path) -> None:
+    """Steps are read from the journal and rebuilt into a new dict per card.
+
+    They were persisted, read and rendered correctly and still arrived empty,
+    because the card is assembled field by field and this one was not copied.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    _set_trade_state(controller, "HOLD", live_enabled=False, key_ready=False)
+    controller._strategies = [
+        {
+            "type": "Spot Grid",
+            "status": "READY",
+            "detail": "Suitable range.",
+            "parameters": [],
+            "manualSteps": ("Open Binance Home > Trading Bots > Spot Grid.", "Select BTCUSDC."),
+        }
+    ]
+
+    card = next(i for i in controller._build_action_plan_items() if i["title"] == "Spot Grid")
+
+    assert card["manualSteps"] == [
+        "Open Binance Home > Trading Bots > Spot Grid.",
+        "Select BTCUSDC.",
+    ]

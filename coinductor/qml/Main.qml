@@ -4926,6 +4926,8 @@ ApplicationWindow {
 
     Dialog {
         id: actionPlanDetailDialog
+        // Named so a screenshot test can open it without guessing at child types.
+        objectName: "actionPlanDetailDialog"
         title: activeActionPlanItem.title || appController.appText.action_detail_fallback_title
         modal: true
         anchors.centerIn: parent
@@ -4994,6 +4996,45 @@ ApplicationWindow {
                                     font.pixelSize: 13
                                     elide: Text.ElideRight
                                 }
+                            }
+                        }
+                    }
+                }
+                ColumnLayout {
+                    // The numbered procedure for setting the bot up on Binance.
+                    // It lived only in the Markdown report, so the dialog showed
+                    // the numbers to retype with no procedure to retype them into.
+                    Layout.fillWidth: true
+                    visible: (activeActionPlanItem.manualSteps || []).length > 0
+                    spacing: 10
+                    Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: border }
+                    Text {
+                        text: appController.appText.manual_steps_title
+                        color: textPrimary
+                        font.pixelSize: 16
+                        font.bold: true
+                    }
+                    Repeater {
+                        model: window.toModel(activeActionPlanItem.manualSteps)
+                        delegate: RowLayout {
+                            required property var modelData
+                            required property int index
+                            Layout.fillWidth: true
+                            spacing: 10
+                            Text {
+                                Layout.alignment: Qt.AlignTop
+                                Layout.preferredWidth: 20
+                                text: (index + 1) + "."
+                                color: textSecondary
+                                font.pixelSize: 12
+                                font.bold: true
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: modelData
+                                color: textPrimary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
                             }
                         }
                     }

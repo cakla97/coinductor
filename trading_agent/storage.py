@@ -521,6 +521,11 @@ class Storage:
         self._ensure_column("grid_recommendations", "estimated_quote_per_grid", "text")
         self._ensure_column("grid_recommendations", "estimated_grid_spacing_pct", "text")
         self._ensure_column("grid_recommendations", "blockers", "text")
+        # The manual setup steps were only ever written to the Markdown report,
+        # so the desktop could show the parameters to retype but not the
+        # procedure they belong to.
+        self._ensure_column("grid_recommendations", "manual_steps", "text")
+        self._ensure_column("rebalancing_bot_recommendations", "manual_steps", "text")
         self._ensure_column("active_grid_evaluations", "binance_bot_id", "text")
         self._ensure_column("active_grid_evaluations", "grid_count", "integer")
         self._ensure_column("active_grid_evaluations", "grid_type", "text")
@@ -1798,8 +1803,8 @@ class Storage:
                 run_id, recommended, symbol, reason, range_low, range_high, grid_count,
                 investment_usdt, stop_loss_price, take_profit_price, market_status,
                 deployment_allowed, score, range_width_pct, estimated_quote_per_grid,
-                estimated_grid_spacing_pct, blockers
-            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                estimated_grid_spacing_pct, blockers, manual_steps
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 run_id,
@@ -1819,6 +1824,7 @@ class Storage:
                 str(recommendation.estimated_quote_per_grid),
                 str(recommendation.estimated_grid_spacing_pct),
                 "\n".join(recommendation.blockers),
+                "\n".join(recommendation.manual_steps),
             ),
         )
         self.connection.commit()
@@ -1832,8 +1838,8 @@ class Storage:
             """
             insert into rebalancing_bot_recommendations (
                 run_id, enabled, recommended, deployment_allowed, mode, threshold_pct,
-                investment_usdt, excluded_assets, blockers, summary
-            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                investment_usdt, excluded_assets, blockers, summary, manual_steps
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 run_id,
@@ -1846,6 +1852,7 @@ class Storage:
                 "\n".join(recommendation.excluded_assets),
                 "\n".join(recommendation.blockers),
                 recommendation.summary,
+                "\n".join(recommendation.manual_steps),
             ),
         )
         self.connection.executemany(

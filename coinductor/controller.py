@@ -2582,6 +2582,7 @@ class AppController(QObject):
                         "tone": tone,
                         "detail": detail or "No strategy detail was recorded for the latest run.",
                         "parameters": list(item.get("parameters", ())),
+                        "manualSteps": list(item.get("manualSteps", ())),
                         "primaryLabel": service_text("card_show_manual_setup", self._wizard_language)
                         if tone == "ready"
                         else service_text("card_why_watched", self._wizard_language)

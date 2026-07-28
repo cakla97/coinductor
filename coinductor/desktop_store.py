@@ -149,7 +149,8 @@ class DesktopStore:
                        {self._column_expr(grid_columns, "range_low")}, {self._column_expr(grid_columns, "range_high")},
                        {self._column_expr(grid_columns, "grid_count")}, {self._column_expr(grid_columns, "stop_loss_price")},
                        {self._column_expr(grid_columns, "take_profit_price")}, {self._column_expr(grid_columns, "estimated_grid_spacing_pct")},
-                       {self._column_expr(grid_columns, "blockers")}
+                       {self._column_expr(grid_columns, "blockers")},
+                       {self._column_expr(grid_columns, "manual_steps")}
                 from grid_recommendations where run_id = ?
                 """,
                 (run_id,),
@@ -174,6 +175,7 @@ class DesktopStore:
                             {"label": "TP / SL", "value": self._range(grid["take_profit_price"], grid["stop_loss_price"])},
                             {"label": "Blockers", "value": str(grid["blockers"] or "")},
                         ),
+                        "manualSteps": self._line_values(grid["manual_steps"]),
                         "registrationSuggestion": {
                             "available": bool(symbol),
                             "name": f"{symbol} Grid" if symbol else "",
@@ -195,7 +197,8 @@ class DesktopStore:
             rebalance = connection.execute(
                 f"""
                 select deployment_allowed, mode, threshold_pct, investment_usdt, summary,
-                       {self._column_expr(rebalance_columns, "blockers")}
+                       {self._column_expr(rebalance_columns, "blockers")},
+                       {self._column_expr(rebalance_columns, "manual_steps")}
                 from rebalancing_bot_recommendations where run_id = ?
                 """,
                 (run_id,),
@@ -217,6 +220,7 @@ class DesktopStore:
                             {"label": "Basket", "value": basket},
                             {"label": "Blockers", "value": str(rebalance["blockers"] or "")},
                         ),
+                        "manualSteps": self._line_values(rebalance["manual_steps"]),
                         "registrationSuggestion": self._rebalancing_registration_suggestion(
                             connection,
                             run_id,

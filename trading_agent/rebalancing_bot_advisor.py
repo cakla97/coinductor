@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal, ROUND_HALF_UP
 
 from .decimal_utils import money
-from .manual_steps import ManualStep, render_manual_step, render_manual_steps
+from .messages import ManualStep, Message, render_manual_step, render_manual_steps, render_message, render_messages
 from .models import Balance, CapitalSourcePlanItem, CapitalSourcingPlan, PortfolioAnalysis, PortfolioAssetValuation, RebalancingBotAsset, RebalancingBotRecommendation
 
 
@@ -28,7 +28,7 @@ class RebalancingBotAdvisor:
         by_asset = {item.asset.upper(): item for item in portfolio.assets}
 
         eligible: list[tuple[str, PortfolioAssetValuation, str, str]] = []
-        blockers: list[str] = []
+        blockers: list[Message] = []
         for asset in allowed:
             if asset in by_asset and by_asset[asset].total_value_usdt >= minimum_value:
                 eligible.append(
@@ -52,7 +52,7 @@ class RebalancingBotAdvisor:
                     )
                 )
         if len(eligible) < minimum_assets:
-            blockers.append(f"only {len(eligible)} eligible assets meet the minimum value; at least {minimum_assets} are required")
+            blockers.append(Message("rebalance_block_too_few_assets", {"found": str(len(eligible)), "required": str(minimum_assets)}))
 
         eligible_total = sum((item.total_value_usdt for _, item, _, _ in eligible), Decimal("0"))
         assets: list[RebalancingBotAsset] = []
@@ -76,7 +76,10 @@ class RebalancingBotAdvisor:
         minimum_investment = Decimal(str(config.get("min_investment_usdt", "50")))
         if investment < minimum_investment:
             blockers.append(
-                f"guarded investment {self._money(investment)} is below configured minimum {self._money(minimum_investment)}"
+                Message(
+                    "rebalance_block_below_minimum",
+                    {"investment": str(self._money(investment)), "minimum": str(self._money(minimum_investment))},
+                )
             )
         funding_plan = self._funding_plan(portfolio, balances or [], investment)
         if funding_plan.missing_usdt > 0:
@@ -84,7 +87,7 @@ class RebalancingBotAdvisor:
             uncovered = max(Decimal("0"), funding_plan.missing_usdt - covered)
             if uncovered > 0:
                 blockers.append(
-                    f"safe funding plan leaves {self._money(uncovered)} USDC uncovered without using protected assets"
+                    Message("rebalance_block_uncovered", {"uncovered": str(self._money(uncovered))})
                 )
 
         protected = {str(asset).upper() for asset in self.config.get("capital_sourcing", {}).get("protected_assets", [])}
@@ -94,11 +97,15 @@ class RebalancingBotAdvisor:
             if item.asset.upper() not in allowed and item.total_value_usdt > 0
         )
         deployment_allowed = bool(assets) and not blockers
-        summary = (
-            f"Proposed {mode.lower()} Rebalancing Bot basket: "
-            + ", ".join(f"{item.asset} {item.target_weight_pct}%" for item in assets)
-            + f"; guarded investment {self._money(investment)} USDC."
+        summary_message = Message(
+            "rebalance_summary",
+            {
+                "mode": mode.lower(),
+                "basket": ", ".join(f"{item.asset} {item.target_weight_pct}%" for item in assets),
+                "investment": str(self._money(investment)),
+            },
         )
+        summary = render_message(summary_message)
         # Same as the grid: blockers have their own field and are shown on the
         # card, in the next-review panel and in the report. Repeating them here
         # printed the same sentence three times on one screen.
@@ -126,11 +133,13 @@ class RebalancingBotAdvisor:
             investment_usdt=self._money(investment),
             assets=tuple(assets),
             excluded_assets=excluded,
-            blockers=tuple(blockers),
+            blockers=render_messages(blockers),
             manual_steps=render_manual_steps(steps),
             summary=summary,
             funding_plan=funding_plan,
             manual_step_specs=steps,
+            blocker_messages=tuple(blockers),
+            summary_message=summary_message,
         )
 
     def _manual_steps(

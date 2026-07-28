@@ -1,15 +1,15 @@
-"""Localizable manual-setup steps for the bot advisors.
+"""Localizable text the engine produces for the desktop to display.
 
-Binance has no public API for creating trading bots, so the procedure the user
-has to carry out by hand is the one place the assistant cannot act for them -
-and it was the one place still stuck in English inside a translated UI.
+The engine used to compose every user-facing sentence as an f-string, which
+left nothing to translate at the display boundary: a finished sentence with
+numbers baked in can only be re-localized by parsing English prose back apart.
+Each localization round therefore fixed one screen and revealed the next.
 
-The advisors used to compose these as f-strings, which left nothing to
-translate at the display boundary: a finished sentence with numbers baked in
-can only be re-localized by parsing English prose back apart. So they emit
-``ManualStep`` (a key plus its parameters) instead, and the text is composed
-once per reader: English for the Markdown report, the user's language for the
-desktop app.
+So the producers emit ``Message`` (a key plus its parameters) and the text is
+composed once per reader: English for the Markdown report, the user's language
+for the desktop app. Started with the manual setup steps; the advisors, the
+risk engine, the next-run recommender and the recommended-action builder use
+the same registry.
 
 Parameter values are deliberately *not* translated. They are either numbers or
 labels the user must find verbatim in Binance's own interface ("By Ratio",
@@ -27,10 +27,10 @@ DEFAULT_LANGUAGE = "en"
 
 
 @dataclass(frozen=True)
-class ManualStep:
+class Message:
     """One instruction, still unrendered.
 
-    ``key`` selects the sentence from ``MANUAL_STEP_TEXT``; ``params`` fills its
+    ``key`` selects the sentence from ``MESSAGE_TEXT``; ``params`` fills its
     placeholders. Both survive a round trip through JSON so the desktop app can
     render a step recorded by an earlier run.
     """
@@ -42,7 +42,7 @@ class ManualStep:
 # Every sentence the advisors can emit. English is the fallback: an unknown key
 # or a missing translation renders in English rather than showing the reader a
 # raw identifier.
-MANUAL_STEP_TEXT: dict[str, dict[str, str]] = {
+MESSAGE_TEXT: dict[str, dict[str, str]] = {
     "bots_manual_because_no_api": {
         "en": (
             "Binance has no public API for creating trading bots, so Coinductor works out the "
@@ -229,6 +229,71 @@ MANUAL_STEP_TEXT: dict[str, dict[str, str]] = {
         "en": "Record the created bot parameters in the local strategy registry before the next run.",
         "cs": "Před dalším během zapište parametry vytvořeného bota do lokálního registru strategií.",
     },
+    # --- Grid scoring, the sentence under the card ---
+    "grid_reason_score": {
+        "en": "{symbol} scored {score}/100 as a range candidate: {reasons}.",
+        "cs": "{symbol} získal {score}/100 jako kandidát na range strategii: {reasons}.",
+    },
+    "grid_reason_neutral_trend": {"en": "neutral trend", "cs": "neutrální trend"},
+    "grid_reason_risk_on_trend": {"en": "controlled risk-on trend", "cs": "mírně růstový trend"},
+    "grid_reason_risk_off_trend": {"en": "risk-off trend", "cs": "klesající trend"},
+    "grid_reason_rsi": {"en": "RSI14 {value}", "cs": "RSI14 {value}"},
+    "grid_reason_atr": {"en": "ATR {value}%", "cs": "ATR {value} %"},
+    "grid_reason_atr_outside": {
+        "en": "ATR {value}% (outside preferred range)",
+        "cs": "ATR {value} % (mimo preferované pásmo)",
+    },
+    "grid_reason_ema_distance": {
+        "en": "{value}% from EMA200",
+        "cs": "{value} % od EMA200",
+    },
+    "grid_reason_7d": {"en": "7d move {value}%", "cs": "pohyb za 7 d {value} %"},
+    "grid_reason_7d_directional": {
+        "en": "7d move {value}% (strongly directional)",
+        "cs": "pohyb za 7 d {value} % (výrazně jednosměrný)",
+    },
+    "grid_reason_no_research": {
+        "en": "multi-timeframe research unavailable",
+        "cs": "průzkum přes více časových rámců není k dispozici",
+    },
+    # --- Grid deployment blockers ---
+    "grid_block_market_status": {
+        "en": "market status is {status}, not SUITABLE",
+        "cs": "stav trhu je {status}, ne SUITABLE",
+    },
+    "grid_block_max_bots": {
+        "en": "maximum active grid bot count is already reached",
+        "cs": "maximální počet aktivních grid botů je už vyčerpán",
+    },
+    "grid_block_kill_switch": {
+        "en": "live risk kill switch is active",
+        "cs": "je aktivní bezpečnostní kill switch",
+    },
+    "grid_block_cooldown": {
+        "en": "loss cooldown is active",
+        "cs": "probíhá pauza po ztrátě",
+    },
+    "grid_block_capital": {
+        "en": "not enough grid capital: {grids} grids need {needed} USDC, only {allocated} is allocated",
+        "cs": "málo kapitálu pro grid: {grids} gridů potřebuje {needed} USDC, vyhrazeno je jen {allocated}",
+    },
+    # --- Rebalancing summary and blockers ---
+    "rebalance_summary": {
+        "en": "Proposed {mode} Rebalancing Bot basket: {basket}; guarded investment {investment} USDC.",
+        "cs": "Navržený košík Rebalancing Bota v režimu {mode}: {basket}; zabezpečená investice {investment} USDC.",
+    },
+    "rebalance_block_too_few_assets": {
+        "en": "only {found} eligible assets meet the minimum value; at least {required} are required",
+        "cs": "minimální hodnotu splňuje jen {found} vhodných aktiv; potřeba je alespoň {required}",
+    },
+    "rebalance_block_below_minimum": {
+        "en": "guarded investment {investment} is below configured minimum {minimum}",
+        "cs": "zabezpečená investice {investment} je pod nastaveným minimem {minimum}",
+    },
+    "rebalance_block_uncovered": {
+        "en": "safe funding plan leaves {uncovered} USDC uncovered without using protected assets",
+        "cs": "bezpečný plán financování nechává {uncovered} USDC nepokrytých bez sáhnutí na chráněná aktiva",
+    },
     # --- Funding the Rebalancing Bot -------------------------------------
     "funding_convert": {
         "en": "Convert approximately {value} USDC-equivalent of {asset} to {quote}.",
@@ -261,14 +326,14 @@ MANUAL_STEP_TEXT: dict[str, dict[str, str]] = {
 }
 
 
-def render_manual_step(step: ManualStep, language: str = DEFAULT_LANGUAGE) -> str:
+def render_message(step: Message, language: str = DEFAULT_LANGUAGE) -> str:
     """Compose one step's sentence, falling back to English then to the key.
 
     A key with no entry at all renders as the key itself: visible enough in a
     report to be reported as a bug, but never a crash in front of a user who
     only wanted to read their next move.
     """
-    translations = MANUAL_STEP_TEXT.get(step.key)
+    translations = MESSAGE_TEXT.get(step.key)
     if translations is None:
         return step.key
     template = translations.get(language) or translations[DEFAULT_LANGUAGE]
@@ -280,20 +345,20 @@ def render_manual_step(step: ManualStep, language: str = DEFAULT_LANGUAGE) -> st
         return template
 
 
-def render_manual_steps(
-    steps: Iterable[ManualStep], language: str = DEFAULT_LANGUAGE
+def render_messages(
+    steps: Iterable[Message], language: str = DEFAULT_LANGUAGE
 ) -> tuple[str, ...]:
-    return tuple(render_manual_step(step, language) for step in steps)
+    return tuple(render_message(step, language) for step in steps)
 
 
-def manual_steps_to_json(steps: Iterable[ManualStep]) -> str:
+def messages_to_json(steps: Iterable[Message]) -> str:
     return json.dumps(
         [{"key": step.key, "params": step.params} for step in steps],
         ensure_ascii=False,
     )
 
 
-def manual_steps_from_json(payload: str) -> tuple[ManualStep, ...]:
+def messages_from_json(payload: str) -> tuple[Message, ...]:
     """Parse stored steps, tolerating rows written before this format existed.
 
     Runs recorded by 0.1.3 stored newline-separated English prose. Those rows
@@ -307,10 +372,10 @@ def manual_steps_from_json(payload: str) -> tuple[ManualStep, ...]:
     try:
         decoded = json.loads(text)
     except (ValueError, TypeError):
-        return tuple(ManualStep(line) for line in text.splitlines() if line.strip())
+        return tuple(Message(line) for line in text.splitlines() if line.strip())
     if not isinstance(decoded, list):
         return ()
-    steps: list[ManualStep] = []
+    steps: list[Message] = []
     for item in decoded:
         if not isinstance(item, dict):
             continue
@@ -323,5 +388,16 @@ def manual_steps_from_json(payload: str) -> tuple[ManualStep, ...]:
             if isinstance(raw_params, dict)
             else {}
         )
-        steps.append(ManualStep(key, params))
+        steps.append(Message(key, params))
     return tuple(steps)
+
+
+# The names the manual-step call sites and the stored JSON already use. The
+# shape is identical - a key and its parameters - so the storage format did not
+# change when the concept was widened beyond setup steps.
+ManualStep = Message
+MANUAL_STEP_TEXT = MESSAGE_TEXT
+render_manual_step = render_message
+render_manual_steps = render_messages
+manual_steps_to_json = messages_to_json
+manual_steps_from_json = messages_from_json

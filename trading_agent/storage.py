@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
-from .manual_steps import manual_steps_to_json
+from .messages import manual_steps_to_json
 from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, FirstPortfolioTrancheResult, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluation, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 # Columns that every reader filters on. Indexed on whichever tables carry them.
@@ -527,6 +527,14 @@ class Storage:
         # procedure they belong to.
         self._ensure_column("grid_recommendations", "manual_steps", "text")
         self._ensure_column("rebalancing_bot_recommendations", "manual_steps", "text")
+        # Structured blockers and summary, so the desktop can render them in the
+        # reader's language. The prose columns beside them stay as they were:
+        # the report uses them, and rows written before this have nothing else.
+        self._ensure_column("grid_recommendations", "blocker_messages", "text")
+        self._ensure_column("grid_recommendations", "reason_message", "text")
+        self._ensure_column("grid_recommendations", "reason_part_messages", "text")
+        self._ensure_column("rebalancing_bot_recommendations", "blocker_messages", "text")
+        self._ensure_column("rebalancing_bot_recommendations", "summary_message", "text")
         self._ensure_column("active_grid_evaluations", "binance_bot_id", "text")
         self._ensure_column("active_grid_evaluations", "grid_count", "integer")
         self._ensure_column("active_grid_evaluations", "grid_type", "text")
@@ -1804,8 +1812,9 @@ class Storage:
                 run_id, recommended, symbol, reason, range_low, range_high, grid_count,
                 investment_usdt, stop_loss_price, take_profit_price, market_status,
                 deployment_allowed, score, range_width_pct, estimated_quote_per_grid,
-                estimated_grid_spacing_pct, blockers, manual_steps
-            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                estimated_grid_spacing_pct, blockers, manual_steps,
+                blocker_messages, reason_message, reason_part_messages
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 run_id,
@@ -1829,6 +1838,11 @@ class Storage:
                 # the reader's language. Rows written before 0.1.4 hold plain
                 # lines, which manual_steps_from_json still returns as-is.
                 manual_steps_to_json(recommendation.manual_step_specs),
+                manual_steps_to_json(recommendation.blocker_messages),
+                manual_steps_to_json(
+                    (recommendation.reason_message,) if recommendation.reason_message else ()
+                ),
+                manual_steps_to_json(recommendation.reason_part_messages),
             ),
         )
         self.connection.commit()
@@ -1842,8 +1856,9 @@ class Storage:
             """
             insert into rebalancing_bot_recommendations (
                 run_id, enabled, recommended, deployment_allowed, mode, threshold_pct,
-                investment_usdt, excluded_assets, blockers, summary, manual_steps
-            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                investment_usdt, excluded_assets, blockers, summary, manual_steps,
+                blocker_messages, summary_message
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 run_id,
@@ -1857,6 +1872,10 @@ class Storage:
                 "\n".join(recommendation.blockers),
                 recommendation.summary,
                 manual_steps_to_json(recommendation.manual_step_specs),
+                manual_steps_to_json(recommendation.blocker_messages),
+                manual_steps_to_json(
+                    (recommendation.summary_message,) if recommendation.summary_message else ()
+                ),
             ),
         )
         self.connection.executemany(

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from trading_agent.manual_steps import ManualStep
+from trading_agent.messages import ManualStep, Message
 
 
 @dataclass(frozen=True)
@@ -239,6 +239,13 @@ class GridRecommendation:
     # desktop app reads the specs and renders them in the user's language.
     manual_steps: tuple[str, ...]
     manual_step_specs: tuple[ManualStep, ...] = ()
+    # Same rule as manual_steps: the strings above are the English rendering,
+    # derived from these at construction so the two cannot drift.
+    blocker_messages: tuple[Message, ...] = ()
+    reason_message: Message | None = None
+    # The parts that fill reason_message's {reasons}. Kept apart so the
+    # sentence can be composed in the reader's language, not baked in English.
+    reason_part_messages: tuple[Message, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -397,6 +404,8 @@ class RebalancingBotRecommendation:
     summary: str
     funding_plan: CapitalSourcingPlan | None = None
     manual_step_specs: tuple[ManualStep, ...] = ()
+    blocker_messages: tuple[Message, ...] = ()
+    summary_message: Message | None = None
 
 
 @dataclass(frozen=True)

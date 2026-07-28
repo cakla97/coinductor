@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication, QImageReader
 
 from trading_agent.config import default_config_path, load_config
-from trading_agent.manual_steps import ManualStep, render_manual_step
+from trading_agent.messages import ManualStep, render_manual_step
 from trading_agent.storage import Storage
 
 from .ai_provider import AiProviderService, provider_kind
@@ -2625,6 +2625,24 @@ class AppController(QObject):
                 result["headline"] = headline
             if timing:
                 result["timing"] = timing.format(hours=hours)
+        # Blockers arrive unrendered, each tagged with the strategy it came
+        # from, so the panel can name both in the reader's language.
+        for field, source in (("manualSteps", "manualStepSpecs"), ("triggers", "marketConditionSpecs")):
+            specs = result.get(source) or ()
+            if not specs:
+                continue
+            rendered = [
+                f"{entry.get('strategy', '')}: {self._rendered_manual_steps((entry.get('blocker', {}),))[0]}"
+                for entry in specs
+                if isinstance(entry, dict)
+            ]
+            if field == "triggers":
+                # Engine triggers keep their place; only the blockers are ours.
+                engine_triggers = [
+                    item for item in (result.get("triggers") or ()) if ": " not in str(item)
+                ]
+                rendered = engine_triggers + rendered
+            result[field] = list(dict.fromkeys(rendered))
         urgency = str(result.get("urgency", "")).replace(" ", "_").upper()
         urgency_text = service_text(f"urgency_{urgency.lower()}", language)
         if urgency_text:
@@ -2797,6 +2815,19 @@ class AppController(QObject):
                 # The reason lived only in the report and a wizard hint seen once,
                 # so a list of numbers to retype read as an unfinished feature.
                 if str(item.get("type", "")) in ("Spot Grid", "Rebalancing"):
+                    # The card summary is the advisor's sentence; render it in
+                    # the reader's language rather than echoing the English the
+                    # report needs.
+                    localized = self._rendered_manual_steps(item.get("detailMessage", ()))
+                    if localized:
+                        parts = self._rendered_manual_steps(item.get("detailParts", ()))
+                        spec = (item.get("detailMessage") or ({},))[0]
+                        params = dict(spec.get("params", {}))
+                        if parts:
+                            params["reasons"] = "; ".join(parts)
+                        detail = render_manual_step(
+                            ManualStep(str(spec.get("key", "")), params), self._wizard_language
+                        )
                     note = service_text("bot_setup_is_manual", self._wizard_language)
                     detail = f"{detail} {note}".strip() if detail else note
                 cards.append(
@@ -2809,7 +2840,7 @@ class AppController(QObject):
                         # Their own field, not a value in the tile grid: a
                         # blocker is a sentence, and beside "Grids: 8" a
                         # sentence can only be elided.
-                        "blockers": list(item.get("blockers", ())),
+                        "blockers": self._rendered_manual_steps(item.get("blockers", ())),
                         "manualSteps": self._rendered_manual_steps(item.get("manualSteps", ())),
                         "primaryLabel": service_text("card_show_manual_setup", self._wizard_language)
                         if tone == "ready"

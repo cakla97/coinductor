@@ -10,7 +10,7 @@ from decimal import Decimal
 import pytest
 
 from trading_agent.grid_advisor import GridBotAdvisor
-from trading_agent.manual_steps import (
+from trading_agent.messages import (
     MANUAL_STEP_TEXT,
     ManualStep,
     manual_steps_from_json,
@@ -94,11 +94,17 @@ def test_every_template_is_translated_into_every_language() -> None:
 
 
 def test_czech_text_is_actually_translated_not_copied() -> None:
-    """A copied English string passes a presence check and fails the user."""
+    """A copied English string passes a presence check and fails the user.
+
+    Except where the whole message is an indicator name and its number, which
+    is written the same way in both languages.
+    """
+    identical_by_design = {"grid_reason_rsi"}
     copied = [
         key
         for key, translations in MANUAL_STEP_TEXT.items()
         if translations["cs"].strip() == translations["en"].strip()
+        and key not in identical_by_design
     ]
     assert copied == [], f"Czech is identical to English for: {copied}"
 

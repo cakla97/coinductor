@@ -6,7 +6,7 @@ from pathlib import Path
 import re
 import sqlite3
 
-from trading_agent.manual_steps import manual_steps_from_json
+from trading_agent.messages import Message, manual_steps_from_json, render_message
 from trading_agent.storage import apply_connection_pragmas, column_or_null, table_columns, table_exists
 
 from .models import DesktopSnapshot
@@ -151,7 +151,10 @@ class DesktopStore:
                        {self._column_expr(grid_columns, "grid_count")}, {self._column_expr(grid_columns, "stop_loss_price")},
                        {self._column_expr(grid_columns, "take_profit_price")}, {self._column_expr(grid_columns, "estimated_grid_spacing_pct")},
                        {self._column_expr(grid_columns, "blockers")},
-                       {self._column_expr(grid_columns, "manual_steps")}
+                       {self._column_expr(grid_columns, "manual_steps")},
+                       {self._column_expr(grid_columns, "blocker_messages")},
+                       {self._column_expr(grid_columns, "reason_message")},
+                       {self._column_expr(grid_columns, "reason_part_messages")}
                 from grid_recommendations where run_id = ?
                 """,
                 (run_id,),
@@ -175,7 +178,9 @@ class DesktopStore:
                             {"label": "Spacing", "value": self._percent(grid["estimated_grid_spacing_pct"])},
                             {"label": "TP / SL", "value": self._range(grid["take_profit_price"], grid["stop_loss_price"])},
                         ),
-                        "blockers": self._line_values(grid["blockers"]),
+                        "blockers": self._messages_or_lines(grid["blocker_messages"], grid["blockers"]),
+                        "detailMessage": self._manual_step_specs(grid["reason_message"]),
+                        "detailParts": self._manual_step_specs(grid["reason_part_messages"]),
                         "manualSteps": self._manual_step_specs(grid["manual_steps"]),
                         "registrationSuggestion": {
                             "available": bool(symbol),
@@ -199,7 +204,9 @@ class DesktopStore:
                 f"""
                 select deployment_allowed, mode, threshold_pct, investment_usdt, summary,
                        {self._column_expr(rebalance_columns, "blockers")},
-                       {self._column_expr(rebalance_columns, "manual_steps")}
+                       {self._column_expr(rebalance_columns, "manual_steps")},
+                       {self._column_expr(rebalance_columns, "blocker_messages")},
+                       {self._column_expr(rebalance_columns, "summary_message")}
                 from rebalancing_bot_recommendations where run_id = ?
                 """,
                 (run_id,),
@@ -220,7 +227,8 @@ class DesktopStore:
                             {"label": "Trigger", "value": f"By ratio {self._percent(rebalance['threshold_pct'])}"},
                             {"label": "Basket", "value": basket},
                         ),
-                        "blockers": self._line_values(rebalance["blockers"]),
+                        "blockers": self._messages_or_lines(rebalance["blocker_messages"], rebalance["blockers"]),
+                        "detailMessage": self._manual_step_specs(rebalance["summary_message"]),
                         "manualSteps": self._manual_step_specs(rebalance["manual_steps"]),
                         "registrationSuggestion": self._rebalancing_registration_suggestion(
                             connection,
@@ -591,17 +599,26 @@ class DesktopStore:
         )
         manual_steps: list[str] = []
         market_conditions: list[str] = []
+        manual_step_specs: list[dict[str, object]] = []
+        market_condition_specs: list[dict[str, object]] = []
         for strategy in strategies:
             strategy_type = str(strategy.get("type", "Strategy"))
             # Blockers used to be scanned out of the parameter tiles by label.
             # They have their own key now, because a sentence cannot live in a
             # fixed-width tile - this list is what the panel is built from.
-            for blocker in strategy.get("blockers", ()):
+            for spec in strategy.get("blockers", ()):
+                # The card carries these unrendered so the desktop can localize
+                # them; this panel needs the sentence, and its own English copy
+                # is what the AI assistant and the report read.
+                blocker = render_message(Message(str(spec.get("key", "")), dict(spec.get("params", {}))))
                 item = f"{strategy_type}: {blocker}"
-                if any(term in str(blocker).lower() for term in structural_terms):
+                entry = {"strategy": strategy_type, "blocker": dict(spec)}
+                if any(term in blocker.lower() for term in structural_terms):
                     manual_steps.append(item)
+                    manual_step_specs.append(entry)
                 else:
                     market_conditions.append(item)
+                    market_condition_specs.append(entry)
 
         scheduled_at = self._scheduled_review(started_at, hours)
         due_now = scheduled_at is not None and scheduled_at <= datetime.now(UTC)
@@ -640,6 +657,8 @@ class DesktopStore:
             "reason": str(row["reason"] or "No next-run reason was recorded."),
             "triggers": list(dict.fromkeys(triggers + market_conditions)),
             "manualSteps": list(dict.fromkeys(manual_steps)),
+            "manualStepSpecs": manual_step_specs,
+            "marketConditionSpecs": market_condition_specs,
             "sourceRun": str(run_id),
             "urgency": str(row["urgency"] or "NORMAL").replace("_", " ").title(),
         }
@@ -757,6 +776,17 @@ class DesktopStore:
 
     def _line_values(self, value: object) -> tuple[str, ...]:
         return tuple(part.strip() for part in str(value or "").splitlines() if part.strip())
+
+    def _messages_or_lines(self, structured: object, prose: object) -> list[dict[str, object]]:
+        """Prefer the structured form; fall back to the prose beside it.
+
+        A run recorded before these columns existed has only the sentences, and
+        they still have to appear - untranslated, but present.
+        """
+        specs = self._manual_step_specs(structured)
+        if specs:
+            return specs
+        return [{"key": line, "params": {}} for line in self._line_values(prose)]
 
     def _manual_step_specs(self, value: object) -> list[dict[str, object]]:
         """Hand the manual steps on unrendered so the controller can localize.

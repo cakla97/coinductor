@@ -232,7 +232,7 @@ def test_next_review_waits_for_market_conditions_without_manual_blocker(tmp_path
         {
             "type": "Spot Grid",
             "parameters": (),
-            "blockers": ("Market status is WATCH.",),
+            "blockers": ({"key": "Market status is WATCH.", "params": {}},),
         },
     )
 

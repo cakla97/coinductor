@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 
 from .decimal_utils import money
-from .manual_steps import ManualStep, render_manual_steps
+from .messages import ManualStep, Message, render_manual_steps, render_message, render_messages
 from .models import (
     ActiveStrategiesReport,
     GridCandidateAssessment,
@@ -64,11 +64,15 @@ class GridBotAdvisor:
         )
         deployment_allowed = not blockers
         recommended = market_status == "SUITABLE" and deployment_allowed
-        reason = (
-            f"{selected_snapshot.symbol} scored {score:.1f}/100 as a range candidate: "
-            + "; ".join(reasons)
-            + "."
+        reason_message = Message(
+            "grid_reason_score",
+            {
+                "symbol": selected_snapshot.symbol,
+                "score": f"{score:.1f}",
+                "reasons": "; ".join(render_messages(reasons)),
+            },
         )
+        reason = render_message(reason_message)
         # Blockers are not repeated here. They have their own field, which the
         # card shows, the next-review panel shows and the report lists - so
         # inlining them printed the same paragraph three times on one screen.
@@ -79,7 +83,7 @@ class GridBotAdvisor:
                 symbol=snapshot.symbol,
                 score=self._one_decimal(candidate_score),
                 market_status=status,
-                reason="; ".join(candidate_reasons),
+                reason="; ".join(render_messages(candidate_reasons)),
             )
             for snapshot, _, candidate_score, status, candidate_reasons in sorted(
                 candidates,
@@ -97,7 +101,7 @@ class GridBotAdvisor:
             stop_loss,
             take_profit,
             deployment_allowed,
-            capital_short=any("not enough grid capital" in item for item in blockers),
+            capital_short=any(item.key == "grid_block_capital" for item in blockers),
         )
         return GridRecommendation(
             recommended=recommended,
@@ -116,7 +120,10 @@ class GridBotAdvisor:
             investment_usdt=self._money(investment),
             stop_loss_price=stop_loss,
             take_profit_price=take_profit,
-            blockers=tuple(blockers),
+            blockers=render_messages(blockers),
+            blocker_messages=tuple(blockers),
+            reason_message=reason_message,
+            reason_part_messages=tuple(reasons),
             candidate_assessments=assessments,
             manual_steps=render_manual_steps(steps),
             manual_step_specs=steps,
@@ -129,47 +136,47 @@ class GridBotAdvisor:
     ) -> tuple[MarketSnapshot, SymbolMarketResearch | None, Decimal, str, list[str]]:
         config = self.config["grid_bot"]
         score = Decimal("0")
-        reasons: list[str] = []
+        reasons: list[Message] = []
         if snapshot.trend_regime == "NEUTRAL":
             score += Decimal("35")
-            reasons.append("neutral trend")
+            reasons.append(Message("grid_reason_neutral_trend"))
         elif snapshot.trend_regime == "RISK_ON":
             score += Decimal("20")
-            reasons.append("controlled risk-on trend")
+            reasons.append(Message("grid_reason_risk_on_trend"))
         else:
-            reasons.append("risk-off trend")
+            reasons.append(Message("grid_reason_risk_off_trend"))
 
         target_rsi = Decimal(str(config.get("target_rsi14", "52")))
         rsi_distance = abs(snapshot.rsi14 - target_rsi)
         score += max(Decimal("0"), Decimal("25") - rsi_distance * Decimal("1.5"))
-        reasons.append(f"RSI14 {snapshot.rsi14:.1f}")
+        reasons.append(Message("grid_reason_rsi", {"value": f"{snapshot.rsi14:.1f}"}))
 
         atr_pct = snapshot.atr14 / snapshot.price * Decimal("100") if snapshot.price > 0 else Decimal("0")
         min_atr = Decimal(str(config.get("min_atr_pct", "1.0")))
         max_atr = Decimal(str(config.get("max_atr_pct", "6.0")))
         if min_atr <= atr_pct <= max_atr:
             score += Decimal("20")
-            reasons.append(f"ATR {atr_pct:.2f}%")
+            reasons.append(Message("grid_reason_atr", {"value": f"{atr_pct:.2f}"}))
         else:
-            reasons.append(f"ATR {atr_pct:.2f}% (outside preferred range)")
+            reasons.append(Message("grid_reason_atr_outside", {"value": f"{atr_pct:.2f}"}))
 
         ema_distance = abs(snapshot.price - snapshot.ema200) / snapshot.ema200 * Decimal("100") if snapshot.ema200 else Decimal("100")
         max_ema_distance = Decimal(str(config.get("max_abs_ema200_distance_pct", "12")))
         if ema_distance <= max_ema_distance:
             score += Decimal("10")
-            reasons.append(f"{ema_distance:.2f}% from EMA200")
+            reasons.append(Message("grid_reason_ema_distance", {"value": f"{ema_distance:.2f}"}))
         else:
-            reasons.append(f"{ema_distance:.2f}% from EMA200")
+            reasons.append(Message("grid_reason_ema_distance", {"value": f"{ema_distance:.2f}"}))
 
         if research is not None:
             max_trend = Decimal(str(config.get("max_abs_7d_return_pct", "10")))
             if research.return_7d_pct is not None and abs(research.return_7d_pct) <= max_trend:
                 score += Decimal("10")
-                reasons.append(f"7d move {research.return_7d_pct:+.2f}%")
+                reasons.append(Message("grid_reason_7d", {"value": f"{research.return_7d_pct:+.2f}"}))
             elif research.return_7d_pct is not None:
-                reasons.append(f"7d move {research.return_7d_pct:+.2f}% (strongly directional)")
+                reasons.append(Message("grid_reason_7d_directional", {"value": f"{research.return_7d_pct:+.2f}"}))
         else:
-            reasons.append("multi-timeframe research unavailable")
+            reasons.append(Message("grid_reason_no_research"))
 
         suitable_score = Decimal(str(config.get("suitable_score", "70")))
         watch_score = Decimal(str(config.get("watch_score", "45")))
@@ -241,17 +248,17 @@ class GridBotAdvisor:
         risk_state: LiveRiskState,
         quote_per_grid: Decimal,
         grid_count: int,
-    ) -> list[str]:
+    ) -> list[Message]:
         config = self.config["grid_bot"]
-        blockers: list[str] = []
+        blockers: list[Message] = []
         if market_status != "SUITABLE":
-            blockers.append(f"market status is {market_status}, not SUITABLE")
+            blockers.append(Message("grid_block_market_status", {"status": market_status}))
         if len(active_strategies.grid_bots) >= int(config.get("max_active_grid_bots", 1)):
-            blockers.append("maximum active grid bot count is already reached")
+            blockers.append(Message("grid_block_max_bots"))
         if risk_state.kill_switch_active:
-            blockers.append("live risk kill switch is active")
+            blockers.append(Message("grid_block_kill_switch"))
         if risk_state.cooldown_active:
-            blockers.append("loss cooldown is active")
+            blockers.append(Message("grid_block_cooldown"))
         min_quote = self._min_quote_per_grid()
         if quote_per_grid < min_quote:
             # One short fact. What to do about it belongs in the manual steps,
@@ -261,8 +268,10 @@ class GridBotAdvisor:
             needed = min_quote * Decimal(grid_count) if grid_count > 0 else min_quote
             allocated = quote_per_grid * Decimal(grid_count)
             blockers.append(
-                f"not enough grid capital: {grid_count} grids need {needed:.2f} USDC, "
-                f"only {allocated:.2f} is allocated"
+                Message(
+                    "grid_block_capital",
+                    {"grids": str(grid_count), "needed": f"{needed:.2f}", "allocated": f"{allocated:.2f}"},
+                )
             )
         return blockers
 

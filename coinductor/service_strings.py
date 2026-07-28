@@ -335,6 +335,11 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Locally stored AI Assistant conversations and screenshots pasted from the clipboard. The newest 20 chats and up to 40 pasted images are retained until this data group is removed.",
         "cs": "Lokálně uložené konverzace s AI Assistant a snímky obrazovky vložené ze schránky. Do odstranění této skupiny se uchovává 20 nejnovějších chatů a až 40 vložených obrázků.",
     },
+    "reset_group_config": {"en": "Configuration", "cs": "Konfigurace"},
+    "reset_group_config_detail": {
+        "en": "Your config.toml - risk limits, allowed symbols, strategy settings. Deleting it means the next start writes fresh defaults.",
+        "cs": "Váš config.toml - limity rizika, povolené symboly, nastavení strategií. Po smazání se při dalším startu zapíšou výchozí hodnoty.",
+    },
     "reset_group_credentials": {"en": "API keys", "cs": "API klíče"},
     "reset_group_credentials_detail": {
         "en": "Your Binance and AI keys, removed from the operating system's credential store and from any local .env file. Choose this when you are removing Coinductor for good - the uninstaller does not touch your keys.",

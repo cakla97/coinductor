@@ -99,8 +99,10 @@ class LocalDataResetService:
                 "default": False,
                 # app.reports_dir is "outputs/reports"; this group used to list
                 # only "reports", so selecting it deleted nothing at all. The
-                # bare name is kept for older layouts that used it.
-                "paths": ("outputs/reports", "reports"),
+                # bare name is kept for older layouts that used it. Diagnostics
+                # bundles are generated, human-readable output too, and survived
+                # a "delete everything" that claimed to be a full local reset.
+                "paths": ("outputs/reports", "outputs/diagnostics", "reports"),
             },
             {
                 "code": "RESEARCH",
@@ -115,6 +117,16 @@ class LocalDataResetService:
                 "detail": self._t("reset_group_ai_chat_detail"),
                 "default": False,
                 "paths": ("state/assistant_history.json", "state/assistant_attachments"),
+            },
+            {
+                # Off by default and listed separately: this holds hand-tuned
+                # risk limits and the trading universe, so it is the one thing
+                # here a user may want to keep while clearing everything else.
+                "code": "CONFIG",
+                "name": self._t("reset_group_config"),
+                "detail": self._t("reset_group_config_detail"),
+                "default": False,
+                "paths": ("config.toml",),
             },
             {
                 "code": "CREDENTIALS",

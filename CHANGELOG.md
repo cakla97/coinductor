@@ -3,6 +3,52 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.5] — 2026-07-28
+
+Found by upgrading 0.1.3 in place and working through the app afterwards.
+
+### Fixed
+
+- **An unconfigured AI provider was reported as a model that answered badly.**
+  With nothing set up — the default state — the AI summary read "the model
+  response was not usable (RuntimeError)", naming a response that never
+  existed and a Python exception class, so anyone who had never configured AI
+  went looking for a broken model. The trade proposal was quieter and worse: it
+  simply returned the deterministic verdict, so ticking "AI proposals" gave an
+  answer with nothing saying where it came from. Both now say plainly that no
+  provider is configured, and a genuine failure keeps its actual cause.
+- **Run History showed every run in UTC.** SQLite records the start time with no
+  offset and the list printed it verbatim, so runs looked hours old — while the
+  Action Plan's next-review line, which already converted, disagreed with it on
+  the same screen.
+- **A past run's report could not be opened.** Thirty runs were listed and the
+  only report reachable anywhere in the app was the newest one, from the Action
+  Plan.
+- **Text that appears only after an action was still English in a Czech app**:
+  the eight completion toasts, the Active Strategies subtitle and its
+  pending-evaluation note. All are composed in Python the moment a run finishes,
+  which is how they outlived every earlier localization pass.
+- **"Refresh monitoring" gave almost no sign it was working** — a swapped label
+  that then sits still for the whole run — on a button that quietly starts a
+  full analysis. It now spins, and says what it does on hover. The Overview
+  analysis button spins too.
+
+### Changed
+
+- The installer states `CloseApplications` explicitly. Upgrading over a running
+  Coinductor already offered to close it rather than demanding a reboot, but as
+  an Inno Setup default a future change could have taken it away silently.
+  Restart Manager no longer relaunches the app, since the installer's own final
+  step already offers to.
+- The antivirus guidance names the temporary path a scanner actually inspects.
+  The download is a loader that unpacks the real installer into
+  `%LOCALAPPDATA%\Temp\is-*.tmp\` and runs that, so excluding the downloaded
+  file never covered the process being sandboxed — and a sandboxed installer
+  completes its wizard while writing nothing, leaving the previous version
+  installed with no sign anything went wrong. The pattern includes the filename
+  on purpose: that folder is Inno Setup's generic scratch directory, and
+  excluding it alone would exempt every installer built with Inno Setup.
+
 ## [0.1.4] — 2026-07-28
 
 Found by installing 0.1.3 and working through a real portfolio.

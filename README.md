@@ -150,11 +150,19 @@ Autosandbox candidate: ...\Temp\is-MZFF6DRNZ5.tmp\Coinductor-0.1.4-setup.tmp
 ```
 
 Sandboxed, the installer runs to the finish and writes nothing — the wizard completes, and
-the old version is still installed. Add the temporary path too:
+the old version is still installed. Add the temporary path too, **including the filename**:
 
 ```text
-%LOCALAPPDATA%\Temp\is-*.tmp\
+%LOCALAPPDATA%\Temp\is-*.tmp\Coinductor-*-setup.tmp
 ```
+
+The folder name is random each run, but the file inside is always
+`Coinductor-<version>-setup.tmp`, so this matches our installer and nothing else.
+
+> **Do not exclude the folder alone.** `is-*.tmp\` is Inno Setup's generic scratch
+> directory — *every* installer built with Inno Setup unpacks into it, including ones you
+> have not chosen to trust. Excluding the bare folder would wave all of them through. Keep
+> the filename in the pattern.
 
 In Avast: *Menu → Settings → General → Exceptions*. Other products have an equivalent.
 Verify the SHA-256 before you exclude anything.

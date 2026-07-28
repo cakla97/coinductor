@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import sqlite3
 
+from trading_agent.manual_steps import manual_steps_from_json
 from trading_agent.storage import apply_connection_pragmas, column_or_null, table_columns, table_exists
 
 from .models import DesktopSnapshot
@@ -175,7 +176,7 @@ class DesktopStore:
                             {"label": "TP / SL", "value": self._range(grid["take_profit_price"], grid["stop_loss_price"])},
                             {"label": "Blockers", "value": str(grid["blockers"] or "")},
                         ),
-                        "manualSteps": self._line_values(grid["manual_steps"]),
+                        "manualSteps": self._manual_step_specs(grid["manual_steps"]),
                         "registrationSuggestion": {
                             "available": bool(symbol),
                             "name": f"{symbol} Grid" if symbol else "",
@@ -220,7 +221,7 @@ class DesktopStore:
                             {"label": "Basket", "value": basket},
                             {"label": "Blockers", "value": str(rebalance["blockers"] or "")},
                         ),
-                        "manualSteps": self._line_values(rebalance["manual_steps"]),
+                        "manualSteps": self._manual_step_specs(rebalance["manual_steps"]),
                         "registrationSuggestion": self._rebalancing_registration_suggestion(
                             connection,
                             run_id,
@@ -725,6 +726,19 @@ class DesktopStore:
 
     def _line_values(self, value: object) -> tuple[str, ...]:
         return tuple(part.strip() for part in str(value or "").splitlines() if part.strip())
+
+    def _manual_step_specs(self, value: object) -> list[dict[str, object]]:
+        """Hand the manual steps on unrendered so the controller can localize.
+
+        The stored column is JSON from 0.1.4 onward and newline-separated
+        English before that; manual_steps_from_json absorbs both, and an
+        unrecognised key renders as itself, so a run recorded by an older
+        version keeps showing exactly what it always showed.
+        """
+        return [
+            {"key": step.key, "params": dict(step.params)}
+            for step in manual_steps_from_json(str(value or ""))
+        ]
 
     def _latest_market_price(self, connection: sqlite3.Connection, symbol: str) -> Decimal | None:
         if not self._table_exists(connection, "market_snapshots"):

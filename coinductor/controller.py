@@ -8,6 +8,7 @@ from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication, QImageReader
 
 from trading_agent.config import default_config_path, load_config
+from trading_agent.manual_steps import ManualStep, render_manual_step
 from trading_agent.storage import Storage
 
 from .ai_provider import AiProviderService, provider_kind
@@ -520,6 +521,11 @@ class AppController(QObject):
         self._local_data_reset_snapshot = LocalDataResetService(language=normalized).preview()
         self._readiness_service.language = normalized
         self._refresh_readiness()
+        # Action Plan cards are built once and cached, so nothing here used to
+        # re-language them: switching left the card labels - and now the whole
+        # Binance setup procedure - in the language of the last analysis.
+        self._action_plan_items = self._build_action_plan_items()
+        self.actionsChanged.emit()
         self.readinessChanged.emit()
         self.wizardLanguageChanged.emit()
         self.setupChanged.emit()
@@ -2395,6 +2401,32 @@ class AppController(QObject):
         self._action_plan_items = self._build_action_plan_items()
         self._refresh_onboarding_review()
 
+    def _rendered_manual_steps(self, steps: object) -> list[str]:
+        """Compose the Binance setup procedure in the user's language.
+
+        The advisors emit a key plus its parameters rather than a finished
+        sentence, precisely so this can happen here: the Markdown report stays
+        English while the dialog - the one place the user has to act by hand -
+        speaks their language. Plain strings pass through for callers that
+        already hold rendered text.
+        """
+        rendered: list[str] = []
+        for step in steps or ():
+            if isinstance(step, dict):
+                params = step.get("params")
+                rendered.append(
+                    render_manual_step(
+                        ManualStep(
+                            str(step.get("key", "")),
+                            {str(k): str(v) for k, v in params.items()} if isinstance(params, dict) else {},
+                        ),
+                        self._wizard_language,
+                    )
+                )
+            else:
+                rendered.append(str(step))
+        return rendered
+
     def _adopt_run_as_connection_evidence(self, result: DesktopRunResult) -> None:
         """Let a finished REAL run stand in for the read-only connection check.
 
@@ -2606,7 +2638,7 @@ class AppController(QObject):
                         "tone": tone,
                         "detail": detail or "No strategy detail was recorded for the latest run.",
                         "parameters": list(item.get("parameters", ())),
-                        "manualSteps": list(item.get("manualSteps", ())),
+                        "manualSteps": self._rendered_manual_steps(item.get("manualSteps", ())),
                         "primaryLabel": service_text("card_show_manual_setup", self._wizard_language)
                         if tone == "ready"
                         else service_text("card_why_watched", self._wizard_language)

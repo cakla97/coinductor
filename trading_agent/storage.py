@@ -4,6 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 import sqlite3
 
+from .manual_steps import manual_steps_to_json
 from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, Balance, CapitalSourcingPlan, ClosedTradeMemory, EarnRedeemPlan, ExecutionChecklistItem, FirstPortfolioTrancheResult, GridRecommendation, LivePositionCycle, LivePositionSummary, LivePreviewReport, LiveRiskState, MarketResearchReport, MarketSnapshot, NextRunRecommendation, OcoProtectionPreviewReport, OcoStatusReport, PaperExecutionReport, PortfolioAnalysis, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, ShadowEvaluation, StrategyDecision, TestnetExecutionReport, TestnetPositionCycle, TestnetPositionSummary, TradeProposal, TradingBankrollReport
 
 # Columns that every reader filters on. Indexed on whichever tables carry them.
@@ -1824,7 +1825,10 @@ class Storage:
                 str(recommendation.estimated_quote_per_grid),
                 str(recommendation.estimated_grid_spacing_pct),
                 "\n".join(recommendation.blockers),
-                "\n".join(recommendation.manual_steps),
+                # JSON, not the rendered prose: the desktop composes these in
+                # the reader's language. Rows written before 0.1.4 hold plain
+                # lines, which manual_steps_from_json still returns as-is.
+                manual_steps_to_json(recommendation.manual_step_specs),
             ),
         )
         self.connection.commit()
@@ -1852,7 +1856,7 @@ class Storage:
                 "\n".join(recommendation.excluded_assets),
                 "\n".join(recommendation.blockers),
                 recommendation.summary,
-                "\n".join(recommendation.manual_steps),
+                manual_steps_to_json(recommendation.manual_step_specs),
             ),
         )
         self.connection.executemany(

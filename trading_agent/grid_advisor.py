@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 
 from .decimal_utils import money
+from .manual_steps import ManualStep, render_manual_steps
 from .models import (
     ActiveStrategiesReport,
     GridCandidateAssessment,
@@ -114,7 +115,8 @@ class GridBotAdvisor:
             take_profit_price=take_profit,
             blockers=tuple(blockers),
             candidate_assessments=assessments,
-            manual_steps=steps,
+            manual_steps=render_manual_steps(steps),
+            manual_step_specs=steps,
         )
 
     def _candidate(
@@ -262,25 +264,35 @@ class GridBotAdvisor:
         stop_loss: Decimal,
         take_profit: Decimal,
         deployment_allowed: bool,
-    ) -> tuple[str, ...]:
+    ) -> tuple[ManualStep, ...]:
+        # A blocked grid deliberately loses its parameters. Its blockers are
+        # market conditions the reader cannot clear, and the range is derived
+        # from today's prices - by the time the market turns SUITABLE those
+        # numbers would be wrong, so offering them would be a trap.
         if not deployment_allowed:
             return (
-                "Do not create the grid while any deployment blocker remains.",
-                "Run the assistant again after the risk cooldown/kill switch and market-status blockers clear.",
+                ManualStep("grid_blocked_do_not_create"),
+                ManualStep("grid_blocked_rerun"),
             )
         return (
-            "Binance has no public API for creating trading bots, so Coinductor works out the parameters and you enter them yourself - it is not an unfinished feature.",
-            "Open Binance Home > Trading Bots > Spot Grid.",
-            f"Select {symbol} and choose Manual parameters.",
-            f"Set lower price {range_low} and upper price {range_high}.",
-            f"Choose Arithmetic and set {grid_count} grids.",
-            f"In the Investment currency dropdown select {quote_asset}, then enter no more than {investment} {quote_asset}.",
-            "Keep Trading Up OFF and Grid Trigger OFF for the initial deployment.",
-            f"Enable TP/SL; set stop loss near {stop_loss} and take profit near {take_profit}.",
-            "Enable Sell All Base Coin on Stop only for this isolated grid allocation so stopping the bot closes its residual base exposure.",
-            "Review Binance's estimated profit/grid and minimum investment before confirming.",
-            "After creation, copy state/active_strategies.example.toml to state/active_strategies.toml and enter the real values.",
-            "Rerun the assistant to begin active range monitoring.",
+            ManualStep("bots_manual_because_no_api"),
+            ManualStep("grid_open_menu"),
+            ManualStep("grid_select_symbol", {"symbol": symbol}),
+            ManualStep("grid_set_range", {"low": str(range_low), "high": str(range_high)}),
+            ManualStep("grid_set_count", {"count": str(grid_count)}),
+            ManualStep(
+                "grid_set_investment",
+                {"quote": quote_asset, "investment": str(investment)},
+            ),
+            ManualStep("grid_trading_up_off"),
+            ManualStep(
+                "grid_set_tpsl",
+                {"stop_loss": str(stop_loss), "take_profit": str(take_profit)},
+            ),
+            ManualStep("grid_sell_all_base"),
+            ManualStep("grid_review_before_confirm"),
+            ManualStep("grid_register_locally"),
+            ManualStep("grid_rerun_to_monitor"),
         )
 
     def _preference_score(self, symbol: str) -> int:
@@ -311,6 +323,7 @@ class GridBotAdvisor:
             blockers=(reason,),
             candidate_assessments=(),
             manual_steps=(),
+            manual_step_specs=(),
         )
 
     def _money(self, value: Decimal) -> Decimal:

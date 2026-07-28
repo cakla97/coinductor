@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal, ROUND_HALF_UP
 
 from .decimal_utils import money
+from .manual_steps import ManualStep, render_manual_step, render_manual_steps
 from .models import Balance, CapitalSourcePlanItem, CapitalSourcingPlan, PortfolioAnalysis, PortfolioAssetValuation, RebalancingBotAsset, RebalancingBotRecommendation
 
 
@@ -101,6 +102,20 @@ class RebalancingBotAdvisor:
         if blockers:
             summary += " Deployment blocked: " + "; ".join(blocker.rstrip(".") for blocker in blockers) + "."
 
+        steps = self._manual_steps(
+            assets,
+            mode,
+            threshold,
+            investment,
+            protected,
+            deployment_allowed,
+            funding_plan,
+            allocation_method,
+            auto_rebalance_mode,
+            bool(config.get("trigger_price_enabled", False)),
+            bool(config.get("stop_trigger_enabled", False)),
+            bool(config.get("sell_all_coins_on_stop", False)),
+        )
         return RebalancingBotRecommendation(
             enabled=True,
             recommended=deployment_allowed,
@@ -111,22 +126,10 @@ class RebalancingBotAdvisor:
             assets=tuple(assets),
             excluded_assets=excluded,
             blockers=tuple(blockers),
-            manual_steps=self._manual_steps(
-                assets,
-                mode,
-                threshold,
-                investment,
-                protected,
-                deployment_allowed,
-                funding_plan,
-                allocation_method,
-                auto_rebalance_mode,
-                bool(config.get("trigger_price_enabled", False)),
-                bool(config.get("stop_trigger_enabled", False)),
-                bool(config.get("sell_all_coins_on_stop", False)),
-            ),
+            manual_steps=render_manual_steps(steps),
             summary=summary,
             funding_plan=funding_plan,
+            manual_step_specs=steps,
         )
 
     def _manual_steps(
@@ -143,47 +146,54 @@ class RebalancingBotAdvisor:
         trigger_price_enabled: bool,
         stop_trigger_enabled: bool,
         sell_all_coins_on_stop: bool,
-    ) -> tuple[str, ...]:
+    ) -> tuple[ManualStep, ...]:
         allocation = ", ".join(f"{item.asset} {item.target_weight_pct}%" for item in assets)
-        allocation_instruction = (
-            "Select Equal as the starting layout, then manually edit the percentages"
-            if allocation_method == "CUSTOM"
-            else f"Select {allocation_method.replace('_', ' ').title()}"
-        )
         form_steps = [
-            f"After funding is complete: {allocation_instruction}; use {allocation}.",
-            f"Enable Auto Rebalance, choose {auto_rebalance_mode.replace('_', ' ').title()}, and set {self._one_decimal(threshold)}%.",
-            f"Trigger Price: {'ON' if trigger_price_enabled else 'OFF'} for the initial deployment.",
-            f"Stop Trigger: {'ON' if stop_trigger_enabled else 'OFF'} for the initial deployment.",
-            f"Sell All Coins on Stop: {'ON' if sell_all_coins_on_stop else 'OFF'} to avoid unintended liquidation on a manual stop.",
+            ManualStep("rebalance_allocation_custom", {"allocation": allocation})
+            if allocation_method == "CUSTOM"
+            else ManualStep(
+                "rebalance_allocation_preset",
+                {"method": allocation_method.replace("_", " ").title(), "allocation": allocation},
+            ),
+            ManualStep(
+                "rebalance_auto_rebalance",
+                {
+                    "mode": auto_rebalance_mode.replace("_", " ").title(),
+                    "threshold": str(self._one_decimal(threshold)),
+                },
+            ),
+            ManualStep("rebalance_trigger_price", {"state": "ON" if trigger_price_enabled else "OFF"}),
+            ManualStep("rebalance_stop_trigger", {"state": "ON" if stop_trigger_enabled else "OFF"}),
+            ManualStep(
+                "rebalance_sell_all_on_stop",
+                {"state": "ON" if sell_all_coins_on_stop else "OFF"},
+            ),
         ]
         if not deployment_allowed:
             # A funding shortfall is a blocker the reader can actually clear, so
             # the steps stay: first how to close the gap, then the parameters to
             # use afterwards. Without the divider the numbered list read as an
             # instruction to create the bot now, contradicting step 1.
-            steps = [
-                "Do not create a Rebalancing Bot while any deployment blocker remains.",
-            ]
-            steps.extend(item.action for item in funding_plan.items)
-            steps.append(funding_plan.summary)
-            steps.append(
-                "Everything below is the configuration to use once every blocker above is resolved. "
-                "Rerun the assistant then, and only create the bot if it is no longer blocked."
+            steps = [ManualStep("rebalance_blocked_do_not_create")]
+            steps.extend(
+                item.action_step or ManualStep(item.action) for item in funding_plan.items
             )
+            if funding_plan.summary_step is not None:
+                steps.append(funding_plan.summary_step)
+            steps.append(ManualStep("rebalance_blocked_divider"))
             steps.extend(form_steps)
             return tuple(steps)
         protected_note = ", ".join(sorted(protected)) or "none"
         return (
-            "Binance has no public API for creating trading bots, so Coinductor works out the parameters and you enter them yourself - it is not an unfinished feature.",
-            "Open Binance Home > Trading Bots > Rebalancing Bot.",
+            ManualStep("bots_manual_because_no_api"),
+            ManualStep("rebalance_open_menu"),
             *form_steps,
-            f"Invest no more than {self._money(investment)} USDC-equivalent.",
-            "Fund the bot from its separate USDC allocation; let Binance acquire the configured ETH share inside the bot.",
-            "Keep existing WBETH outside the bot and do not convert or sell it automatically.",
-            f"Do not fund it by automatically selling protected assets ({protected_note}).",
-            "Review Binance minimum allocation and investment requirements before confirming.",
-            "Record the created bot parameters in the local strategy registry before the next run.",
+            ManualStep("rebalance_invest_cap", {"investment": str(self._money(investment))}),
+            ManualStep("rebalance_fund_separately"),
+            ManualStep("rebalance_keep_wbeth"),
+            ManualStep("rebalance_do_not_sell_protected", {"protected": protected_note}),
+            ManualStep("rebalance_review_minimums"),
+            ManualStep("rebalance_record_locally"),
         )
 
     def _funding_plan(
@@ -234,10 +244,15 @@ class RebalancingBotAdvisor:
             if value <= 0:
                 continue
             remaining_value = valuation.total_value_usdt - value
+            action_step = ManualStep(
+                "funding_convert",
+                {"value": str(self._money(value)), "asset": asset, "quote": quote_asset},
+            )
             items.append(
                 CapitalSourcePlanItem(
                     asset=asset,
-                    action=f"Convert approximately {self._money(value)} USDC-equivalent of {asset} to {quote_asset}.",
+                    action=render_manual_step(action_step),
+                    action_step=action_step,
                     value_usdt=self._money(value),
                     source_pct_of_asset=self._one_decimal(value / valuation.total_value_usdt * Decimal("100")),
                     remaining_value_usdt=self._money(remaining_value),
@@ -250,17 +265,28 @@ class RebalancingBotAdvisor:
         covered = sum((item.value_usdt for item in items), Decimal("0"))
         uncovered = max(Decimal("0"), missing - covered)
         if missing <= 0:
-            summary = f"Existing {quote_asset} balance fully covers the {self._money(investment)} setup."
+            summary_step = ManualStep(
+                "funding_summary_balance_covers",
+                {"quote": quote_asset, "investment": str(self._money(investment))},
+            )
         elif uncovered <= 0:
-            summary = (
-                f"Existing {self._money(available)} {quote_asset} plus proposed conversions cover "
-                f"the {self._money(investment)} investment."
+            summary_step = ManualStep(
+                "funding_summary_conversions_cover",
+                {
+                    "available": str(self._money(available)),
+                    "quote": quote_asset,
+                    "investment": str(self._money(investment)),
+                },
             )
         else:
-            summary = (
-                f"Use existing {self._money(available)} {quote_asset} and convert about {self._money(covered)} "
-                f"from allowed sources. Remaining gap: {self._money(uncovered)} {quote_asset}; "
-                "do not fill it from protected BTC, ETH, WBETH, or BNB without a separate policy decision."
+            summary_step = ManualStep(
+                "funding_summary_gap",
+                {
+                    "available": str(self._money(available)),
+                    "quote": quote_asset,
+                    "covered": str(self._money(covered)),
+                    "uncovered": str(self._money(uncovered)),
+                },
             )
         return CapitalSourcingPlan(
             needed_usdt=self._money(investment),
@@ -268,8 +294,9 @@ class RebalancingBotAdvisor:
             missing_usdt=self._money(missing),
             quote_asset=quote_asset,
             recommended=bool(items),
-            summary=summary,
+            summary=render_manual_step(summary_step),
             items=tuple(items),
+            summary_step=summary_step,
         )
 
     def _balanced_weights(self, weights: list[Decimal]) -> list[Decimal]:

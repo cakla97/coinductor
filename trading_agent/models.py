@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
+from trading_agent.manual_steps import ManualStep
+
 
 @dataclass(frozen=True)
 class Balance:
@@ -232,7 +234,11 @@ class GridRecommendation:
     take_profit_price: Decimal
     blockers: tuple[str, ...]
     candidate_assessments: tuple[GridCandidateAssessment, ...]
+    # `manual_steps` is the English rendering, derived from `manual_step_specs`
+    # at construction so the two cannot drift. The report reads the strings; the
+    # desktop app reads the specs and renders them in the user's language.
     manual_steps: tuple[str, ...]
+    manual_step_specs: tuple[ManualStep, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -292,6 +298,9 @@ class CapitalSourcePlanItem:
     remaining_value_usdt: Decimal
     remaining_pct_of_asset: Decimal
     reason: str
+    # Optional: only the rebalancing bot's funding plan reaches the desktop
+    # dialog, so only it needs a translatable form of `action`.
+    action_step: ManualStep | None = None
 
 
 @dataclass(frozen=True)
@@ -303,6 +312,8 @@ class CapitalSourcingPlan:
     recommended: bool
     summary: str
     items: tuple[CapitalSourcePlanItem, ...]
+    # See CapitalSourcePlanItem.action_step.
+    summary_step: ManualStep | None = None
 
 
 @dataclass(frozen=True)
@@ -381,9 +392,11 @@ class RebalancingBotRecommendation:
     assets: tuple[RebalancingBotAsset, ...]
     excluded_assets: tuple[str, ...]
     blockers: tuple[str, ...]
+    # See GridRecommendation.manual_steps for why both forms are carried.
     manual_steps: tuple[str, ...]
     summary: str
     funding_plan: CapitalSourcingPlan | None = None
+    manual_step_specs: tuple[ManualStep, ...] = ()
 
 
 @dataclass(frozen=True)

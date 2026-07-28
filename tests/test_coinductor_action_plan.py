@@ -368,7 +368,10 @@ def test_manual_steps_survive_the_whole_path_to_the_card(monkeypatch, tmp_path) 
             "status": "READY",
             "detail": "Suitable range.",
             "parameters": [],
-            "manualSteps": ("Open Binance Home > Trading Bots > Spot Grid.", "Select BTCUSDC."),
+            "manualSteps": (
+                {"key": "grid_open_menu", "params": {}},
+                {"key": "grid_select_symbol", "params": {"symbol": "BTCUSDC"}},
+            ),
         }
     ]
 
@@ -376,5 +379,86 @@ def test_manual_steps_survive_the_whole_path_to_the_card(monkeypatch, tmp_path) 
 
     assert card["manualSteps"] == [
         "Open Binance Home > Trading Bots > Spot Grid.",
-        "Select BTCUSDC.",
+        "Select BTCUSDC and choose Manual parameters.",
     ]
+
+
+def test_manual_steps_reach_the_card_in_the_users_language(monkeypatch, tmp_path) -> None:
+    """The procedure is the one thing the app cannot do for the user.
+
+    The advisors emit a key plus parameters rather than a finished sentence so
+    that the Markdown report can stay English while this dialog - where the
+    user has to act by hand on Binance - speaks their language.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    _set_trade_state(controller, "HOLD", live_enabled=False, key_ready=False)
+    controller.setWizardLanguage("cs")
+    controller._strategies = [
+        {
+            "type": "Spot Grid",
+            "status": "READY",
+            "detail": "Suitable range.",
+            "parameters": [],
+            "manualSteps": (
+                {"key": "grid_select_symbol", "params": {"symbol": "BTCUSDC"}},
+                {"key": "grid_set_count", "params": {"count": "10"}},
+            ),
+        }
+    ]
+
+    card = next(i for i in controller._build_action_plan_items() if i["title"] == "Spot Grid")
+
+    assert card["manualSteps"] == ["Vyberte BTCUSDC a zvolte Manual parameters.", "Zvolte Arithmetic a nastavte 10 gridů."]
+
+
+def test_switching_language_relanguages_the_cached_action_plan(monkeypatch, tmp_path) -> None:
+    """actionPlanItems serves a cached list rebuilt only by run/safety events.
+
+    Switching language in Settings left the cards - labels and, once the setup
+    procedure was localized, every step of it - in the previous language until
+    the next analysis happened to rebuild them.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    _set_trade_state(controller, "HOLD", live_enabled=False, key_ready=False)
+    controller._strategies = [
+        {
+            "type": "Spot Grid",
+            "status": "READY",
+            "detail": "Suitable range.",
+            "parameters": [],
+            "manualSteps": ({"key": "grid_open_menu", "params": {}},),
+        }
+    ]
+    controller._action_plan_items = controller._build_action_plan_items()
+    seen: list[int] = []
+    controller.actionsChanged.connect(lambda: seen.append(1))
+
+    controller.setWizardLanguage("cs")
+
+    card = next(i for i in controller.actionPlanItems if i["title"] == "Spot Grid")
+    assert card["manualSteps"] == ["Otevřete Binance Home > Trading Bots > Spot Grid."]
+    assert seen, "QML repaints the Action Plan only on actionsChanged"
+
+
+def test_steps_recorded_before_localization_still_reach_the_card(monkeypatch, tmp_path) -> None:
+    """A journal written by 0.1.3 holds English prose with no key to translate.
+
+    Those rows arrive as steps whose key is the sentence itself. They must keep
+    showing what they always showed rather than vanishing after an upgrade.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    _set_trade_state(controller, "HOLD", live_enabled=False, key_ready=False)
+    controller.setWizardLanguage("cs")
+    controller._strategies = [
+        {
+            "type": "Spot Grid",
+            "status": "READY",
+            "detail": "Suitable range.",
+            "parameters": [],
+            "manualSteps": ({"key": "Open Binance Home > Trading Bots > Spot Grid.", "params": {}},),
+        }
+    ]
+
+    card = next(i for i in controller._build_action_plan_items() if i["title"] == "Spot Grid")
+
+    assert card["manualSteps"] == ["Open Binance Home > Trading Bots > Spot Grid."]

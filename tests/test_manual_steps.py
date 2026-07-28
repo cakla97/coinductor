@@ -32,7 +32,17 @@ def _grid(blocked: bool):
         _research_report((_research("BTCUSDC"), _research("ETHUSDC", "9"))),
         ActiveStrategiesReport(True, (), "none"),
     )
-    return GridBotAdvisor(_config()).recommend(*args, _risk_state(blocked=blocked), Decimal("800"))
+    config = _config()
+    if not blocked:
+        # The shipped defaults cannot fund a grid Binance would accept, so with
+        # them every case lands in the blocked branch and the twelve-step
+        # procedure below stops being exercised at all.
+        config["grid_bot"]["default_investment_usdt"] = 120
+        config["grid_bot"]["max_grid_capital_usdt"] = 200
+    portfolio = Decimal("800") if blocked else Decimal("4000")
+    recommendation = GridBotAdvisor(config).recommend(*args, _risk_state(blocked=blocked), portfolio)
+    assert recommendation.deployment_allowed is not blocked, "fixture no longer covers this branch"
+    return recommendation
 
 
 def _rebalancing(blocked: bool):

@@ -199,7 +199,12 @@ max_range_width_pct = 25.0
 min_grid_count = 8
 max_grid_count = 40
 preferred_grid_count = 20
-min_quote_per_grid_usdt = 2.5
+# Binance's NOTIONAL filter rejects any order below 5 USDC on BTCUSDC/ETHUSDC,
+# so a lower value here just produces a grid the exchange will not accept. The
+# advisor enforces 5 as a floor regardless of what is set. Note that Binance's
+# own minimum for a created grid is higher again - it depends on the range you
+# enter - so treat this as a lower bound, not the amount to fund.
+min_quote_per_grid_usdt = 5.0
 target_rsi14 = 52.0
 min_rsi14 = 40.0
 max_rsi14 = 65.0

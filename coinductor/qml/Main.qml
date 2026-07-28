@@ -2000,12 +2000,6 @@ ApplicationWindow {
                         highlighted: true
                         onClicked: runDialog.open()
                     }
-                    BusyIndicator {
-                        running: appController.busy
-                        visible: appController.busy
-                        implicitWidth: 22
-                        implicitHeight: 22
-                    }
                 }
 
                 Rectangle {
@@ -2676,12 +2670,11 @@ ApplicationWindow {
                     }
                     // A swapped label was the only sign this was working, and it
                     // sits still for the whole run - which reads as a hang on a
-                    // button that quietly starts a full analysis.
-                    BusyIndicator {
-                        running: appController.busy
+                    // button that quietly starts a full analysis. Every other
+                    // page already animates with BusyDots; this one was missed.
+                    BusyDots {
+                        Layout.alignment: Qt.AlignVCenter
                         visible: appController.busy
-                        implicitWidth: 22
-                        implicitHeight: 22
                     }
                     Button {
                         text: appController.busy ? appController.appText.refreshing_status : appController.appText.refresh_monitoring_button

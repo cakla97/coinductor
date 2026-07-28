@@ -119,12 +119,59 @@ def test_selects_best_range_candidate_and_caps_grid_count_by_capital() -> None:
 
     assert recommendation.symbol == "BTCUSDC"
     assert recommendation.market_status == "SUITABLE"
-    assert recommendation.deployment_allowed is True
-    assert recommendation.recommended is True
-    assert recommendation.grid_count == 10
-    assert recommendation.estimated_quote_per_grid == Decimal("2.50")
     assert recommendation.range_low < btc.price < recommendation.range_high
     assert [item.symbol for item in recommendation.candidate_assessments] == ["BTCUSDC", "ETHUSDC"]
+    # The shipped defaults cannot fund a grid Binance would accept - see
+    # test_shipped_defaults_cannot_fund_a_grid_binance_would_accept.
+    assert recommendation.deployment_allowed is False
+
+
+def test_shipped_defaults_cannot_fund_a_grid_binance_would_accept() -> None:
+    """The recommendation was a recipe that dead-ends at the exchange.
+
+    Binance's NOTIONAL filter rejects any order under 5 USDC, so a grid funded
+    at 2.50 per level cannot place one - yet the advisor recommended it, handed
+    over the parameters, and the user only found out when Binance quoted its own
+    minimum. The floor is the exchange's, not a preference, so it applies even
+    to a config written before this check existed.
+    """
+    advisor = GridBotAdvisor(_config())
+
+    recommendation = advisor.recommend(
+        [_snapshot("BTCUSDC"), _snapshot("ETHUSDC", regime="RISK_ON")],
+        _research_report((_research("BTCUSDC"), _research("ETHUSDC", "9"))),
+        ActiveStrategiesReport(True, (), "none"),
+        _risk_state(),
+        Decimal("800"),
+    )
+
+    assert recommendation.deployment_allowed is False
+    assert recommendation.recommended is False
+    blocker = next(item for item in recommendation.blockers if "grid capital is too small" in item)
+    assert "8 grids need at least 40.00" in blocker
+    assert "default_investment_usdt" in blocker, "the reader needs the setting to change"
+    # Blocked grids drop their parameters on purpose: the range is derived from
+    # today's prices and would be stale by the time the capital is raised.
+    assert not any("Investment currency dropdown" in step for step in recommendation.manual_steps)
+
+
+def test_a_properly_funded_grid_still_deploys() -> None:
+    config = _config()
+    config["grid_bot"]["default_investment_usdt"] = 120
+    config["grid_bot"]["max_grid_capital_usdt"] = 200
+    advisor = GridBotAdvisor(config)
+
+    recommendation = advisor.recommend(
+        [_snapshot("BTCUSDC"), _snapshot("ETHUSDC", regime="RISK_ON")],
+        _research_report((_research("BTCUSDC"), _research("ETHUSDC", "9"))),
+        ActiveStrategiesReport(True, (), "none"),
+        _risk_state(),
+        Decimal("4000"),
+    )
+
+    assert recommendation.deployment_allowed is True
+    assert recommendation.recommended is True
+    assert recommendation.estimated_quote_per_grid >= Decimal("5")
     assert any("Investment currency dropdown select USDC" in step for step in recommendation.manual_steps)
     assert any("Trading Up OFF" in step for step in recommendation.manual_steps)
     assert any("Enable TP/SL" in step for step in recommendation.manual_steps)

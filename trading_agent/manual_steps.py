@@ -82,6 +82,20 @@ MANUAL_STEP_TEXT: dict[str, dict[str, str]] = {
         "en": "In the Investment currency dropdown select {quote}, then enter no more than {investment} {quote}.",
         "cs": "V rozbalovacím seznamu Investment currency vyberte {quote} a zadejte nejvýše {investment} {quote}.",
     },
+    "grid_binance_minimum_wins": {
+        "en": (
+            "Binance will show its own minimum investment for the range you entered, and it is "
+            "usually higher than this figure - ours is a risk cap, theirs is an exchange floor. "
+            "If theirs is higher, do not raise yours to match: close the form and decide "
+            "deliberately whether that much capital belongs in this bot."
+        ),
+        "cs": (
+            "Binance u zadaného rozsahu ukáže vlastní minimální investici a bývá vyšší než tato "
+            "částka - naše je strop rizika, jejich je limit burzy. Pokud je jejich vyšší, "
+            "nezvyšujte tu naši, abyste se trefil: zavřete formulář a rozmyslete si, jestli do "
+            "tohoto bota tolik kapitálu opravdu patří."
+        ),
+    },
     "grid_trading_up_off": {
         "en": "Keep Trading Up OFF and Grid Trigger OFF for the initial deployment.",
         "cs": "Při prvním nasazení nechte Trading Up na OFF a Grid Trigger na OFF.",

@@ -701,9 +701,18 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "{url} responded, but reported no installed models.",
         "cs": "{url} odpovědělo, ale nenahlásilo žádné nainstalované modely.",
     },
+    # Detection only fills the dropdowns - it stores nothing. Without saying so,
+    # models appearing looked like the provider was configured, and the setting
+    # was silently absent until an analysis reported having no AI at all.
     "aidisc_ok": {
-        "en": "{count} model(s) reported by {url}.",
-        "cs": "{url} nahlásilo {count} model(ů).",
+        "en": (
+            "{count} model(s) reported by {url}. Nothing is stored yet: pick the models you want, "
+            "then press Save local AI."
+        ),
+        "cs": (
+            "{url} nahlásilo {count} model(ů). Zatím se nic neuložilo: vyberte modely, které chcete, "
+            "a stiskněte Save local AI."
+        ),
     },
     "spot_trades_locked_by_profile": {
         "en": "Guarded spot trades are switched off in your profile, so Coinductor will not submit this buy. Enable them in the setup wizard if you want it to.",

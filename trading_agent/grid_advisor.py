@@ -60,6 +60,7 @@ class GridBotAdvisor:
             active_strategies=active_strategies,
             risk_state=risk_state,
             quote_per_grid=quote_per_grid,
+            grid_count=grid_count,
         )
         deployment_allowed = not blockers
         recommended = market_status == "SUITABLE" and deployment_allowed
@@ -227,7 +228,7 @@ class GridBotAdvisor:
         minimum = int(config["min_grid_count"])
         maximum = int(config["max_grid_count"])
         preferred = int(config.get("preferred_grid_count", minimum))
-        min_quote = Decimal(str(config.get("min_quote_per_grid_usdt", "2.5")))
+        min_quote = self._min_quote_per_grid()
         capital_cap = int((investment / min_quote).to_integral_value(rounding=ROUND_DOWN)) if min_quote > 0 else maximum
         return max(minimum, min(maximum, preferred, capital_cap))
 
@@ -237,6 +238,7 @@ class GridBotAdvisor:
         active_strategies: ActiveStrategiesReport,
         risk_state: LiveRiskState,
         quote_per_grid: Decimal,
+        grid_count: int,
     ) -> list[str]:
         config = self.config["grid_bot"]
         blockers: list[str] = []
@@ -248,10 +250,32 @@ class GridBotAdvisor:
             blockers.append("live risk kill switch is active")
         if risk_state.cooldown_active:
             blockers.append("loss cooldown is active")
-        min_quote = Decimal(str(config.get("min_quote_per_grid_usdt", "2.5")))
+        min_quote = self._min_quote_per_grid()
         if quote_per_grid < min_quote:
-            blockers.append(f"estimated quote per grid {quote_per_grid:.2f} is below configured {min_quote:.2f}")
+            # Say what it would take, not just that it is short: the reader's
+            # next move is to raise max_grid_capital_usdt or skip the grid, and
+            # neither is obvious from "3.13 is below 5.00".
+            needed = min_quote * Decimal(grid_count) if grid_count > 0 else min_quote
+            blockers.append(
+                f"grid capital is too small: {grid_count} grids need at least {needed:.2f} "
+                f"({min_quote:.2f} per grid, Binance's minimum order value) but only "
+                f"{quote_per_grid:.2f} per grid is available. Raise grid_bot."
+                f"default_investment_usdt and max_grid_capital_usdt if you want this bot; "
+                f"Binance will then show its own minimum, which is higher again for the exact "
+                f"range you enter"
+            )
         return blockers
+
+    # Binance's NOTIONAL filter rejects any order below this, so a grid whose
+    # per-level order falls under it cannot place a single one. Verified against
+    # /api/v3/exchangeInfo for BTCUSDC and ETHUSDC. Used as a floor under the
+    # configured value because a config written before this check existed can
+    # still hold a number the exchange will not accept.
+    EXCHANGE_MIN_NOTIONAL_USDT = Decimal("5")
+
+    def _min_quote_per_grid(self) -> Decimal:
+        configured = Decimal(str(self.config["grid_bot"].get("min_quote_per_grid_usdt", "2.5")))
+        return max(configured, self.EXCHANGE_MIN_NOTIONAL_USDT)
 
     def _manual_steps(
         self,
@@ -284,6 +308,7 @@ class GridBotAdvisor:
                 "grid_set_investment",
                 {"quote": quote_asset, "investment": str(investment)},
             ),
+            ManualStep("grid_binance_minimum_wins"),
             ManualStep("grid_trading_up_off"),
             ManualStep(
                 "grid_set_tpsl",

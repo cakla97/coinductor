@@ -126,7 +126,10 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     # A swapped button label was the only sign a run was in flight, and it
     # sits still - which reads as a hang on a button that quietly starts a
     # full analysis.
-    assert qml.count("BusyIndicator {") == 2
+    # BusyDots is the project's own animation; Active Strategies was the one
+    # page still without it.
+    assert "BusyIndicator" not in qml
+    assert qml.count("BusyDots {") >= 5
     assert "appController.appText.refresh_monitoring_tooltip" in qml
     assert "appController.openRunReport(modelData.reportPath)" in qml
     assert "appController.appText.open_run_report_button" in qml

@@ -3,6 +3,47 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.7] — 2026-07-28
+
+Found by reading the Action Plan the way anyone reads a screen — by skimming it.
+
+### Fixed
+
+- **The same paragraph was printed three times.** The Spot Grid blocker added in
+  0.1.6 ran to 317 characters, named two config keys, and was repeated verbatim
+  in the card summary, the blockers field and the next-review panel — 817
+  characters on one card, which is not something anyone reads. The blocker is
+  one fact now (73 characters), what to do about it is a setup step, and neither
+  advisor inlines its blockers into the summary any more. The grid's scoring
+  line lost the words carrying no information: 500 characters to 119.
+- **The Action Plan showed one screen in two languages.** The Trade card builds
+  its labels in the app and was translated; the Spot Grid and Rebalancing cards
+  take theirs from the journal reader, which has no language, so they read
+  "Symbol / Range / Grids" beside "Akce / Symbol / Jistota". The next-review
+  panel had the same split.
+- **Two things were never re-read on a language change.** The Active Strategies
+  subtitle — translated in 0.1.5 — kept whatever it resolved to at startup,
+  because the signal it depends on was not emitted; and the next-review panel is
+  composed when a run loads and nothing recomposed it.
+- **AI commentary came back in English beside a Czech screen.** It is the model's
+  own prose, so it cannot be translated afterwards the way the app's text is.
+  The run now carries the interface language and asks for it.
+
+### Changed
+
+- The antivirus guidance no longer claims the temporary-path exclusion prevents
+  the problem. Tested with it in place and matching exactly, Avast sandboxed the
+  installer anyway — its Exceptions list does not appear to govern Autosandbox.
+  If the first attempt fails, run the installer again; that is what works.
+
+### Known limitations
+
+- **Recommended actions are still English.** Their headline could be translated
+  on its own, but the explanation under each one is borrowed from five other
+  parts of the engine, so doing half of it would produce exactly the mixed
+  screen this release removes elsewhere. It needs the same treatment the setup
+  steps got in 0.1.4, as its own change.
+
 ## [0.1.6] — 2026-07-28
 
 Found by following the app's own Spot Grid instructions on Binance.

@@ -140,8 +140,28 @@ update, or use a wildcard if your product supports one:
 %USERPROFILE%\Downloads\Coinductor-*-setup.exe
 ```
 
+**That one is not enough on its own.** The file you download is a small loader: it unpacks
+the real installer into a random temporary folder and runs *that*, so the process your
+antivirus inspects is never the file you excluded. Avast's log names it directly:
+
+```text
+Autosandbox candidate: ...\Temp\is-MZFF6DRNZ5.tmp\Coinductor-0.1.4-setup.tmp
+ --> Result: Sandboxing (no custody)
+```
+
+Sandboxed, the installer runs to the finish and writes nothing — the wizard completes, and
+the old version is still installed. Add the temporary path too:
+
+```text
+%LOCALAPPDATA%\Temp\is-*.tmp\
+```
+
 In Avast: *Menu → Settings → General → Exceptions*. Other products have an equivalent.
 Verify the SHA-256 before you exclude anything.
+
+If it has already happened, nothing is broken and nothing was lost: your data is untouched
+and the previous version still works. Check which one you are actually running under
+*Settings → About*, and install again.
 
 Reporting the file to your vendor as a false positive helps everyone: once it is
 whitelisted, the next person does not have to do this at all.

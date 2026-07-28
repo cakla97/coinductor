@@ -32,6 +32,13 @@ OutputBaseFilename=Coinductor-{#AppVersion}-setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+; Upgrading over a running Coinductor locks its .exe. Restart Manager offers to
+; close it instead of demanding a reboot; it is the Inno 6 default, but stated
+; here so a future default cannot silently take it away.
+CloseApplications=yes
+; The [Run] entry below already offers to launch after installing. Letting
+; Restart Manager relaunch as well would open two copies.
+RestartApplications=no
 SetupIconFile=..\coinductor\coinductor.ico
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible

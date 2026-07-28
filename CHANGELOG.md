@@ -3,6 +3,28 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.8] — 2026-07-28
+
+0.1.7 was built but never published; use this instead.
+
+### Fixed
+
+- **One decision type was showing in English.** The engine reports a spot-trade
+  run as `SPOT_TRADE_RECOMMENDATION`; the display map keyed it as `SPOT_TRADE`,
+  so that one case fell through to the generic fallback and read "Spot trade
+  recommendation" on a Czech screen. Only visible on a run that proposes a spot
+  trade, which is why it survived testing.
+
+### Added
+
+- **The translation tables are now checked against what feeds them.** Each of
+  them falls back to English rather than failing — right at runtime, and exactly
+  why the gap above was invisible: a value added later simply appears
+  untranslated and nothing says so. The tests read the producers themselves (the
+  label literals in the journal reader, the branch codes, the decision enums
+  across the engine) rather than a list kept by hand, so adding a value without
+  its translation now fails the build.
+
 ## [0.1.7] — 2026-07-28
 
 Found by reading the Action Plan the way anyone reads a screen — by skimming it.

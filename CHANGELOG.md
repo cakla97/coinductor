@@ -3,6 +3,45 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.6] — 2026-07-28
+
+Found by following the app's own Spot Grid instructions on Binance.
+
+### Fixed
+
+- **The app recommended a grid Binance would refuse to create.** Binance rejects
+  any order under 5 USDC, and the shipped defaults fund a grid at 2.50 per
+  level — so the recommendation could not place a single order. It was handed
+  over with full parameters anyway, and the only way to find out was to fill in
+  Binance's form and be told the minimum was more than double. The exchange
+  minimum is now enforced whatever the config says, and a grid that cannot meet
+  it is blocked with the amount required and the setting to change. Defaults are
+  deliberately unchanged: with them a grid is not fundable, and raising someone's
+  capital commitment to make a recommendation appear is not the app's call.
+- **The setup procedure told you to hand-edit a TOML file.** Step 11 asked the
+  reader to copy `state/active_strategies.example.toml`, rename it, and fill in
+  values. The app has had a registration dialog since active-strategy monitoring
+  was added — Active Strategies → Register active bot → Import latest
+  recommendation — and the step simply never pointed at it.
+- **Indicators were printed at full computed precision**, so a HOLD was explained
+  with `RSI=43.384672227767928463538468495` in the middle of the sentence.
+- **Values could not be copied.** Every price, count and threshold in the Action
+  Plan exists to be reproduced in Binance's form, and the only way to move one
+  was to retype it.
+
+### Changed
+
+- The trading pair is written the way Binance's own picker shows it — `ETH/USDC`,
+  not `ETHUSDC` — because that is what you are matching against by eye.
+- The Trade card says "A Spot Grid was recommended" rather than
+  `GRID_BOT_RECOMMENDATION`, and explains a HOLD in a sentence instead of
+  `trend=RISK_OFF`. The stored values stay as they were; only the display
+  changed.
+- The setup procedure can be copied whole, and individual steps selected.
+- README opens with a nav row covering Install and Support the project, and the
+  "not financial advice" disclaimer sits at the top rather than only at the
+  bottom of a long page.
+
 ## [0.1.5] — 2026-07-28
 
 Found by upgrading 0.1.3 in place and working through the app afterwards.

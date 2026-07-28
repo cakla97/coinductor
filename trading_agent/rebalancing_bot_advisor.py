@@ -158,11 +158,19 @@ class RebalancingBotAdvisor:
             f"Sell All Coins on Stop: {'ON' if sell_all_coins_on_stop else 'OFF'} to avoid unintended liquidation on a manual stop.",
         ]
         if not deployment_allowed:
+            # A funding shortfall is a blocker the reader can actually clear, so
+            # the steps stay: first how to close the gap, then the parameters to
+            # use afterwards. Without the divider the numbered list read as an
+            # instruction to create the bot now, contradicting step 1.
             steps = [
                 "Do not create a Rebalancing Bot while any deployment blocker remains.",
             ]
             steps.extend(item.action for item in funding_plan.items)
             steps.append(funding_plan.summary)
+            steps.append(
+                "Everything below is the configuration to use once every blocker above is resolved. "
+                "Rerun the assistant then, and only create the bot if it is no longer blocked."
+            )
             steps.extend(form_steps)
             return tuple(steps)
         protected_note = ", ".join(sorted(protected)) or "none"

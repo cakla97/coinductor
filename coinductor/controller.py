@@ -111,6 +111,7 @@ class AppController(QObject):
         self._challenge_outcome = ""
         self._pending_result_page = 3
         self._pending_completion_message = "Analysis complete. Review the Action Plan."
+        self._pending_data_mode = "REAL"
         self._onboarding_path = ""
         self._checking_connection = False
         self._checking_live_trading = False
@@ -1869,6 +1870,7 @@ class AppController(QObject):
             return
         self._pending_result_page = result_page
         self._pending_completion_message = completion_message
+        self._pending_data_mode = data_mode.upper()
         self._set_busy(True)
         self._progress = 0
         self._status_text = "Starting analysis"
@@ -2162,6 +2164,7 @@ class AppController(QObject):
         self._snapshot = DesktopStore().load()
         self._asset_role_overrides = self._asset_policy_store.load()
         self._apply_snapshot()
+        self._adopt_run_as_connection_evidence(result)
         self._refresh_readiness()
         # Resolve the outcome before emitting: challengeOutcome is notified by
         # actionsChanged, so setting it afterwards left the QML text binding on
@@ -2391,6 +2394,27 @@ class AppController(QObject):
             self._hydrate_run_result(self._snapshot.latest_run)
         self._action_plan_items = self._build_action_plan_items()
         self._refresh_onboarding_review()
+
+    def _adopt_run_as_connection_evidence(self, result: DesktopRunResult) -> None:
+        """Let a finished REAL run stand in for the read-only connection check.
+
+        A REAL run authenticates against Binance and reads the account; if the
+        key were missing, wrong or unpermitted the run would have raised and
+        landed in ``_on_failed`` instead. Leaving the badge on "Not checked"
+        after that made the only way to clear it a trip back through the wizard,
+        which is worse evidence than the run the user just watched succeed.
+
+        Only the readiness step and its suggested next action read this status -
+        money-moving gates use the live-key check and the safety stage - so
+        promoting it here cannot widen execution authority.
+        """
+        if self._pending_data_mode != "REAL" or self._connection_status == "Connected":
+            return
+        self._connection_status = "Connected"
+        self._connection_detail = service_text(
+            "connection_confirmed_by_run", self._wizard_language
+        ).format(run_id=result.run_id)
+        self.connectionChanged.emit()
 
     def _hydrate_run_result(self, result: DesktopRunResult) -> None:
         self._decision = result.decision

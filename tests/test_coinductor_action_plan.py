@@ -257,6 +257,36 @@ def test_challenge_outcome_is_set_before_listeners_are_notified(monkeypatch, tmp
     assert "rejected" in seen[0]
 
 
+def test_finished_real_run_clears_the_not_checked_binance_badge(monkeypatch, tmp_path) -> None:
+    """A REAL run is better evidence than the read-only check button.
+
+    It authenticates and reads the account; a missing or unpermitted key would
+    have raised into _on_failed instead. Leaving the badge on "Not checked"
+    meant the only way to clear it was another trip through the wizard.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    assert controller.binanceConnectionState == "Not checked"
+    controller._pending_data_mode = "REAL"
+    seen: list[str] = []
+    controller.connectionChanged.connect(lambda: seen.append(controller.binanceConnectionState))
+
+    controller._on_completed(_run("HOLD"))
+
+    assert controller.binanceConnectionState == "Connected"
+    assert "1" in controller.binanceConnectionDetail, "the detail should name the run that proved it"
+    assert seen == ["Connected"], "QML is only repainted on connectionChanged"
+
+
+def test_mock_run_leaves_the_binance_badge_unchecked(monkeypatch, tmp_path) -> None:
+    """A MOCK run never touches Binance, so it proves nothing about the keys."""
+    controller = _controller(monkeypatch, tmp_path)
+    controller._pending_data_mode = "MOCK"
+
+    controller._on_completed(_run("HOLD"))
+
+    assert controller.binanceConnectionState == "Not checked"
+
+
 def test_trade_card_reports_the_trade_verdict_not_the_run_decision(monkeypatch, tmp_path) -> None:
     """A recommended grid wins the run's decision type across every strategy.
 

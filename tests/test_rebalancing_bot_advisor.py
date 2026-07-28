@@ -125,3 +125,33 @@ def test_funding_plan_uses_legacy_then_capped_reserves_and_reports_gap() -> None
     assert any("uncovered" in blocker for blocker in result.blockers)
     assert any("After funding is complete" in step for step in result.manual_steps)
     assert any("By Ratio" in step for step in result.manual_steps)
+
+
+def test_blocked_steps_separate_the_funding_path_from_the_parameters() -> None:
+    """A blocked bot still lists parameters, so say they are not for now.
+
+    The funding gap is a blocker the reader can clear, which is why the steps
+    survive at all - unlike the grid, whose blocker is a market condition and
+    whose numbers would be stale by the time it clears. But an unbroken
+    numbered list reads as a recipe to follow immediately, contradicting its
+    own first line.
+    """
+    portfolio = _portfolio(
+        _asset("BTC", "CORE", "214", "26.5"),
+        _asset("SOL", "CAPITAL_SOURCE", "96", "11.9"),
+        _asset("USDC", "STABLE", "12", "1.5"),
+    )
+
+    result = RebalancingBotAdvisor(_config()).recommend(
+        portfolio,
+        [Balance("USDC", Decimal("0"), flexible_amount=Decimal("12"))],
+    )
+
+    assert result.deployment_allowed is False
+    steps = list(result.manual_steps)
+    divider = next(
+        index for index, step in enumerate(steps) if "once every blocker above is resolved" in step
+    )
+    form = next(index for index, step in enumerate(steps) if "After funding is complete" in step)
+    assert steps[0].startswith("Do not create a Rebalancing Bot")
+    assert 0 < divider < form, "the divider must sit between the funding path and the parameters"

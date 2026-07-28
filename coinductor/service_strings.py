@@ -30,6 +30,10 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Run the read-only check from Settings before live analysis.",
         "cs": "Před živou analýzou spusťte read-only kontrolu v Nastavení.",
     },
+    "connection_confirmed_by_run": {
+        "en": "Confirmed by run {run_id}: the analysis read your Binance account successfully.",
+        "cs": "Potvrzeno během běhu {run_id}: analýza úspěšně načetla váš účet Binance.",
+    },
     "live_trading_idle_detail": {
         "en": "Verify live-key permissions before arming guarded execution.",
         "cs": "Než povolíte zabezpečené provádění, ověřte oprávnění živého klíče.",

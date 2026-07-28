@@ -11,7 +11,7 @@
 ; code-signing certificate is added (out of scope for this step).
 
 #define AppName "Coinductor"
-#define AppVersion "0.1.2"
+#define AppVersion "0.1.3"
 #define AppPublisher "Coinductor"
 #define AppExeName "Coinductor.exe"
 
@@ -93,10 +93,10 @@ end;
 function AskWhatElseToRemove(): Boolean;
 var
   Form: TSetupForm;
-  Intro, Footer: TNewStaticText;
+  Intro, Footer, DataNote, KeysNote: TNewStaticText;
   OkButton, KeepButton: TNewButton;
 begin
-  Form := CreateCustomForm(ScaleX(440), ScaleY(250), False, False);
+  Form := CreateCustomForm(ScaleX(470), ScaleY(300), False, False);
   try
     Form.Caption := 'Uninstall {#AppName}';
 
@@ -112,38 +112,58 @@ begin
       'Tick anything you also want deleted. Leave both unticked to remove the' +
       ' program only and keep everything else, for example if you plan to reinstall.';
 
+    // A TNewCheckBox caption does not wrap, so a long one is simply clipped at
+    // the default window width. Keep the caption to a label and put the detail
+    // in a wrapped static text underneath.
     DataCheckBox := TNewCheckBox.Create(Form);
     DataCheckBox.Parent := Form;
     DataCheckBox.Left := ScaleX(16);
-    DataCheckBox.Top := Intro.Top + Intro.Height + ScaleY(16);
+    DataCheckBox.Top := Intro.Top + Intro.Height + ScaleY(14);
     DataCheckBox.Width := Form.ClientWidth - ScaleX(32);
-    DataCheckBox.Height := ScaleY(34);
+    DataCheckBox.Height := ScaleY(18);
     DataCheckBox.Checked := False;
-    DataCheckBox.Caption :=
-      'Delete local data' + #13#10 +
-      ExpandConstant('{localappdata}\{#AppName}') +
-      ' - portfolio state, run history, reports, profile, config';
+    DataCheckBox.Caption := 'Delete local data';
+
+    DataNote := TNewStaticText.Create(Form);
+    DataNote.Parent := Form;
+    DataNote.Left := ScaleX(34);
+    DataNote.Top := DataCheckBox.Top + DataCheckBox.Height + ScaleY(2);
+    DataNote.Width := Form.ClientWidth - ScaleX(50);
+    DataNote.WordWrap := True;
+    DataNote.AutoSize := True;
+    DataNote.Caption :=
+      'Portfolio state, run history, reports, profile and config, from' + #13#10 +
+      ExpandConstant('{localappdata}\{#AppName}');
 
     KeysCheckBox := TNewCheckBox.Create(Form);
     KeysCheckBox.Parent := Form;
     KeysCheckBox.Left := ScaleX(16);
-    KeysCheckBox.Top := DataCheckBox.Top + DataCheckBox.Height + ScaleY(10);
+    KeysCheckBox.Top := DataNote.Top + DataNote.Height + ScaleY(12);
     KeysCheckBox.Width := Form.ClientWidth - ScaleX(32);
-    KeysCheckBox.Height := ScaleY(34);
+    KeysCheckBox.Height := ScaleY(18);
     KeysCheckBox.Checked := False;
-    KeysCheckBox.Caption :=
-      'Delete API keys' + #13#10 +
-      'Your Binance and AI keys, from Windows Credential Manager';
+    KeysCheckBox.Caption := 'Delete API keys';
+
+    KeysNote := TNewStaticText.Create(Form);
+    KeysNote.Parent := Form;
+    KeysNote.Left := ScaleX(34);
+    KeysNote.Top := KeysCheckBox.Top + KeysCheckBox.Height + ScaleY(2);
+    KeysNote.Width := Form.ClientWidth - ScaleX(50);
+    KeysNote.WordWrap := True;
+    KeysNote.AutoSize := True;
+    KeysNote.Caption :=
+      'Your Binance and AI keys, from Windows Credential Manager.' + #13#10 +
+      'Binance shows a secret only once, so these cannot be recovered here.';
 
     Footer := TNewStaticText.Create(Form);
     Footer.Parent := Form;
     Footer.Left := ScaleX(16);
-    Footer.Top := KeysCheckBox.Top + KeysCheckBox.Height + ScaleY(10);
+    Footer.Top := KeysNote.Top + KeysNote.Height + ScaleY(14);
     Footer.Width := Form.ClientWidth - ScaleX(32);
     Footer.WordWrap := True;
     Footer.AutoSize := True;
     Footer.Caption :=
-      'Deleted API keys cannot be recovered here; Binance shows a secret only once.';
+      'Nothing ticked removes the program only.';
 
     KeepButton := TNewButton.Create(Form);
     KeepButton.Parent := Form;

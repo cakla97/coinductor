@@ -3,6 +3,39 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.3] — 2026-07-28
+
+Found by installing 0.1.2 and using it as a new user would.
+
+### Added
+
+- **The manual bot setup steps are in the app.** The Action Plan dialog handed
+  over parameters to retype on Binance with no procedure to retype them into -
+  the numbered steps existed only in the Markdown report, because neither
+  recommendation table had a column for them.
+- **Bot cards say why setup is manual.** Binance has no public API for creating
+  trading bots; without that, a list of steps to perform by hand reads as an
+  unfinished feature. Shown in the app in your language, and in the report.
+- `config.toml` is its own group under Delete local data, off by default: it
+  holds hand-tuned risk limits, so it is the one thing worth keeping while
+  clearing everything else.
+
+### Fixed
+
+- **Export diagnostics looked like it did nothing.** It wrote the file correctly
+  but named a path relative to the working directory, which for an installed
+  build is a folder nobody has reason to know. The path is now absolute and the
+  file opens.
+- **"Delete everything" left the diagnostics bundle behind**, on a screen that
+  calls that selection a full local reset.
+- The locale picker was labelled "Language / region" while only setting region
+  and fiat currency, so es-ES read as a promise of a Spanish interface. It is now
+  "Region and fiat currency"; the interface language stays its own switch.
+- The uninstaller's first checkbox was clipped at the default window width -
+  a checkbox caption does not wrap, so the detail is now a label beneath it.
+- The antivirus guidance recommended excluding a versioned installer filename,
+  which stops matching on the next release.
+
 ## [0.1.2] — 2026-07-27
 
 Found by installing 0.1.1 and walking it as a new user would.

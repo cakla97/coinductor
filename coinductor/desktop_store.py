@@ -42,6 +42,7 @@ class DesktopStore:
             active_strategies_summary = "No active strategies are registered."
             next_review: dict[str, object] | None = None
             earn_redeem: dict[str, object] | None = None
+            recommended_actions: list[dict[str, object]] = []
             has_ready_live_preview = False
             if latest is not None:
                 report_path = self._report_path(latest)
@@ -66,6 +67,7 @@ class DesktopStore:
                     strategies,
                 )
                 earn_redeem = self._earn_redeem(connection, int(latest["id"]))
+                recommended_actions = self._recommended_actions(connection, int(latest["id"]))
             history = self._history(connection)
             return DesktopSnapshot(
                 latest_result,
@@ -79,6 +81,7 @@ class DesktopStore:
                 active_strategies_summary,
                 next_review,
                 earn_redeem,
+                tuple(recommended_actions),
             )
         finally:
             connection.close()
@@ -575,9 +578,11 @@ class DesktopStore:
         required = {"run_id", "run_again_in_hours", "urgency", "reason", "triggers"}
         if not required.issubset(self._columns(connection, "next_run_recommendations")):
             return None
+        next_run_columns = self._columns(connection, "next_run_recommendations")
         row = connection.execute(
-            """
-            select run_again_in_hours, urgency, reason, triggers
+            f"""
+            select run_again_in_hours, urgency, reason, triggers,
+                   {self._column_expr(next_run_columns, "reason_message")}, {self._column_expr(next_run_columns, "trigger_messages")}
             from next_run_recommendations where run_id = ? order by rowid desc limit 1
             """,
             (run_id,),
@@ -655,6 +660,8 @@ class DesktopStore:
             "timing": "After the manual step" if manual_steps else "Now" if due_now or hours == 0 else f"In {hours} hours",
             "scheduledAt": self._format_scheduled_review(scheduled_at),
             "reason": str(row["reason"] or "No next-run reason was recorded."),
+            "reasonMessage": self._manual_step_specs(row["reason_message"]),
+            "triggerMessages": self._manual_step_specs(row["trigger_messages"]),
             "triggers": list(dict.fromkeys(triggers + market_conditions)),
             "manualSteps": list(dict.fromkeys(manual_steps)),
             "manualStepSpecs": manual_step_specs,
@@ -776,6 +783,38 @@ class DesktopStore:
 
     def _line_values(self, value: object) -> tuple[str, ...]:
         return tuple(part.strip() for part in str(value or "").splitlines() if part.strip())
+
+    def _recommended_actions(self, connection: sqlite3.Connection, run_id: int) -> list[dict[str, object]]:
+        """Read the action list from the journal rather than the Markdown report.
+
+        The desktop used to parse it back out of the report with a regex, which
+        left nothing to translate - the sentences had already been composed in
+        English by then.
+        """
+        if not self._table_exists(connection, "recommended_actions"):
+            return []
+        columns = self._columns(connection, "recommended_actions")
+        rows = connection.execute(
+            f"""
+            select priority, action, reason,
+                   {self._column_expr(columns, "action_message")},
+                   {self._column_expr(columns, "reason_message")},
+                   {self._column_expr(columns, "reason_part_messages")}
+            from recommended_actions where run_id = ? order by rowid
+            """,
+            (run_id,),
+        ).fetchall()
+        return [
+            {
+                "priority": str(row["priority"] or ""),
+                "action": str(row["action"] or ""),
+                "reason": str(row["reason"] or ""),
+                "actionMessage": self._manual_step_specs(row["action_message"]),
+                "reasonMessage": self._manual_step_specs(row["reason_message"]),
+                "reasonParts": self._manual_step_specs(row["reason_part_messages"]),
+            }
+            for row in rows
+        ]
 
     def _messages_or_lines(self, structured: object, prose: object) -> list[dict[str, object]]:
         """Prefer the structured form; fall back to the prose beside it.

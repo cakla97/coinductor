@@ -294,6 +294,107 @@ MESSAGE_TEXT: dict[str, dict[str, str]] = {
         "en": "safe funding plan leaves {uncovered} USDC uncovered without using protected assets",
         "cs": "bezpečný plán financování nechává {uncovered} USDC nepokrytých bez sáhnutí na chráněná aktiva",
     },
+    # --- Next-run recommendation ---
+    "next_run_reason_grid": {
+        "en": "A manual Spot Grid setup was recommended. Run again after setup to record the active strategy baseline.",
+        "cs": "Bylo doporučeno ruční nastavení Spot Gridu. Po nastavení spusťte znovu, aby se zaznamenal výchozí stav strategie.",
+    },
+    "next_run_trigger_grid_created": {
+        "en": "Run immediately after creating or skipping the recommended grid bot.",
+        "cs": "Spusťte hned po založení doporučeného grid bota, nebo když ho vynecháte.",
+    },
+    "next_run_trigger_grid_range": {
+        "en": "Run sooner if price moves outside the proposed grid range.",
+        "cs": "Spusťte dřív, pokud cena vyjde mimo navržený rozsah gridu.",
+    },
+    "next_run_reason_spot_trade": {
+        "en": "A spot trade recommendation was produced. Recheck after the next daily market update.",
+        "cs": "Vzniklo doporučení ke spotovému obchodu. Zkontrolujte po další denní aktualizaci trhu.",
+    },
+    "next_run_trigger_after_execution": {
+        "en": "Run sooner after manual execution.",
+        "cs": "Spusťte dřív po ručním provedení obchodu.",
+    },
+    "next_run_trigger_tp_sl": {
+        "en": "Run sooner if stop loss or take profit is hit.",
+        "cs": "Spusťte dřív, pokud se trefí stop loss nebo take profit.",
+    },
+    "next_run_reason_no_action": {
+        "en": "No action was recommended. Daily review is enough unless the market changes sharply.",
+        "cs": "Nebyla doporučena žádná akce. Denní kontrola stačí, pokud se trh prudce nezmění.",
+    },
+    "next_run_trigger_large_move": {
+        "en": "Run sooner after a large BTC or ETH move.",
+        "cs": "Spusťte dřív po výrazném pohybu BTC nebo ETH.",
+    },
+    "next_run_trigger_manual_change": {
+        "en": "Run sooner before making manual portfolio changes.",
+        "cs": "Spusťte dřív, než budete ručně měnit portfolio.",
+    },
+    # --- Recommended actions, the headline of each item ---
+    "action_review_rebalance_funding": {
+        "en": "Review the Rebalancing Bot USDC funding plan.",
+        "cs": "Zkontrolujte plán financování Rebalancing Bota v USDC.",
+    },
+    "action_review_rebalance_setup": {
+        "en": "Review manual Binance Rebalancing Bot setup.",
+        "cs": "Zkontrolujte ruční nastavení Rebalancing Bota na Binance.",
+    },
+    "action_review_active_grid": {
+        "en": "Review active grid bot {name}.",
+        "cs": "Zkontrolujte aktivního grid bota {name}.",
+    },
+    "action_review_grid_setup": {
+        "en": "Review manual Spot Grid setup for {symbol}.",
+        "cs": "Zkontrolujte ruční nastavení Spot Gridu pro {symbol}.",
+    },
+    "action_monitor_grid": {
+        "en": "Monitor grid conditions for {symbol}; do not create it yet.",
+        "cs": "Sledujte podmínky pro grid u {symbol}; zatím ho nezakládejte.",
+    },
+    "action_review_spot_trade": {
+        "en": "Review spot trade proposal for {symbol}.",
+        "cs": "Zkontrolujte návrh spotového obchodu pro {symbol}.",
+    },
+    "action_no_new_trade": {
+        "en": "Do not open a new trade from this run.",
+        "cs": "Z tohoto běhu neotvírejte nový obchod.",
+    },
+    # One key per label rather than a label parameter: a parameter is a plain
+    # string, so a nested key would reach the reader unrendered.
+    "action_source_capital_spot_trade": {
+        "en": "For the spot trade, consider sourcing {amount} {quote} manually; first candidate is {asset}.",
+        "cs": "Pro spotový obchod zvažte ruční obstarání {amount} {quote}; první kandidát je {asset}.",
+    },
+    "action_source_capital_grid_setup": {
+        "en": "For the grid setup, consider sourcing {amount} {quote} manually; first candidate is {asset}.",
+        "cs": "Pro nastavení gridu zvažte ruční obstarání {amount} {quote}; první kandidát je {asset}.",
+    },
+    "action_funding_gap_spot_trade": {
+        "en": "Do not execute the spot trade until the {amount} {quote} funding gap is resolved.",
+        "cs": "Neprovádějte spotový obchod, dokud není vyřešena chybějící částka {amount} {quote}.",
+    },
+    "action_funding_gap_grid_setup": {
+        "en": "Do not execute the grid setup until the {amount} {quote} funding gap is resolved.",
+        "cs": "Neprovádějte nastavení gridu, dokud není vyřešena chybějící částka {amount} {quote}.",
+    },
+    "action_run_again": {
+        "en": "Run the assistant again in {hours} hours.",
+        "cs": "Spusťte asistenta znovu za {hours} h.",
+    },
+    # Reasons written inline by the action builder rather than borrowed.
+    "action_reason_rebalance_allowed": {
+        "en": "Deterministic advisor allows a {mode} setup with {basket}, threshold {threshold}%, and maximum investment {investment} USDC-equivalent.",
+        "cs": "Deterministický poradce povoluje nastavení {mode} s {basket}, prahem {threshold} % a maximální investicí {investment} v ekvivalentu USDC.",
+    },
+    "action_reason_grid_recommend_only": {
+        "en": "Current market profile looks suitable for a range strategy, but bot creation is recommend-only.",
+        "cs": "Současný profil trhu vypadá vhodně pro range strategii, ale bota lze jen doporučit, ne založit.",
+    },
+    "action_reason_trade_passed_checks": {
+        "en": "The proposal passed deterministic MVP risk checks, but execution is still manual/recommend-only.",
+        "cs": "Návrh prošel deterministickými rizikovými kontrolami, ale provedení zůstává ruční, jen jako doporučení.",
+    },
     # --- Funding the Rebalancing Bot -------------------------------------
     "funding_convert": {
         "en": "Convert approximately {value} USDC-equivalent of {asset} to {quote}.",

@@ -533,6 +533,11 @@ class Storage:
         self._ensure_column("grid_recommendations", "blocker_messages", "text")
         self._ensure_column("grid_recommendations", "reason_message", "text")
         self._ensure_column("grid_recommendations", "reason_part_messages", "text")
+        self._ensure_column("next_run_recommendations", "reason_message", "text")
+        self._ensure_column("next_run_recommendations", "trigger_messages", "text")
+        self._ensure_column("recommended_actions", "action_message", "text")
+        self._ensure_column("recommended_actions", "reason_message", "text")
+        self._ensure_column("recommended_actions", "reason_part_messages", "text")
         self._ensure_column("rebalancing_bot_recommendations", "blocker_messages", "text")
         self._ensure_column("rebalancing_bot_recommendations", "summary_message", "text")
         self._ensure_column("active_grid_evaluations", "binance_bot_id", "text")
@@ -2073,21 +2078,50 @@ class Storage:
 
     def save_next_run_recommendation(self, run_id: int, recommendation: NextRunRecommendation) -> None:
         self.connection.execute(
-            "insert into next_run_recommendations values (?, ?, ?, ?, ?)",
+            """
+            insert into next_run_recommendations
+                (run_id, run_again_in_hours, urgency, reason, triggers,
+                 reason_message, trigger_messages)
+            values (?, ?, ?, ?, ?, ?, ?)
+            """,
             (
                 run_id,
                 recommendation.run_again_in_hours,
                 recommendation.urgency,
                 recommendation.reason,
                 "\n".join(recommendation.triggers),
+                manual_steps_to_json(
+                    (recommendation.reason_message,) if recommendation.reason_message else ()
+                ),
+                manual_steps_to_json(recommendation.trigger_messages),
             ),
         )
         self.connection.commit()
 
     def save_recommended_actions(self, run_id: int, actions: tuple[RecommendedAction, ...]) -> None:
         self.connection.executemany(
-            "insert into recommended_actions values (?, ?, ?, ?)",
-            [(run_id, action.priority, action.action, action.reason) for action in actions],
+            """
+            insert into recommended_actions
+                (run_id, priority, action, reason,
+                 action_message, reason_message, reason_part_messages)
+            values (?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    run_id,
+                    action.priority,
+                    action.action,
+                    action.reason,
+                    manual_steps_to_json(
+                        (action.action_message,) if action.action_message else ()
+                    ),
+                    manual_steps_to_json(
+                        (action.reason_message,) if action.reason_message else ()
+                    ),
+                    manual_steps_to_json(action.reason_part_messages),
+                )
+                for action in actions
+            ],
         )
         self.connection.commit()
 

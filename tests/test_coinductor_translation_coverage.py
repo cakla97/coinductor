@@ -153,3 +153,56 @@ def test_czech_is_not_silently_a_copy_of_the_english() -> None:
         and tr.get("en", "").strip() not in _LITERAL_TERMS
     ]
     assert copied == [], "Czech is a copy of the English for:\n  " + "\n  ".join(copied)
+
+
+def _engine_message_keys() -> set[str]:
+    """Every key the engine can emit, read from the engine itself."""
+    emitted: set[str] = set()
+    for path in ROOT.joinpath("trading_agent").glob("*.py"):
+        if path.name == "messages.py":
+            continue
+        source = path.read_text(encoding="utf-8")
+        emitted |= set(re.findall(r'Message\(\s*\n?\s*"([a-z0-9_]+)"', source))
+        emitted |= set(re.findall(r'ManualStep\(\s*\n?\s*"([a-z0-9_]+)"', source))
+    return emitted
+
+
+def test_every_engine_message_key_has_text() -> None:
+    """The engine renders an unknown key as the key itself.
+
+    Right at runtime, and the reason a missing entry is invisible: the screen
+    shows `action_run_again` instead of a sentence and nothing raises.
+    """
+    from trading_agent.messages import MESSAGE_TEXT
+
+    emitted = _engine_message_keys()
+    assert emitted, "the extraction pattern is stale"
+    missing = sorted(emitted - set(MESSAGE_TEXT))
+    assert missing == [], f"engine emits keys with no text: {missing}"
+
+
+def test_no_engine_prose_is_left_where_a_message_belongs() -> None:
+    """The producers that reach the desktop must not compose sentences.
+
+    Each of these was converted because a finished English sentence cannot be
+    re-localized; a new f-string in one of them would quietly restart that.
+    """
+    converted = ("grid_advisor.py", "rebalancing_bot_advisor.py", "next_run.py",
+                 "recommended_actions.py")
+    # Why each funding source was picked. It appears in the Markdown report and
+    # nowhere on screen - verified by grepping the desktop for it - so it stays
+    # English with the rest of the report.
+    report_only = ("Reserve source is capped", "Small legacy/speculative holding")
+    offenders = []
+    for name in converted:
+        for line in _source("trading_agent", name).splitlines():
+            stripped = line.strip()
+            if stripped.startswith("#") or "Message(" in stripped:
+                continue
+            if any(phrase in stripped for phrase in report_only):
+                continue
+            # A quoted string of several words being appended or assigned to a
+            # user-facing field is the shape that started all of this.
+            if re.search(r'(reason|summary|action|blockers)\w*\s*(=|\.append\()\s*f?"[A-Z][a-z]+ \w+ \w+', stripped):
+                offenders.append(f"{name}: {stripped[:70]}")
+    assert offenders == [], "prose where a message belongs:\n  " + "\n  ".join(offenders)

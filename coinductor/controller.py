@@ -91,6 +91,7 @@ class AppController(QObject):
         self._ai_summary = "No summary available."
         self._report_path = ""
         self._actions: list[dict[str, str]] = []
+        self._report_actions: tuple = ()
         self._action_plan_items: list[dict[str, object]] = []
         self._portfolio_assets: list[dict[str, str]] = []
         self._strategies: list[dict[str, object]] = []
@@ -566,6 +567,7 @@ class AppController(QObject):
         # Both of these are composed once when a snapshot loads, so a language
         # change left them showing whatever language the app started in.
         self._next_review = self._enrich_next_review(self._snapshot.next_review)
+        self._actions = self._localized_actions(self._report_actions)
         self.actionsChanged.emit()
         # activeStrategiesSummary and the other data-backed properties compose
         # their text at read time, so without this their bindings keep whatever
@@ -2582,10 +2584,51 @@ class AppController(QObject):
         self._risk_state = "Approved" if result.risk_approved else result.risk_reason
         self._ai_summary = result.ai_summary or "AI summary was not requested."
         self._report_path = str(Path(result.report_path))
-        self._actions = [
-            {"priority": item.priority, "action": item.action, "reason": item.reason}
-            for item in result.actions
-        ]
+        # Kept so the list can be recomposed when the language changes; the
+        # journal rows are preferred, these are the fallback for old runs.
+        self._report_actions = tuple(result.actions)
+        self._actions = self._localized_actions(self._report_actions)
+
+    def _localized_actions(self, report_actions) -> list[dict[str, str]]:
+        """Prefer the journal's structured rows over the ones parsed from the report.
+
+        The report has already composed its sentences in English by the time
+        the desktop sees them, so there is nothing left to translate; the
+        journal keeps the message each line was built from. A run recorded
+        before those columns existed has only the report, and still shows.
+        """
+        rows = self._snapshot.recommended_actions
+        if not rows:
+            return [
+                {"priority": item.priority, "action": item.action, "reason": item.reason}
+                for item in report_actions
+            ]
+        localized: list[dict[str, str]] = []
+        for row in rows:
+            action = self._rendered_manual_steps(row.get("actionMessage", ()))
+            reason = self._compose_message(row.get("reasonMessage", ()), row.get("reasonParts", ()))
+            localized.append(
+                {
+                    "priority": str(row.get("priority", "")),
+                    "action": action[0] if action else str(row.get("action", "")),
+                    "reason": reason or str(row.get("reason", "")),
+                }
+            )
+        return localized
+
+    def _compose_message(self, message: object, parts: object) -> str:
+        """Render a sentence whose {reasons} placeholder is itself a list."""
+        specs = list(message or ())
+        if not specs or not isinstance(specs[0], dict):
+            return ""
+        spec = specs[0]
+        params = {str(k): str(v) for k, v in dict(spec.get("params", {})).items()}
+        rendered_parts = self._rendered_manual_steps(parts or ())
+        if rendered_parts:
+            params["reasons"] = "; ".join(rendered_parts)
+        return render_manual_step(
+            ManualStep(str(spec.get("key", "")), params), self._wizard_language
+        )
 
     def _registration_suggestion(self, strategy_type: str) -> dict[str, object]:
         for strategy in self._strategies:
@@ -2625,6 +2668,13 @@ class AppController(QObject):
                 result["headline"] = headline
             if timing:
                 result["timing"] = timing.format(hours=hours)
+        # The engine's own reason and triggers, unrendered.
+        reason = self._rendered_manual_steps(result.get("reasonMessage", ()))
+        if reason:
+            result["reason"] = reason[0]
+        engine_triggers = self._rendered_manual_steps(result.get("triggerMessages", ()))
+        if engine_triggers:
+            result["triggers"] = engine_triggers
         # Blockers arrive unrendered, each tagged with the strategy it came
         # from, so the panel can name both in the reader's language.
         for field, source in (("manualSteps", "manualStepSpecs"), ("triggers", "marketConditionSpecs")):
@@ -2638,10 +2688,7 @@ class AppController(QObject):
             ]
             if field == "triggers":
                 # Engine triggers keep their place; only the blockers are ours.
-                engine_triggers = [
-                    item for item in (result.get("triggers") or ()) if ": " not in str(item)
-                ]
-                rendered = engine_triggers + rendered
+                rendered = list(result.get("triggers") or ()) + rendered
             result[field] = list(dict.fromkeys(rendered))
         urgency = str(result.get("urgency", "")).replace(" ", "_").upper()
         urgency_text = service_text(f"urgency_{urgency.lower()}", language)

@@ -60,6 +60,9 @@ class DesktopSnapshot:
     active_strategies_summary: str = "No active strategies are registered."
     next_review: dict[str, object] | None = None
     earn_redeem: dict[str, object] | None = None
+    # Read from the journal rather than parsed back out of the Markdown report,
+    # so each item still carries the message it was composed from.
+    recommended_actions: tuple[dict[str, object], ...] = ()
 
 
 @dataclass(frozen=True)

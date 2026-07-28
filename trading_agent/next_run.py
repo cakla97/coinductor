@@ -1,38 +1,61 @@
 from __future__ import annotations
 
+from .messages import Message, render_message, render_messages
 from .models import NextRunRecommendation, StrategyDecision
 
 
 class NextRunAdvisor:
+    """When to look again, and why.
+
+    Emits messages rather than sentences so the desktop can show this panel in
+    the reader's language while the Markdown report stays English.
+    """
+
     def recommend(self, decision: StrategyDecision) -> NextRunRecommendation:
         if decision.decision_type == "GRID_BOT_RECOMMENDATION":
-            return NextRunRecommendation(
-                run_again_in_hours=0,
+            return self._build(
+                hours=0,
                 urgency="ACTION_REQUIRED",
-                reason="A manual Spot Grid setup was recommended. Run again after setup to record the active strategy baseline.",
+                reason=Message("next_run_reason_grid"),
                 triggers=(
-                    "Run immediately after creating or skipping the recommended grid bot.",
-                    "Run sooner if price moves outside the proposed grid range.",
+                    Message("next_run_trigger_grid_created"),
+                    Message("next_run_trigger_grid_range"),
                 ),
             )
 
         if decision.decision_type == "SPOT_TRADE_RECOMMENDATION":
-            return NextRunRecommendation(
-                run_again_in_hours=24,
+            return self._build(
+                hours=24,
                 urgency="NORMAL",
-                reason="A spot trade recommendation was produced. Recheck after the next daily market update.",
+                reason=Message("next_run_reason_spot_trade"),
                 triggers=(
-                    "Run sooner after manual execution.",
-                    "Run sooner if stop loss or take profit is hit.",
+                    Message("next_run_trigger_after_execution"),
+                    Message("next_run_trigger_tp_sl"),
                 ),
             )
 
-        return NextRunRecommendation(
-            run_again_in_hours=24,
+        return self._build(
+            hours=24,
             urgency="NORMAL",
-            reason="No action was recommended. Daily review is enough unless the market changes sharply.",
+            reason=Message("next_run_reason_no_action"),
             triggers=(
-                "Run sooner after a large BTC or ETH move.",
-                "Run sooner before making manual portfolio changes.",
+                Message("next_run_trigger_large_move"),
+                Message("next_run_trigger_manual_change"),
             ),
+        )
+
+    def _build(
+        self,
+        hours: int,
+        urgency: str,
+        reason: Message,
+        triggers: tuple[Message, ...],
+    ) -> NextRunRecommendation:
+        return NextRunRecommendation(
+            run_again_in_hours=hours,
+            urgency=urgency,
+            reason=render_message(reason),
+            triggers=render_messages(triggers),
+            reason_message=reason,
+            trigger_messages=triggers,
         )

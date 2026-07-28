@@ -262,8 +262,11 @@ class StrategyDecision:
 class NextRunRecommendation:
     run_again_in_hours: int
     urgency: str
+    # English rendering, derived from the messages below at construction.
     reason: str
     triggers: tuple[str, ...]
+    reason_message: Message | None = None
+    trigger_messages: tuple[Message, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -427,8 +430,14 @@ class ReadinessReport:
 @dataclass(frozen=True)
 class RecommendedAction:
     priority: str
+    # English rendering, derived from the messages below at construction.
     action: str
     reason: str
+    action_message: Message | None = None
+    # Reasons are mostly borrowed from whichever advisor produced them, so the
+    # parts travel too where the sentence has any.
+    reason_message: Message | None = None
+    reason_part_messages: tuple[Message, ...] = ()
 
 
 @dataclass(frozen=True)

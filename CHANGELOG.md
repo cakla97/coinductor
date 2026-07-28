@@ -3,6 +3,45 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.4] — 2026-07-28
+
+Found by installing 0.1.3 and working through a real portfolio.
+
+### Added
+
+- **The Binance setup procedure is in your language.** Binance has no public API
+  for creating trading bots, so those numbered steps are the one thing the app
+  cannot do for you - and they were the last English text left in a translated
+  UI. The advisors now emit each step as a key plus its parameters instead of a
+  finished sentence, so the Markdown report stays English while the dialog
+  speaks your language. Amounts, prices and Binance's own control labels
+  ("Equal", "By Ratio", "OFF") are left verbatim, because you have to find them
+  in Binance's interface exactly as written.
+
+### Fixed
+
+- **The Binance badge stayed on "Not checked" after a successful analysis.** A
+  real run authenticates and reads your account, so it is better evidence than
+  the check button - but only that button ever cleared the badge, which left
+  another trip through the wizard as the only way to do it. This affects the
+  readiness display only; permission to place orders still comes from the
+  live-key check and the safety stage.
+- **A blocked Rebalancing Bot read like an instruction to set it up now.** Its
+  steps keep the parameters on purpose, because a funding shortfall is a
+  blocker you can actually clear - unlike the grid, whose blocker is a market
+  condition and whose price range would be stale by the time it lifts. But the
+  numbered list ran straight from "do not create this yet" into the settings to
+  enter, with nothing marking where one ended and the other began.
+- **Switching language left the Action Plan in the previous one.** The cards are
+  built once and cached, and nothing rebuilt them on a language change, so they
+  kept the language of the last analysis until you ran another one.
+
+### Upgrading
+
+Runs recorded by 0.1.3 keep their setup steps and still display them in English:
+they were stored as finished sentences, with no key left to translate. Run a
+fresh analysis to get the procedure in your language.
+
 ## [0.1.3] — 2026-07-28
 
 Found by installing 0.1.2 and using it as a new user would.

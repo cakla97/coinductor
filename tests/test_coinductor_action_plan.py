@@ -175,7 +175,7 @@ def test_active_strategy_refresh_returns_to_monitor_without_ai(monkeypatch, tmp_
 
     assert captured["args"] == ("REAL", False, False, False)
     assert captured["kwargs"]["result_page"] == 4
-    assert "monitoring refreshed" in captured["kwargs"]["completion_message"].lower()
+    assert captured["kwargs"]["completion_message"] == "toast_monitoring_refreshed"
 
 
 def test_action_plan_surfaces_only_active_bots_requiring_attention(monkeypatch, tmp_path) -> None:

@@ -111,7 +111,7 @@ class AppController(QObject):
         self._challenged_symbol = ""
         self._challenge_outcome = ""
         self._pending_result_page = 3
-        self._pending_completion_message = "Analysis complete. Review the Action Plan."
+        self._pending_completion_message = "toast_analysis_done"
         self._pending_data_mode = "REAL"
         self._onboarding_path = ""
         self._checking_connection = False
@@ -298,6 +298,16 @@ class AppController(QObject):
 
     @Property(str, notify=stateChanged)
     def aiSummary(self) -> str:
+        """Explain an absent AI summary here rather than echoing the engine.
+
+        With no provider configured the engine records that it asked nothing -
+        a true statement, in English, that reads as a malfunction next to a
+        card headed "AI summary". The desktop already knows the provider is
+        unset, so it can say so plainly, in the user's language, without
+        matching on the stored wording.
+        """
+        if self.activeAiProviderKind == "NONE":
+            return service_text("ai_summary_no_provider", self._wizard_language)
         return self._ai_summary
 
     @Property("QVariantList", notify=actionsChanged)
@@ -326,7 +336,32 @@ class AppController(QObject):
 
     @Property(str, notify=dataChanged)
     def activeStrategiesSummary(self) -> str:
-        return self._active_strategies_summary
+        """Recompose the summary here so the page subtitle can be translated.
+
+        DesktopStore builds an English sentence, which the AI assistant is fed
+        verbatim and should keep. The counts behind it are all in
+        `_active_strategies`, so the screen can say the same thing in the
+        user's language without the store having to know about languages.
+        """
+        language = self._wizard_language
+        if not self._active_strategies:
+            summary = service_text("active_strategies_none", language)
+        else:
+            healthy = sum(1 for item in self._active_strategies if item.get("health") == "Healthy")
+            review = sum(1 for item in self._active_strategies if item.get("health") == "Review")
+            action = len(self._active_strategies) - healthy - review
+            summary = service_text("active_strategies_counts", language).format(
+                total=len(self._active_strategies),
+                healthy=healthy,
+                review=review,
+                action=action,
+            )
+        pending = max(0, self._registered_strategy_count - len(self._active_strategies))
+        if pending:
+            summary += " " + service_text("active_strategies_pending", language).format(
+                pending=pending
+            )
+        return summary
 
     @Property(int, notify=dataChanged)
     def registeredStrategyCount(self) -> int:
@@ -1698,7 +1733,7 @@ class AppController(QObject):
                 True,
                 False,
                 result_page=3,
-                completion_message="Read-only analysis complete. Review the Action Plan.",
+                completion_message="toast_readonly_analysis_done",
             )
         elif action_type == "SET_ASSET_ROLE":
             asset = str(action.get("asset", "")).upper()
@@ -1723,7 +1758,7 @@ class AppController(QObject):
             ai_proposals,
             live_preview,
             result_page=3,
-            completion_message="Analysis complete. Review the Action Plan.",
+            completion_message="toast_analysis_done",
         )
 
     @Slot()
@@ -1734,7 +1769,7 @@ class AppController(QObject):
             True,
             True,
             result_page=3,
-            completion_message="Trade preview ready. Review the Action Plan.",
+            completion_message="toast_trade_preview_ready",
         )
 
     @Slot()
@@ -1745,7 +1780,7 @@ class AppController(QObject):
             True,
             False,
             result_page=3,
-            completion_message="Bot plan ready. Review the Action Plan.",
+            completion_message="toast_bot_plan_ready",
         )
 
     @Slot(str)
@@ -1875,6 +1910,8 @@ class AppController(QObject):
         if self._busy:
             return
         self._pending_result_page = result_page
+        # A key, not a sentence: resolved in _on_completed so the toast is in
+        # whatever language the user is reading when the run finishes.
         self._pending_completion_message = completion_message
         self._pending_data_mode = data_mode.upper()
         self._set_busy(True)
@@ -1931,7 +1968,7 @@ class AppController(QObject):
             True,
             True,
             result_page=3,
-            completion_message="Guarded trade submit run complete. Review the Action Plan.",
+            completion_message="toast_guarded_trade_done",
             live_submit=True,
             live_confirm=confirmation,
         )
@@ -1944,7 +1981,7 @@ class AppController(QObject):
             False,
             False,
             result_page=4,
-            completion_message="Active strategy monitoring refreshed.",
+            completion_message="toast_monitoring_refreshed",
         )
 
     @Slot(str, str, str, str, str, str, str, str, str, str, str, str, str, bool, result=bool)
@@ -2064,7 +2101,7 @@ class AppController(QObject):
             True,
             True,
             result_page=3,
-            completion_message="Guarded OCO protection run complete. Review the Action Plan.",
+            completion_message="toast_guarded_oco_done",
             oco_submit=True,
             oco_confirm=confirmation,
         )
@@ -2091,7 +2128,7 @@ class AppController(QObject):
             True,
             True,
             result_page=3,
-            completion_message="Guarded Earn redeem run complete. Review the Action Plan.",
+            completion_message="toast_guarded_earn_done",
             earn_redeem_submit=True,
             earn_redeem_confirm=confirmation,
         )
@@ -2136,6 +2173,21 @@ class AppController(QObject):
         if self._report_path:
             QDesktopServices.openUrl(QUrl.fromLocalFile(self._report_path))
 
+    @Slot(str)
+    def openRunReport(self, path: str) -> None:
+        """Open the report of any past run, not only the newest.
+
+        Run History listed thirty runs and could open none of them; the only
+        report reachable from the UI was the latest, via the Action Plan.
+        """
+        target = Path(path.strip()) if path.strip() else None
+        if target is None or not target.exists():
+            self.notificationRequested.emit(
+                service_text("run_report_missing", self._wizard_language)
+            )
+            return
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(target)))
+
     @Slot(str, int)
     def _on_progress(self, message: str, percent: int) -> None:
         self._status_text = message
@@ -2176,7 +2228,9 @@ class AppController(QObject):
         # actionsChanged, so setting it afterwards left the QML text binding on
         # the stale empty value while `visible` (which also reads busy) had
         # already flipped true - an empty banner.
-        message = self._challenge_outcome_message() or self._pending_completion_message
+        message = self._challenge_outcome_message() or service_text(
+            self._pending_completion_message, self._wizard_language
+        )
         self._status_text = f"Run {result.run_id} completed - {message}"
         self.actionsChanged.emit()
         self.dataChanged.emit()
@@ -2391,10 +2445,6 @@ class AppController(QObject):
         self._active_strategies_summary = self._snapshot.active_strategies_summary
         self._registered_strategy_count = self._strategy_registration_service.registered_count()
         self._next_review = self._enrich_next_review(self._snapshot.next_review)
-        pending = max(0, self._registered_strategy_count - len(self._active_strategies))
-        if pending:
-            suffix = "strategy is" if pending == 1 else "strategies are"
-            self._active_strategies_summary += f" {pending} registered {suffix} awaiting a fresh evaluation."
         self._run_history = list(self._snapshot.run_history)
         if self._snapshot.latest_run is not None:
             self._hydrate_run_result(self._snapshot.latest_run)

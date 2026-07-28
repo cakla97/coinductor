@@ -650,12 +650,35 @@ class DesktopStore:
     def _format_scheduled_review(self, value: datetime | None) -> str:
         if value is None:
             return "Not available"
+        return self._local_timestamp(value)
+
+    def _local_timestamp(self, value: datetime, seconds: bool = False) -> str:
         local_value = value.astimezone()
         offset = local_value.utcoffset() or timedelta(0)
         total_minutes = int(offset.total_seconds() // 60)
         sign = "+" if total_minutes >= 0 else "-"
         offset_hours, offset_minutes = divmod(abs(total_minutes), 60)
-        return f"{local_value:%Y-%m-%d %H:%M} UTC{sign}{offset_hours:02d}:{offset_minutes:02d}"
+        pattern = "%Y-%m-%d %H:%M:%S" if seconds else "%Y-%m-%d %H:%M"
+        return f"{local_value:{pattern}} UTC{sign}{offset_hours:02d}:{offset_minutes:02d}"
+
+    def _local_started_at(self, value: object) -> str:
+        """Render a run's start time in the reader's timezone.
+
+        SQLite's `default current_timestamp` writes UTC with no offset, and Run
+        History printed that string straight out - so every run appeared to
+        have happened hours before it did, while the Action Plan's next-review
+        line (which already converted) disagreed with it on the same screen.
+        """
+        text = str(value or "").strip()
+        if not text:
+            return ""
+        try:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        except ValueError:
+            return text
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=UTC)
+        return self._local_timestamp(parsed, seconds=True)
 
     def _active_grid_item(self, row: sqlite3.Row) -> dict[str, object]:
         state = str(row["state"] or "UNKNOWN_PRICE").upper()
@@ -860,11 +883,15 @@ class DesktopStore:
         return tuple(
             {
                 "runId": str(row["id"]),
-                "startedAt": str(row["started_at"]),
+                "startedAt": self._local_started_at(row["started_at"]),
                 "status": str(row["status"]),
                 "dataMode": "MOCK" if row["data_status"] == "MOCK" else "REAL",
                 "decision": str(row["decision_type"] or "UNKNOWN"),
                 "summary": str(row["decision_summary"] or row["summary"] or ""),
+                # Every run wrote a report, but only the newest one could be
+                # opened - from the Action Plan. Run History listed the rest
+                # with no way to read any of them.
+                "reportPath": str(self._report_path(row) or ""),
             }
             for row in rows
         )

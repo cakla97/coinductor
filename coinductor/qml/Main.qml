@@ -2000,6 +2000,12 @@ ApplicationWindow {
                         highlighted: true
                         onClicked: runDialog.open()
                     }
+                    BusyIndicator {
+                        running: appController.busy
+                        visible: appController.busy
+                        implicitWidth: 22
+                        implicitHeight: 22
+                    }
                 }
 
                 Rectangle {
@@ -2668,10 +2674,21 @@ ApplicationWindow {
                         Text { text: appController.appText.active_strategies_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
                         Text { Layout.fillWidth: true; text: appController.activeStrategiesSummary; color: textSecondary; font.pixelSize: 13; wrapMode: Text.WordWrap }
                     }
+                    // A swapped label was the only sign this was working, and it
+                    // sits still for the whole run - which reads as a hang on a
+                    // button that quietly starts a full analysis.
+                    BusyIndicator {
+                        running: appController.busy
+                        visible: appController.busy
+                        implicitWidth: 22
+                        implicitHeight: 22
+                    }
                     Button {
                         text: appController.busy ? appController.appText.refreshing_status : appController.appText.refresh_monitoring_button
                         enabled: !appController.busy
                         onClicked: appController.refreshActiveStrategies()
+                        ToolTip.visible: hovered
+                        ToolTip.text: appController.appText.refresh_monitoring_tooltip
                     }
                     Button {
                         text: appController.appText.register_active_bot_button
@@ -2978,7 +2995,10 @@ ApplicationWindow {
                                 Text { text: modelData.dataMode; color: modelData.dataMode === "REAL" ? accent : warning; font.pixelSize: 10; font.bold: true }
                             }
                             ColumnLayout {
-                                Layout.preferredWidth: 145
+                                // Widened for the timezone suffix: the stored
+                                // time is UTC, so it has to say which clock it
+                                // is on now that it is converted.
+                                Layout.preferredWidth: 190
                                 Text { text: modelData.startedAt; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
                                 Text { text: modelData.status; color: textPrimary; font.pixelSize: 11 }
                             }
@@ -2992,6 +3012,11 @@ ApplicationWindow {
                                     font.pixelSize: 11
                                     elide: Text.ElideRight
                                 }
+                            }
+                            Button {
+                                text: appController.appText.open_run_report_button
+                                visible: modelData.reportPath !== ""
+                                onClicked: appController.openRunReport(modelData.reportPath)
                             }
                         }
                     }

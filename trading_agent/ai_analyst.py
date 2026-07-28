@@ -8,6 +8,45 @@ import urllib.request
 from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, CapitalSourcingPlan, GridRecommendation, LivePositionSummary, MarketResearchReport, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
+class AiProviderNotConfigured(RuntimeError):
+    """No AI endpoint is set, so nothing was ever sent.
+
+    Told apart from a genuine call failure because the two need opposite
+    responses: one is a setting the user never filled in, the other is a
+    provider that answered badly. Reporting the first as the second sent a
+    reader looking for a broken model they had not configured.
+    """
+
+
+def commentary_failure_summary(exc: BaseException) -> str:
+    """Say why there is no commentary, in terms of what the reader can act on.
+
+    The old wording blamed "the model response" and appended the exception's
+    class name, so an unconfigured provider - by far the most common case, and
+    the default state - was reported as a model that had answered badly. A
+    reader with no provider went looking for a broken one.
+    """
+    if isinstance(exc, AiProviderNotConfigured):
+        return (
+            "AI commentary was requested, but no AI provider is configured, so nothing was asked. "
+            "Set one up in Settings, or leave it off - it is optional, and the deterministic "
+            "analysis below never uses it."
+        )
+    return f"AI commentary could not be generated: {exc}. Deterministic analysis below is unaffected."
+
+
+def proposal_fallback_reason(exc: BaseException, fallback_reason: str) -> str:
+    """Same distinction for the trade proposal, which falls back deterministically."""
+    if isinstance(exc, AiProviderNotConfigured):
+        prefix = (
+            "AI proposals were requested, but no AI provider is configured, so the deterministic "
+            "analyst decided this"
+        )
+    else:
+        prefix = f"The AI proposal failed ({exc}), so the deterministic analyst decided this"
+    return f"{prefix}. {fallback_reason}"
+
+
 def _string_list(value: object, limit: int = 5) -> tuple[str, ...]:
     """Coerce a model-supplied field into a short tuple of strings.
 
@@ -61,7 +100,7 @@ class AiAnalyst:
                 quote_amount_usdt=fallback.quote_amount_usdt,
                 stop_loss_pct=fallback.stop_loss_pct,
                 take_profit_pct=fallback.take_profit_pct,
-                reason=f"Local AI proposal failed ({exc}); {fallback.reason}",
+                reason=proposal_fallback_reason(exc, fallback.reason),
             )
 
     def propose_manual_override(
@@ -258,10 +297,7 @@ class AiAnalyst:
         except Exception as exc:
             return AiCommentary(
                 enabled=True,
-                summary=(
-                    "AI commentary could not be generated because the model response was not usable "
-                    f"({type(exc).__name__}). Deterministic analysis below is unaffected."
-                ),
+                summary=commentary_failure_summary(exc),
                 risks=(),
                 watchlist=(),
                 raw_response="",
@@ -403,7 +439,11 @@ class AiAnalyst:
         ai_config = self.config["ai"]
         base_url = os.getenv(ai_config["base_url_env"], "").rstrip("/")
         if not base_url:
-            return self._mock_proposal(snapshots)
+            # Returning the deterministic proposal here swallowed the fact that
+            # the model was never asked: the user ticked "AI proposals", got a
+            # verdict, and nothing in it said where the verdict came from.
+            # propose_trade still falls back - it just says so now.
+            raise AiProviderNotConfigured("No AI provider is configured.")
 
         prompt = {
             "task": (
@@ -610,7 +650,7 @@ class AiAnalyst:
         api_key = os.getenv(ai_config["api_key_env"], "")
         model = os.getenv(ai_config["model_env"], "qwen3:14b")
         if not base_url:
-            raise RuntimeError("LLM_BASE_URL is not set.")
+            raise AiProviderNotConfigured("No AI provider is configured.")
 
         body = json.dumps(
             {

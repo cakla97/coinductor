@@ -1,6 +1,13 @@
 from decimal import Decimal
 
-from trading_agent.ai_analyst import AiAnalyst
+import pytest
+
+from trading_agent.ai_analyst import (
+    AiAnalyst,
+    AiProviderNotConfigured,
+    commentary_failure_summary,
+    proposal_fallback_reason,
+)
 from trading_agent.models import (
     AiDecisionMemory,
     LivePositionCycle,
@@ -376,3 +383,47 @@ def test_string_list_tolerates_shapes_models_actually_return() -> None:
     assert _string_list(None) == ()
     assert _string_list(42) == ()
     assert _string_list(["", "   ", "ok"]) == ("ok",)
+
+
+def test_missing_provider_is_told_apart_from_a_failed_call() -> None:
+    """The default state is "no provider", and it was reported as a bad answer.
+
+    The old wording blamed "the model response was not usable" and appended the
+    exception class name, so a user who had never configured AI went looking
+    for a broken model instead of an empty setting.
+    """
+    not_configured = commentary_failure_summary(AiProviderNotConfigured("No AI provider is configured."))
+    failed = commentary_failure_summary(TimeoutError("read timed out"))
+
+    assert "no AI provider is configured" in not_configured
+    assert "optional" in not_configured
+    assert "model response" not in not_configured
+    assert "read timed out" in failed, "a real failure must keep its cause"
+    assert "RuntimeError" not in failed and "TimeoutError" not in failed
+
+
+def test_proposal_fallback_reason_keeps_the_deterministic_verdict() -> None:
+    fallback = "Fallback analyst: no allowed symbol passed conservative BUY filters."
+
+    not_configured = proposal_fallback_reason(AiProviderNotConfigured("x"), fallback)
+    failed = proposal_fallback_reason(ValueError("bad json"), fallback)
+
+    assert not_configured.endswith(fallback) and failed.endswith(fallback)
+    assert "no AI provider is configured" in not_configured
+    assert "bad json" in failed
+
+
+def test_unset_endpoint_raises_the_dedicated_error(monkeypatch) -> None:
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
+
+    with pytest.raises(AiProviderNotConfigured):
+        AiAnalyst(_config())._chat_json(system="s", user="u")
+
+
+def test_enabled_ai_without_a_provider_still_returns_a_deterministic_proposal(monkeypatch) -> None:
+    monkeypatch.delenv("LLM_BASE_URL", raising=False)
+
+    proposal = AiAnalyst(_config()).propose_trade(_snapshots(), decision_memory=_memory())
+
+    assert proposal.action in {"HOLD", "BUY"}, "the run must not be lost with the model"
+    assert "no AI provider is configured" in proposal.reason

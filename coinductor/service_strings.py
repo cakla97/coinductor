@@ -30,6 +30,68 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Run the read-only check from Settings before live analysis.",
         "cs": "Před živou analýzou spusťte read-only kontrolu v Nastavení.",
     },
+    # Completion toasts. Keyed rather than passed as sentences so they are not
+    # the last English text left on a translated screen.
+    "toast_analysis_done": {
+        "en": "Analysis complete. Review the Action Plan.",
+        "cs": "Analýza dokončena. Zkontrolujte Action Plan.",
+    },
+    "toast_readonly_analysis_done": {
+        "en": "Read-only analysis complete. Review the Action Plan.",
+        "cs": "Read-only analýza dokončena. Zkontrolujte Action Plan.",
+    },
+    "toast_trade_preview_ready": {
+        "en": "Trade preview ready. Review the Action Plan.",
+        "cs": "Náhled obchodu je připraven. Zkontrolujte Action Plan.",
+    },
+    "toast_bot_plan_ready": {
+        "en": "Bot plan ready. Review the Action Plan.",
+        "cs": "Plán bota je připraven. Zkontrolujte Action Plan.",
+    },
+    "toast_guarded_trade_done": {
+        "en": "Guarded trade submit run complete. Review the Action Plan.",
+        "cs": "Zabezpečené odeslání obchodu dokončeno. Zkontrolujte Action Plan.",
+    },
+    "toast_monitoring_refreshed": {
+        "en": "Active strategy monitoring refreshed.",
+        "cs": "Sledování aktivních strategií bylo obnoveno.",
+    },
+    "toast_guarded_oco_done": {
+        "en": "Guarded OCO protection run complete. Review the Action Plan.",
+        "cs": "Zabezpečená OCO ochrana dokončena. Zkontrolujte Action Plan.",
+    },
+    "toast_guarded_earn_done": {
+        "en": "Guarded Earn redeem run complete. Review the Action Plan.",
+        "cs": "Zabezpečený výběr z Earn dokončen. Zkontrolujte Action Plan.",
+    },
+    "active_strategies_none": {
+        "en": "No registered active Grid or Rebalancing bots were evaluated in the latest run.",
+        "cs": "V posledním běhu nebyli vyhodnoceni žádní registrovaní aktivní Grid ani Rebalancing boti.",
+    },
+    "active_strategies_counts": {
+        "en": "{total} active strategy(s): {healthy} healthy, {review} to review, {action} requiring action.",
+        "cs": "Aktivních strategií: {total} - {healthy} v pořádku, {review} ke kontrole, {action} vyžaduje zásah.",
+    },
+    "active_strategies_pending": {
+        "en": "{pending} registered strategy(s) awaiting a fresh evaluation.",
+        "cs": "Registrovaných strategií čekajících na nové vyhodnocení: {pending}.",
+    },
+    "run_report_missing": {
+        "en": "That run's report file is no longer on disk.",
+        "cs": "Soubor s reportem tohoto běhu už na disku není.",
+    },
+    "ai_summary_no_provider": {
+        "en": (
+            "No AI provider is configured, so there is no commentary to show. This is optional - "
+            "every decision above comes from the deterministic analysis, which never uses a model. "
+            "Settings has the setup if you want it."
+        ),
+        "cs": (
+            "Není nastavený žádný AI provider, takže není co zobrazit. Je to volitelné - všechna "
+            "rozhodnutí výše pocházejí z deterministické analýzy, která model nikdy nepoužívá. "
+            "Nastavení najdete v Nastavení."
+        ),
+    },
     "connection_confirmed_by_run": {
         "en": "Confirmed by run {run_id}: the analysis read your Binance account successfully.",
         "cs": "Potvrzeno během běhu {run_id}: analýza úspěšně načetla váš účet Binance.",

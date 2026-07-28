@@ -951,6 +951,20 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Refresh monitoring",
         "cs": "Obnovit sledování",
     },
+    "open_run_report_button": {
+        "en": "Open report",
+        "cs": "Otevřít report",
+    },
+    "refresh_monitoring_tooltip": {
+        "en": (
+            "Runs a fresh read-only analysis and re-evaluates every registered bot against it. "
+            "No AI, no trade preview, and nothing is sent to Binance."
+        ),
+        "cs": (
+            "Spustí novou read-only analýzu a znovu proti ní vyhodnotí všechny registrované boty. "
+            "Bez AI, bez náhledu obchodu a na Binance se nic neodesílá."
+        ),
+    },
     "register_active_bot_button": {
         "en": "Register active bot",
         "cs": "Registrovat aktivního bota",

@@ -123,6 +123,13 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert '"Active Strategies"' in qml
     assert "appController.activeStrategiesSummary" in qml
     assert "appController.refreshActiveStrategies()" in qml
+    # A swapped button label was the only sign a run was in flight, and it
+    # sits still - which reads as a hang on a button that quietly starts a
+    # full analysis.
+    assert qml.count("BusyIndicator {") == 2
+    assert "appController.appText.refresh_monitoring_tooltip" in qml
+    assert "appController.openRunReport(modelData.reportPath)" in qml
+    assert "appController.appText.open_run_report_button" in qml
     assert "strategyRegistrationDialog.open()" in qml
     assert qml.count("text: appController.appText.import_latest_recommendation_button") == 2
     assert "appController.latestGridRegistrationSuggestion" in qml

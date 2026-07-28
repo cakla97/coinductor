@@ -328,3 +328,31 @@ def replace_next_review(snapshot, review):
     from dataclasses import replace
 
     return replace(snapshot, next_review=review)
+
+
+def test_the_run_carries_the_ui_language_to_the_model(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("cs")
+    captured = {}
+
+    def stub(options):
+        captured["options"] = options
+        return _StubWorker()
+
+    monkeypatch.setattr("coinductor.controller.AnalysisWorker", stub)
+    monkeypatch.setattr(AppController, "_start_worker", lambda self, *_args: None)
+
+    controller._start_analysis("MOCK", False, False, False, result_page=3, completion_message="toast_analysis_done")
+
+    assert captured["options"].response_language == "cs"
+
+
+class _StubWorker:
+    class _Sig:
+        def connect(self, *_args, **_kwargs):
+            return None
+
+    progress = completed = failed = finished = _Sig()
+
+    def moveToThread(self, *_args):
+        return None

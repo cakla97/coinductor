@@ -294,7 +294,10 @@ class AiAnalyst:
         }
         try:
             content = self._chat_json(
-                system="You are a cautious crypto portfolio assistant. Output valid JSON only.",
+                system=(
+                    "You are a cautious crypto portfolio assistant. Output valid JSON only. "
+                    + self._language_instruction()
+                ),
                 user=json.dumps(prompt, default=str),
             )
             data = json.loads(content)
@@ -315,6 +318,18 @@ class AiAnalyst:
                 watchlist=(),
                 raw_response="",
             )
+
+    def _language_instruction(self) -> str:
+        """Ask the model for the reader's language.
+
+        Commentary is the model's own prose, so it cannot be translated at the
+        display boundary the way our own text is - it came back in English
+        beside a Czech screen. Field names and JSON keys stay as specified.
+        """
+        language = str(self.config.get("ai", {}).get("response_language", "")).strip().lower()
+        if language.startswith("cs"):
+            return "Write every human-readable value in Czech; keep the JSON keys in English."
+        return "Write every human-readable value in English."
 
     def _focused_rebalancing_assessment(self, recommendation: RebalancingBotRecommendation) -> str:
         payload = self._rebalancing_payload(recommendation)

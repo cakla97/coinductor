@@ -1983,6 +1983,9 @@ class AppController(QObject):
             earn_redeem_submit=earn_redeem_submit and self._safety_snapshot.allows_live_submit,
             earn_redeem_confirm=earn_redeem_confirm.strip(),
             manual_override_symbol=manual_override_symbol.strip(),
+            # The model writes its own prose, so unlike our text it cannot be
+            # translated after the fact - it has to be asked up front.
+            response_language=self._wizard_language,
         )
         self._worker = AnalysisWorker(options)
         self._worker.progress.connect(self._on_progress)

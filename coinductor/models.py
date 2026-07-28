@@ -20,6 +20,7 @@ class RunOptions:
     earn_redeem_submit: bool = False
     earn_redeem_confirm: str = ""
     manual_override_symbol: str = ""
+    response_language: str = "en"
 
 
 @dataclass(frozen=True)

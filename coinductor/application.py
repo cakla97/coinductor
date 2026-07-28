@@ -56,6 +56,7 @@ class CoinductorApplication:
         config["app"]["mock_data"] = mode == "MOCK"
         config["ai"]["commentary_enabled"] = bool(options.ai_summary)
         config["ai"]["enabled"] = bool(options.ai_proposals)
+        config["ai"]["response_language"] = options.response_language
         config["live_confirm"]["enabled"] = bool(options.live_preview or options.live_submit)
         # Confirmation strings are only carried when the matching submit was
         # actually requested, so a stale string cannot authorise a later run.

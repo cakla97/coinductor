@@ -65,12 +65,13 @@ class GridBotAdvisor:
         deployment_allowed = not blockers
         recommended = market_status == "SUITABLE" and deployment_allowed
         reason = (
-            f"{selected_snapshot.symbol} scored {score:.1f}/100 for a range strategy: "
+            f"{selected_snapshot.symbol} scored {score:.1f}/100 as a range candidate: "
             + "; ".join(reasons)
             + "."
         )
-        if blockers:
-            reason += " Deployment blockers: " + "; ".join(blockers) + "."
+        # Blockers are not repeated here. They have their own field, which the
+        # card shows, the next-review panel shows and the report lists - so
+        # inlining them printed the same paragraph three times on one screen.
 
         quote_asset = self._quote_asset(selected_snapshot.symbol)
         assessments = tuple(
@@ -96,6 +97,7 @@ class GridBotAdvisor:
             stop_loss,
             take_profit,
             deployment_allowed,
+            capital_short=any("not enough grid capital" in item for item in blockers),
         )
         return GridRecommendation(
             recommended=recommended,
@@ -147,25 +149,25 @@ class GridBotAdvisor:
         max_atr = Decimal(str(config.get("max_atr_pct", "6.0")))
         if min_atr <= atr_pct <= max_atr:
             score += Decimal("20")
-            reasons.append(f"ATR {atr_pct:.2f}% is tradable")
+            reasons.append(f"ATR {atr_pct:.2f}%")
         else:
-            reasons.append(f"ATR {atr_pct:.2f}% is outside preferred range")
+            reasons.append(f"ATR {atr_pct:.2f}% (outside preferred range)")
 
         ema_distance = abs(snapshot.price - snapshot.ema200) / snapshot.ema200 * Decimal("100") if snapshot.ema200 else Decimal("100")
         max_ema_distance = Decimal(str(config.get("max_abs_ema200_distance_pct", "12")))
         if ema_distance <= max_ema_distance:
             score += Decimal("10")
-            reasons.append(f"price is {ema_distance:.2f}% from EMA200")
+            reasons.append(f"{ema_distance:.2f}% from EMA200")
         else:
-            reasons.append(f"price is {ema_distance:.2f}% from EMA200")
+            reasons.append(f"{ema_distance:.2f}% from EMA200")
 
         if research is not None:
             max_trend = Decimal(str(config.get("max_abs_7d_return_pct", "10")))
             if research.return_7d_pct is not None and abs(research.return_7d_pct) <= max_trend:
                 score += Decimal("10")
-                reasons.append(f"7d move {research.return_7d_pct:+.2f}% is range-compatible")
+                reasons.append(f"7d move {research.return_7d_pct:+.2f}%")
             elif research.return_7d_pct is not None:
-                reasons.append(f"7d move {research.return_7d_pct:+.2f}% is strongly directional")
+                reasons.append(f"7d move {research.return_7d_pct:+.2f}% (strongly directional)")
         else:
             reasons.append("multi-timeframe research unavailable")
 
@@ -252,17 +254,15 @@ class GridBotAdvisor:
             blockers.append("loss cooldown is active")
         min_quote = self._min_quote_per_grid()
         if quote_per_grid < min_quote:
-            # Say what it would take, not just that it is short: the reader's
-            # next move is to raise max_grid_capital_usdt or skip the grid, and
-            # neither is obvious from "3.13 is below 5.00".
+            # One short fact. What to do about it belongs in the manual steps,
+            # and config key names belong nowhere a reader is skimming: this
+            # line is repeated on the card, in the blockers field and in the
+            # next-review panel, so length here is paid for three times.
             needed = min_quote * Decimal(grid_count) if grid_count > 0 else min_quote
+            allocated = quote_per_grid * Decimal(grid_count)
             blockers.append(
-                f"grid capital is too small: {grid_count} grids need at least {needed:.2f} "
-                f"({min_quote:.2f} per grid, Binance's minimum order value) but only "
-                f"{quote_per_grid:.2f} per grid is available. Raise grid_bot."
-                f"default_investment_usdt and max_grid_capital_usdt if you want this bot; "
-                f"Binance will then show its own minimum, which is higher again for the exact "
-                f"range you enter"
+                f"not enough grid capital: {grid_count} grids need {needed:.2f} USDC, "
+                f"only {allocated:.2f} is allocated"
             )
         return blockers
 
@@ -299,16 +299,21 @@ class GridBotAdvisor:
         stop_loss: Decimal,
         take_profit: Decimal,
         deployment_allowed: bool,
+        capital_short: bool = False,
     ) -> tuple[ManualStep, ...]:
         # A blocked grid deliberately loses its parameters. Its blockers are
         # market conditions the reader cannot clear, and the range is derived
         # from today's prices - by the time the market turns SUITABLE those
         # numbers would be wrong, so offering them would be a trap.
         if not deployment_allowed:
-            return (
-                ManualStep("grid_blocked_do_not_create"),
-                ManualStep("grid_blocked_rerun"),
-            )
+            # A capital shortfall is the one grid blocker the reader can clear,
+            # so it gets a step saying how - the market-condition blockers only
+            # ever mean "wait".
+            steps = [ManualStep("grid_blocked_do_not_create")]
+            if capital_short:
+                steps.append(ManualStep("grid_blocked_raise_capital"))
+            steps.append(ManualStep("grid_blocked_rerun"))
+            return tuple(steps)
         return (
             ManualStep("bots_manual_because_no_api"),
             ManualStep("grid_open_menu"),

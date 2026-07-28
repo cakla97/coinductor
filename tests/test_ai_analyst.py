@@ -448,3 +448,17 @@ def test_indicator_values_are_rounded_for_the_sentence_a_person_reads() -> None:
     # Field names and enums are not sentences.
     assert "trend=" not in reason and "RISK_OFF" not in reason
     assert "risk-off trend" in reason
+
+
+def test_commentary_asks_the_model_for_the_readers_language() -> None:
+    """Commentary is the model's own prose.
+
+    Unlike our own text it cannot be translated at the display boundary, so it
+    came back in English beside a Czech screen; it has to be asked up front.
+    """
+    config = _config()
+    config["ai"]["response_language"] = "cs"
+
+    assert "in Czech" in AiAnalyst(config)._language_instruction()
+    assert "JSON keys in English" in AiAnalyst(config)._language_instruction()
+    assert "in English" in AiAnalyst(_config())._language_instruction()

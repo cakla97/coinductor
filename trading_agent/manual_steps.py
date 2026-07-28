@@ -58,6 +58,18 @@ MANUAL_STEP_TEXT: dict[str, dict[str, str]] = {
         "en": "Do not create the grid while any deployment blocker remains.",
         "cs": "Nezakládejte grid, dokud trvá jakýkoli blokátor nasazení.",
     },
+    "grid_blocked_raise_capital": {
+        "en": (
+            "If you want this bot, raise the grid capital in config.toml - grid_bot."
+            "default_investment_usdt and max_grid_capital_usdt - and run the analysis again. "
+            "Binance will then show its own minimum for the range, higher again."
+        ),
+        "cs": (
+            "Pokud tohoto bota chcete, zvyšte kapitál pro grid v config.toml - grid_bot."
+            "default_investment_usdt a max_grid_capital_usdt - a spusťte analýzu znovu. "
+            "Binance pak u daného rozsahu ukáže vlastní minimum, ještě vyšší."
+        ),
+    },
     "grid_blocked_rerun": {
         "en": "Run the assistant again after the risk cooldown/kill switch and market-status blockers clear.",
         "cs": "Spusťte asistenta znovu, až pominou blokátory rizikové pauzy, kill switche a stavu trhu.",

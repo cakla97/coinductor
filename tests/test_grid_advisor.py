@@ -147,10 +147,18 @@ def test_shipped_defaults_cannot_fund_a_grid_binance_would_accept() -> None:
 
     assert recommendation.deployment_allowed is False
     assert recommendation.recommended is False
-    blocker = next(item for item in recommendation.blockers if "grid capital is too small" in item)
-    assert "8 grids need at least 40.00" in blocker
-    assert "default_investment_usdt" in blocker, "the reader needs the setting to change"
-    # Blocked grids drop their parameters on purpose: the range is derived from
+    blocker = next(item for item in recommendation.blockers if "not enough grid capital" in item)
+    assert blocker == "not enough grid capital: 8 grids need 40.00 USDC, only 25.00 is allocated"
+    # This line is repeated on the card, in the blockers field and in the
+    # next-review panel, so length is paid for three times.
+    assert len(blocker) < 100, f"blocker is a paragraph again: {len(blocker)} chars"
+    assert "config" not in blocker, "config keys belong in the steps, not in a skimmed line"
+    # And it is not inlined into the reason as well.
+    assert "not enough grid capital" not in recommendation.reason
+    assert len(recommendation.reason) < 200, "the reason grew back into a wall of text"
+    # What to do about it is a step, because this blocker is one the reader can clear.
+    assert any("default_investment_usdt" in step for step in recommendation.manual_steps)
+    # Blocked grids still drop their parameters: the range is derived from
     # today's prices and would be stale by the time the capital is raised.
     assert not any("Investment currency dropdown" in step for step in recommendation.manual_steps)
 

@@ -99,8 +99,9 @@ class RebalancingBotAdvisor:
             + ", ".join(f"{item.asset} {item.target_weight_pct}%" for item in assets)
             + f"; guarded investment {self._money(investment)} USDC."
         )
-        if blockers:
-            summary += " Deployment blocked: " + "; ".join(blocker.rstrip(".") for blocker in blockers) + "."
+        # Same as the grid: blockers have their own field and are shown on the
+        # card, in the next-review panel and in the report. Repeating them here
+        # printed the same sentence three times on one screen.
 
         steps = self._manual_steps(
             assets,

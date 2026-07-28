@@ -539,6 +539,10 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "{action} is locked by your profile: automation level is Recommendations only. Switch it to Guarded automation in the setup wizard first.",
         "cs": "{action} je uzamčeno vaším profilem: úroveň automatizace je Pouze doporučení. Nejprve ji v průvodci nastavením přepněte na Zabezpečená automatizace.",
     },
+    "diagnostics_saved": {
+        "en": "Diagnostics bundle saved and opened: {path}",
+        "cs": "Diagnostika uložena a otevřena: {path}",
+    },
     # --- Action Plan trade card ---
     "trade_param_action": {"en": "Action", "cs": "Akce"},
     "trade_param_symbol": {"en": "Symbol", "cs": "Symbol"},

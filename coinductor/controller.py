@@ -1081,7 +1081,12 @@ class AppController(QObject):
         except Exception as exc:
             self.notificationRequested.emit(f"Could not write diagnostics bundle: {type(exc).__name__}")
             return
-        self.notificationRequested.emit(f"Diagnostics bundle saved to {path}")
+        # Open it as well as naming it: the toast is easy to miss, and the file
+        # is written under the data directory, which most users never visit.
+        self.notificationRequested.emit(
+            service_text("diagnostics_saved", self._wizard_language).format(path=path)
+        )
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
 
     @Slot(str, str, str, str, str, bool, bool, float, float)
     def saveGuidedProfile(

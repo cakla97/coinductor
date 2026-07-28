@@ -51,7 +51,10 @@ class DiagnosticsService:
         stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
         path = target_dir / f"coinductor-diagnostics-{stamp}.txt"
         path.write_text(self.generate_report(), encoding="utf-8")
-        return path
+        # Absolute: the caller reports this to the user, and a path relative to
+        # the working directory is unusable to someone running an installed
+        # build - they have no reason to know where that directory is.
+        return path.resolve()
 
     def _system_section(self, lines: list[str]) -> None:
         lines.append("[System]")

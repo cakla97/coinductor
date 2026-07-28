@@ -157,7 +157,8 @@ Autosandbox candidate: ...\Temp\is-MZFF6DRNZ5.tmp\Coinductor-0.1.4-setup.tmp
 ```
 
 Sandboxed, the installer runs to the finish and writes nothing — the wizard completes, and
-the old version is still installed. Add the temporary path too, **including the filename**:
+the old version is still installed. You can exclude that path too, **including the
+filename**:
 
 ```text
 %LOCALAPPDATA%\Temp\is-*.tmp\Coinductor-*-setup.tmp
@@ -170,6 +171,16 @@ The folder name is random each run, but the file inside is always
 > directory — *every* installer built with Inno Setup unpacks into it, including ones you
 > have not chosen to trust. Excluding the bare folder would wave all of them through. Keep
 > the filename in the pattern.
+
+**Expect it to sandbox the installer anyway.** With that exclusion in place and matching
+the path exactly, Avast still logged `Result: Sandboxing` for it. Its general Exceptions
+list does not appear to govern Autosandbox. What the exclusion does seem to change is
+CyberCapture, which went from holding the file to `custody processed with result Run`.
+
+So in practice: **if the first attempt fails, run the installer again.** The second run is
+the real one and it works. If Coinductor was open during a sandboxed attempt you may see
+an error about a file in use, because the installer cannot close an application that is
+running outside the sandbox it was put in — the second run offers to close it properly.
 
 In Avast: *Menu → Settings → General → Exceptions*. Other products have an equivalent.
 Verify the SHA-256 before you exclude anything.

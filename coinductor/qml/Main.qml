@@ -2569,12 +2569,10 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         spacing: 2
                                         Text { text: modelData.label; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                                        Text {
+                                        CopyableValue {
                                             Layout.fillWidth: true
-                                            text: modelData.value || "-"
-                                            color: textPrimary
+                                            value: modelData.value
                                             font.pixelSize: 12
-                                            elide: Text.ElideRight
                                         }
                                     }
                                 }
@@ -2915,7 +2913,7 @@ ApplicationWindow {
                                         Layout.fillWidth: true
                                         spacing: 2
                                         Text { text: modelData.label; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                                        Text { Layout.fillWidth: true; text: modelData.value || "-"; color: textPrimary; font.pixelSize: 11; elide: Text.ElideRight }
+                                        CopyableValue { Layout.fillWidth: true; value: modelData.value; font.pixelSize: 11 }
                                     }
                                 }
                             }
@@ -4659,7 +4657,7 @@ ApplicationWindow {
                                 anchors.margins: 10
                                 spacing: 3
                                 Text { text: modelData.label; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                                Text { Layout.fillWidth: true; text: modelData.value || "-"; color: textPrimary; font.pixelSize: 12; elide: Text.ElideRight }
+                                CopyableValue { Layout.fillWidth: true; value: modelData.value; font.pixelSize: 12 }
                             }
                         }
                     }
@@ -5007,12 +5005,10 @@ ApplicationWindow {
                                 anchors.margins: 10
                                 spacing: 3
                                 Text { text: modelData.label; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                                Text {
+                                CopyableValue {
                                     Layout.fillWidth: true
-                                    text: modelData.value || "-"
-                                    color: textPrimary
+                                    value: modelData.value
                                     font.pixelSize: 13
-                                    elide: Text.ElideRight
                                 }
                             }
                         }
@@ -5144,7 +5140,7 @@ ApplicationWindow {
                                     anchors.margins: 10
                                     spacing: 3
                                     Text { text: modelData.label; color: textSecondary; font.pixelSize: 10; font.bold: true }
-                                    Text { Layout.fillWidth: true; text: modelData.value || "-"; color: textPrimary; font.pixelSize: 12; elide: Text.ElideRight }
+                                    CopyableValue { Layout.fillWidth: true; value: modelData.value; font.pixelSize: 12 }
                                 }
                             }
                         }
@@ -6149,6 +6145,26 @@ ApplicationWindow {
 
     // Animated "something is happening" marker. A static "Running..." label
     // left users unsure whether the app had actually started working.
+    // A value the reader has to reproduce somewhere else - a price, a grid
+    // count, a threshold. Elide rules these out as TextEdit (which has no
+    // elide), so copying is a click rather than a drag-select.
+    component CopyableValue: Text {
+        id: copyableValue
+        property string value: ""
+        text: value || "-"
+        color: textPrimary
+        elide: Text.ElideRight
+        MouseArea {
+            anchors.fill: parent
+            enabled: copyableValue.value !== ""
+            cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+            hoverEnabled: true
+            onClicked: appController.copyValue(copyableValue.value)
+            ToolTip.visible: containsMouse && enabled
+            ToolTip.text: appController.appText.click_to_copy_tooltip
+        }
+    }
+
     component BusyDots: Row {
         id: busyDots
         property color dotColor: accent

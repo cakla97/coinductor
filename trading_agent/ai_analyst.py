@@ -5,7 +5,20 @@ import json
 import os
 import urllib.request
 
+from .decimal_utils import display
 from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, CapitalSourcingPlan, GridRecommendation, LivePositionSummary, MarketResearchReport, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
+
+
+_TREND_PHRASES = {
+    "RISK_ON": "risk-on trend",
+    "RISK_OFF": "risk-off trend",
+    "NEUTRAL": "neutral trend",
+}
+
+
+def _trend_phrase(regime: str) -> str:
+    """`trend=RISK_OFF` is a field name and an enum; this is what it means."""
+    return _TREND_PHRASES.get(str(regime).upper(), f"{str(regime).replace('_', '-').lower()} trend")
 
 
 class AiProviderNotConfigured(RuntimeError):
@@ -406,13 +419,19 @@ class AiAnalyst:
         allowed_symbols = [str(symbol).upper() for symbol in self.config.get("strategy", {}).get("allowed_symbols", [])]
         candidates = [snapshot for snapshot in snapshots if snapshot.symbol.upper() in allowed_symbols]
         if not candidates:
-            return self._hold_proposal(snapshots, "Fallback analyst: no allowed symbols are present in market snapshots.")
+            return self._hold_proposal(snapshots, "None of your allowed symbols appear in current market data.")
         buy_candidates = [snapshot for snapshot in candidates if self._is_fallback_buy_candidate(snapshot)]
         if not buy_candidates:
-            observed = "; ".join(f"{item.symbol}: trend={item.trend_regime}, RSI={item.rsi14}" for item in candidates)
+            # Written as a sentence, not key=value with raw Decimals: this is
+            # the line on the Trade card that explains a HOLD, and an RSI
+            # printed to twenty decimals made it unreadable.
+            observed = ". ".join(
+                f"{item.symbol}: {_trend_phrase(item.trend_regime)}, RSI {display(item.rsi14)}"
+                for item in candidates
+            )
             return self._hold_proposal(
                 snapshots,
-                "Fallback analyst: no allowed symbol passed conservative BUY filters. Observed: " + observed,
+                f"No symbol passed the conservative BUY filters. {observed}.",
             )
         best = sorted(buy_candidates, key=self._fallback_score, reverse=True)[0]
         orders = self.config["orders"]
@@ -424,8 +443,8 @@ class AiAnalyst:
             stop_loss_pct=Decimal(str(orders["default_stop_loss_pct"])),
             take_profit_pct=Decimal(str(orders["default_take_profit_pct"])),
             reason=(
-                f"Fallback analyst: {best.symbol} passed conservative filters "
-                f"(trend={best.trend_regime}, RSI={best.rsi14}, price above EMA200)."
+                f"{best.symbol} passed the conservative filters: {_trend_phrase(best.trend_regime)}, "
+                f"RSI {display(best.rsi14)}, price above its 200-day average."
             ),
         )
 

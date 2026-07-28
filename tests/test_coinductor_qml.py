@@ -138,6 +138,11 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.copyManualSteps(activeActionPlanItem.manualSteps)" in qml
     assert "appController.appText.copy_manual_steps_button" in qml
     assert "selectByMouse: true" in qml
+    # Values are elided, so copying is a click; drag-selection is impossible.
+    assert "component CopyableValue: Text {" in qml
+    assert qml.count("CopyableValue {") == 5
+    assert 'modelData.value || "-"' not in qml, "a value that cannot be copied"
+    assert "appController.copyValue(copyableValue.value)" in qml
     assert "strategyRegistrationDialog.open()" in qml
     assert qml.count("text: appController.appText.import_latest_recommendation_button") == 2
     assert "appController.latestGridRegistrationSuggestion" in qml

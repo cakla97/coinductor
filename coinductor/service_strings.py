@@ -76,9 +76,33 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "{pending} registered strategy(s) awaiting a fresh evaluation.",
         "cs": "Registrovaných strategií čekajících na nové vyhodnocení: {pending}.",
     },
+    "decision_grid_recommended": {
+        "en": "A Spot Grid was recommended",
+        "cs": "Doporučen Spot Grid",
+    },
+    "decision_rebalancing_recommended": {
+        "en": "A Rebalancing Bot was recommended",
+        "cs": "Doporučen Rebalancing Bot",
+    },
+    "decision_spot_trade": {
+        "en": "A spot trade was proposed",
+        "cs": "Navržen spotový obchod",
+    },
+    "decision_hold": {
+        "en": "No action",
+        "cs": "Žádná akce",
+    },
+    "decision_no_action": {
+        "en": "No action",
+        "cs": "Žádná akce",
+    },
     "manual_steps_copied": {
         "en": "{count} setup steps copied. Paste them next to Binance and work down the list.",
         "cs": "Zkopírováno {count} kroků nastavení. Vložte si je vedle Binance a projděte je shora dolů.",
+    },
+    "value_copied": {
+        "en": "Copied: {value}",
+        "cs": "Zkopírováno: {value}",
     },
     "clipboard_unavailable": {
         "en": "The clipboard is not available.",

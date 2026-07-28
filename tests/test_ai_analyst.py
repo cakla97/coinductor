@@ -427,3 +427,24 @@ def test_enabled_ai_without_a_provider_still_returns_a_deterministic_proposal(mo
 
     assert proposal.action in {"HOLD", "BUY"}, "the run must not be lost with the model"
     assert "no AI provider is configured" in proposal.reason
+
+
+def test_indicator_values_are_rounded_for_the_sentence_a_person_reads() -> None:
+    """RSI comes out of division at full precision.
+
+    Printed raw it ran to twenty-odd decimals in the middle of the line that
+    explains a HOLD on the Trade card.
+    """
+    noisy = MarketSnapshot(
+        symbol="BTCUSDC", price=Decimal("65000"), ema20=Decimal("64000"), ema50=Decimal("63000"),
+        ema200=Decimal("60000"), rsi14=Decimal("43.384672227767928463538468495"),
+        atr14=Decimal("1000"), volume_trend="rising", trend_regime="RISK_OFF",
+    )
+
+    reason = AiAnalyst(_config())._mock_proposal([noisy]).reason
+
+    assert "RSI 43.4" in reason
+    assert "43.3846" not in reason
+    # Field names and enums are not sentences.
+    assert "trend=" not in reason and "RISK_OFF" not in reason
+    assert "risk-off trend" in reason

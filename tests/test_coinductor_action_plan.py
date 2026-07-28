@@ -304,8 +304,10 @@ def test_trade_card_reports_the_trade_verdict_not_the_run_decision(monkeypatch, 
     assert card["status"] == "BUY", "the card must state the trade verdict"
     assert card["tone"] == "ready"
     assert card["canSubmitLive"] is True, "an approved BUY must keep its submit path"
-    # The run-level decision stays visible, under a label that says what it is.
-    assert {"label": "Run decision", "value": "GRID_BOT_RECOMMENDATION"} in card["parameters"]
+    # The run-level decision stays visible, under a label that says what it is,
+    # and spelled for a reader rather than as the enum the engine stores.
+    assert {"label": "Run decision", "value": "A Spot Grid was recommended"} in card["parameters"]
+    assert controller._decision == "GRID_BOT_RECOMMENDATION", "the stored value stays the enum"
     assert state is not None
 
 

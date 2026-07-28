@@ -1457,6 +1457,27 @@ class AppController(QObject):
         clipboard.setText(text)
         self.notificationRequested.emit("Confirmation phrase copied.")
 
+    @Slot(str)
+    def copyValue(self, value: str) -> None:
+        """Copy one figure - a price, a grid count, a threshold.
+
+        These exist to be reproduced in Binance's form, and the labels are
+        elided, which rules out drag-selection; a click is the whole gesture.
+        """
+        text = (value or "").strip()
+        if not text:
+            return
+        clipboard = QGuiApplication.clipboard()
+        if clipboard is None:
+            self.notificationRequested.emit(
+                service_text("clipboard_unavailable", self._wizard_language)
+            )
+            return
+        clipboard.setText(text)
+        self.notificationRequested.emit(
+            service_text("value_copied", self._wizard_language).format(value=text)
+        )
+
     @Slot("QVariantList")
     def copyManualSteps(self, steps: list) -> None:
         """Put the whole numbered procedure on the clipboard.
@@ -2616,6 +2637,22 @@ class AppController(QObject):
             },
         ]
 
+    # Engine decision types, spelled for a reader. The stored value stays the
+    # enum - gates compare it verbatim - so this is display only.
+    _DECISION_LABELS = {
+        "GRID_BOT_RECOMMENDATION": "decision_grid_recommended",
+        "REBALANCING_BOT_RECOMMENDATION": "decision_rebalancing_recommended",
+        "SPOT_TRADE": "decision_spot_trade",
+        "HOLD": "decision_hold",
+        "NO_ACTION": "decision_no_action",
+    }
+
+    def _decision_label(self, decision: str) -> str:
+        key = self._DECISION_LABELS.get(decision.strip().upper())
+        if key:
+            return service_text(key, self._wizard_language)
+        return decision.replace("_", " ").capitalize()
+
     def _build_action_plan_items(self) -> list[dict[str, object]]:
         # self._decision is the run's overall decision type, chosen across every
         # strategy: a recommended grid wins over the trade verdict, so it reads
@@ -2646,9 +2683,13 @@ class AppController(QObject):
              "value": str(latest_trade.get("quoteAmount", "") if latest_trade else "")},
         ]
         if run_decision and run_decision != trade_status:
-            # Keep it visible, but named for what it is.
+            # Keep it visible, but named for what it is - and spelled the way a
+            # person reads rather than as the enum the engine stores.
             trade_parameters.append(
-                {"label": service_text("trade_param_run_decision", language), "value": run_decision}
+                {
+                    "label": service_text("trade_param_run_decision", language),
+                    "value": self._decision_label(run_decision),
+                }
             )
         if latest_trade and latest_trade.get("reason"):
             trade_detail = str(latest_trade["reason"])

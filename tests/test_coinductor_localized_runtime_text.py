@@ -225,3 +225,30 @@ def test_copying_nothing_says_nothing(monkeypatch, tmp_path) -> None:
     controller.copyManualSteps([])
 
     assert seen == [], "an empty list is not a failure worth a toast"
+
+
+def test_clicking_a_value_copies_just_that_value(monkeypatch, tmp_path) -> None:
+    """Card values are elided, which rules out drag-selection."""
+    from PySide6.QtGui import QGuiApplication
+
+    QGuiApplication.instance() or QGuiApplication([])
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("cs")
+    seen: list[str] = []
+    controller.notificationRequested.connect(seen.append)
+
+    controller.copyValue("1675.87 - 2040.57")
+    controller.copyValue("   ")
+
+    assert QGuiApplication.clipboard().text() == "1675.87 - 2040.57"
+    assert seen == ["Zkopírováno: 1675.87 - 2040.57"], "blank values are not worth a toast"
+
+
+def test_run_decision_is_spelled_for_a_reader(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("cs")
+
+    assert controller._decision_label("GRID_BOT_RECOMMENDATION") == "Doporučen Spot Grid"
+    assert controller._decision_label("HOLD") == "Žádná akce"
+    # An enum nobody has mapped yet still reads better than SHOUTING_SNAKE_CASE.
+    assert controller._decision_label("SOME_NEW_TYPE") == "Some new type"

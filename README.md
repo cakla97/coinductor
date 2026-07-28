@@ -3,6 +3,13 @@
 **Knowing *when* to act is the hard part of crypto. Coinductor works it out for you — and
 never acts without your say-so.**
 
+[**Install**](#install) · [First run](#first-run) · [What it will not do](#what-it-will-not-do) ·
+[Where your data lives](#where-your-data-lives) · [Documentation](#documentation) ·
+[**Support the project**](#support-the-project) · [Security](SECURITY.md) · [License](#license)
+
+> **Not financial advice.** Coinductor is a personal portfolio tool. You are responsible for
+> every order that reaches your exchange account, including ones you confirmed through it.
+
 ![Coinductor setup wizard](docs/screenshot-wizard.png)
 
 Most people who want to hold crypto get stuck in the same place. Either they have never

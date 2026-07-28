@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from .decimal_utils import display
 from .models import LiveRiskState, MarketSnapshot, RiskDecision, TradeProposal
 
 
@@ -79,7 +80,7 @@ class RiskEngine:
         min_rsi = Decimal(str(consensus.get("min_rsi14", "45")))
         max_rsi = Decimal(str(consensus.get("max_rsi14", "68")))
         if not min_rsi <= snapshot.rsi14 <= max_rsi:
-            return f"Consensus gate: {proposal.symbol} RSI14 {snapshot.rsi14} is outside {min_rsi}-{max_rsi}."
+            return f"Consensus gate: {proposal.symbol} RSI14 {display(snapshot.rsi14)} is outside {min_rsi}-{max_rsi}."
         if consensus.get("require_rising_volume", False) and snapshot.volume_trend != "rising":
             return f"Consensus gate: {proposal.symbol} volume trend is {snapshot.volume_trend}, not rising."
         return None

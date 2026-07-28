@@ -232,9 +232,12 @@ WIZARD_STRINGS: dict[str, dict[str, str]] = {
         "en": "Review rhythm",
         "cs": "Rytmus kontrol",
     },
+    # Named for what it does. It was "Language / region", which contradicted the
+    # hint right under it and had people expecting a Spanish UI from es-ES; the
+    # interface language is a separate switch at the top of the window.
     "field_language_region": {
-        "en": "Language / region",
-        "cs": "Jazyk / region",
+        "en": "Region and fiat currency",
+        "cs": "Region a fiat měna",
     },
     "field_operating_currency": {
         "en": "Operating currency",

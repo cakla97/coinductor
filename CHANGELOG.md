@@ -3,6 +3,39 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.10] — 2026-07-29
+
+First public release of the repository.
+
+### Fixed
+
+- **One unusable field no longer loses the whole AI proposal.** Models answer "high" or
+  "0.72 (strong)" where a number was asked for; `Decimal(str(value))` raised on that and
+  the Trade card reported the loss as `[<class 'decimal.ConversionSyntax'>]`. The value is
+  salvaged when the text contains a number and otherwise takes the conservative end.
+- **The funding plan asked for a zero conversion.** When no allowed source asset can
+  contribute anything, "convert about 0.00 from allowed sources" was the instruction. That
+  case now says the gap cannot be covered and names the two honest options.
+
+### Added
+
+- **What to expect from the AI**, in the README and the in-app guide. A local model may
+  ignore the requested format and return no commentary, answer in the wrong language, or
+  have its trade opinion discarded — none of which touches the analysis, and all of which
+  reads like a broken app if nobody says so first.
+- **A note on Binance account access.** Coinductor uses the API from your desktop and never
+  the mobile app, so mobile availability is irrelevant to it; what matters is an account you
+  can create an API key on, and that varies by country.
+
+### Changed
+
+- `outputs/diagnostics/` is git-ignored. A diagnostics bundle names your home directory and
+  app state, and is written to be sent to a maintainer — it was the file most likely to
+  carry personal detail and the one that could still be committed by accident.
+- The two internal working documents are gone and the roadmap says where the project
+  actually is. Neither had been updated as the code moved, and a stale internal doc is
+  worse in a public repository than no doc.
+
 ## [0.1.9] — 2026-07-28
 
 The Action Plan is in one language, and the reason it kept not being is fixed

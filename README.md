@@ -90,6 +90,18 @@ format — at the cost of sending the prompt off your machine.
 None of the above can affect what an order does. The model cannot reach a submit path; see
 [the invariant](#the-invariant).
 
+## Before you start: a Binance account that can create API keys
+
+Coinductor talks to the **Binance API from your desktop**. It does not use, need or
+interact with the Binance mobile app, so whether that app is installable on your phone
+makes no difference to Coinductor.
+
+What it does need is an account you can sign into and create an API key on, which is done
+in Binance's web interface. **Binance's availability, entity and terms differ by country
+and have changed more than once** — check what applies where you live before relying on
+any of this. That is Binance's to state, not ours, and anything written here would go
+stale.
+
 ## Platform support
 
 | | Status |

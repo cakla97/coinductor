@@ -1,9 +1,10 @@
 # Coinductor Roadmap
 
-Coinductor is moving from a personal CLI prototype to a local-first desktop
-application. Deterministic policy code remains responsible for permissions, limits,
-and execution. AI may explain, summarize, and rank bounded options, but it cannot
-bypass those controls.
+**Status: Stage A and Stage B are complete.** Coinductor is a released local-first
+desktop application with a Windows installer; the sections below record how it got
+there and what is still open. Deterministic policy code remains responsible for
+permissions, limits, and execution; AI may explain, summarize and rank bounded
+options, but it cannot bypass those controls.
 
 ## Stage A: Personal Desktop Application
 
@@ -16,7 +17,7 @@ bypass those controls.
   AI Assistant, Help & Guides, and Settings pages
 - first-run product tour covering all nine pages (see A2)
 
-### A2. Settings and onboarding - in progress
+### A2. Settings and onboarding - complete
 
 - local setup checks that never reveal API secrets
 - separate paths for an existing portfolio and a first portfolio

@@ -462,3 +462,31 @@ def test_commentary_asks_the_model_for_the_readers_language() -> None:
     assert "in Czech" in AiAnalyst(config)._language_instruction()
     assert "JSON keys in English" in AiAnalyst(config)._language_instruction()
     assert "in English" in AiAnalyst(_config())._language_instruction()
+
+
+def test_a_non_numeric_field_does_not_throw_the_whole_proposal_away() -> None:
+    """Models return "high" where a number was asked for.
+
+    Decimal(str(value)) raised ConversionSyntax on that, losing the entire
+    proposal over one field - and reporting the loss as
+    "[<class 'decimal.ConversionSyntax'>]" on the Trade card.
+    """
+    analyst = AiAnalyst(_config())
+    low, high = Decimal("0"), Decimal("1")
+
+    assert analyst._bounded_decimal("0.72", low, high) == Decimal("0.72")
+    assert analyst._bounded_decimal("0.72 (strong)", low, high) == Decimal("0.72")
+    # Nothing numeric at all: take the conservative end rather than raising.
+    assert analyst._bounded_decimal("high", low, high) == low
+    assert analyst._bounded_decimal(None, low, high) == low
+    assert analyst._bounded_decimal("85%", low, high) == high
+
+
+def test_a_failure_is_described_by_its_cause_not_its_class_internals() -> None:
+    from decimal import InvalidOperation
+
+    from trading_agent.ai_analyst import _describe_exception
+
+    # This is what a Decimal error stringifies to, and it reached the screen.
+    assert "class" not in _describe_exception(InvalidOperation())
+    assert _describe_exception(TimeoutError("read timed out")) == "read timed out"

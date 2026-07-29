@@ -155,3 +155,27 @@ def test_blocked_steps_separate_the_funding_path_from_the_parameters() -> None:
     form = next(index for index, step in enumerate(steps) if "After funding is complete" in step)
     assert steps[0].startswith("Do not create a Rebalancing Bot")
     assert 0 < divider < form, "the divider must sit between the funding path and the parameters"
+
+
+def test_a_gap_nothing_can_cover_does_not_ask_for_a_zero_conversion() -> None:
+    """"Convert about 0.00 from allowed sources" is not an instruction.
+
+    With no allowed source asset holding anything, the shared gap sentence
+    still told the reader to convert zero and left them to work out that the
+    bot is simply out of reach.
+    """
+    portfolio = _portfolio(
+        _asset("BTC", "CORE", "214", "26.5"),
+        _asset("USDC", "STABLE", "11.88", "1.5"),
+    )
+
+    result = RebalancingBotAdvisor(_config()).recommend(
+        portfolio,
+        [Balance("USDC", Decimal("0"), flexible_amount=Decimal("11.88"))],
+    )
+
+    summary = result.funding_plan.summary
+    assert "convert about 0.00" not in summary
+    assert "0.00" not in summary
+    assert "no allowed source asset can cover it" in summary
+    assert result.funding_plan.summary_step.key == "funding_summary_nothing_to_source"

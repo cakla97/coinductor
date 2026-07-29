@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import json
+import re
 import os
 import urllib.request
 
@@ -31,6 +32,18 @@ class AiProviderNotConfigured(RuntimeError):
     """
 
 
+def _describe_exception(exc: BaseException) -> str:
+    """A cause a reader can act on, not the exception's internals.
+
+    A Decimal error stringifies to "[<class 'decimal.ConversionSyntax'>]",
+    which appeared verbatim on the Trade card.
+    """
+    message = str(exc).strip()
+    if message and not message.startswith("["):
+        return message
+    return type(exc).__name__.replace("Error", " error").strip().lower()
+
+
 def commentary_failure_summary(exc: BaseException) -> str:
     """Say why there is no commentary, in terms of what the reader can act on.
 
@@ -45,7 +58,10 @@ def commentary_failure_summary(exc: BaseException) -> str:
             "Set one up in Settings, or leave it off - it is optional, and the deterministic "
             "analysis below never uses it."
         )
-    return f"AI commentary could not be generated: {exc}. Deterministic analysis below is unaffected."
+    return (
+        f"AI commentary could not be generated: {_describe_exception(exc)}. "
+        "Deterministic analysis below is unaffected."
+    )
 
 
 def proposal_fallback_reason(exc: BaseException, fallback_reason: str) -> str:
@@ -56,7 +72,7 @@ def proposal_fallback_reason(exc: BaseException, fallback_reason: str) -> str:
             "analyst decided this"
         )
     else:
-        prefix = f"The AI proposal failed ({exc}), so the deterministic analyst decided this"
+        prefix = f"The AI proposal failed ({_describe_exception(exc)}), so the deterministic analyst decided this"
     return f"{prefix}. {fallback_reason}"
 
 
@@ -640,8 +656,26 @@ class AiAnalyst:
         }
 
     def _bounded_decimal(self, value: object, minimum: Decimal, maximum: Decimal) -> Decimal:
-        parsed = Decimal(str(value))
-        return min(max(parsed, minimum), maximum)
+        """Coerce a model-supplied number without throwing the proposal away.
+
+        Models do not always return a number where one was asked for -
+        "high", "0.72 (strong)", null. `Decimal(str(value))` raised
+        ConversionSyntax on those, which lost the entire proposal over one
+        field and reported a Python class name as the cause. Salvage a number
+        if the text contains one, and otherwise take the minimum, which for
+        confidence is the conservative end.
+        """
+        try:
+            return min(max(Decimal(str(value)), minimum), maximum)
+        except (InvalidOperation, ValueError, TypeError):
+            pass
+        match = re.search(r"-?\d+(?:\.\d+)?", str(value))
+        if match:
+            try:
+                return min(max(Decimal(match.group()), minimum), maximum)
+            except InvalidOperation:
+                pass
+        return minimum
 
     def _open_live_position_blocks_buy(self, live_positions: LivePositionSummary | None) -> bool:
         guard = self.config.get("live_position_guard", {})

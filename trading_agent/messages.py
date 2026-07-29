@@ -412,6 +412,18 @@ MESSAGE_TEXT: dict[str, dict[str, str]] = {
             "Stávajících {available} {quote} plus navržené konverze pokryjí investici {investment}."
         ),
     },
+    "funding_summary_nothing_to_source": {
+        "en": (
+            "You have {available} {quote}; {uncovered} {quote} is still missing and no allowed "
+            "source asset can cover it. Add {quote} yourself, or leave this bot alone - do not "
+            "fill the gap from protected BTC, ETH, WBETH or BNB without deciding that separately."
+        ),
+        "cs": (
+            "Máte {available} {quote}; chybí {uncovered} {quote} a žádné povolené zdrojové aktivum "
+            "to nepokryje. Buď {quote} doplňte sami, nebo tohoto bota nechte být - nedoplňujte to "
+            "z chráněných BTC, ETH, WBETH ani BNB bez samostatného rozhodnutí."
+        ),
+    },
     "funding_summary_gap": {
         "en": (
             "Use existing {available} {quote} and convert about {covered} from allowed sources. "

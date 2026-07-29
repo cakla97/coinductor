@@ -288,6 +288,18 @@ class RebalancingBotAdvisor:
                     "investment": str(self._money(investment)),
                 },
             )
+        elif covered <= 0:
+            # "convert about 0.00 from allowed sources" is not an instruction.
+            # When no allowed asset can contribute anything, say that instead
+            # of asking the reader to convert zero.
+            summary_step = ManualStep(
+                "funding_summary_nothing_to_source",
+                {
+                    "available": str(self._money(available)),
+                    "quote": quote_asset,
+                    "uncovered": str(self._money(uncovered)),
+                },
+            )
         else:
             summary_step = ManualStep(
                 "funding_summary_gap",

@@ -211,15 +211,21 @@ The folder name is random each run, but the file inside is always
 > have not chosen to trust. Excluding the bare folder would wave all of them through. Keep
 > the filename in the pattern.
 
-**Expect it to sandbox the installer anyway.** With that exclusion in place and matching
-the path exactly, Avast still logged `Result: Sandboxing` for it. Its general Exceptions
-list does not appear to govern Autosandbox. What the exclusion does seem to change is
-CyberCapture, which went from holding the file to `custody processed with result Run`.
+**Then let CyberCapture finish before you click anything.** Avast draws a blue border
+around the setup window while it is still analysing the file. Clicking through during that
+is what makes the install fail and the wizard restart from the beginning, which is
+thoroughly confusing the first time. **Wait for the border to disappear, then install
+normally** — that works.
 
-So in practice: **if the first attempt fails, run the installer again.** The second run is
-the real one and it works. If Coinductor was open during a sandboxed attempt you may see
-an error about a file in use, because the installer cannot close an application that is
-running outside the sandbox it was put in — the second run offers to close it properly.
+If you do click through it: run the installer again, and the second run is the real one. An
+error about a file in use means Coinductor was open during a sandboxed attempt, since the
+installer cannot close an application running outside the sandbox it was put in; the second
+run offers to close it properly.
+
+The exclusion above does not stop this. With it in place and matching the path exactly,
+Avast still logged `Result: Sandboxing` — its general Exceptions list does not appear to
+govern Autosandbox. What it did change is CyberCapture, which went from holding the file to
+`custody processed with result Run`.
 
 In Avast: *Menu → Settings → General → Exceptions*. Other products have an equivalent.
 Verify the SHA-256 before you exclude anything.
@@ -230,6 +236,18 @@ and the previous version still works. Check which one you are actually running u
 
 Reporting the file to your vendor as a false positive helps everyone: once it is
 whitelisted, the next person does not have to do this at all.
+
+### On Windows Defender alone
+
+**Untested, and worth saying so:** every observation above comes from a machine where Avast
+is the active product and Defender is switched off, so none of it was verified against
+Defender.
+
+What you should expect there is different in kind. Defender has no CyberCapture equivalent
+and does not sandbox installers — there is no window to wait on. What you get instead is
+the SmartScreen dialog and the mark-of-the-web block described above, plus possibly a few
+seconds' pause while cloud protection checks a file nobody has run before. Reports of
+Defender behaving otherwise are welcome in an issue.
 
 ### From source
 

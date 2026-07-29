@@ -93,28 +93,15 @@ None of the above can affect what an order does. The model cannot reach a submit
 ## Before you start: what you need on Binance's side
 
 **If you only ever touch crypto from a phone, this is not the tool for you.** Coinductor is
-a Windows desktop application. It talks to the Binance API from your computer and never
-uses the mobile app, so mobile availability makes no difference to it — but you do need a
-PC, and you need to sign into Binance's **web interface** at least once to create an API
-key. There is no way to set this up from a phone alone.
+a Windows desktop app that uses the Binance API — it never touches the mobile app, so app
+availability is irrelevant to it, but you do need a PC and one visit to Binance's web
+interface to create a read-only API key.
 
-The key itself is read-only to begin with; Coinductor rejects it if it can do anything more
-than read.
-
-**Check that Binance is available to you where you live, and on what terms.** Which entity
-serves your country, and under which licence, is moving. As of **late July 2026**: MiCA's
-transition period ended on 1 July, Binance withdrew its MiCA application in Greece before
-that deadline, and Google — which requires a CASP authorisation for crypto apps aimed at EU
-users — began removing the Binance Android app from Google Play in some EU countries around
-27 July. Spain and Latvia are the confirmed cases; Poland is not affected, so this is not
-EU-wide. We have not been able to confirm the position on iOS.
-
-That is about **app distribution**, not about the API this tool uses, and the two are
-separate: an app pulled from a store does not close an account or revoke a key. But it is a
-fair signal that Binance's EU status is unsettled, so check what applies to you before
-committing to any of this. Read
-[Binance's own announcements](https://www.binance.com/en/blog/regulation) — this file is a
-snapshot with a date on it, not a source of truth.
+**Check that Binance serves your country and on what terms.** That is moving right now:
+MiCA's transition period ended on 1 July 2026 and Binance is between EU authorisations, so
+some things differ by country. Read
+[Binance's own announcements](https://www.binance.com/en/blog/regulation) — none of it
+stops the API this tool uses, but it is worth knowing before you commit.
 
 ## Platform support
 

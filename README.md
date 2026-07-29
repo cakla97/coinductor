@@ -102,11 +102,19 @@ The key itself is read-only to begin with; Coinductor rejects it if it can do an
 than read.
 
 **Check that Binance is available to you where you live, and on what terms.** Which entity
-serves your country, and under which licence, has changed more than once and is still
-moving — in the EU it depends on where Binance ends up authorised under MiCA. This project
-has no view on that and no way to keep up with it; read
-[Binance's own announcements](https://www.binance.com/en/blog/regulation) rather than
-anything written here, which would be out of date by the time you read it.
+serves your country, and under which licence, is moving. As of **late July 2026**: MiCA's
+transition period ended on 1 July, Binance withdrew its MiCA application in Greece before
+that deadline, and Google — which requires a CASP authorisation for crypto apps aimed at EU
+users — began removing the Binance Android app from Google Play in some EU countries around
+27 July. Spain and Latvia are the confirmed cases; Poland is not affected, so this is not
+EU-wide. We have not been able to confirm the position on iOS.
+
+That is about **app distribution**, not about the API this tool uses, and the two are
+separate: an app pulled from a store does not close an account or revoke a key. But it is a
+fair signal that Binance's EU status is unsettled, so check what applies to you before
+committing to any of this. Read
+[Binance's own announcements](https://www.binance.com/en/blog/regulation) — this file is a
+snapshot with a date on it, not a source of truth.
 
 ## Platform support
 

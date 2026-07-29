@@ -7,6 +7,9 @@ __pycache__/
 *.egg-info/
 work/
 outputs/reports/
+# A diagnostics bundle names the user's home directory and their app
+# state; it is written for sending to a maintainer, not for committing.
+outputs/diagnostics/
 research/requests/*
 !research/requests/.gitkeep
 state/active_strategies.toml

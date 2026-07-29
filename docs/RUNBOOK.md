@@ -1,7 +1,7 @@
 # Binance Trading Agent Runbook
 
 This runbook is the operational checklist for local, periodic use. It assumes the project is opened
-in `D:\CodexWork\binance-trading-agent` and that `.env` already contains the configured Binance keys.
+in `<repo>` and that `.env` already contains the configured Binance keys.
 
 ## Default Safe Run
 

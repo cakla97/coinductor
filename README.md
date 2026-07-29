@@ -64,6 +64,32 @@ This is the part worth reading before installing anything that touches an exchan
   [the invariant](#the-invariant) below.
 - **It is not a 24/7 bot.** It runs when you open it and press a button.
 
+## What to expect from the AI
+
+**The AI is optional and it decides nothing.** Every number, verdict and blocker on the
+Action Plan comes from the deterministic analysis, which never consults a model. The AI adds
+a commentary, an alternative trade opinion, and a chat that can explain the app. Turning it
+off costs you none of the analysis.
+
+That matters because **a local model will sometimes produce nothing useful**, and this is
+normal rather than a fault:
+
+- It may answer in the wrong shape and the commentary comes back empty. Coinductor asks for
+  a specific JSON structure; smaller models drift from it. You will see "AI commentary
+  returned no summary" — the run itself is unaffected.
+- It may answer in English even when the app is in your language. The request asks for your
+  language; a model is free to ignore it.
+- Its trade opinion may be discarded. If it proposes something the risk engine rejects, the
+  deterministic analyst decides instead and the card says so.
+
+**Model size is the main lever.** For portfolio commentary, 14B-class models are the
+practical minimum; anything smaller is best treated as help with using the app rather than
+as market reasoning. A cloud provider is markedly more reliable at following the requested
+format — at the cost of sending the prompt off your machine.
+
+None of the above can affect what an order does. The model cannot reach a submit path; see
+[the invariant](#the-invariant).
+
 ## Platform support
 
 | | Status |
@@ -212,7 +238,7 @@ account** — it only writes a local profile and shows what still needs verifyin
 1. Create a Binance API key with **read-only** permissions and paste it in. Coinductor
    verifies the permissions and refuses the key if it can do more than read.
 2. Optionally point it at an AI provider — local (Ollama and similar) or a cloud API key.
-   It works fine with no AI at all.
+   It works fine with no AI at all; see [what to expect from it](#what-to-expect-from-the-ai).
 3. Run an analysis. The first one is read-only by definition.
 
 Live trading stays locked until you deliberately walk the safety stages in **Live Actions**.

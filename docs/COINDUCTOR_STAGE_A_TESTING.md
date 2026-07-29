@@ -12,7 +12,7 @@ steps casually; prefer Testnet and previews.
 From the project folder:
 
 ```powershell
-cd D:\CodexWork\binance-trading-agent
+cd <repo>
 python -m pip install -e ".[desktop]"
 python -m coinductor.desktop
 ```

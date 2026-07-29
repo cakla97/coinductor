@@ -10,7 +10,7 @@ documentation are primarily English.
 
 ## First Session Checklist
 
-1. Work in `D:\CodexWork\binance-trading-agent`.
+1. Work in `<repo>`.
 2. Read this file, `README.md`, `docs/ROADMAP.md`, and `docs/RUNBOOK.md`.
 3. Run `git status --short` and `git log -5 --oneline` before editing.
 4. Never print, quote, commit, overwrite, or upload `.env`.
@@ -360,7 +360,7 @@ before broad open-source distribution.
 ## Useful Commands
 
 ```powershell
-cd D:\CodexWork\binance-trading-agent
+cd <repo>
 
 # Install desktop dependencies in the active Python environment
 python -m pip install -e ".[desktop]"
@@ -531,14 +531,14 @@ from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickWindow  # required for grabWindow() to resolve
 
-sys.path.insert(0, r"D:\CodexWork\binance-trading-agent")
+sys.path.insert(0, r"<repo>")
 from coinductor.controller import AppController
 
 app = QGuiApplication.instance() or QGuiApplication([])
 engine = QQmlApplicationEngine()
 controller = AppController(engine)
 engine.rootContext().setContextProperty("appController", controller)
-engine.load(QUrl.fromLocalFile(r"D:\CodexWork\binance-trading-agent\coinductor\qml\Main.qml"))
+engine.load(QUrl.fromLocalFile(r"<repo>\coinductor\qml\Main.qml"))
 window = engine.rootObjects()[0]
 
 # An isolated temp CWD has no onboarding profile, so closeOnboardingWizard()'s
@@ -590,7 +590,7 @@ Gotchas hit while building this session's redesign:
 Use this as the first message after giving the provider access to the project folder:
 
 > Continue development of the Coinductor project in
-> `D:\CodexWork\binance-trading-agent`. First read
+> `<repo>`. First read
 > `docs/AI_PROVIDER_HANDOFF.md`, then inspect `README.md`, `docs/ROADMAP.md`, the last
 > five Git commits, and the working-tree status. Do not read aloud or expose `.env`, do
 > not execute any live Binance action, and do not change the Safety stage. Run the test

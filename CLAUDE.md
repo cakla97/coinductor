@@ -8,7 +8,7 @@ Local Binance Spot assistant. Two packages, one direction of dependency:
 ## Commands
 
 ```bash
-python -m pytest -q                                   # 379 tests, ~7s, fully offline
+python -m pytest -q                                   # 467 tests, ~10s, fully offline
 python -m ruff check trading_agent coinductor tests   # must be clean
 python -m trading_agent run --config config.example.toml
 coinductor                                            # desktop app (needs the desktop extra)
@@ -33,6 +33,7 @@ submit path without passing through the risk engine.
 | Per-run submit authority | `trading_agent/runtime_flags.py` |
 | Run orchestration | `trading_agent/runner.py` + `run_phases.py` |
 | Background jobs off the GUI thread | `coinductor/workers.py` |
+| User-facing text the engine produces | `trading_agent/messages.py` — key + params, never a finished sentence |
 
 ## Things that will bite you
 

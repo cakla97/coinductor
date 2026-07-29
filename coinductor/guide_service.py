@@ -62,6 +62,8 @@ class GuideService:
                         "7. Save the settings and run Check AI provider. It must report the text model as ready and, when configured, the vision model as ready.",
                         "",
                         "Model quality note: for portfolio commentary and market reasoning, 14B-class models are the preferred minimum when hardware supports them. Smaller models may still answer basic app questions, but they are more likely to miss context or produce weak recommendations.",
+                        "",
+                        "What a weak answer looks like, and why it is not a fault: the model may ignore the JSON structure Coinductor asks for, and the commentary comes back as \"AI commentary returned no summary\". It may reply in English even though the request asks for your language. Its trade opinion may be rejected by the risk engine, in which case the deterministic analyst decides and the card says so. None of this changes the analysis - every number, verdict and blocker on the Action Plan is produced without a model.",
                         "Do not enable LLM_VISION_ENABLED just to force a text-only model. That advanced override changes detection only and cannot add image support.",
                         "",
                         "Local AI can explain Coinductor, summarize reports, and help with onboarding. It cannot bypass deterministic safety gates or submit trades by itself.",

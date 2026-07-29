@@ -23,9 +23,12 @@ First public release of the repository.
   ignore the requested format and return no commentary, answer in the wrong language, or
   have its trade opinion discarded — none of which touches the analysis, and all of which
   reads like a broken app if nobody says so first.
-- **A note on Binance account access.** Coinductor uses the API from your desktop and never
-  the mobile app, so mobile availability is irrelevant to it; what matters is an account you
-  can create an API key on, and that varies by country.
+- **What you need on Binance's side, up front.** Coinductor is a desktop application that
+  uses the API and never the mobile app — so if you only ever touch crypto from a phone,
+  it does not fit, and saying that plainly is fairer than letting someone find out after
+  downloading. Which Binance entity serves your country, and under which licence, is
+  changing; the README points at Binance's own announcements rather than restating them,
+  because anything written here would be stale within weeks.
 
 ### Changed
 

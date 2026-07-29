@@ -90,17 +90,23 @@ format — at the cost of sending the prompt off your machine.
 None of the above can affect what an order does. The model cannot reach a submit path; see
 [the invariant](#the-invariant).
 
-## Before you start: a Binance account that can create API keys
+## Before you start: what you need on Binance's side
 
-Coinductor talks to the **Binance API from your desktop**. It does not use, need or
-interact with the Binance mobile app, so whether that app is installable on your phone
-makes no difference to Coinductor.
+**If you only ever touch crypto from a phone, this is not the tool for you.** Coinductor is
+a Windows desktop application. It talks to the Binance API from your computer and never
+uses the mobile app, so mobile availability makes no difference to it — but you do need a
+PC, and you need to sign into Binance's **web interface** at least once to create an API
+key. There is no way to set this up from a phone alone.
 
-What it does need is an account you can sign into and create an API key on, which is done
-in Binance's web interface. **Binance's availability, entity and terms differ by country
-and have changed more than once** — check what applies where you live before relying on
-any of this. That is Binance's to state, not ours, and anything written here would go
-stale.
+The key itself is read-only to begin with; Coinductor rejects it if it can do anything more
+than read.
+
+**Check that Binance is available to you where you live, and on what terms.** Which entity
+serves your country, and under which licence, has changed more than once and is still
+moving — in the EU it depends on where Binance ends up authorised under MiCA. This project
+has no view on that and no way to keep up with it; read
+[Binance's own announcements](https://www.binance.com/en/blog/regulation) rather than
+anything written here, which would be out of date by the time you read it.
 
 ## Platform support
 

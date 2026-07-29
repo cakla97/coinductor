@@ -3,6 +3,39 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.11] — 2026-07-29
+
+The last of the English prose, and the AI answer that was being thrown away.
+
+### Changed
+
+- **The risk engine's verdict is in your language.** It is what the Risk gate tile shows
+  and what sits behind "Why HOLD?", and it read "AI proposal is HOLD." on a Czech screen.
+  All fourteen outcomes are messages now, and the tile reads the journal rather than a
+  sentence parsed back out of the Markdown report.
+- **Active-strategy monitoring advice too** — the twelve recommendations about a registered
+  grid or rebalancing bot. That is every prose source that reaches the screen; the report
+  stays English by design.
+
+### Fixed
+
+- **The AI commentary discarded usable answers.** Models are asked for a `summary` key and
+  routinely reply with their own structure, which left the card reading "returned no
+  summary" beside 1300 characters of perfectly good prose. It now takes the requested key
+  when present and otherwise the longest sentence in the reply — and when there really is
+  nothing, it says the model ignored the format rather than implying it broke.
+
+### Added
+
+- `CONTRIBUTING.md`, stating the two rules that are not negotiable: model output never
+  reaches a submit path, and user-facing text is a message rather than a finished sentence.
+  Both have a test behind them.
+
+### Upgrading
+
+Two more journal columns are added on first start. Existing runs are untouched and keep
+displaying as they did.
+
 ## [0.1.10] — 2026-07-29
 
 First public release of the repository.

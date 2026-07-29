@@ -5,6 +5,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
 from .grid_registry import GridRegistry
+from .messages import Message, render_message
 from .models import ActiveGridBot, ActiveGridEvaluation, ActiveRebalancingBot, ActiveRebalancingEvaluation, ActiveStrategiesReport, MarketSnapshot
 from .rebalancing_registry import RebalancingRegistry
 
@@ -86,28 +87,28 @@ class ActiveStrategiesTracker:
 
         if bot.stop_loss_price > 0 and price <= bot.stop_loss_price:
             state = "STOP_LOSS_BREACH"
-            recommendation = "Price reached the registered stop-loss. Review and stop the Binance grid immediately."
+            recommendation = Message("active_grid_stop_loss")
         elif bot.take_profit_price > 0 and price >= bot.take_profit_price:
             state = "TAKE_PROFIT_REACHED"
-            recommendation = "Price reached the registered take-profit. Review closing the grid and securing proceeds."
+            recommendation = Message("active_grid_take_profit")
         elif age_days is not None and age_days >= max_runtime:
             state = "RUNTIME_EXPIRED"
-            recommendation = f"Grid age reached {age_days:.1f} days, above the configured {max_runtime} days. Review closure or recreation."
+            recommendation = Message("active_grid_runtime_expired", {"age": f"{age_days:.1f}", "maximum": str(max_runtime)})
         elif price < bot.range_low:
             state = "BELOW_RANGE"
-            recommendation = "Price is below grid range. Review whether to stop, widen, or recreate the grid."
+            recommendation = Message("active_grid_below_range")
         elif price > bot.range_high:
             state = "ABOVE_RANGE"
-            recommendation = "Price is above grid range. Review whether to take profit, stop, or recreate the grid."
+            recommendation = Message("active_grid_above_range")
         elif distance_lower <= warn_pct:
             state = "NEAR_LOWER"
-            recommendation = "Price is close to the lower grid boundary. Monitor downside and stop conditions."
+            recommendation = Message("active_grid_near_lower")
         elif distance_upper <= warn_pct:
             state = "NEAR_UPPER"
-            recommendation = "Price is close to the upper grid boundary. Monitor take-profit or range adjustment."
+            recommendation = Message("active_grid_near_upper")
         else:
             state = "IN_RANGE"
-            recommendation = "Grid is inside configured range. Continue monitoring."
+            recommendation = Message("active_grid_in_range")
 
         return ActiveGridEvaluation(
             bot=bot,
@@ -116,7 +117,8 @@ class ActiveStrategiesTracker:
             distance_to_lower_pct=self._percent(distance_lower),
             distance_to_upper_pct=self._percent(distance_upper),
             age_days=self._one_decimal(age_days) if age_days is not None else None,
-            recommendation=recommendation,
+            recommendation=render_message(recommendation),
+            recommendation_message=recommendation,
         )
 
     def _evaluate_rebalancing_bot(
@@ -135,7 +137,8 @@ class ActiveStrategiesTracker:
                     max_drift_pct=None,
                     state="UNKNOWN_PRICE",
                     age_days=self._one_decimal(age_days) if age_days is not None else None,
-                    recommendation=f"Current price for {asset} is unavailable; compare the bot directly in Binance.",
+                    recommendation=render_message(Message("active_price_unavailable", {"asset": asset})),
+                    recommendation_message=Message("active_price_unavailable", {"asset": asset}),
                 )
             initial_value = bot.investment_usdt * weight / Decimal("100")
             current_values.append(initial_value / entry_price * current_price)
@@ -145,15 +148,15 @@ class ActiveStrategiesTracker:
         max_drift = max(drifts, default=Decimal("0"))
         if max_drift >= bot.threshold_pct:
             state = "THRESHOLD_REACHED"
-            recommendation = (
-                f"Theoretical basket drift reached {self._percent(max_drift)}%, at or above the "
-                f"registered {bot.threshold_pct}% threshold. Verify Binance bot activity and allocation."
+            recommendation = Message(
+                "active_rebalance_threshold_reached",
+                {"drift": str(self._percent(max_drift)), "threshold": str(bot.threshold_pct)},
             )
         else:
             state = "WITHIN_THRESHOLD"
-            recommendation = (
-                f"Theoretical basket drift is {self._percent(max_drift)}%, below the "
-                f"registered {bot.threshold_pct}% threshold. Continue monitoring."
+            recommendation = Message(
+                "active_rebalance_within_threshold",
+                {"drift": str(self._percent(max_drift)), "threshold": str(bot.threshold_pct)},
             )
         return ActiveRebalancingEvaluation(
             bot=bot,
@@ -161,7 +164,8 @@ class ActiveStrategiesTracker:
             max_drift_pct=self._percent(max_drift),
             state=state,
             age_days=self._one_decimal(age_days) if age_days is not None else None,
-            recommendation=recommendation,
+            recommendation=render_message(recommendation),
+            recommendation_message=recommendation,
         )
 
     def _pct(self, part: Decimal, total: Decimal) -> Decimal:

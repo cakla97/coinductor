@@ -63,6 +63,7 @@ class DesktopSnapshot:
     # Read from the journal rather than parsed back out of the Markdown report,
     # so each item still carries the message it was composed from.
     recommended_actions: tuple[dict[str, object], ...] = ()
+    risk_reason_message: tuple[dict[str, object], ...] = ()
 
 
 @dataclass(frozen=True)

@@ -538,6 +538,7 @@ class Storage:
         self._ensure_column("recommended_actions", "action_message", "text")
         self._ensure_column("recommended_actions", "reason_message", "text")
         self._ensure_column("recommended_actions", "reason_part_messages", "text")
+        self._ensure_column("risk_decisions", "reason_message", "text")
         self._ensure_column("rebalancing_bot_recommendations", "blocker_messages", "text")
         self._ensure_column("rebalancing_bot_recommendations", "summary_message", "text")
         self._ensure_column("active_grid_evaluations", "binance_bot_id", "text")
@@ -1032,8 +1033,18 @@ class Storage:
 
     def save_risk_decision(self, run_id: int, decision: RiskDecision) -> None:
         self.connection.execute(
-            "insert into risk_decisions values (?, ?, ?, ?)",
-            (run_id, int(decision.approved), decision.reason, str(decision.adjusted_quote_amount_usdt)),
+            """
+            insert into risk_decisions
+                (run_id, approved, reason, adjusted_quote_amount_usdt, reason_message)
+            values (?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                int(decision.approved),
+                decision.reason,
+                str(decision.adjusted_quote_amount_usdt),
+                manual_steps_to_json((decision.reason_message,) if decision.reason_message else ()),
+            ),
         )
         self.connection.commit()
 

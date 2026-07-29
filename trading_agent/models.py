@@ -159,8 +159,10 @@ class ShadowEvaluationReport:
 @dataclass(frozen=True)
 class RiskDecision:
     approved: bool
+    # English rendering, derived from reason_message at construction.
     reason: str
     adjusted_quote_amount_usdt: Decimal
+    reason_message: Message | None = None
 
 
 @dataclass(frozen=True)
@@ -529,7 +531,9 @@ class ActiveGridEvaluation:
     distance_to_lower_pct: Decimal | None
     distance_to_upper_pct: Decimal | None
     age_days: Decimal | None
+    # English rendering, derived from recommendation_message.
     recommendation: str
+    recommendation_message: Message | None = None
 
 
 @dataclass(frozen=True)
@@ -553,7 +557,9 @@ class ActiveRebalancingEvaluation:
     max_drift_pct: Decimal | None
     state: str
     age_days: Decimal | None
+    # English rendering, derived from recommendation_message.
     recommendation: str
+    recommendation_message: Message | None = None
 
 
 @dataclass(frozen=True)

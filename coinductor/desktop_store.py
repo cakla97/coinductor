@@ -43,6 +43,7 @@ class DesktopStore:
             next_review: dict[str, object] | None = None
             earn_redeem: dict[str, object] | None = None
             recommended_actions: list[dict[str, object]] = []
+            risk_reason_message: list[dict[str, object]] = []
             has_ready_live_preview = False
             if latest is not None:
                 report_path = self._report_path(latest)
@@ -68,6 +69,7 @@ class DesktopStore:
                 )
                 earn_redeem = self._earn_redeem(connection, int(latest["id"]))
                 recommended_actions = self._recommended_actions(connection, int(latest["id"]))
+                risk_reason_message = self._risk_decision(connection, int(latest["id"]))
             history = self._history(connection)
             return DesktopSnapshot(
                 latest_result,
@@ -82,6 +84,7 @@ class DesktopStore:
                 next_review,
                 earn_redeem,
                 tuple(recommended_actions),
+                tuple(risk_reason_message),
             )
         finally:
             connection.close()
@@ -783,6 +786,20 @@ class DesktopStore:
 
     def _line_values(self, value: object) -> tuple[str, ...]:
         return tuple(part.strip() for part in str(value or "").splitlines() if part.strip())
+
+    def _risk_decision(self, connection: sqlite3.Connection, run_id: int) -> list[dict[str, object]]:
+        """The verdict behind the Risk gate tile, unrendered."""
+        if not self._table_exists(connection, "risk_decisions"):
+            return []
+        columns = self._columns(connection, "risk_decisions")
+        row = connection.execute(
+            f"""
+            select {self._column_expr(columns, "reason_message")}
+            from risk_decisions where run_id = ? order by rowid desc limit 1
+            """,
+            (run_id,),
+        ).fetchone()
+        return self._manual_step_specs(row["reason_message"]) if row is not None else []
 
     def _recommended_actions(self, connection: sqlite3.Connection, run_id: int) -> list[dict[str, object]]:
         """Read the action list from the journal rather than the Markdown report.

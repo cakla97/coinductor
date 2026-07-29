@@ -2581,7 +2581,12 @@ class AppController(QObject):
         self._portfolio_value = f"{result.portfolio_value:.2f} USDC"
         self._liquid_value = f"{result.liquid_value:.2f} USDC"
         self._locked_value = f"{result.locked_value:.2f} USDC"
-        self._risk_state = "Approved" if result.risk_approved else result.risk_reason
+        # The Risk gate tile. Prefer the journal's message over the sentence
+        # parsed from the report, which is already English by then.
+        localized = self._rendered_manual_steps(self._snapshot.risk_reason_message)
+        self._risk_state = localized[0] if localized else (
+            "Approved" if result.risk_approved else result.risk_reason
+        )
         self._ai_summary = result.ai_summary or "AI summary was not requested."
         self._report_path = str(Path(result.report_path))
         # Kept so the list can be recomposed when the language changes; the

@@ -22,6 +22,12 @@ def _trend_phrase(regime: str) -> str:
     return _TREND_PHRASES.get(str(regime).upper(), f"{str(regime).replace('_', '-').lower()} trend")
 
 
+_NO_SUMMARY = (
+    "The AI answered, but not in the format Coinductor asked for, so there is no commentary "
+    "to show. Smaller local models do this; the analysis above is unaffected."
+)
+
+
 class AiProviderNotConfigured(RuntimeError):
     """No AI endpoint is set, so nothing was ever sent.
 
@@ -74,6 +80,44 @@ def proposal_fallback_reason(exc: BaseException, fallback_reason: str) -> str:
     else:
         prefix = f"The AI proposal failed ({_describe_exception(exc)}), so the deterministic analyst decided this"
     return f"{prefix}. {fallback_reason}"
+
+
+def _salvaged_summary(data: object) -> str:
+    """Find a summary in whatever shape the model actually returned.
+
+    Models are asked for a `summary` key and frequently answer with their own
+    structure instead, which left the card reading "AI commentary returned no
+    summary" beside 1300 characters of usable prose. Take the requested key
+    when it is there; otherwise take the longest sentence-like string anywhere
+    in the response, and only give up when there is nothing.
+    """
+    if not isinstance(data, dict):
+        return _NO_SUMMARY
+    direct = str(data.get("summary", "")).strip()
+    if direct:
+        return direct
+
+    candidates: list[str] = []
+
+    def walk(node: object, depth: int = 0) -> None:
+        if depth > 4:
+            return
+        if isinstance(node, str):
+            text = node.strip()
+            # A sentence, not a symbol, an enum or a number.
+            if len(text) >= 40 and " " in text:
+                candidates.append(text)
+        elif isinstance(node, dict):
+            for value in node.values():
+                walk(value, depth + 1)
+        elif isinstance(node, (list, tuple)):
+            for value in node:
+                walk(value, depth + 1)
+
+    walk(data)
+    if not candidates:
+        return _NO_SUMMARY
+    return max(candidates, key=len)
 
 
 def _string_list(value: object, limit: int = 5) -> tuple[str, ...]:
@@ -320,7 +364,7 @@ class AiAnalyst:
             rebalancing_assessment = self._focused_rebalancing_assessment(rebalancing_bot_recommendation)
             return AiCommentary(
                 enabled=True,
-                summary=str(data.get("summary", "")).strip() or "AI commentary returned no summary.",
+                summary=_salvaged_summary(data),
                 risks=_string_list(data.get("risks")),
                 watchlist=_string_list(data.get("watchlist")),
                 raw_response=content,

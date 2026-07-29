@@ -490,3 +490,26 @@ def test_a_failure_is_described_by_its_cause_not_its_class_internals() -> None:
     # This is what a Decimal error stringifies to, and it reached the screen.
     assert "class" not in _describe_exception(InvalidOperation())
     assert _describe_exception(TimeoutError("read timed out")) == "read timed out"
+
+
+def test_a_summary_is_salvaged_from_whatever_shape_the_model_returned() -> None:
+    """Models answer with their own structure and ignore the requested key.
+
+    That left the card reading "AI commentary returned no summary" next to
+    1300 characters of perfectly usable prose.
+    """
+    from trading_agent.ai_analyst import _salvaged_summary
+
+    own_shape = {
+        "trade_proposal": {
+            "pair": "BTCUSDC",
+            "reasoning": "Market trend is RISK_OFF with falling volume and price below EMA200.",
+        },
+        "urgency": "low",
+    }
+
+    assert "RISK_OFF with falling volume" in _salvaged_summary(own_shape)
+    assert _salvaged_summary({"summary": "All good."}) == "All good."
+    # Enums and numbers are not sentences; nothing usable means saying so.
+    nothing = _salvaged_summary({"action": "HOLD", "confidence": 1})
+    assert "not in the format" in nothing

@@ -395,6 +395,120 @@ MESSAGE_TEXT: dict[str, dict[str, str]] = {
         "en": "The proposal passed deterministic MVP risk checks, but execution is still manual/recommend-only.",
         "cs": "Návrh prošel deterministickými rizikovými kontrolami, ale provedení zůstává ruční, jen jako doporučení.",
     },
+    # --- Risk engine verdicts, behind "Why HOLD?" ---
+    "risk_not_whitelisted": {
+        "en": "Symbol {symbol} is not whitelisted.",
+        "cs": "Symbol {symbol} není na seznamu povolených.",
+    },
+    "risk_proposal_is_hold": {
+        "en": "AI proposal is HOLD.",
+        "cs": "Návrh je HOLD - nedělat nic.",
+    },
+    "risk_unsupported_action": {
+        "en": "Unsupported action {action}.",
+        "cs": "Nepodporovaná akce {action}.",
+    },
+    "risk_confidence_too_low": {
+        "en": "Confidence is below configured minimum.",
+        "cs": "Jistota je pod nastaveným minimem.",
+    },
+    "risk_kill_switch": {
+        "en": "Live risk kill switch is active. {summary}",
+        "cs": "Je aktivní bezpečnostní kill switch. {summary}",
+    },
+    "risk_cooldown": {
+        "en": "Loss cooldown is active. {summary}",
+        "cs": "Probíhá pauza po ztrátě. {summary}",
+    },
+    "risk_daily_trade_limit": {
+        "en": "Daily trade count limit reached.",
+        "cs": "Byl vyčerpán denní limit počtu obchodů.",
+    },
+    "risk_daily_loss_limit": {
+        "en": "Daily loss limit reached.",
+        "cs": "Byl dosažen denní limit ztráty.",
+    },
+    "risk_weekly_loss_limit": {
+        "en": "Weekly loss limit reached.",
+        "cs": "Byl dosažen týdenní limit ztráty.",
+    },
+    "risk_stop_loss_required": {
+        "en": "Stop loss is required.",
+        "cs": "Stop loss je povinný.",
+    },
+    "risk_approved_skip_consensus": {
+        "en": "Proposal approved by live risk state. Consensus/market-timing checks were intentionally skipped for this initial portfolio deployment tranche; all other deterministic limits still applied.",
+        "cs": "Návrh schválen podle aktuálního rizikového stavu. Kontroly konsenzu a načasování trhu byly u této první tranše nasazení portfolia záměrně vynechány; všechny ostatní deterministické limity platily.",
+    },
+    "risk_approved": {
+        "en": "Proposal approved by live risk state and deterministic market consensus.",
+        "cs": "Návrh schválen podle aktuálního rizikového stavu a deterministického tržního konsenzu.",
+    },
+    "risk_no_snapshot": {
+        "en": "Consensus gate: no market snapshot is available for {symbol}.",
+        "cs": "Konsenzuální brána: pro {symbol} nejsou k dispozici tržní data.",
+    },
+    "risk_trend_not_risk_on": {
+        "en": "Consensus gate: {symbol} trend regime is {regime}, not RISK_ON.",
+        "cs": "Konsenzuální brána: trendový režim {symbol} je {regime}, ne RISK_ON.",
+    },
+    "risk_below_ema200": {
+        "en": "Consensus gate: {symbol} price is not above EMA200.",
+        "cs": "Konsenzuální brána: cena {symbol} není nad EMA200.",
+    },
+    "risk_rsi_outside_band": {
+        "en": "Consensus gate: {symbol} RSI14 {value} is outside {minimum}-{maximum}.",
+        "cs": "Konsenzuální brána: RSI14 {value} u {symbol} je mimo pásmo {minimum}-{maximum}.",
+    },
+    "risk_volume_not_rising": {
+        "en": "Consensus gate: {symbol} volume trend is {trend}, not rising.",
+        "cs": "Konsenzuální brána: objemový trend {symbol} je {trend}, ne rostoucí.",
+    },
+    # --- Active strategy monitoring ---
+    "active_grid_stop_loss": {
+        "en": "Price reached the registered stop-loss. Review and stop the Binance grid immediately.",
+        "cs": "Cena dosáhla zaregistrovaného stop-lossu. Zkontrolujte grid na Binance a okamžitě ho zastavte.",
+    },
+    "active_grid_take_profit": {
+        "en": "Price reached the registered take-profit. Review closing the grid and securing proceeds.",
+        "cs": "Cena dosáhla zaregistrovaného take-profitu. Zvažte uzavření gridu a zajištění výnosu.",
+    },
+    "active_grid_runtime_expired": {
+        "en": "Grid age reached {age} days, above the configured {maximum} days. Review closure or recreation.",
+        "cs": "Grid běží {age} dní, nad nastavenými {maximum} dny. Zvažte uzavření nebo založení znovu.",
+    },
+    "active_grid_below_range": {
+        "en": "Price is below grid range. Review whether to stop, widen, or recreate the grid.",
+        "cs": "Cena je pod rozsahem gridu. Zvažte zastavení, rozšíření nebo nové založení.",
+    },
+    "active_grid_above_range": {
+        "en": "Price is above grid range. Review whether to take profit, stop, or recreate the grid.",
+        "cs": "Cena je nad rozsahem gridu. Zvažte vybrání zisku, zastavení nebo nové založení.",
+    },
+    "active_grid_near_lower": {
+        "en": "Price is close to the lower grid boundary. Monitor downside and stop conditions.",
+        "cs": "Cena je blízko spodní hranice gridu. Sledujte pokles a podmínky pro zastavení.",
+    },
+    "active_grid_near_upper": {
+        "en": "Price is close to the upper grid boundary. Monitor take-profit or range adjustment.",
+        "cs": "Cena je blízko horní hranice gridu. Sledujte take-profit nebo úpravu rozsahu.",
+    },
+    "active_grid_in_range": {
+        "en": "Grid is inside configured range. Continue monitoring.",
+        "cs": "Grid je uvnitř nastaveného rozsahu. Pokračujte ve sledování.",
+    },
+    "active_price_unavailable": {
+        "en": "Current price for {asset} is unavailable; compare the bot directly in Binance.",
+        "cs": "Aktuální cena {asset} není k dispozici; porovnejte bota přímo na Binance.",
+    },
+    "active_rebalance_threshold_reached": {
+        "en": "Theoretical basket drift reached {drift}%, at or above the registered {threshold}% threshold. Verify Binance bot activity and allocation.",
+        "cs": "Teoretická odchylka košíku dosáhla {drift} %, na úrovni zaregistrovaného prahu {threshold} % nebo nad ním. Ověřte činnost a alokaci bota na Binance.",
+    },
+    "active_rebalance_within_threshold": {
+        "en": "Theoretical basket drift is {drift}%, below the registered {threshold}% threshold. Continue monitoring.",
+        "cs": "Teoretická odchylka košíku je {drift} %, pod zaregistrovaným prahem {threshold} %. Pokračujte ve sledování.",
+    },
     # --- Funding the Rebalancing Bot -------------------------------------
     "funding_convert": {
         "en": "Convert approximately {value} USDC-equivalent of {asset} to {quote}.",

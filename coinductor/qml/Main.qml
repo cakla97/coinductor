@@ -3781,6 +3781,78 @@ ApplicationWindow {
                     Item { Layout.fillWidth: true }
                 }
 
+                // The cap used to be reachable only by opening config.toml, which
+                // is the one thing this app promises nobody has to do.
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: orderCapsContent.implicitHeight + 32
+                    radius: radiusMd
+                    color: panel
+                    border.color: appController.orderCaps.aboveSuggestion ? warning : border
+                    ColumnLayout {
+                        id: orderCapsContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 8
+                        Text {
+                            text: appController.appText.order_caps_title
+                            color: textPrimary
+                            font.pixelSize: 16
+                            font.bold: true
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.order_caps_description
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            Text {
+                                text: appController.appText.order_caps_testnet_label
+                                color: textSecondary
+                                font.pixelSize: 12
+                            }
+                            TextField {
+                                id: testnetCapInput
+                                Layout.preferredWidth: 110
+                                text: appController.orderCaps.testnet
+                            }
+                            Item { Layout.preferredWidth: 12 }
+                            Text {
+                                text: appController.appText.order_caps_mainnet_label
+                                color: textSecondary
+                                font.pixelSize: 12
+                            }
+                            TextField {
+                                id: mainnetCapInput
+                                Layout.preferredWidth: 110
+                                text: appController.orderCaps.mainnet
+                            }
+                            Button {
+                                Layout.preferredHeight: 30
+                                Layout.preferredWidth: 110
+                                text: appController.appText.order_caps_save_button
+                                onClicked: appController.saveOrderCaps(testnetCapInput.text, mainnetCapInput.text)
+                            }
+                            Item { Layout.fillWidth: true }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            visible: appController.orderCaps.hasPortfolio
+                            text: appController.appText.order_caps_suggestion_template
+                                .replace("{suggested}", appController.orderCaps.suggested)
+                            color: appController.orderCaps.aboveSuggestion ? warning : textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 104

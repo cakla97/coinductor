@@ -203,6 +203,19 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
             "nepoužívá. Hodnocení dostanete, když při spuštění zaškrtnete \"Vygenerovat shrnutí od AI\"."
         ),
     },
+    # --- per-order size cap ---
+    "order_caps_saved": {
+        "en": "Order size caps saved.",
+        "cs": "Stropy na velikost příkazu uloženy.",
+    },
+    "order_caps_saved_above_suggestion": {
+        "en": "Saved. The live cap is above the {suggested} suggested for a portfolio this size - deliberate is fine, accidental is not.",
+        "cs": "Uloženo. Živý strop je nad hodnotou {suggested} doporučenou pro portfolio této velikosti - pokud je to záměr, v pořádku.",
+    },
+    "order_caps_unchanged": {
+        "en": "Nothing changed. A cap must be greater than zero.",
+        "cs": "Nic se nezměnilo. Strop musí být větší než nula.",
+    },
     # --- first portfolio tranches ---
     "tranche_busy": {
         "en": "Wait for the current analysis to finish first.",

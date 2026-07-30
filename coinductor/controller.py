@@ -21,6 +21,12 @@ from .first_portfolio_planner import FirstPortfolioPlanner
 from .diagnostics_service import DiagnosticsService
 from .guide_service import GuideService
 from .local_data_reset import LocalDataResetService
+from .order_caps import (
+    apply_order_caps_to_config,
+    exceeds_suggestion,
+    read_order_caps,
+    suggested_mainnet_cap,
+)
 from .paths import data_dir_label
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions, SafetySnapshot
 from .readiness_service import ReadinessService
@@ -76,6 +82,7 @@ class AppController(QObject):
     wizardLanguageChanged = Signal()
     localDataResetChanged = Signal()
     firstPortfolioDeploymentChanged = Signal()
+    orderCapsChanged = Signal()
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
@@ -1931,6 +1938,48 @@ class AppController(QObject):
         self._first_portfolio_deployment_progress = self._load_first_portfolio_progress()
         self.firstPortfolioDeploymentChanged.emit()
         self.notificationRequested.emit(self._first_portfolio_toast(result))
+
+    @Property("QVariantMap", notify=orderCapsChanged)
+    def orderCaps(self) -> dict[str, object]:
+        """Composed when read: the config is the source of truth, not a cache."""
+        caps = read_order_caps(default_config_path())
+        portfolio = self._portfolio_value_amount()
+        suggested = suggested_mainnet_cap(portfolio)
+        return {
+            "testnet": str(caps["testnet"]),
+            "mainnet": str(caps["mainnet"]),
+            "suggested": str(suggested),
+            "hasPortfolio": portfolio > 0,
+            "aboveSuggestion": exceeds_suggestion(caps["mainnet"], portfolio),
+        }
+
+    def _portfolio_value_amount(self) -> Decimal:
+        latest = self._snapshot.latest_run if self._snapshot is not None else None
+        return Decimal(str(latest.portfolio_value)) if latest is not None else Decimal("0")
+
+    @Slot(str, str)
+    def saveOrderCaps(self, testnet: str, mainnet: str) -> None:
+        """Write both caps, and say plainly when the live one is above the suggestion.
+
+        The warning never blocks. Someone raising this deliberately has a
+        reason, and a desktop that refuses their number is one they will work
+        around by editing the file - which is the problem this replaced.
+        """
+        language = self._wizard_language
+        changed = apply_order_caps_to_config(default_config_path(), testnet, mainnet)
+        self.orderCapsChanged.emit()
+        if not changed:
+            self.notificationRequested.emit(service_text("order_caps_unchanged", language))
+            return
+        portfolio = self._portfolio_value_amount()
+        if exceeds_suggestion(mainnet, portfolio):
+            self.notificationRequested.emit(
+                service_text("order_caps_saved_above_suggestion", language).format(
+                    suggested=suggested_mainnet_cap(portfolio)
+                )
+            )
+            return
+        self.notificationRequested.emit(service_text("order_caps_saved", language))
 
     def _first_portfolio_toast(self, result) -> str:
         """Say what happened, in the reader's language.

@@ -1169,6 +1169,30 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Setup wizard",
         "cs": "Průvodce nastavením",
     },
+    "order_caps_title": {
+        "en": "Maximum size of a single order",
+        "cs": "Maximální velikost jednoho příkazu",
+    },
+    "order_caps_description": {
+        "en": "The last limit before an order reaches the exchange. Everything else decides whether an order goes; this decides how big. It applies to every order Coinductor can place - the guarded trade and each first-portfolio tranche alike - and it truncates silently rather than refusing, so a tranche planned above it submits this amount instead.",
+        "cs": "Poslední mez, než příkaz odejde na burzu. Všechno ostatní rozhoduje, jestli příkaz vůbec odejde; tohle rozhoduje, jak velký bude. Platí na každý příkaz, který Coinductor umí zadat - na zabezpečený obchod i na každou tranši prvního portfolia - a ořezává tiše, takže tranše plánovaná výš odešle jen tuhle částku.",
+    },
+    "order_caps_testnet_label": {
+        "en": "Testnet (USDT)",
+        "cs": "Testnet (USDT)",
+    },
+    "order_caps_mainnet_label": {
+        "en": "Live (USDC)",
+        "cs": "Živé (USDC)",
+    },
+    "order_caps_save_button": {
+        "en": "Save caps",
+        "cs": "Uložit stropy",
+    },
+    "order_caps_suggestion_template": {
+        "en": "For a portfolio this size, {suggested} is a conservative live cap. Raise it deliberately, not to make one blocked order go through.",
+        "cs": "Pro portfolio této velikosti je {suggested} konzervativní živý strop. Zvyšujte ho vědomě, ne kvůli jednomu zablokovanému příkazu.",
+    },
     "replay_app_tour_button": {
         "en": "Replay app tour",
         "cs": "Zopakovat prohlídku aplikace",

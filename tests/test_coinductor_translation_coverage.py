@@ -117,6 +117,8 @@ _LITERAL_TERMS = {
     "Binance Spot Testnet", "Coinductor", "Binance", "USDC", "OCO", "AI Assistant",
     # Product and section names that read the same in Czech.
     "BINANCE", "AI", "Binance API",
+    # A network name beside its currency ticker: both halves are literal.
+    "Testnet (USDT)",
 }
 
 

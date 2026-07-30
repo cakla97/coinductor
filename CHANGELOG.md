@@ -3,6 +3,27 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.20] — 2026-07-30
+
+### Added
+
+- **The per-order size cap is editable in Settings**, for Testnet and live separately. It
+  ships at 10 and could previously only be changed by opening `config.toml` — the one
+  thing this app tells people they never have to do, and a step already removed from the
+  manual procedure for exactly that reason. The panel says what the cap governs: every
+  order Coinductor can place, not only a first-portfolio tranche, and that it truncates
+  silently rather than refusing.
+- **A suggested live cap sized to the portfolio** (a tenth of it, never below the shipped
+  10), with a warning when the saved value is above it. The warning never blocks —
+  someone raising this deliberately has a reason, and a desktop that refuses their number
+  is one they work around by editing the file again.
+
+### Notes
+
+The shipped defaults stay at 10. A new install still starts at the strictest cap and is
+raised deliberately; what changed is that raising it is possible from the app, and that a
+truncated order now says so.
+
 ## [0.1.19] — 2026-07-30
 
 ### Fixed

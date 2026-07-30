@@ -175,6 +175,7 @@ class FirstPortfolioExecutor:
                 status="BLOCKED",
                 validation_summary=validation.reason,
                 confirmation_required="CONFIRM_TESTNET_ORDER",
+                reason_message=validation.reason_message,
             )
         request = executor.market_buy_quote(
             symbol=proposal.symbol,

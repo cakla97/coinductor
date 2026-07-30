@@ -3,6 +3,22 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.21] — 2026-07-31
+
+### Fixed
+
+- **The buttons added over the last few releases were the wrong size.** Three of them —
+  Deploy, Copy, and Save caps — carried hand-set heights and widths, which made them the
+  only buttons in the app not at the default size, and clipped "Uložit stropy" to
+  "Uložit st…". The sizes are gone. The deployment rows that provoked the first one are
+  56 px now, tall enough for a normal button, which is what should have been done instead
+  of shrinking the button to fit a 40 px row.
+- **A refused tranche mixed the two languages**: *"Tranše 2/3 pro BTC na Testnetu se
+  neodeslala: Adjusted quote amount 1.67 USDT is below BTCUSDT minNotional 5.00000000."*
+  The reason is the useful half of that sentence, and it is also the most actionable
+  refusal there is, so it travels as a key and parameters like the rest of the engine's
+  text and names the fix: raise the budget or use fewer tranches.
+
 ## [0.1.20] — 2026-07-30
 
 ### Added

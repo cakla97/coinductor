@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication, QImageReader
 
 from trading_agent.config import default_config_path, load_config
-from trading_agent.messages import ManualStep, render_manual_step
+from trading_agent.messages import ManualStep, render_manual_step, render_message
 from trading_agent.storage import Storage
 
 from .ai_provider import AiProviderService, provider_kind
@@ -2012,9 +2012,14 @@ class AppController(QObject):
                     subject=subject, amount=actual, planned=planned
                 )
             return service_text("tranche_submitted", language).format(subject=subject, amount=actual)
-        # Blocked or skipped: the engine's reason is the useful part and is
-        # technical by nature, so it is kept verbatim behind a localized lead.
-        reason = result.message or result.validation_summary or result.status
+        # Blocked or skipped: the reason is the useful part. Rendered from its
+        # message when the engine supplied one - otherwise kept verbatim, which
+        # is English, but losing a technical cause costs more than that does.
+        message = getattr(result, "reason_message", None)
+        if message is not None:
+            reason = render_message(message, language)
+        else:
+            reason = result.message or result.validation_summary or result.status
         return service_text("tranche_not_sent", language).format(subject=subject, reason=reason)
 
     @Slot(str)

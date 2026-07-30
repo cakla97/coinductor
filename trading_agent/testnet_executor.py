@@ -4,7 +4,8 @@ from decimal import Decimal
 import json
 
 from .binance_client import BinanceApiError, BinanceClient
-from .decimal_utils import floor_to_step
+from .decimal_utils import display, floor_to_step
+from .messages import Message, render_message
 from .models import OrderValidation, RiskDecision, SymbolRules, TestnetExecutedOrder, TestnetExecutionReport, TestnetOrderRequest, TestnetOrderResult, TradeProposal
 from .order_journal import OrderIntentFactory
 
@@ -107,11 +108,19 @@ class TestnetExecutor:
         max_quote = Decimal(str(self.config.get("testnet_execution", {}).get("max_quote_amount_usdt", "10")))
         adjusted = min(quote_amount_usdt, max_quote)
         if rules.min_notional and adjusted < rules.min_notional:
-            return OrderValidation(
-                False,
-                f"Adjusted quote amount {adjusted} USDT is below {rules.symbol} minNotional {rules.min_notional}.",
-                adjusted,
+            # By far the most common way a small order is refused, and the one a
+            # user can act on: raise the budget, or lower the tranche count. It
+            # carries a message so the desktop is not left appending an English
+            # sentence to a Czech one.
+            reason = Message(
+                "order_below_min_notional",
+                {
+                    "amount": display(adjusted),
+                    "symbol": rules.symbol,
+                    "minimum": display(rules.min_notional),
+                },
             )
+            return OrderValidation(False, render_message(reason), adjusted, reason_message=reason)
         return OrderValidation(
             True,
             f"{rules.symbol} filters passed: minNotional={rules.min_notional}, quoteOrderQtyMarketAllowed={rules.quote_order_qty_market_allowed}.",

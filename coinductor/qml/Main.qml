@@ -2482,7 +2482,11 @@ ApplicationWindow {
                             delegate: Rectangle {
                                 required property var modelData
                                 Layout.fillWidth: true
-                                Layout.preferredHeight: 40
+                                // Tall enough for a default Material button. It
+                                // was 40, which is shorter than the button asks
+                                // for - shrinking the button instead made these
+                                // the only odd-sized buttons in the app.
+                                Layout.preferredHeight: 56
                                 radius: radiusSm
                                 color: panelRaised
                                 RowLayout {
@@ -2500,15 +2504,6 @@ ApplicationWindow {
                                         font.pixelSize: 11
                                     }
                                     Button {
-                                        // A Material button asks for 52 px and
-                                        // this row is 40, so left to itself it
-                                        // burst out the bottom of its own
-                                        // rounded background. The row is the
-                                        // fixed thing here, so the button is
-                                        // what gives.
-                                        Layout.preferredHeight: 28
-                                        Layout.preferredWidth: 96
-                                        Layout.alignment: Qt.AlignVCenter
                                         text: appController.appText.first_portfolio_deploy_button
                                         enabled: !appController.busy
                                         onClicked: {
@@ -3834,8 +3829,6 @@ ApplicationWindow {
                                 text: appController.orderCaps.mainnet
                             }
                             Button {
-                                Layout.preferredHeight: 30
-                                Layout.preferredWidth: 110
                                 text: appController.appText.order_caps_save_button
                                 onClicked: appController.saveOrderCaps(testnetCapInput.text, mainnetCapInput.text)
                             }
@@ -5796,8 +5789,6 @@ ApplicationWindow {
                     font.family: "Consolas"
                 }
                 Button {
-                    Layout.preferredHeight: 28
-                    Layout.preferredWidth: 110
                     text: appController.appText.copy_button
                     onClicked: appController.copyValue(firstPortfolioDeployDialog.expectedConfirm)
                 }

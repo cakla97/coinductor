@@ -265,6 +265,10 @@ MESSAGE_TEXT: dict[str, dict[str, str]] = {
         "en": "maximum active grid bot count is already reached",
         "cs": "maximální počet aktivních grid botů je už vyčerpán",
     },
+    "order_below_min_notional": {
+        "en": "The order would be {amount} USDT, below the {minimum} minimum {symbol} accepts. Raise the total budget or use fewer tranches.",
+        "cs": "Příkaz by byl na {amount} USDT, což je pod minimem {minimum}, které {symbol} přijímá. Zvyšte celkový rozpočet nebo použijte méně tranší.",
+    },
     "grid_block_kill_switch": {
         "en": "live risk kill switch is active",
         "cs": "je aktivní bezpečnostní kill switch",

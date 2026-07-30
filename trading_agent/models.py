@@ -643,6 +643,11 @@ class OrderValidation:
     approved: bool
     reason: str
     adjusted_quote_amount_usdt: Decimal
+    # Additive: the same reason as a key and parameters, for callers that show
+    # it on screen rather than writing it into the English report. Absent means
+    # "nothing better than the rendered text", which is what every existing
+    # caller already had.
+    reason_message: object | None = None
 
 
 @dataclass(frozen=True)
@@ -843,3 +848,7 @@ class FirstPortfolioTrancheResult:
     executed_quantity: Decimal = Decimal("0")
     cumulative_quote_qty: Decimal = Decimal("0")
     message: str = ""
+    # The same reason as validation_summary, but as a key and parameters so the
+    # desktop can say it in the reader's language. validation_summary stays the
+    # rendered English, for the report and for anything stored.
+    reason_message: object | None = None

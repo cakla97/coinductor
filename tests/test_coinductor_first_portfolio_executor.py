@@ -289,3 +289,33 @@ def test_a_correct_confirmation_reaches_the_submit_gate_unchanged(tmp_path, monk
     )
 
     assert seen["confirm"] == "CONFIRM_TESTNET_ORDER"
+
+
+def test_a_below_minimum_order_carries_its_reason_as_a_message(tmp_path, monkeypatch) -> None:
+    """The toast read "Transe 2/3 ... se neodeslala: Adjusted quote amount 1.67
+    USDT is below BTCUSDT minNotional 5.00000000." - half Czech, half English.
+
+    The reason is the useful half, so it travels as a key and parameters rather
+    than as a finished English sentence.
+    """
+    monkeypatch.chdir(tmp_path)
+    _write_config(tmp_path)
+    executor = _executor(tmp_path)
+
+    monkeypatch.setattr(BinanceClient, "get_symbol_rules", lambda self, symbol: _testnet_rules())
+
+    # 10% of a 50 budget over 3 tranches is 1.67, under the 5 minNotional.
+    result = executor.run_tranche("BNB", Decimal("10"), Decimal("50"), 1, 3, mode="TESTNET", submit=False)
+
+    assert result.status == "BLOCKED"
+    assert result.reason_message is not None
+    assert result.reason_message.key == "order_below_min_notional"
+    # The English stays on the result for the report; only the desktop swaps it.
+    assert "below" in result.validation_summary
+
+    from trading_agent.messages import render_message
+
+    czech = render_message(result.reason_message, "cs")
+    assert "pod minimem" in czech
+    assert "below" not in czech
+    assert "BNBUSDT" in czech

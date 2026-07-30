@@ -204,6 +204,30 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         ),
     },
     # --- first portfolio tranches ---
+    "tranche_busy": {
+        "en": "Wait for the current analysis to finish first.",
+        "cs": "Nejdřív počkejte, až doběhne probíhající analýza.",
+    },
+    "tranche_bad_mode": {
+        "en": "Mode must be Testnet or Mainnet.",
+        "cs": "Režim musí být Testnet nebo Mainnet.",
+    },
+    "tranche_no_budget": {
+        "en": "Enter the actual budget for this basket before continuing.",
+        "cs": "Než budete pokračovat, zadejte skutečný rozpočet pro tenhle koš.",
+    },
+    "tranche_bad_count": {
+        "en": "The number of tranches must be at least 1.",
+        "cs": "Počet tranší musí být aspoň 1.",
+    },
+    "tranche_stage_locked": {
+        "en": "Mainnet submit is locked until the Safety stage is raised to LIVE_ENABLED.",
+        "cs": "Odeslání na Mainnet je zamčené, dokud nezvýšíte bezpečnostní stupeň na LIVE_ENABLED.",
+    },
+    "tranche_failed": {
+        "en": "The tranche could not be run: {reason}",
+        "cs": "Tranši se nepodařilo spustit: {reason}",
+    },
     "tranche_on_testnet": {"en": "on Testnet", "cs": "na Testnetu"},
     "tranche_on_mainnet": {"en": "on Mainnet", "cs": "na Mainnetu"},
     "tranche_subject": {
@@ -217,6 +241,10 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     "tranche_submitted": {
         "en": "{subject} was submitted for {amount}.",
         "cs": "{subject} byla odeslána za {amount}.",
+    },
+    "tranche_submitted_capped": {
+        "en": "{subject} was submitted for {amount}, not the planned {planned} - a per-order cap applied. Raise live_confirm.max_quote_amount_usdt if that was not what you wanted.",
+        "cs": "{subject} byla odeslána za {amount}, ne za plánovaných {planned} - zasáhl strop na jeden příkaz. Pokud jste to tak nechtěl, zvyšte live_confirm.max_quote_amount_usdt.",
     },
     "tranche_already_done": {
         "en": "{subject} is already done. Nothing was sent twice.",

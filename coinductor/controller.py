@@ -1873,21 +1873,22 @@ class AppController(QObject):
         submit: bool,
         confirm: str,
     ) -> None:
+        language = self._wizard_language
         if self._busy:
-            self.notificationRequested.emit("Wait for the current analysis to finish first.")
+            self.notificationRequested.emit(service_text("tranche_busy", language))
             return
         mode_normalized = mode.strip().upper()
         if mode_normalized not in {"TESTNET", "MAINNET"}:
-            self.notificationRequested.emit("Mode must be Testnet or Mainnet.")
+            self.notificationRequested.emit(service_text("tranche_bad_mode", language))
             return
         if total_budget_usdc <= 0:
-            self.notificationRequested.emit("Enter the actual USDC budget for this basket before continuing.")
+            self.notificationRequested.emit(service_text("tranche_no_budget", language))
             return
         if tranches_total <= 0:
-            self.notificationRequested.emit("Tranches total must be at least 1.")
+            self.notificationRequested.emit(service_text("tranche_bad_count", language))
             return
         if mode_normalized == "MAINNET" and submit and not self._safety_snapshot.allows_live_submit:
-            self.notificationRequested.emit("Mainnet submit is locked until the Safety stage is promoted to LIVE_ENABLED.")
+            self.notificationRequested.emit(service_text("tranche_stage_locked", language))
             return
 
         asset_normalized = asset.strip().upper()
@@ -1950,9 +1951,18 @@ class AppController(QObject):
         if result.status == "ALREADY_DONE":
             return service_text("tranche_already_done", language).format(subject=subject)
         if result.submitted:
-            return service_text("tranche_submitted", language).format(
-                subject=subject, amount=result.quote_amount
-            )
+            # What the exchange actually took, not what the plan asked for. On
+            # mainnet live_confirm.max_quote_amount_usdt silently caps the order
+            # (min(), not a rejection), so a 66 USDC tranche can submit 10 - and
+            # a toast quoting the plan would be telling the user a number that
+            # never reached Binance.
+            planned = result.quote_amount
+            actual = result.cumulative_quote_qty or planned
+            if actual < planned:
+                return service_text("tranche_submitted_capped", language).format(
+                    subject=subject, amount=actual, planned=planned
+                )
+            return service_text("tranche_submitted", language).format(subject=subject, amount=actual)
         # Blocked or skipped: the engine's reason is the useful part and is
         # technical by nature, so it is kept verbatim behind a localized lead.
         reason = result.message or result.validation_summary or result.status
@@ -1960,7 +1970,9 @@ class AppController(QObject):
 
     @Slot(str)
     def _on_first_portfolio_tranche_failed(self, message: str) -> None:
-        self.notificationRequested.emit(f"First portfolio tranche failed: {message}")
+        self.notificationRequested.emit(
+            service_text("tranche_failed", self._wizard_language).format(reason=message)
+        )
 
     @Slot()
     def _clear_first_portfolio_tranche_worker(self) -> None:

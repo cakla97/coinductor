@@ -3,6 +3,30 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.19] — 2026-07-30
+
+### Fixed
+
+- **A capped mainnet tranche would have reported the amount it never sent.**
+  `live_confirm.max_quote_amount_usdt` caps an order with `min()` rather than rejecting
+  it, so a 66 USDC tranche against the default cap of 10 submits 10 — quietly, and the
+  tranche then counts as done. The toast quoted the plan. It now reports what the
+  exchange actually took, and says so explicitly when the two differ.
+- **The remaining tranche messages were English**: the busy, budget, tranche-count and
+  safety-stage guards, and the failure notice. Every one of them is the only feedback a
+  user gets at that moment.
+
+### Notes
+
+Reviewed the Mainnet path end to end, since it cannot be exercised from an existing
+portfolio. It has no equivalent of the validate-only defect — submission is reached only
+when the preview succeeds *and* live submit was requested. What guards a live tranche:
+the Safety stage, the typed confirmation, the risk engine's kill switch and loss limits,
+the bankroll policy, the per-order cap, the exchange filters, and the intent id that stops
+a resend. What it deliberately skips: market timing, and the symbol whitelist — the basket
+chosen in the wizard is the universe, which is the only way SOL or BNB can be deployed at
+all.
+
 ## [0.1.18] — 2026-07-30
 
 ### Fixed

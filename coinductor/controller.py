@@ -88,7 +88,8 @@ class AppController(QObject):
         self._liquid_value = "0.00 USDC"
         self._locked_value = "0.00 USDC"
         self._risk_state = "Not evaluated"
-        self._ai_summary = "No summary available."
+        self._ai_summary = ""
+        self._ai_enabled = True
         self._report_path = ""
         self._actions: list[dict[str, str]] = []
         self._report_actions: tuple = ()
@@ -314,9 +315,11 @@ class AppController(QObject):
         unset, so it can say so plainly, in the user's language, without
         matching on the stored wording.
         """
+        if not self._ai_enabled:
+            return service_text("ai_summary_not_requested", self._wizard_language)
         if self.activeAiProviderKind == "NONE":
             return service_text("ai_summary_no_provider", self._wizard_language)
-        return self._ai_summary
+        return self._ai_summary or service_text("ai_summary_empty", self._wizard_language)
 
     @Property("QVariantList", notify=actionsChanged)
     def actions(self) -> list[dict[str, str]]:
@@ -2591,7 +2594,8 @@ class AppController(QObject):
         # The English fallback for a run recorded before the message columns.
         # riskState composes the localized form at read time.
         self._risk_state = "Approved" if result.risk_approved else result.risk_reason
-        self._ai_summary = result.ai_summary or "AI summary was not requested."
+        self._ai_enabled = result.ai_enabled
+        self._ai_summary = result.ai_summary
         self._report_path = str(Path(result.report_path))
         # Kept so the list can be recomposed when the language changes; the
         # journal rows are preferred, these are the fallback for old runs.

@@ -2203,12 +2203,20 @@ ApplicationWindow {
                             // border. Selectable too: it is the one thing here
                             // worth quoting back when a model misbehaves.
                             ScrollView {
+                                id: aiSummaryScroll
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 clip: true
                                 ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
                                 TextEdit {
-                                    width: parent.width
+                                    // Not parent.width: inside a ScrollView the
+                                    // parent is the internal Flickable, whose
+                                    // width follows the content rather than the
+                                    // view. Binding to it leaves the width
+                                    // unresolved, wrapMode has nothing to wrap
+                                    // against, and the model's summary runs off
+                                    // the panel on a single line.
+                                    width: aiSummaryScroll.availableWidth
                                     text: appController.aiSummary
                                     color: textSecondary
                                     font.pixelSize: 13

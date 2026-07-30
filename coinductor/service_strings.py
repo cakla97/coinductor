@@ -191,6 +191,22 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "That run's report file is no longer on disk.",
         "cs": "Soubor s reportem tohoto běhu už na disku není.",
     },
+    "ai_summary_not_requested": {
+        "en": (
+            "This analysis ran without AI commentary, so there is nothing here. Nothing is missing "
+            "from the result: every decision above comes from the deterministic analysis, which "
+            "never uses a model. Tick \"Generate AI summary\" when starting a run to get one."
+        ),
+        "cs": (
+            "Tato analýza běžela bez hodnocení od AI, takže tu nic není. Ve výsledku nic nechybí - "
+            "všechna rozhodnutí výše pocházejí z deterministické analýzy, která model nikdy "
+            "nepoužívá. Hodnocení dostanete, když při spuštění zaškrtnete \"Vygenerovat shrnutí od AI\"."
+        ),
+    },
+    "ai_summary_empty": {
+        "en": "The model was asked but returned nothing usable. The deterministic decisions above are unaffected.",
+        "cs": "Model byl dotázán, ale nevrátil nic použitelného. Deterministických rozhodnutí výše se to nijak netýká.",
+    },
     "ai_summary_no_provider": {
         "en": (
             "No AI provider is configured, so there is no commentary to show. This is optional - "

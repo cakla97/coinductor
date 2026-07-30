@@ -3,6 +3,31 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.13] — 2026-07-30
+
+### Fixed
+
+- **The AI summary ran off the panel on one line.** It had `wrapMode` set and a width
+  bound to `parent.width` — but inside a `ScrollView` the parent is the internal
+  Flickable, whose width follows the content rather than the view, so the binding
+  resolved to nothing and there was no width to wrap against. Measured offscreen: the
+  same text laid out 1932 px wide on one line in a 360 px panel, and 307 px over eight
+  lines once bound to the view's `availableWidth`.
+- **Two of the three model calls never asked for the reader's language.** Only the
+  commentary did, so the Trade card read "AI uvedla: Market context remains unclear…"
+  beside an otherwise Czech screen, and the rebalancing assessment came back in English
+  too. A test now asserts it per call site rather than on one prompt, because the gap was
+  a call site nobody had looked at.
+- **The model translated "Grid" to "síť"** — Czech for *network*, naming nothing a reader
+  can find in Binance's interface. It also hid a stray Grid mention from the validator
+  that strips one, which matches on the word itself. Product names are pinned to English
+  in the prompt now.
+- **A run started without AI showed the engine's English note** under a heading reading
+  "Shrnutí od AI", which reads as a malfunction rather than the setting the user chose.
+  The report has always recorded `Enabled`; the desktop simply never read it. It now says
+  so plainly, in the reader's language, and separately for "the model returned nothing
+  usable".
+
 ## [0.1.12] — 2026-07-30
 
 ### Fixed

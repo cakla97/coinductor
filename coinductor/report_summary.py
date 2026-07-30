@@ -23,6 +23,7 @@ class ReportSummaryReader:
             liquid_value=self._amount(text, "Executive Summary", "Liquid value"),
             locked_value=self._amount(text, "Executive Summary", "Locked value"),
             ai_summary=self._field(text, "AI Commentary", "Summary", ""),
+            ai_enabled=self._field(text, "AI Commentary", "Enabled", "True").lower() == "true",
             actions=self._actions(text),
         )
 

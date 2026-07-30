@@ -45,6 +45,10 @@ class DesktopRunResult:
     ai_summary: str
     actions: tuple[ActionSummary, ...]
     trade_proposal: dict[str, str] | None = None
+    # Whether the run asked the model at all. Without this the desktop cannot
+    # tell "the model said nothing useful" from "you ran this without AI", and
+    # showed the engine's English note for both.
+    ai_enabled: bool = True
 
 
 @dataclass(frozen=True)

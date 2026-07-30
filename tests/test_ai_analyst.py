@@ -466,6 +466,41 @@ def test_commentary_asks_the_model_for_the_readers_language() -> None:
     assert "in English" in AiAnalyst(_config())._language_instruction()
 
 
+def test_every_model_call_asks_for_the_readers_language() -> None:
+    """Only the commentary call carried the instruction.
+
+    The trade proposal and the rebalancing assessment did not, so the Trade
+    card read "AI uvedla: Market context remains unclear..." on a Czech screen.
+    Asserting per call site rather than on one prompt, because the gap was a
+    call site nobody had looked at.
+    """
+    import re
+    from pathlib import Path
+
+    source = Path(__file__).resolve().parents[1].joinpath("trading_agent", "ai_analyst.py").read_text(encoding="utf-8")
+    # Each _chat_json(...) up to its user= argument, which always follows system=.
+    calls = re.findall(r"_chat_json\(\s*system=(.*?)user=", source, re.DOTALL)
+    assert len(calls) >= 3, f"the extraction pattern is stale: found {len(calls)} call sites"
+    missing = [call.strip()[:60] for call in calls if "_language_instruction()" not in call]
+    assert missing == [], f"model calls that do not ask for the reader's language: {missing}"
+
+
+def test_product_names_are_pinned_so_the_model_cannot_translate_them() -> None:
+    """A model asked for Czech rendered "Grid" as "sit" - Czech for network.
+
+    It names nothing a reader can find in Binance's interface, and it hides a
+    stray Grid mention from _validate_rebalancing_assessment, which matches on
+    the word itself.
+    """
+    config = _config()
+    config["ai"]["response_language"] = "cs"
+    instruction = AiAnalyst(config)._language_instruction()
+
+    for name in ("Grid", "Rebalancing Bot", "Binance", "USDC"):
+        assert name in instruction, f"{name} is not pinned"
+    assert "untranslated" in instruction
+
+
 def test_a_non_numeric_field_does_not_throw_the_whole_proposal_away() -> None:
     """Models return "high" where a number was asked for.
 

@@ -417,10 +417,21 @@ class AiAnalyst:
         Commentary is the model's own prose, so it cannot be translated at the
         display boundary the way our own text is - it came back in English
         beside a Czech screen. Field names and JSON keys stay as specified.
+
+        Product names are pinned too. A model asked for Czech translated "Grid"
+        to "sit" - a word meaning network, which names nothing a reader can find
+        in Binance's interface. It also blinds _validate_rebalancing_assessment,
+        which strips a stray Grid mention by looking for the word itself.
         """
+        # Names the reader has to find written this way in Binance's interface,
+        # or that the assessment validator matches on.
+        keep = "Grid, Spot Grid, Rebalancing Bot, Binance, Earn, USDC, stop-loss, take-profit, RSI, EMA"
         language = str(self.config.get("ai", {}).get("response_language", "")).strip().lower()
         if language.startswith("cs"):
-            return "Write every human-readable value in Czech; keep the JSON keys in English."
+            return (
+                "Write every human-readable value in Czech; keep the JSON keys in English. "
+                f"Leave these product names untranslated, exactly as written: {keep}."
+            )
         return "Write every human-readable value in English."
 
     def _focused_rebalancing_assessment(self, recommendation: RebalancingBotRecommendation) -> str:
@@ -438,7 +449,10 @@ class AiAnalyst:
         }
         try:
             content = self._chat_json(
-                system="You are reviewing one deterministic rebalancing proposal. Use only supplied facts. Output valid JSON only.",
+                system=(
+                    "You are reviewing one deterministic rebalancing proposal. Use only supplied facts. "
+                    "Output valid JSON only. " + self._language_instruction()
+                ),
                 user=json.dumps(prompt, default=str),
             )
             assessment = str(json.loads(content).get("assessment", "")).strip()
@@ -613,7 +627,10 @@ class AiAnalyst:
             },
         }
         content = self._chat_json(
-            system="You are a cautious crypto market analyst. Output JSON only.",
+            system=(
+                "You are a cautious crypto market analyst. Output JSON only. "
+                + self._language_instruction()
+            ),
             user=json.dumps(prompt, default=str),
         )
         data = json.loads(content)

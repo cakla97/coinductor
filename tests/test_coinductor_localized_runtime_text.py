@@ -98,6 +98,25 @@ def test_ai_summary_says_no_provider_rather_than_echoing_the_engine(monkeypatch,
     assert controller.aiSummary.startswith("Není nastavený žádný AI provider")
 
 
+def test_a_run_without_ai_says_so_instead_of_showing_the_engines_note(monkeypatch, tmp_path) -> None:
+    """Unticking the AI summary is a choice, not a failure.
+
+    It showed the engine's English "AI commentary is disabled." under a heading
+    reading "Shrnuti od AI", which looks like something went wrong. Checked
+    before the provider branch: with no provider configured the run is also
+    without AI, and the reason the user picked is the more useful one.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("cs")
+    controller._ai_enabled = False
+    controller._ai_summary = "AI commentary is disabled."
+
+    assert controller.aiSummary.startswith("Tato analýza běžela bez hodnocení od AI")
+
+    controller.setWizardLanguage("en")
+    assert controller.aiSummary.startswith("This analysis ran without AI commentary")
+
+
 def test_run_history_start_times_are_converted_to_local(tmp_path) -> None:
     """SQLite's `default current_timestamp` writes UTC with no offset.
 

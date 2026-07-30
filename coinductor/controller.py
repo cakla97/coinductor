@@ -606,6 +606,18 @@ class AppController(QObject):
         self.liveTradingCheckChanged.emit()
         self.testnetCheckChanged.emit()
         self.localAiDiscoveryChanged.emit()
+        # riskState, decisionSummary and aiSummary compose their text when read,
+        # which is only half the fix: without their notify signal QML never
+        # reads them again, so a language switch left all three as they were.
+        # The AI summary made it visible - its "written in another language"
+        # line appeared at the *next* analysis, when something else happened to
+        # emit this.
+        self.stateChanged.emit()
+        # assistantContextPage translates a page name when read.
+        self.assistantChanged.emit()
+        # _apply_idle_status_defaults above already re-localized the hardware
+        # summary; only the signal was missing.
+        self.localAiRecommendationChanged.emit()
 
     @Property("QVariantMap", notify=assistantChanged)
     def assistantPendingAction(self) -> dict[str, object]:

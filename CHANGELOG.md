@@ -3,6 +3,25 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.15] — 2026-07-30
+
+### Fixed
+
+- **Switching language did not refresh the Risk gate, Latest decision or the AI summary.**
+  0.1.12 changed all three to compose their text when read, which was only half the fix:
+  `setWizardLanguage` never emitted their notify signal, so QML had no reason to read
+  them again and they kept whatever language the last analysis ran in. The AI summary is
+  what made it visible — its "written in another language" line appeared at the *next*
+  analysis, because that is when something else happened to emit the signal. Enumerating
+  every notify signal against the ones the language switch emits found two more that were
+  missing, and a test now asserts they fire.
+
+### Known gaps
+
+- The **app tour** and the **suggested first basket** are still English-only in both
+  languages. Neither is a stale translation — the text has no Czech version to fall back
+  to. They are separate surfaces from the ones converted so far.
+
 ## [0.1.14] — 2026-07-30
 
 ### Fixed

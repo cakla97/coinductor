@@ -117,6 +117,27 @@ def test_a_run_without_ai_says_so_instead_of_showing_the_engines_note(monkeypatc
     assert controller.aiSummary.startswith("This analysis ran without AI commentary")
 
 
+def test_switching_language_notifies_the_properties_that_compose_when_read(monkeypatch, tmp_path) -> None:
+    """Composing at read time is only half of it.
+
+    riskState, decisionSummary and aiSummary were changed to compose when read
+    so a language switch would reach them - but setWizardLanguage never emitted
+    their notify signal, so QML never read them again and all three kept the
+    old language. It showed up as the AI summary's "written in another
+    language" line appearing at the next analysis rather than at the switch.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("en")
+
+    fired: set[str] = set()
+    for name in ("stateChanged", "assistantChanged", "localAiRecommendationChanged"):
+        getattr(controller, name).connect(lambda n=name: fired.add(n))
+
+    controller.setWizardLanguage("cs")
+
+    assert fired == {"stateChanged", "assistantChanged", "localAiRecommendationChanged"}
+
+
 def test_a_summary_written_in_another_language_says_so(monkeypatch, tmp_path) -> None:
     """The model's prose is the one thing here that cannot be re-translated.
 

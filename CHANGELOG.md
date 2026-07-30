@@ -3,6 +3,31 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.12] — 2026-07-30
+
+### Fixed
+
+- **The AI summary printed a Python dictionary at you.** Several hundred characters of
+  `{'ETHUSDC_Grid': {'blocker': ...}}`, introduced in 0.1.11 by the salvage that was
+  supposed to rescue usable answers: it stringified whatever the `summary` key held, and a
+  dict is not empty. Only a string counts now, and when a model answers in its own shape
+  the sentences are joined in order into a paragraph. The panel scrolls and can be selected
+  rather than spilling past its border.
+- **Three more sources were writing English onto the first screen**: the trade proposal's
+  reason — the Trade card's own sentence, the model's words included — the run's decision
+  summary under "Latest decision", and the four explanations behind "Why HOLD?". The
+  commentary-disabled line too.
+- **The Risk gate and Latest decision showed the previous language after a switch.** They
+  were built once when a run loaded. Both are composed when read now, which removes the
+  cause rather than the instance; four fields had shown it.
+
+### Changed
+
+- The test that rejects new prose in a converted module covers eight modules instead of
+  four. Twice a release claimed every prose source was converted while a module outside
+  that list of four was still writing sentences; the modules that feed only the Markdown
+  report are now listed explicitly, with the reason each is exempt.
+
 ## [0.1.11] — 2026-07-29
 
 The last of the English prose, and the AI answer that was being thrown away.

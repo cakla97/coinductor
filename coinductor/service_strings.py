@@ -151,6 +151,30 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     "urgency_normal": {"en": "Normal", "cs": "Běžná"},
     "urgency_action_required": {"en": "Action required", "cs": "Vyžaduje zásah"},
     "urgency_elevated": {"en": "Elevated", "cs": "Zvýšená"},
+    "submit_blocked_not_buy": {
+        "en": "Live submit appears only for BUY previews that pass the deterministic checks.",
+        "cs": "Zabezpečené odeslání se objeví jen u nákupních náhledů, které projdou deterministickými kontrolami.",
+    },
+    "submit_blocked_stage": {
+        "en": "Live submit is locked until you raise the safety stage to LIVE_ENABLED.",
+        "cs": "Zabezpečené odeslání je zamčené, dokud nezvýšíte bezpečnostní stupeň na LIVE_ENABLED.",
+    },
+    "submit_blocked_no_key": {
+        "en": "The live trading key is not configured, or has not passed the setup checks.",
+        "cs": "Živý obchodní klíč není nastavený, nebo neprošel kontrolami nastavení.",
+    },
+    "submit_blocked_unverified": {
+        "en": "Verify the live key's permissions in Live Actions for this app session.",
+        "cs": "Ověřte oprávnění živého klíče v Živých akcích pro tuto session aplikace.",
+    },
+    "submit_confirm_label": {
+        "en": "Confirm live {action}",
+        "cs": "Potvrdit živý {action}",
+    },
+    "submit_locked_label": {
+        "en": "Live submit locked",
+        "cs": "Odeslání zamčeno",
+    },
     "manual_steps_copied": {
         "en": "{count} setup steps copied. Paste them next to Binance and work down the list.",
         "cs": "Zkopírováno {count} kroků nastavení. Vložte si je vedle Binance a projděte je shora dolů.",

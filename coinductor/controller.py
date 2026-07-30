@@ -279,7 +279,13 @@ class AppController(QObject):
 
     @Property(str, notify=stateChanged)
     def decisionSummary(self) -> str:
-        return self._decision_summary
+        """Composed at read time, not cached.
+
+        Four separate fields have now shown English after a language switch
+        because they were built once when a run loaded. Reading through the
+        message keeps this one out of that class of bug entirely.
+        """
+        return self._compose_message(self._snapshot.decision_summary_message, ()) or self._decision_summary
 
     @Property(str, notify=stateChanged)
     def portfolioValue(self) -> str:
@@ -295,7 +301,8 @@ class AppController(QObject):
 
     @Property(str, notify=stateChanged)
     def riskState(self) -> str:
-        return self._risk_state
+        """Composed at read time - see decisionSummary."""
+        return self._compose_message(self._snapshot.risk_reason_message, ()) or self._risk_state
 
     @Property(str, notify=stateChanged)
     def aiSummary(self) -> str:
@@ -2581,12 +2588,9 @@ class AppController(QObject):
         self._portfolio_value = f"{result.portfolio_value:.2f} USDC"
         self._liquid_value = f"{result.liquid_value:.2f} USDC"
         self._locked_value = f"{result.locked_value:.2f} USDC"
-        # The Risk gate tile. Prefer the journal's message over the sentence
-        # parsed from the report, which is already English by then.
-        localized = self._rendered_manual_steps(self._snapshot.risk_reason_message)
-        self._risk_state = localized[0] if localized else (
-            "Approved" if result.risk_approved else result.risk_reason
-        )
+        # The English fallback for a run recorded before the message columns.
+        # riskState composes the localized form at read time.
+        self._risk_state = "Approved" if result.risk_approved else result.risk_reason
         self._ai_summary = result.ai_summary or "AI summary was not requested."
         self._report_path = str(Path(result.report_path))
         # Kept so the list can be recomposed when the language changes; the
@@ -2630,7 +2634,11 @@ class AppController(QObject):
         params = {str(k): str(v) for k, v in dict(spec.get("params", {})).items()}
         rendered_parts = self._rendered_manual_steps(parts or ())
         if rendered_parts:
+            # The grid's frame asks for {reasons}, the trade proposal's for
+            # {observed}. Filling both is harmless: a template ignores a
+            # parameter it does not mention.
             params["reasons"] = "; ".join(rendered_parts)
+            params["observed"] = ". ".join(rendered_parts)
         return render_manual_step(
             ManualStep(str(spec.get("key", "")), params), self._wizard_language
         )
@@ -2818,16 +2826,21 @@ class AppController(QObject):
                 }
             )
         if latest_trade and latest_trade.get("reason"):
-            trade_detail = str(latest_trade["reason"])
+            # The proposal's own message where the run recorded one; the stored
+            # sentence is already English by the time it reaches here.
+            localized_reason = self._compose_message(
+                latest_trade.get("reasonMessage", ()), latest_trade.get("reasonParts", ())
+            )
+            trade_detail = localized_reason or str(latest_trade["reason"])
         trade_can_submit = trade_tone == "ready" and trade_action == "BUY"
         if not trade_can_submit:
-            trade_submit_blocked = "Live submit appears only for BUY previews that pass deterministic checks."
+            trade_submit_blocked = service_text("submit_blocked_not_buy", language)
         elif not self._safety_snapshot.allows_live_submit:
-            trade_submit_blocked = "Live submit is locked until the Safety stage is promoted to LIVE_ENABLED."
+            trade_submit_blocked = service_text("submit_blocked_stage", language)
         elif self.liveTradingKeyStatus != "PASS":
-            trade_submit_blocked = "Live trading key is not configured or has not passed setup checks."
+            trade_submit_blocked = service_text("submit_blocked_no_key", language)
         elif self._live_trading_check_status != "Verified":
-            trade_submit_blocked = "Verify live-key permissions in Live Actions for this app session."
+            trade_submit_blocked = service_text("submit_blocked_unverified", language)
         else:
             trade_submit_blocked = ""
 
@@ -2849,7 +2862,9 @@ class AppController(QObject):
             and self._safety_snapshot.allows_live_submit
             and self.liveTradingKeyStatus == "PASS"
             and self._live_trading_check_status == "Verified",
-            "submitLabel": f"Confirm live {trade_action}" if trade_can_submit else "Live submit locked",
+            "submitLabel": service_text("submit_confirm_label", language).format(action=trade_action)
+            if trade_can_submit
+            else service_text("submit_locked_label", language),
             "submitBlockedReason": trade_submit_blocked,
         }
         if self._snapshot.live_action_lifecycle is not None:

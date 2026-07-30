@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .messages import Message, render_message
 from .models import GridRecommendation, RiskDecision, StrategyDecision, TradeProposal
 
 
@@ -14,7 +15,8 @@ class StrategyDecisionEngine:
             return StrategyDecision(
                 decision_type="GRID_BOT_RECOMMENDATION",
                 priority="MEDIUM",
-                summary="A Spot Grid setup looks suitable for current market conditions. Manual confirmation is required.",
+                summary=render_message(Message("decision_summary_grid")),
+                summary_message=Message("decision_summary_grid"),
                 spot_trade=proposal if risk_decision.approved else None,
                 grid=grid_recommendation,
                 rebalancing_note="Keep rebalancing separate from grid capital until an active grid baseline is recorded.",
@@ -24,7 +26,8 @@ class StrategyDecisionEngine:
             return StrategyDecision(
                 decision_type="SPOT_TRADE_RECOMMENDATION",
                 priority="LOW",
-                summary="No grid setup is recommended, but the spot trade proposal passed MVP risk checks.",
+                summary=render_message(Message("decision_summary_spot_trade")),
+                summary_message=Message("decision_summary_spot_trade"),
                 spot_trade=proposal,
                 grid=grid_recommendation,
                 rebalancing_note=None,
@@ -33,7 +36,8 @@ class StrategyDecisionEngine:
         return StrategyDecision(
             decision_type="HOLD",
             priority="LOW",
-            summary="No action is recommended. Risk or market filters rejected active strategies.",
+            summary=render_message(Message("decision_summary_hold")),
+            summary_message=Message("decision_summary_hold"),
             spot_trade=None,
             grid=grid_recommendation,
             rebalancing_note=None,

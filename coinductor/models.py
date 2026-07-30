@@ -64,6 +64,7 @@ class DesktopSnapshot:
     # so each item still carries the message it was composed from.
     recommended_actions: tuple[dict[str, object], ...] = ()
     risk_reason_message: tuple[dict[str, object], ...] = ()
+    decision_summary_message: tuple[dict[str, object], ...] = ()
 
 
 @dataclass(frozen=True)

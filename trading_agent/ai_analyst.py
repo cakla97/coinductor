@@ -7,6 +7,7 @@ import os
 import urllib.request
 
 from .decimal_utils import display
+from .messages import DEFAULT_LANGUAGE, Message, render_message, render_messages
 from .models import ActiveStrategiesReport, AiCommentary, AiDecisionMemory, CapitalSourcingPlan, GridRecommendation, LivePositionSummary, MarketResearchReport, MarketSnapshot, NextRunRecommendation, PortfolioAnalysis, RebalancingBotRecommendation, RecommendedAction, ResearchBundle, ResearchStatus, RiskDecision, StrategyDecision, TradeProposal
 
 
@@ -20,6 +21,18 @@ _TREND_PHRASES = {
 def _trend_phrase(regime: str) -> str:
     """`trend=RISK_OFF` is a field name and an enum; this is what it means."""
     return _TREND_PHRASES.get(str(regime).upper(), f"{str(regime).replace('_', '-').lower()} trend")
+
+
+_TREND_SUFFIX = {"RISK_ON": "risk_on", "RISK_OFF": "risk_off", "NEUTRAL": "neutral"}
+
+
+def _trend_suffix(regime: str) -> str:
+    """Trends get one key each rather than a nested parameter.
+
+    A parameter is a plain string, so a message key placed in one would reach
+    the reader unrendered - which is exactly what `trade_trend_risk_off` did.
+    """
+    return _TREND_SUFFIX.get(str(regime).upper(), "neutral")
 
 
 _NO_SUMMARY = (
@@ -82,6 +95,20 @@ def proposal_fallback_reason(exc: BaseException, fallback_reason: str) -> str:
     return f"{prefix}. {fallback_reason}"
 
 
+def render_trade_reason(
+    reason: Message, parts: tuple[Message, ...] = (), language: str = DEFAULT_LANGUAGE
+) -> str:
+    """Compose a proposal reason whose {observed} placeholder is a list.
+
+    Same shape as the grid's scoring line: the frame and its parts are kept
+    apart so the sentence can be built in the reader's language.
+    """
+    params = dict(reason.params)
+    if parts:
+        params["observed"] = ". ".join(render_messages(parts, language))
+    return render_message(Message(reason.key, params), language)
+
+
 def _salvaged_summary(data: object) -> str:
     """Find a summary in whatever shape the model actually returned.
 
@@ -93,9 +120,12 @@ def _salvaged_summary(data: object) -> str:
     """
     if not isinstance(data, dict):
         return _NO_SUMMARY
-    direct = str(data.get("summary", "")).strip()
-    if direct:
-        return direct
+    # Only a string counts as the summary. A dict here stringifies to its Python
+    # repr, which is how a wall of {'ETHUSDC_Grid': {'blocker': ...}} reached
+    # the screen - unreadable, and worse than admitting there was nothing.
+    direct = data.get("summary")
+    if isinstance(direct, str) and direct.strip():
+        return direct.strip()
 
     candidates: list[str] = []
 
@@ -103,9 +133,9 @@ def _salvaged_summary(data: object) -> str:
         if depth > 4:
             return
         if isinstance(node, str):
-            text = node.strip()
+            text = " ".join(node.split())
             # A sentence, not a symbol, an enum or a number.
-            if len(text) >= 40 and " " in text:
+            if len(text) >= 40 and " " in text and text not in candidates:
                 candidates.append(text)
         elif isinstance(node, dict):
             for value in node.values():
@@ -117,7 +147,16 @@ def _salvaged_summary(data: object) -> str:
     walk(data)
     if not candidates:
         return _NO_SUMMARY
-    return max(candidates, key=len)
+    # Several sentences in document order read as a paragraph; the single
+    # longest one reads as a fragment torn out of the middle. Capped, because
+    # this lands in a fixed panel and a model asked for four sentences can
+    # return forty.
+    summary: list[str] = []
+    for candidate in candidates:
+        if sum(len(item) for item in summary) + len(candidate) > 420:
+            break
+        summary.append(candidate if candidate.endswith((".", "!", "?")) else candidate + ".")
+    return " ".join(summary) or _NO_SUMMARY
 
 
 def _string_list(value: object, limit: int = 5) -> tuple[str, ...]:
@@ -155,10 +194,7 @@ class AiAnalyst:
         market_research: MarketResearchReport | None = None,
     ) -> TradeProposal:
         if self._open_live_position_blocks_buy(live_positions):
-            return self._hold_proposal(
-                snapshots,
-                "Open live position guard: an existing live position is being monitored, so no new BUY is proposed.",
-            )
+            return self._hold_proposal(snapshots, Message("trade_open_position_guard"))
         ai_config = self.config.get("ai", {})
         if not ai_config.get("enabled", False):
             return self._mock_proposal(snapshots)
@@ -183,17 +219,12 @@ class AiAnalyst:
         live_positions: LivePositionSummary | None = None,
     ) -> TradeProposal:
         if self._open_live_position_blocks_buy(live_positions):
-            return self._hold_proposal(
-                snapshots,
-                "Open live position guard: an existing live position is being monitored, so no new BUY is "
-                "proposed, including manual overrides.",
-            )
+            return self._hold_proposal(snapshots, Message("trade_open_position_guard_override"))
         allowed_symbols = [str(item).upper() for item in self.config.get("strategy", {}).get("allowed_symbols", [])]
         normalized = symbol.strip().upper()
         if normalized not in allowed_symbols:
             return self._hold_proposal(
-                snapshots,
-                f"Manual override requested {normalized}, which is not in strategy.allowed_symbols.",
+                snapshots, Message("trade_override_not_allowed", {"symbol": normalized})
             )
         orders = self.config["orders"]
         return TradeProposal(
@@ -203,7 +234,8 @@ class AiAnalyst:
             quote_amount_usdt=Decimal(str(self.config["strategy"]["quote_amount_usdt"])),
             stop_loss_pct=Decimal(str(orders["default_stop_loss_pct"])),
             take_profit_pct=Decimal(str(orders["default_take_profit_pct"])),
-            reason=f"Manual override: user requested a BUY evaluation for {normalized} instead of accepting HOLD.",
+            reason=render_message(Message("trade_override_requested", {"symbol": normalized})),
+            reason_message=Message("trade_override_requested", {"symbol": normalized}),
         )
 
     def comment_on_portfolio(
@@ -229,7 +261,7 @@ class AiAnalyst:
         if not ai_config.get("commentary_enabled", False):
             return AiCommentary(
                 enabled=False,
-                summary="AI commentary is disabled.",
+                summary=render_message(Message("ai_commentary_disabled")),
                 risks=(),
                 watchlist=(),
                 raw_response="",
@@ -494,19 +526,23 @@ class AiAnalyst:
         allowed_symbols = [str(symbol).upper() for symbol in self.config.get("strategy", {}).get("allowed_symbols", [])]
         candidates = [snapshot for snapshot in snapshots if snapshot.symbol.upper() in allowed_symbols]
         if not candidates:
-            return self._hold_proposal(snapshots, "None of your allowed symbols appear in current market data.")
+            return self._hold_proposal(snapshots, Message("trade_no_allowed_symbols"))
         buy_candidates = [snapshot for snapshot in candidates if self._is_fallback_buy_candidate(snapshot)]
         if not buy_candidates:
             # Written as a sentence, not key=value with raw Decimals: this is
             # the line on the Trade card that explains a HOLD, and an RSI
             # printed to twenty decimals made it unreadable.
-            observed = ". ".join(
-                f"{item.symbol}: {_trend_phrase(item.trend_regime)}, RSI {display(item.rsi14)}"
+            parts = [
+                Message(
+                    f"trade_observed_{_trend_suffix(item.trend_regime)}",
+                    {"symbol": item.symbol, "rsi": display(item.rsi14)},
+                )
                 for item in candidates
-            )
+            ]
             return self._hold_proposal(
                 snapshots,
-                f"No symbol passed the conservative BUY filters. {observed}.",
+                Message("trade_no_symbol_passed", {"observed": ""}),
+                parts=tuple(parts),
             )
         best = sorted(buy_candidates, key=self._fallback_score, reverse=True)[0]
         orders = self.config["orders"]
@@ -517,10 +553,8 @@ class AiAnalyst:
             quote_amount_usdt=Decimal(str(self.config["strategy"]["quote_amount_usdt"])),
             stop_loss_pct=Decimal(str(orders["default_stop_loss_pct"])),
             take_profit_pct=Decimal(str(orders["default_take_profit_pct"])),
-            reason=(
-                f"{best.symbol} passed the conservative filters: {_trend_phrase(best.trend_regime)}, "
-                f"RSI {display(best.rsi14)}, price above its 200-day average."
-            ),
+            reason=render_message(self._passed_filters(best)),
+            reason_message=self._passed_filters(best),
         )
 
     def _openai_compatible_proposal(
@@ -588,11 +622,21 @@ class AiAnalyst:
         symbol = str(data.get("symbol", allowed_symbols[0] if allowed_symbols else "")).upper()
         confidence = self._bounded_decimal(data.get("confidence", "0"), Decimal("0"), Decimal("1"))
         if action not in {"BUY", "HOLD"}:
-            return self._hold_proposal(snapshots, f"Local AI returned unsupported action {action}.")
+            return self._hold_proposal(
+                snapshots, Message("trade_model_unsupported_action", {"action": action})
+            )
         if symbol not in allowed_symbols:
-            return self._hold_proposal(snapshots, f"Local AI returned non-whitelisted symbol {symbol}.")
+            return self._hold_proposal(
+                snapshots, Message("trade_model_symbol_not_allowed", {"symbol": symbol})
+            )
         if action == "HOLD":
-            return self._hold_proposal(snapshots, f"Local AI: {str(data.get('reason', 'No favorable setup.')).strip()}")
+            return self._hold_proposal(
+                snapshots,
+                Message(
+                    "trade_model_reason",
+                    {"reason": str(data.get("reason", "No favorable setup.")).strip()},
+                ),
+            )
         orders = self.config["orders"]
         return TradeProposal(
             symbol=symbol,
@@ -601,7 +645,12 @@ class AiAnalyst:
             quote_amount_usdt=Decimal(str(self.config["strategy"]["quote_amount_usdt"])),
             stop_loss_pct=Decimal(str(orders["default_stop_loss_pct"])),
             take_profit_pct=Decimal(str(orders["default_take_profit_pct"])),
-            reason=f"Local AI ranking: {str(data.get('reason', '')).strip()}",
+            reason=render_message(
+                Message("trade_model_reason", {"reason": str(data.get("reason", "")).strip()})
+            ),
+            reason_message=Message(
+                "trade_model_reason", {"reason": str(data.get("reason", "")).strip()}
+            ),
         )
 
     def _market_research_payload(self, research: MarketResearchReport | None) -> dict:
@@ -727,7 +776,12 @@ class AiAnalyst:
             return False
         return live_positions is not None and bool(live_positions.open_positions)
 
-    def _hold_proposal(self, snapshots: list[MarketSnapshot], reason: str) -> TradeProposal:
+    def _hold_proposal(
+        self,
+        snapshots: list[MarketSnapshot],
+        reason: Message,
+        parts: tuple[Message, ...] = (),
+    ) -> TradeProposal:
         allowed_symbols = [str(symbol).upper() for symbol in self.config.get("strategy", {}).get("allowed_symbols", [])]
         symbol = allowed_symbols[0] if allowed_symbols else (snapshots[0].symbol if snapshots else "BTCUSDC")
         orders = self.config["orders"]
@@ -738,7 +792,17 @@ class AiAnalyst:
             quote_amount_usdt=Decimal("0"),
             stop_loss_pct=Decimal(str(orders["default_stop_loss_pct"])),
             take_profit_pct=Decimal(str(orders["default_take_profit_pct"])),
-            reason=reason,
+            reason=render_trade_reason(reason, parts),
+            reason_message=reason,
+            reason_part_messages=parts,
+        )
+
+    def _passed_filters(self, best: MarketSnapshot) -> Message:
+        # Only RISK_ON and NEUTRAL can pass the fallback filters.
+        suffix = "risk_on" if _trend_suffix(best.trend_regime) == "risk_on" else "neutral"
+        return Message(
+            f"trade_passed_{suffix}",
+            {"symbol": best.symbol, "rsi": display(best.rsi14)},
         )
 
     def _is_fallback_buy_candidate(self, snapshot: MarketSnapshot) -> bool:

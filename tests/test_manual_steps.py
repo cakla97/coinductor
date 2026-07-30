@@ -99,7 +99,8 @@ def test_czech_text_is_actually_translated_not_copied() -> None:
     Except where the whole message is an indicator name and its number, which
     is written the same way in both languages.
     """
-    identical_by_design = {"grid_reason_rsi"}
+    # Pure placeholders and indicator names, with no words of their own.
+    identical_by_design = {"grid_reason_rsi", "trade_observed_symbol"}
     copied = [
         key
         for key, translations in MANUAL_STEP_TEXT.items()

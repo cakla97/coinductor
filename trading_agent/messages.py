@@ -509,6 +509,80 @@ MESSAGE_TEXT: dict[str, dict[str, str]] = {
         "en": "Theoretical basket drift is {drift}%, below the registered {threshold}% threshold. Continue monitoring.",
         "cs": "Teoretická odchylka košíku je {drift} %, pod zaregistrovaným prahem {threshold} %. Pokračujte ve sledování.",
     },
+    "ai_commentary_disabled": {
+        "en": "AI commentary was not requested for this run.",
+        "cs": "AI komentář nebyl pro tento běh vyžádán.",
+    },
+    # --- Trade proposal reasons, the sentence on the Trade card ---
+    "trade_no_symbol_passed": {
+        "en": "No symbol passed the conservative BUY filters. {observed}.",
+        "cs": "Žádný symbol neprošel konzervativními filtry pro nákup. {observed}.",
+    },
+    "trade_observed_risk_on": {
+        "en": "{symbol}: risk-on trend, RSI {rsi}",
+        "cs": "{symbol}: růstový trend, RSI {rsi}",
+    },
+    "trade_observed_risk_off": {
+        "en": "{symbol}: risk-off trend, RSI {rsi}",
+        "cs": "{symbol}: klesající trend, RSI {rsi}",
+    },
+    "trade_observed_neutral": {
+        "en": "{symbol}: neutral trend, RSI {rsi}",
+        "cs": "{symbol}: neutrální trend, RSI {rsi}",
+    },
+    "trade_passed_risk_on": {
+        "en": "{symbol} passed the conservative filters: risk-on trend, RSI {rsi}, price above its 200-day average.",
+        "cs": "{symbol} prošel konzervativními filtry: růstový trend, RSI {rsi}, cena nad 200denním průměrem.",
+    },
+    "trade_passed_neutral": {
+        "en": "{symbol} passed the conservative filters: neutral trend, RSI {rsi}, price above its 200-day average.",
+        "cs": "{symbol} prošel konzervativními filtry: neutrální trend, RSI {rsi}, cena nad 200denním průměrem.",
+    },
+    "trade_model_unsupported_action": {
+        "en": "The AI returned an unsupported action ({action}), so no trade is proposed.",
+        "cs": "AI vrátila nepodporovanou akci ({action}), takže se žádný obchod nenavrhuje.",
+    },
+    "trade_model_symbol_not_allowed": {
+        "en": "The AI returned {symbol}, which is not among your allowed symbols.",
+        "cs": "AI vrátila {symbol}, který není mezi vašimi povolenými symboly.",
+    },
+    "trade_no_allowed_symbols": {
+        "en": "None of your allowed symbols appear in current market data.",
+        "cs": "Žádný z vašich povolených symbolů se v aktuálních tržních datech neobjevuje.",
+    },
+    "trade_open_position_guard": {
+        "en": "An existing live position is being monitored, so no new buy is proposed.",
+        "cs": "Sleduje se otevřená živá pozice, takže se nenavrhuje žádný nový nákup.",
+    },
+    "trade_open_position_guard_override": {
+        "en": "An existing live position is being monitored, so no new buy is proposed - manual overrides included.",
+        "cs": "Sleduje se otevřená živá pozice, takže se nenavrhuje žádný nový nákup - ani ruční přebití.",
+    },
+    "trade_override_not_allowed": {
+        "en": "Manual override requested {symbol}, which is not among your allowed symbols.",
+        "cs": "Ruční přebití požadovalo {symbol}, který není mezi vašimi povolenými symboly.",
+    },
+    "trade_override_requested": {
+        "en": "Manual override: you asked for a buy evaluation of {symbol} instead of accepting HOLD.",
+        "cs": "Ruční přebití: vyžádal jste vyhodnocení nákupu {symbol} místo přijetí HOLD.",
+    },
+    "trade_model_reason": {
+        "en": "The AI said: {reason}",
+        "cs": "AI uvedla: {reason}",
+    },
+    # --- The run's overall decision, shown as "Latest decision" ---
+    "decision_summary_grid": {
+        "en": "A Spot Grid setup looks suitable for current market conditions. Manual confirmation is required.",
+        "cs": "Nastavení Spot Gridu vypadá vhodně pro současné podmínky na trhu. Je potřeba ruční potvrzení.",
+    },
+    "decision_summary_spot_trade": {
+        "en": "No grid setup is recommended, but the spot trade proposal passed risk checks.",
+        "cs": "Nastavení gridu se nedoporučuje, ale návrh spotového obchodu prošel rizikovými kontrolami.",
+    },
+    "decision_summary_hold": {
+        "en": "No action is recommended. Risk or market filters rejected active strategies.",
+        "cs": "Nedoporučuje se žádná akce. Rizikové nebo tržní filtry zamítly aktivní strategie.",
+    },
     # --- Funding the Rebalancing Bot -------------------------------------
     "funding_convert": {
         "en": "Convert approximately {value} USDC-equivalent of {asset} to {quote}.",

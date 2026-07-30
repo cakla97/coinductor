@@ -85,7 +85,11 @@ class TradeProposal:
     quote_amount_usdt: Decimal
     stop_loss_pct: Decimal
     take_profit_pct: Decimal
+    # English rendering, derived from reason_message where there is one. The
+    # model's own prose has none, so it travels wrapped in trade_model_reason.
     reason: str
+    reason_message: Message | None = None
+    reason_part_messages: tuple[Message, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -254,10 +258,12 @@ class GridRecommendation:
 class StrategyDecision:
     decision_type: str
     priority: str
+    # English rendering, derived from summary_message at construction.
     summary: str
     spot_trade: TradeProposal | None
     grid: GridRecommendation | None
     rebalancing_note: str | None
+    summary_message: Message | None = None
 
 
 @dataclass(frozen=True)

@@ -187,12 +187,38 @@ def test_no_engine_prose_is_left_where_a_message_belongs() -> None:
     Each of these was converted because a finished English sentence cannot be
     re-localized; a new f-string in one of them would quietly restart that.
     """
-    converted = ("grid_advisor.py", "rebalancing_bot_advisor.py", "next_run.py",
-                 "recommended_actions.py")
+    # Modules whose text the desktop renders. Twice this list was short and a
+    # source nobody had looked at was writing English onto the first screen a
+    # user sees, so adding a module that reaches the UI means adding it here.
+    #
+    # This cannot prove completeness - only something that inspects the rendered
+    # screen could - but it does stop the converted modules regressing, which is
+    # how the last two gaps appeared.
+    converted = (
+        "grid_advisor.py",
+        "rebalancing_bot_advisor.py",
+        "next_run.py",
+        "recommended_actions.py",
+        "risk_engine.py",
+        "strategy_decision.py",
+        "active_strategies.py",
+        "ai_analyst.py",
+    )
+    # Deliberately absent: research.py, testnet_executor.py, trading_bankroll.py,
+    # storage.py and the rest write into the Markdown report only, which is
+    # English by design. If one of them ever feeds a card, it belongs above.
     # Why each funding source was picked. It appears in the Markdown report and
     # nowhere on screen - verified by grepping the desktop for it - so it stays
     # English with the rest of the report.
-    report_only = ("Reserve source is capped", "Small legacy/speculative holding")
+    report_only = (
+        "Reserve source is capped",
+        "Small legacy/speculative holding",
+        # ActiveStrategiesReport.summary feeds the report and the AI assistant's
+        # context. The screen's version is recomposed from counts in the
+        # controller, so this string is never rendered to a user.
+        "Active strategy tracking is disabled",
+        "No registered active",
+    )
     offenders = []
     for name in converted:
         for line in _source("trading_agent", name).splitlines():

@@ -2198,13 +2198,25 @@ ApplicationWindow {
                             anchors.fill: parent
                             anchors.margins: 18
                             Text { text: appController.appText.overview_ai_summary_title; color: textPrimary; font.pixelSize: 16; font.bold: true }
-                            Text {
+                            // The model decides how much it writes, so this
+                            // panel scrolls rather than spilling past its own
+                            // border. Selectable too: it is the one thing here
+                            // worth quoting back when a model misbehaves.
+                            ScrollView {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-                                text: appController.aiSummary
-                                color: textSecondary
-                                font.pixelSize: 13
-                                wrapMode: Text.WordWrap
+                                clip: true
+                                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                                TextEdit {
+                                    width: parent.width
+                                    text: appController.aiSummary
+                                    color: textSecondary
+                                    font.pixelSize: 13
+                                    wrapMode: TextEdit.Wrap
+                                    readOnly: true
+                                    selectByMouse: true
+                                    selectionColor: accent
+                                }
                             }
                         }
                     }

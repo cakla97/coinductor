@@ -93,7 +93,8 @@ def test_non_whitelisted_symbol_becomes_hold(monkeypatch) -> None:
 
     assert proposal.action == "HOLD"
     assert proposal.quote_amount_usdt == Decimal("0")
-    assert "non-whitelisted" in proposal.reason
+    assert "not among your allowed symbols" in proposal.reason
+    assert proposal.reason_message.key == "trade_model_symbol_not_allowed"
 
 
 def test_sell_action_becomes_hold(monkeypatch) -> None:
@@ -108,7 +109,8 @@ def test_sell_action_becomes_hold(monkeypatch) -> None:
     proposal = analyst.propose_trade(_snapshots(), decision_memory=_memory())
 
     assert proposal.action == "HOLD"
-    assert "unsupported action SELL" in proposal.reason
+    assert "unsupported action (SELL)" in proposal.reason
+    assert proposal.reason_message.key == "trade_model_unsupported_action"
 
 
 def test_small_memory_sample_is_withheld_from_trade_ranking() -> None:
@@ -144,7 +146,7 @@ def test_manual_override_refuses_a_symbol_outside_the_whitelist() -> None:
 
     assert proposal.action == "HOLD"
     assert proposal.quote_amount_usdt == Decimal("0")
-    assert "not in strategy.allowed_symbols" in proposal.reason
+    assert "not among your allowed symbols" in proposal.reason
 
 
 def test_manual_override_is_blocked_while_a_live_position_is_open() -> None:
@@ -179,7 +181,7 @@ def test_manual_override_is_blocked_while_a_live_position_is_open() -> None:
     proposal = analyst.propose_manual_override("ETHUSDC", _snapshots(), live_positions=live_positions)
 
     assert proposal.action == "HOLD"
-    assert "Open live position guard" in proposal.reason
+    assert "existing live position is being monitored" in proposal.reason
 
 
 def test_manual_override_proposal_still_fails_the_consensus_gate() -> None:

@@ -539,6 +539,9 @@ class Storage:
         self._ensure_column("recommended_actions", "reason_message", "text")
         self._ensure_column("recommended_actions", "reason_part_messages", "text")
         self._ensure_column("risk_decisions", "reason_message", "text")
+        self._ensure_column("ai_proposals", "reason_message", "text")
+        self._ensure_column("ai_proposals", "reason_part_messages", "text")
+        self._ensure_column("strategy_decisions", "summary_message", "text")
         self._ensure_column("rebalancing_bot_recommendations", "blocker_messages", "text")
         self._ensure_column("rebalancing_bot_recommendations", "summary_message", "text")
         self._ensure_column("active_grid_evaluations", "binance_bot_id", "text")
@@ -885,8 +888,22 @@ class Storage:
 
     def save_proposal(self, run_id: int, proposal: TradeProposal) -> None:
         self.connection.execute(
-            "insert into ai_proposals values (?, ?, ?, ?, ?, ?)",
-            (run_id, proposal.symbol, proposal.action, str(proposal.confidence), str(proposal.quote_amount_usdt), proposal.reason),
+            """
+            insert into ai_proposals
+                (run_id, symbol, action, confidence, quote_amount_usdt, reason,
+                 reason_message, reason_part_messages)
+            values (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                proposal.symbol,
+                proposal.action,
+                str(proposal.confidence),
+                str(proposal.quote_amount_usdt),
+                proposal.reason,
+                manual_steps_to_json((proposal.reason_message,) if proposal.reason_message else ()),
+                manual_steps_to_json(proposal.reason_part_messages),
+            ),
         )
         self.connection.commit()
 
@@ -1919,8 +1936,19 @@ class Storage:
 
     def save_strategy_decision(self, run_id: int, decision: StrategyDecision) -> None:
         self.connection.execute(
-            "insert into strategy_decisions values (?, ?, ?, ?, ?)",
-            (run_id, decision.decision_type, decision.priority, decision.summary, decision.rebalancing_note),
+            """
+            insert into strategy_decisions
+                (run_id, decision_type, priority, summary, rebalancing_note, summary_message)
+            values (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                decision.decision_type,
+                decision.priority,
+                decision.summary,
+                decision.rebalancing_note,
+                manual_steps_to_json((decision.summary_message,) if decision.summary_message else ()),
+            ),
         )
         self.connection.commit()
 

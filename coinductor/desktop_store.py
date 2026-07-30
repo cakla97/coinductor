@@ -44,6 +44,7 @@ class DesktopStore:
             earn_redeem: dict[str, object] | None = None
             recommended_actions: list[dict[str, object]] = []
             risk_reason_message: list[dict[str, object]] = []
+            decision_summary_message: list[dict[str, object]] = []
             has_ready_live_preview = False
             if latest is not None:
                 report_path = self._report_path(latest)
@@ -70,6 +71,7 @@ class DesktopStore:
                 earn_redeem = self._earn_redeem(connection, int(latest["id"]))
                 recommended_actions = self._recommended_actions(connection, int(latest["id"]))
                 risk_reason_message = self._risk_decision(connection, int(latest["id"]))
+                decision_summary_message = self._decision_summary(connection, int(latest["id"]))
             history = self._history(connection)
             return DesktopSnapshot(
                 latest_result,
@@ -85,6 +87,7 @@ class DesktopStore:
                 earn_redeem,
                 tuple(recommended_actions),
                 tuple(risk_reason_message),
+                tuple(decision_summary_message),
             )
         finally:
             connection.close()
@@ -129,9 +132,11 @@ class DesktopStore:
     def _trade_proposal(self, connection: sqlite3.Connection, run_id: int) -> dict[str, str] | None:
         if not self._table_exists(connection, "ai_proposals"):
             return None
+        proposal_columns = self._columns(connection, "ai_proposals")
         row = connection.execute(
-            """
-            select symbol, action, confidence, quote_amount_usdt, reason
+            f"""
+            select symbol, action, confidence, quote_amount_usdt, reason,
+                   {self._column_expr(proposal_columns, "reason_message")}, {self._column_expr(proposal_columns, "reason_part_messages")}
             from ai_proposals where run_id = ?
             """,
             (run_id,),
@@ -144,6 +149,8 @@ class DesktopStore:
             "confidence": str(row["confidence"] or ""),
             "quoteAmount": self._money(row["quote_amount_usdt"]),
             "reason": str(row["reason"] or ""),
+            "reasonMessage": self._manual_step_specs(row["reason_message"]),
+            "reasonParts": self._manual_step_specs(row["reason_part_messages"]),
         }
 
     def _strategies(self, connection: sqlite3.Connection, run_id: int) -> tuple[dict[str, object], ...]:
@@ -786,6 +793,20 @@ class DesktopStore:
 
     def _line_values(self, value: object) -> tuple[str, ...]:
         return tuple(part.strip() for part in str(value or "").splitlines() if part.strip())
+
+    def _decision_summary(self, connection: sqlite3.Connection, run_id: int) -> list[dict[str, object]]:
+        """The "Latest decision" sentence, unrendered."""
+        if not self._table_exists(connection, "strategy_decisions"):
+            return []
+        columns = self._columns(connection, "strategy_decisions")
+        row = connection.execute(
+            f"""
+            select {self._column_expr(columns, "summary_message")}
+            from strategy_decisions where run_id = ? order by rowid desc limit 1
+            """,
+            (run_id,),
+        ).fetchone()
+        return self._manual_step_specs(row["summary_message"]) if row is not None else []
 
     def _risk_decision(self, connection: sqlite3.Connection, run_id: int) -> list[dict[str, object]]:
         """The verdict behind the Risk gate tile, unrendered."""

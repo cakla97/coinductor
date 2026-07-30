@@ -3,6 +3,17 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.17] — 2026-07-30
+
+### Fixed
+
+- **The Deploy buttons burst out of their rows** in First portfolio deployment. A Material
+  button asks for 52 px and the row is 40, and a `RowLayout` will not shrink a child below
+  its implicit minimum, so each button overhung the bottom of its own rounded background.
+  Measured offscreen under the style the app actually uses — the default style gives 23 px
+  and hides the problem entirely. The row is the fixed thing, so the button is what gives.
+  A sweep of every fixed-height container in the QML found no second case.
+
 ## [0.1.16] — 2026-07-30
 
 ### Fixed

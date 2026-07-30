@@ -2500,6 +2500,15 @@ ApplicationWindow {
                                         font.pixelSize: 11
                                     }
                                     Button {
+                                        // A Material button asks for 52 px and
+                                        // this row is 40, so left to itself it
+                                        // burst out the bottom of its own
+                                        // rounded background. The row is the
+                                        // fixed thing here, so the button is
+                                        // what gives.
+                                        Layout.preferredHeight: 28
+                                        Layout.preferredWidth: 96
+                                        Layout.alignment: Qt.AlignVCenter
                                         text: appController.appText.first_portfolio_deploy_button
                                         enabled: !appController.busy
                                         onClicked: {

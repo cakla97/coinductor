@@ -155,6 +155,43 @@ def test_czech_is_not_silently_a_copy_of_the_english() -> None:
     assert copied == [], "Czech is a copy of the English for:\n  " + "\n  ".join(copied)
 
 
+def test_every_app_tour_step_resolves_to_text_in_both_languages() -> None:
+    """currentAppTourStep substitutes an empty string for a missing key.
+
+    Right at runtime - the overlay renders rather than crashing - and the reason
+    a typo would be invisible: the step simply appears blank. The steps used to
+    be English literals here, so there was no key to get wrong.
+    """
+    from coinductor.ui_strings import APP_STRINGS
+
+    steps = re.findall(r'"nav": "(\w+)", "key": "(\w+)"', _source("coinductor", "controller.py"))
+    assert len(steps) >= 9, f"the extraction pattern is stale: found {len(steps)}"
+
+    missing = [
+        f"{key}/{language}"
+        for nav, step in steps
+        for key in (nav, f"app_tour_{step}_title", f"app_tour_{step}_detail", f"app_tour_{step}_tip")
+        for language in LANGUAGES
+        if not APP_STRINGS.get(key, {}).get(language, "").strip()
+    ]
+    assert missing == [], f"app tour text missing: {missing}"
+
+
+def test_every_first_portfolio_plan_key_resolves() -> None:
+    """The planner falls back to English for an unknown key, silently."""
+    keys = set(re.findall(r'service_text\(\s*"(first_plan_\w+)"', _source("coinductor", "first_portfolio_planner.py")))
+    keys |= set(re.findall(r'"(first_plan_note_\w+)"', _source("coinductor", "first_portfolio_planner.py")))
+    assert keys, "the extraction pattern is stale"
+
+    missing = [
+        f"{key}/{language}"
+        for key in keys
+        for language in LANGUAGES
+        if not SERVICE_STRINGS.get(key, {}).get(language, "").strip()
+    ]
+    assert missing == [], f"first portfolio plan text missing: {missing}"
+
+
 def _engine_message_keys() -> set[str]:
     """Every key the engine can emit, read from the engine itself."""
     emitted: set[str] = set()

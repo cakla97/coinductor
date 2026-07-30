@@ -1794,6 +1794,117 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     "nav_ai_assistant": {"en": "AI Assistant", "cs": "AI asistent"},
     "nav_help_guides": {"en": "Help & Guides", "cs": "Nápověda a návody"},
     "nav_settings": {"en": "Settings", "cs": "Nastavení"},
+    # --- app tour ---
+    # One entry per step of the guided tour behind Settings > Replay app tour.
+    # The nav label of each step is reused from the nav_* keys above.
+    "app_tour_overview_title": {
+        "en": "Your portfolio at a glance",
+        "cs": "Portfolio na jednom místě",
+    },
+    "app_tour_overview_detail": {
+        "en": "Overview shows the latest portfolio totals, readiness state, safety stage, and the clearest next action.",
+        "cs": "Přehled ukazuje poslední součty portfolia, stav připravenosti, bezpečnostní stupeň a nejbližší jasnou akci.",
+    },
+    "app_tour_overview_tip": {
+        "en": "Start a normal read-only analysis here. It never submits an order by itself.",
+        "cs": "Tady spustíte běžnou analýzu, která jen čte. Sama nikdy nezadá příkaz.",
+    },
+    "app_tour_portfolio_title": {
+        "en": "Review how every asset may be used",
+        "cs": "Zkontrolujte, jak se smí s každým aktivem naložit",
+    },
+    "app_tour_portfolio_detail": {
+        "en": "Portfolio lists all detected holdings and their roles, including protected assets, funding sources, trading assets, and dust.",
+        "cs": "Portfolio vypisuje všechna nalezená aktiva a jejich role: chráněná aktiva, zdroje financování, obchodovaná aktiva a drobné zbytky.",
+    },
+    "app_tour_portfolio_tip": {
+        "en": "You can override a role, but Coinductor keeps deterministic risk and funding limits in force.",
+        "cs": "Roli můžete přepsat ručně, ale deterministické limity rizika a financování platí dál.",
+    },
+    "app_tour_live_actions_title": {
+        "en": "Safety before execution",
+        "cs": "Nejdřív zabezpečení, potom provedení",
+    },
+    "app_tour_live_actions_detail": {
+        "en": "Live Actions contains analysis controls, the staged safety lock, and the separate live API management workflow.",
+        "cs": "Živé akce obsahují ovládání analýzy, stupňovaný bezpečnostní zámek a samostatnou správu živého API klíče.",
+    },
+    "app_tour_live_actions_tip": {
+        "en": "Preview, Armed, and Live Enabled are local gates. Every real order still needs its own confirmation.",
+        "cs": "Náhled, Připraveno a Živě povoleno jsou místní pojistky. Každý skutečný příkaz stejně potřebuje vlastní potvrzení.",
+    },
+    "app_tour_action_plan_title": {
+        "en": "One place for every run result",
+        "cs": "Výsledek běhu na jednom místě",
+    },
+    "app_tour_action_plan_detail": {
+        "en": "After an analysis, Action Plan consolidates the trade decision, Spot Grid plan, Rebalancing plan, blockers, and next-review timing.",
+        "cs": "Po analýze sdruží Plán akcí rozhodnutí o obchodu, plán Spot Gridu, plán rebalancování, blokátory a termín další kontroly.",
+    },
+    "app_tour_action_plan_tip": {
+        "en": "A READY action can expose a guarded confirmation. HOLD, Watched, and Blocked remain review-only.",
+        "cs": "U akce ve stavu READY se může objevit zabezpečené potvrzení. HOLD, Sledováno a Blokováno zůstávají jen ke kontrole.",
+    },
+    "app_tour_active_strategies_title": {
+        "en": "Monitor Binance bots you created",
+        "cs": "Sledujte boty, které jste založili na Binance",
+    },
+    "app_tour_active_strategies_detail": {
+        "en": "Register the real parameters of an active Grid or Rebalancing Bot so future runs can evaluate its lifecycle and health.",
+        "cs": "Zaregistrujte skutečné parametry aktivního Grid nebo Rebalancing bota, aby další běhy mohly hodnotit jeho stav a průběh.",
+    },
+    "app_tour_active_strategies_tip": {
+        "en": "Coinductor currently guides bot creation in Binance; registration here does not create or modify the bot.",
+        "cs": "Coinductor vás zakládáním bota na Binance zatím jen provede. Registrace tady bota nevytvoří ani nezmění.",
+    },
+    "app_tour_run_history_title": {
+        "en": "Every past run stays on record",
+        "cs": "Každý proběhlý běh zůstává zaznamenaný",
+    },
+    "app_tour_run_history_detail": {
+        "en": "Run History lists the latest analytical runs with their data mode, status, and decision, so you can trace what happened and when.",
+        "cs": "Historie běhů vypisuje poslední analýzy s režimem dat, stavem a rozhodnutím, takže dohledáte co a kdy se stalo.",
+    },
+    "app_tour_run_history_tip": {
+        "en": "REAL runs read your live Binance account. MOCK runs use example data and never touch it.",
+        "cs": "Běhy REAL čtou váš skutečný účet na Binance. Běhy MOCK používají ukázková data a na účet vůbec nesáhnou.",
+    },
+    "app_tour_ai_assistant_title": {
+        "en": "Ask for explanations, not permission bypasses",
+        "cs": "Ptejte se na vysvětlení, ne na obejití pojistek",
+    },
+    "app_tour_ai_assistant_detail": {
+        "en": "The assistant can explain reports, portfolio roles, settings, and market context using your configured local or cloud provider.",
+        "cs": "Asistent umí vysvětlit reporty, role v portfoliu, nastavení a tržní souvislosti pomocí vašeho místního nebo cloudového modelu.",
+    },
+    "app_tour_ai_assistant_tip": {
+        "en": "AI commentary supports decisions but cannot override deterministic safety gates or submit an action on its own.",
+        "cs": "Hodnocení od AI je jen podpora rozhodování. Nemůže přebít deterministické pojistky ani samo něco odeslat.",
+    },
+    "app_tour_help_guides_title": {
+        "en": "Detailed help stays available",
+        "cs": "Podrobná nápověda je pořád po ruce",
+    },
+    "app_tour_help_guides_detail": {
+        "en": "Open the built-in guides whenever you need step-by-step help with Ollama, Binance APIs, safety, or portfolio roles.",
+        "cs": "Vestavěné návody otevřete, kdykoli potřebujete krok za krokem poradit s Ollamou, Binance API, zabezpečením nebo rolemi aktiv.",
+    },
+    "app_tour_help_guides_tip": {
+        "en": "You can replay this tour later from Settings.",
+        "cs": "Tuhle prohlídku si můžete kdykoli znovu pustit z Nastavení.",
+    },
+    "app_tour_settings_title": {
+        "en": "Configuration and system status live here",
+        "cs": "Nastavení a stav systému najdete tady",
+    },
+    "app_tour_settings_detail": {
+        "en": "Settings holds your Binance and AI connections, onboarding profile, privacy controls, and the detailed Safety stage state.",
+        "cs": "V Nastavení je připojení k Binance a k AI, profil z průvodce, ovládání soukromí a podrobný stav bezpečnostního stupně.",
+    },
+    "app_tour_settings_tip": {
+        "en": "Nothing here places an order. \"Delete local data\" is currently a preview only and is not executed.",
+        "cs": "Nic tady nezadá příkaz. \"Smazat lokální data\" je zatím jen náhled a neprovede se.",
+    },
 }
 
 

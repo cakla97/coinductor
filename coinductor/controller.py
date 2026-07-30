@@ -138,70 +138,20 @@ class AppController(QObject):
         self._user_profile_snapshot = self._user_profile_service.inspect()
         self._onboarding_wizard_visible = not self._user_profile_snapshot.configured
         self._app_tour_service = AppTourService()
+        # Page, the nav label to reuse, and the key its three texts live under.
+        # The text itself is in ui_strings so the tour switches language with
+        # everything else; it used to be English literals right here, which is
+        # why it stayed English in both.
         self._app_tour_steps: list[dict[str, object]] = [
-            {
-                "page": 0,
-                "navLabel": "Overview",
-                "title": "Your portfolio at a glance",
-                "detail": "Overview shows the latest portfolio totals, readiness state, safety stage, and the clearest next action.",
-                "tip": "Start a normal read-only analysis here. It never submits an order by itself.",
-            },
-            {
-                "page": 2,
-                "navLabel": "Portfolio",
-                "title": "Review how every asset may be used",
-                "detail": "Portfolio lists all detected holdings and their roles, including protected assets, funding sources, trading assets, and dust.",
-                "tip": "You can override a role, but Coinductor keeps deterministic risk and funding limits in force.",
-            },
-            {
-                "page": 1,
-                "navLabel": "Live Actions",
-                "title": "Safety before execution",
-                "detail": "Live Actions contains analysis controls, the staged safety lock, and the separate live API management workflow.",
-                "tip": "Preview, Armed, and Live Enabled are local gates. Every real order still needs its own confirmation.",
-            },
-            {
-                "page": 3,
-                "navLabel": "Action Plan",
-                "title": "One place for every run result",
-                "detail": "After an analysis, Action Plan consolidates the trade decision, Spot Grid plan, Rebalancing plan, blockers, and next-review timing.",
-                "tip": "A READY action can expose a guarded confirmation. HOLD, Watched, and Blocked remain review-only.",
-            },
-            {
-                "page": 4,
-                "navLabel": "Active Strategies",
-                "title": "Monitor Binance bots you created",
-                "detail": "Register the real parameters of an active Grid or Rebalancing Bot so future runs can evaluate its lifecycle and health.",
-                "tip": "Coinductor currently guides bot creation in Binance; registration here does not create or modify the bot.",
-            },
-            {
-                "page": 5,
-                "navLabel": "Run History",
-                "title": "Every past run stays on record",
-                "detail": "Run History lists the latest analytical runs with their data mode, status, and decision, so you can trace what happened and when.",
-                "tip": "REAL runs read your live Binance account. MOCK runs use example data and never touch it.",
-            },
-            {
-                "page": 6,
-                "navLabel": "AI Assistant",
-                "title": "Ask for explanations, not permission bypasses",
-                "detail": "The assistant can explain reports, portfolio roles, settings, and market context using your configured local or cloud provider.",
-                "tip": "AI commentary supports decisions but cannot override deterministic safety gates or submit an action on its own.",
-            },
-            {
-                "page": 7,
-                "navLabel": "Help & Guides",
-                "title": "Detailed help stays available",
-                "detail": "Open the built-in guides whenever you need step-by-step help with Ollama, Binance APIs, safety, or portfolio roles.",
-                "tip": "You can replay this tour later from Settings.",
-            },
-            {
-                "page": 8,
-                "navLabel": "Settings",
-                "title": "Configuration and system status live here",
-                "detail": "Settings holds your Binance and AI connections, onboarding profile, privacy controls, and the detailed Safety stage state.",
-                "tip": "Nothing here places an order. \"Delete local data\" is currently a preview only and is not executed.",
-            },
+            {"page": 0, "nav": "nav_overview", "key": "overview"},
+            {"page": 2, "nav": "nav_portfolio", "key": "portfolio"},
+            {"page": 1, "nav": "nav_live_actions", "key": "live_actions"},
+            {"page": 3, "nav": "nav_action_plan", "key": "action_plan"},
+            {"page": 4, "nav": "nav_active_strategies", "key": "active_strategies"},
+            {"page": 5, "nav": "nav_run_history", "key": "run_history"},
+            {"page": 6, "nav": "nav_ai_assistant", "key": "ai_assistant"},
+            {"page": 7, "nav": "nav_help_guides", "key": "help_guides"},
+            {"page": 8, "nav": "nav_settings", "key": "settings"},
         ]
         self._assistant_pending_action: dict[str, object] = {}
         self._assistant_origin_page = 0
@@ -227,7 +177,8 @@ class AppController(QObject):
         )
         self._first_portfolio_planner = FirstPortfolioPlanner()
         self._first_portfolio_plan = self._first_portfolio_planner.plan(
-            self._user_profile_service.current_profile("EXISTING_PORTFOLIO")
+            self._user_profile_service.current_profile("EXISTING_PORTFOLIO"),
+            self._wizard_language,
         )
         self._first_portfolio_deployment_progress: list[dict[str, object]] = self._load_first_portfolio_progress()
         self._guides = GuideService().list_guides(self._wizard_language)
@@ -618,6 +569,12 @@ class AppController(QObject):
         # _apply_idle_status_defaults above already re-localized the hardware
         # summary; only the signal was missing.
         self.localAiRecommendationChanged.emit()
+        # The tour composes its step when read, so it needs telling too.
+        self.appTourChanged.emit()
+        # The first-portfolio plan is built once and held, so unlike the tour it
+        # has to be rebuilt before its signal means anything.
+        self._refresh_first_portfolio_plan()
+        self.firstPortfolioPlanChanged.emit()
 
     @Property("QVariantMap", notify=assistantChanged)
     def assistantPendingAction(self) -> dict[str, object]:
@@ -665,7 +622,17 @@ class AppController(QObject):
 
     @Property("QVariantMap", notify=appTourChanged)
     def currentAppTourStep(self) -> dict[str, object]:
-        return dict(self._app_tour_steps[self._app_tour_step])
+        """Composed when read, so switching language redraws the overlay."""
+        step = self._app_tour_steps[self._app_tour_step]
+        text = UiStringsService().app_text(self._wizard_language)
+        key = step["key"]
+        return {
+            "page": step["page"],
+            "navLabel": text.get(str(step["nav"]), ""),
+            "title": text.get(f"app_tour_{key}_title", ""),
+            "detail": text.get(f"app_tour_{key}_detail", ""),
+            "tip": text.get(f"app_tour_{key}_tip", ""),
+        }
 
     @Property("QVariantList", notify=setupChanged)
     def setupChecks(self) -> list[dict[str, str]]:
@@ -3060,7 +3027,7 @@ class AppController(QObject):
     def _refresh_first_portfolio_plan(self) -> None:
         fallback = "FIRST_PORTFOLIO" if self._onboarding_path == "FIRST_PORTFOLIO" else "EXISTING_PORTFOLIO"
         self._first_portfolio_plan = self._first_portfolio_planner.plan(
-            self._user_profile_service.current_profile(fallback)
+            self._user_profile_service.current_profile(fallback), self._wizard_language
         )
 
     def _load_first_portfolio_progress(self) -> list[dict[str, object]]:

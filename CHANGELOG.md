@@ -3,6 +3,30 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.16] — 2026-07-30
+
+### Fixed
+
+- **The app tour was English in both languages.** Its nine steps were English literals in
+  the controller rather than entries in a translation table, so there was nothing to
+  switch to. Each step now reuses the navigation label it points at and takes its title,
+  detail and tip from `ui_strings`, composed when read so the overlay follows a language
+  change.
+- **The suggested first basket was English even on a Czech screen** — and for a subtler
+  reason than a missing translation. Its prose was keyed off `profile.locale`, which is a
+  regional fact, not a language: it decides that someone in Czechia deposits CZK. With
+  the default `en-US` profile a Czech reader got an English plan. Language and region are
+  now separate — money follows the locale, words follow the reader — and the labels,
+  short values and notes that bypassed the mechanism entirely have translations at last.
+- The Czech planner strings addressed the reader informally while everything beside them
+  used the formal form, and pointed at an English button name the Czech wizard does not
+  have.
+
+### Changed
+
+- Guard tests for both surfaces. A missing app tour key renders as a blank step and a
+  missing plan key silently falls back to English, so neither would have shown up.
+
 ## [0.1.15] — 2026-07-30
 
 ### Fixed

@@ -203,6 +203,54 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
             "nepoužívá. Hodnocení dostanete, když při spuštění zaškrtnete \"Vygenerovat shrnutí od AI\"."
         ),
     },
+    # --- first portfolio plan ---
+    # The planner's prose comes from the locale profile; these are the labels
+    # and short values that used to be English literals beside it.
+    "first_plan_role_core": {"en": "Core", "cs": "Základ"},
+    "first_plan_role_utility": {"en": "Utility", "cs": "Užitkové"},
+    "first_plan_role_growth": {"en": "Growth", "cs": "Růstové"},
+    "first_plan_share_of_converted": {
+        "en": "{pct}% of converted {funding}",
+        "cs": "{pct} % z převedených {funding}",
+    },
+    "first_plan_funding_deposit": {"en": "Deposit", "cs": "Vklad"},
+    "first_plan_funding_reserve": {"en": "Reserve", "cs": "Rezerva"},
+    "first_plan_funding_deployment": {"en": "Initial deployment", "cs": "První nasazení"},
+    "first_plan_step_fund": {"en": "Fund Binance", "cs": "Poslat peníze na Binance"},
+    "first_plan_step_buy": {"en": "Buy basket", "cs": "Nakoupit koš"},
+    "first_plan_step_earn": {"en": "Enable Earn", "cs": "Zapnout Earn"},
+    "first_plan_step_rhythm": {"en": "Review rhythm", "cs": "Rytmus kontrol"},
+    "first_plan_value_manual": {"en": "Manual", "cs": "Ručně"},
+    "first_plan_value_optional": {"en": "Optional", "cs": "Volitelné"},
+    "first_plan_value_later": {"en": "Later", "cs": "Později"},
+    "first_plan_value_manual_first": {"en": "Manual first", "cs": "Nejdřív ručně"},
+    "first_plan_step_earn_detail": {
+        "en": "Flexible Earn is fine for idle reserve, but keep enough liquid for planned actions.",
+        "cs": "Flexible Earn je pro nečinnou rezervu v pořádku, ale nechte si dost likvidních prostředků na plánované akce.",
+    },
+    "first_plan_step_rhythm_detail": {
+        "en": "Run Coinductor on this rhythm before enabling more active automation.",
+        "cs": "Než zapnete aktivnější automatizaci, spouštějte Coinductor v tomto rytmu.",
+    },
+    "first_plan_note_rebalancing": {"en": "Rebalancing", "cs": "Rebalancování"},
+    "first_plan_note_grid": {"en": "Grid", "cs": "Grid"},
+    "first_plan_note_execution": {"en": "Execution", "cs": "Provedení"},
+    "first_plan_note_rebalancing_ready": {
+        "en": "Rebalancing bot can be considered after at least 200 USDC is available for its basket.",
+        "cs": "Rebalancing bota zvažte, až bude pro jeho koš k dispozici alespoň 200 USDC.",
+    },
+    "first_plan_note_rebalancing_below_minimum": {
+        "en": "Rebalancing bot is below the usual 200 USDC minimum; start with manual basket review.",
+        "cs": "Na Rebalancing bota je to pod obvyklým minimem 200 USDC. Začněte ruční kontrolou koše.",
+    },
+    "first_plan_note_grid_disabled": {
+        "en": "Grid bot stays disabled for the first portfolio plan.",
+        "cs": "Grid bot zůstává pro plán prvního portfolia vypnutý.",
+    },
+    "first_plan_note_grid_later": {
+        "en": "Grid bot can be reviewed later, after the first portfolio has a stable tracked baseline.",
+        "cs": "Grid bota můžete zvážit později, až bude mít první portfolio stabilní sledovaný základ.",
+    },
     "ai_summary_other_language": {
         "en": "— These are the model's own words, written during that run in the language set at the time. Run the analysis again to get them in this one.",
         "cs": "— Tohle jsou vlastní slova modelu, napsaná při onom běhu v tehdy nastaveném jazyce. Spusťte analýzu znovu, ať je dostanete v tomto.",

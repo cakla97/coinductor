@@ -75,15 +75,18 @@ LOCALE_PROFILES: dict[str, LocaleProfile] = {
         funding_currency="USDC",
         default_starting_budget=10_000.0,
         fiat_to_funding_hint="Vlož CZK a provozní kapitál převeď do USDC.",
+        # Formal address throughout, and the wizard choice named as it appears
+        # on screen. These sat beside labels that address the reader as "vy",
+        # and referred to an English button that the Czech wizard does not have.
         translations={
-            "planner.unavailable": "Plán prvního portfolia je dostupný po výběru Build my first portfolio.",
-            "planner.summary": "Začni s {investment:.0f} {fiat}: nech {reserve:.0f} {fiat} jako rezervu a převeď přibližně {deployable:.0f} {fiat} do {funding} pro první koš.",
+            "planner.unavailable": "Plán prvního portfolia se zobrazí po výběru možnosti Vybudovat první portfolio.",
+            "planner.summary": "Začněte s {investment:.0f} {fiat}: nechte si {reserve:.0f} {fiat} jako rezervu a přibližně {deployable:.0f} {fiat} převeďte do {funding} na první koš.",
             "funding.deposit.detail": "Doporučená první částka před jakoukoliv automatizací.",
-            "funding.reserve.detail": "Tuhle část nech likvidní; nepoužívej ji pro boty ani obchody.",
-            "funding.deployment.detail": "Tento provozní kapitál převeď do {funding} a potom ho rozděl podle navrženého koše.",
-            "steps.fund.detail": "Vlož {fiat} a provozní kapitál převeď do {funding}.",
-            "steps.buy.detail": "Navržené assety nejdřív nakup ručně; Coinductor je zanalyzuje po připojení read-only API.",
-            "notes.execution.detail": "Tento plánovač nikdy nezadává objednávky; připravuje jen čitelný startovní plán.",
+            "funding.reserve.detail": "Tuhle část nechte likvidní; nepoužívejte ji pro boty ani obchody.",
+            "funding.deployment.detail": "Tento provozní kapitál převeďte do {funding} a potom ho rozdělte podle navrženého koše.",
+            "steps.fund.detail": "Vložte {fiat} a provozní kapitál převeďte do {funding}.",
+            "steps.buy.detail": "Navržená aktiva nejdřív nakupte ručně; Coinductor je zanalyzuje po připojení read-only API.",
+            "notes.execution.detail": "Tento plánovač nikdy nezadává příkazy; připravuje jen čitelný startovní plán.",
         },
     ),
     "pt-BR": LocaleProfile(

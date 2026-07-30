@@ -1,4 +1,4 @@
 """Periodic Binance trading agent MVP."""
 
-__version__ = "0.1.13"
+__version__ = "0.1.14"
 

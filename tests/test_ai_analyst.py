@@ -501,6 +501,20 @@ def test_product_names_are_pinned_so_the_model_cannot_translate_them() -> None:
     assert "untranslated" in instruction
 
 
+def test_the_recorded_language_is_normalised_to_what_the_desktop_compares() -> None:
+    """The desktop compares this against its own two-letter language code.
+
+    A raw config value would not match: "cs-CZ" against "cs" reads as a
+    mismatch on every run and would append the "written in another language"
+    note to a summary that is in the reader's language.
+    """
+    for configured, expected in (("cs", "cs"), ("cs-CZ", "cs"), ("CS", "cs"),
+                                 ("en", "en"), ("", "en"), ("de", "en")):
+        config = _config()
+        config["ai"]["response_language"] = configured
+        assert AiAnalyst(config)._response_language() == expected, configured
+
+
 def test_a_non_numeric_field_does_not_throw_the_whole_proposal_away() -> None:
     """Models return "high" where a number was asked for.
 

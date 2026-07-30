@@ -49,6 +49,9 @@ class DesktopRunResult:
     # tell "the model said nothing useful" from "you ran this without AI", and
     # showed the engine's English note for both.
     ai_enabled: bool = True
+    # Empty for a run recorded before the report carried it, and for a summary
+    # that is ours rather than the model's - both mean "nothing to explain".
+    ai_language: str = ""
 
 
 @dataclass(frozen=True)

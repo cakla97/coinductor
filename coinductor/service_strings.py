@@ -203,6 +203,10 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
             "nepoužívá. Hodnocení dostanete, když při spuštění zaškrtnete \"Vygenerovat shrnutí od AI\"."
         ),
     },
+    "ai_summary_other_language": {
+        "en": "— These are the model's own words, written during that run in the language set at the time. Run the analysis again to get them in this one.",
+        "cs": "— Tohle jsou vlastní slova modelu, napsaná při onom běhu v tehdy nastaveném jazyce. Spusťte analýzu znovu, ať je dostanete v tomto.",
+    },
     "ai_summary_empty": {
         "en": "The model was asked but returned nothing usable. The deterministic decisions above are unaffected.",
         "cs": "Model byl dotázán, ale nevrátil nic použitelného. Deterministických rozhodnutí výše se to nijak netýká.",

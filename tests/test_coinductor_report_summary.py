@@ -75,3 +75,32 @@ def test_a_run_without_ai_is_read_back_as_such(tmp_path) -> None:
     result = ReportSummaryReader().read(129, "OK", str(path))
 
     assert result.ai_enabled is False
+
+
+def test_the_language_the_model_wrote_in_is_read_back(tmp_path) -> None:
+    """Model prose cannot be translated later; it was written once.
+
+    A report from before this was recorded reads back as empty, which the
+    desktop treats as "nothing to explain" rather than guessing.
+    """
+    path = tmp_path / "report.md"
+    path.write_text(
+        """# Report
+
+## AI Commentary
+
+- Enabled: `True`
+- Language: `cs`
+- Summary: Nedostatek kapitálu.
+""",
+        encoding="utf-8",
+    )
+
+    assert ReportSummaryReader().read(130, "OK", str(path)).ai_language == "cs"
+
+    older = tmp_path / "older.md"
+    older.write_text(
+        "# Report\n\n## AI Commentary\n\n- Enabled: `True`\n- Summary: Guarded.\n",
+        encoding="utf-8",
+    )
+    assert ReportSummaryReader().read(131, "OK", str(older)).ai_language == ""

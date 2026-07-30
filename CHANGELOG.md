@@ -3,6 +3,18 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.14] — 2026-07-30
+
+### Fixed
+
+- **Switching to English left the AI summary in Czech**, under a heading reading "AI
+  summary", with nothing to say why. The model's prose is the one thing on that screen
+  that cannot be translated at the display boundary — it was written once, during the
+  run, in the language set at the time. The report now records which language that was,
+  and the panel adds a line saying so, with the one thing that fixes it: run the analysis
+  again. A run recorded before this says nothing rather than guessing which language its
+  stored prose is in.
+
 ## [0.1.13] — 2026-07-30
 
 ### Fixed

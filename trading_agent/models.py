@@ -479,6 +479,11 @@ class AiCommentary:
     watchlist: tuple[str, ...]
     raw_response: str
     rebalancing_assessment: str = ""
+    # The language the model was asked to write in. Its prose is the one thing
+    # here that cannot be translated at the display boundary, so a reader who
+    # switches language afterwards sees the old one and has no way to tell that
+    # from a bug. Recorded so the desktop can say which it is.
+    language: str = ""
 
 
 @dataclass(frozen=True)

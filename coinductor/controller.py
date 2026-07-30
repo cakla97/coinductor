@@ -90,6 +90,7 @@ class AppController(QObject):
         self._risk_state = "Not evaluated"
         self._ai_summary = ""
         self._ai_enabled = True
+        self._ai_language = ""
         self._report_path = ""
         self._actions: list[dict[str, str]] = []
         self._report_actions: tuple = ()
@@ -319,7 +320,16 @@ class AppController(QObject):
             return service_text("ai_summary_not_requested", self._wizard_language)
         if self.activeAiProviderKind == "NONE":
             return service_text("ai_summary_no_provider", self._wizard_language)
-        return self._ai_summary or service_text("ai_summary_empty", self._wizard_language)
+        if not self._ai_summary:
+            return service_text("ai_summary_empty", self._wizard_language)
+        # The model's own prose is the one thing on this screen that cannot be
+        # translated when the language changes - it was written once, during the
+        # run. Switching to English left a Czech paragraph under an English
+        # heading, which reads as a bug rather than as what it is.
+        if self._ai_language and self._ai_language != self._wizard_language:
+            note = service_text("ai_summary_other_language", self._wizard_language)
+            return f"{self._ai_summary}\n\n{note}"
+        return self._ai_summary
 
     @Property("QVariantList", notify=actionsChanged)
     def actions(self) -> list[dict[str, str]]:
@@ -2595,6 +2605,7 @@ class AppController(QObject):
         # riskState composes the localized form at read time.
         self._risk_state = "Approved" if result.risk_approved else result.risk_reason
         self._ai_enabled = result.ai_enabled
+        self._ai_language = result.ai_language
         self._ai_summary = result.ai_summary
         self._report_path = str(Path(result.report_path))
         # Kept so the list can be recomposed when the language changes; the

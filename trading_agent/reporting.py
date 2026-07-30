@@ -84,6 +84,7 @@ class Reporter:
                 "## AI Commentary",
                 "",
                 f"- Enabled: `{ai_commentary.enabled}`",
+                f"- Language: `{ai_commentary.language}`",
                 f"- Summary: {ai_commentary.summary}",
                 f"- Rebalancing assessment: {ai_commentary.rebalancing_assessment or 'Not provided.'}",
                 "",

@@ -117,6 +117,38 @@ def test_a_run_without_ai_says_so_instead_of_showing_the_engines_note(monkeypatc
     assert controller.aiSummary.startswith("This analysis ran without AI commentary")
 
 
+def test_a_summary_written_in_another_language_says_so(monkeypatch, tmp_path) -> None:
+    """The model's prose is the one thing here that cannot be re-translated.
+
+    It was written once, during the run. Switching to English left a Czech
+    paragraph under a heading reading "AI summary", with nothing to distinguish
+    that from a broken translation.
+    """
+    import coinductor.controller as controller_module
+
+    # A stored summary is the model's prose, so a provider was configured when
+    # the run happened; without one the earlier branch answers instead. Patched
+    # at the function rather than on the snapshot, which a language switch
+    # reloads.
+    monkeypatch.setattr(controller_module, "provider_kind", lambda _base_url: "LOCAL")
+
+    controller = _controller(monkeypatch, tmp_path)
+    controller._ai_summary = "Nedostatek kapitálu pro založení gridu."
+    controller._ai_language = "cs"
+
+    controller.setWizardLanguage("cs")
+    assert controller.aiSummary == "Nedostatek kapitálu pro založení gridu."
+
+    controller.setWizardLanguage("en")
+    assert controller.aiSummary.startswith("Nedostatek kapitálu pro založení gridu.")
+    assert "the model's own words" in controller.aiSummary
+
+    # A run recorded before the language was written down: say nothing rather
+    # than guess which language the stored prose is in.
+    controller._ai_language = ""
+    assert controller.aiSummary == "Nedostatek kapitálu pro založení gridu."
+
+
 def test_run_history_start_times_are_converted_to_local(tmp_path) -> None:
     """SQLite's `default current_timestamp` writes UTC with no offset.
 

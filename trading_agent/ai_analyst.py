@@ -401,8 +401,11 @@ class AiAnalyst:
                 watchlist=_string_list(data.get("watchlist")),
                 raw_response=content,
                 rebalancing_assessment=rebalancing_assessment,
+                language=self._response_language(),
             )
         except Exception as exc:
+            # No language recorded on failure: the summary here is ours, not the
+            # model's, so it translates like any other message.
             return AiCommentary(
                 enabled=True,
                 summary=commentary_failure_summary(exc),
@@ -410,6 +413,10 @@ class AiAnalyst:
                 watchlist=(),
                 raw_response="",
             )
+
+    def _response_language(self) -> str:
+        language = str(self.config.get("ai", {}).get("response_language", "")).strip().lower()
+        return "cs" if language.startswith("cs") else "en"
 
     def _language_instruction(self) -> str:
         """Ask the model for the reader's language.
@@ -426,8 +433,8 @@ class AiAnalyst:
         # Names the reader has to find written this way in Binance's interface,
         # or that the assessment validator matches on.
         keep = "Grid, Spot Grid, Rebalancing Bot, Binance, Earn, USDC, stop-loss, take-profit, RSI, EMA"
-        language = str(self.config.get("ai", {}).get("response_language", "")).strip().lower()
-        if language.startswith("cs"):
+        language = self._response_language()
+        if language == "cs":
             return (
                 "Write every human-readable value in Czech; keep the JSON keys in English. "
                 f"Leave these product names untranslated, exactly as written: {keep}."

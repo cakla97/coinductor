@@ -1,4 +1,4 @@
-; Inno Setup script for Coinductor.
+﻿; Inno Setup script for Coinductor.
 ; Wraps the PyInstaller onedir bundle (dist\Coinductor) into a per-user
 ; installer with a Start Menu shortcut and an uninstaller.
 ;
@@ -11,7 +11,7 @@
 ; code-signing certificate is added (out of scope for this step).
 
 #define AppName "Coinductor"
-#define AppVersion "0.1.17"
+#define AppVersion "0.1.18"
 #define AppPublisher "Coinductor"
 #define AppExeName "Coinductor.exe"
 

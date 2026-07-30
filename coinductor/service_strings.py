@@ -203,6 +203,29 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
             "nepoužívá. Hodnocení dostanete, když při spuštění zaškrtnete \"Vygenerovat shrnutí od AI\"."
         ),
     },
+    # --- first portfolio tranches ---
+    "tranche_on_testnet": {"en": "on Testnet", "cs": "na Testnetu"},
+    "tranche_on_mainnet": {"en": "on Mainnet", "cs": "na Mainnetu"},
+    "tranche_subject": {
+        "en": "Tranche {index}/{total} for {asset} {where}",
+        "cs": "Tranše {index}/{total} pro {asset} {where}",
+    },
+    "tranche_validated": {
+        "en": "{subject} passed every check. Nothing was sent - type the confirmation phrase and press Submit to place it.",
+        "cs": "{subject} prošla všemi kontrolami. Nic se neodeslalo - pro zadání vypište potvrzovací frázi a stiskněte Odeslat.",
+    },
+    "tranche_submitted": {
+        "en": "{subject} was submitted for {amount}.",
+        "cs": "{subject} byla odeslána za {amount}.",
+    },
+    "tranche_already_done": {
+        "en": "{subject} is already done. Nothing was sent twice.",
+        "cs": "{subject} už proběhla. Nic se neodeslalo podruhé.",
+    },
+    "tranche_not_sent": {
+        "en": "{subject} was not sent: {reason}",
+        "cs": "{subject} se neodeslala: {reason}",
+    },
     # --- first portfolio plan ---
     # The planner's prose comes from the locale profile; these are the labels
     # and short values that used to be English literals beside it.

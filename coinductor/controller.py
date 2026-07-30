@@ -1929,7 +1929,34 @@ class AppController(QObject):
     def _on_first_portfolio_tranche_completed(self, result) -> None:
         self._first_portfolio_deployment_progress = self._load_first_portfolio_progress()
         self.firstPortfolioDeploymentChanged.emit()
-        self.notificationRequested.emit(result.message or result.validation_summary or result.status)
+        self.notificationRequested.emit(self._first_portfolio_toast(result))
+
+    def _first_portfolio_toast(self, result) -> str:
+        """Say what happened, in the reader's language.
+
+        The engine's own wording went straight to the toast, so the one message
+        a user actually reads here arrived in English - and for a validate-only
+        run it was the submit gate's complaint about an empty confirmation.
+        """
+        language = self._wizard_language
+        where = service_text(
+            "tranche_on_testnet" if result.mode == "TESTNET" else "tranche_on_mainnet", language
+        )
+        subject = service_text("tranche_subject", language).format(
+            index=result.tranche_index, total=result.tranches_total, asset=result.asset, where=where
+        )
+        if result.status == "VALIDATED":
+            return service_text("tranche_validated", language).format(subject=subject)
+        if result.status == "ALREADY_DONE":
+            return service_text("tranche_already_done", language).format(subject=subject)
+        if result.submitted:
+            return service_text("tranche_submitted", language).format(
+                subject=subject, amount=result.quote_amount
+            )
+        # Blocked or skipped: the engine's reason is the useful part and is
+        # technical by nature, so it is kept verbatim behind a localized lead.
+        reason = result.message or result.validation_summary or result.status
+        return service_text("tranche_not_sent", language).format(subject=subject, reason=reason)
 
     @Slot(str)
     def _on_first_portfolio_tranche_failed(self, message: str) -> None:

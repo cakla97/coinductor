@@ -181,7 +181,26 @@ class FirstPortfolioExecutor:
             quote_amount_usdt=validation.adjusted_quote_amount_usdt,
             client_order_id=f"bta-fp-{intent_id}",
         )
-        result = executor.submit(request, confirm if submit else "")
+        if not submit:
+            # Do not ask submit() what it thinks of an empty confirmation. It
+            # answers "Confirmation string did not match CONFIRM_TESTNET_ORDER",
+            # which is true and completely misleading here: nobody asked it to
+            # submit. Validate-only reported itself as a failed confirmation,
+            # and read as if the tranche could never be sent.
+            return FirstPortfolioTrancheResult(
+                intent_id=intent_id,
+                mode="TESTNET",
+                asset=asset,
+                symbol=proposal.symbol,
+                tranche_index=tranche_index,
+                tranches_total=tranches_total,
+                quote_amount=proposal.quote_amount_usdt,
+                status="VALIDATED",
+                validation_summary=validation.reason,
+                confirmation_required="CONFIRM_TESTNET_ORDER",
+                submitted=False,
+            )
+        result = executor.submit(request, confirm)
         order = executor._executed_order_from_result(intent_id, request, result, validation.reason)
         return FirstPortfolioTrancheResult(
             intent_id=intent_id,

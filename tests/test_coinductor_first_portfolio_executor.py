@@ -30,6 +30,10 @@ max_trades_per_day = 10
 max_daily_loss_pct = 5
 max_weekly_loss_pct = 10
 min_ai_confidence = 0.5
+# Without this the default is 0, and "0 consecutive losses >= 0" arms the kill
+# switch on a clean slate. That default is deliberate - the gate fails closed -
+# so the config is what has to say otherwise.
+max_consecutive_losses = 2
 
 [consensus]
 enabled = true
@@ -199,3 +203,89 @@ def _kill_switch_state():
         kill_switch_active=True,
         summary="kill switch triggered by consecutive losses",
     )
+
+
+def _testnet_rules():
+    from trading_agent.models import SymbolRules
+
+    return SymbolRules(
+        symbol="BNBUSDT",
+        status="TRADING",
+        base_asset="BNB",
+        quote_asset="USDT",
+        quote_order_qty_market_allowed=True,
+        min_qty=Decimal("0.001"),
+        max_qty=Decimal("1000"),
+        step_size=Decimal("0.001"),
+        min_notional=Decimal("5"),
+        tick_size=Decimal("0.01"),
+    )
+
+
+def test_validate_only_never_asks_the_submit_gate_about_an_empty_confirmation(tmp_path, monkeypatch) -> None:
+    """Validate-only used to report itself as a failed confirmation.
+
+    It called submit() with an empty string and passed the answer along:
+    "Confirmation string did not match CONFIRM_TESTNET_ORDER". True, and
+    completely misleading - nobody had asked it to submit - and it read as if
+    the tranche could never be sent at all.
+    """
+    monkeypatch.chdir(tmp_path)
+    _write_config(tmp_path)
+    executor = _executor(tmp_path)
+
+    from trading_agent.models import OrderValidation
+    from trading_agent.testnet_executor import TestnetExecutor
+
+    monkeypatch.setattr(BinanceClient, "get_symbol_rules", lambda self, symbol: _testnet_rules())
+    monkeypatch.setattr(
+        TestnetExecutor,
+        "validate_market_buy",
+        lambda self, symbol, amount, rules, require_whitelist=True: OrderValidation(
+            True, "BNBUSDT filters passed.", amount
+        ),
+    )
+
+    def refuse(self, request, confirm):
+        raise AssertionError("submit() must not be consulted when submit=False")
+
+    monkeypatch.setattr(TestnetExecutor, "submit", refuse)
+
+    result = executor.run_tranche("BNB", Decimal("10"), Decimal("500"), 1, 4, mode="TESTNET", submit=False)
+
+    assert result.status == "VALIDATED"
+    assert result.submitted is False
+    assert "did not match" not in (result.message or "")
+    assert result.validation_summary == "BNBUSDT filters passed."
+
+
+def test_a_correct_confirmation_reaches_the_submit_gate_unchanged(tmp_path, monkeypatch) -> None:
+    """The other half: what the user types must arrive verbatim."""
+    monkeypatch.chdir(tmp_path)
+    _write_config(tmp_path)
+    executor = _executor(tmp_path)
+
+    from trading_agent.models import OrderValidation, TestnetOrderResult
+    from trading_agent.testnet_executor import TestnetExecutor
+
+    seen: dict[str, str] = {}
+
+    monkeypatch.setattr(BinanceClient, "get_symbol_rules", lambda self, symbol: _testnet_rules())
+    monkeypatch.setattr(
+        TestnetExecutor,
+        "validate_market_buy",
+        lambda self, symbol, amount, rules, require_whitelist=True: OrderValidation(True, "ok", amount),
+    )
+
+    def capture(self, request, confirm):
+        seen["confirm"] = confirm
+        return TestnetOrderResult(submitted=True, status="SUBMITTED", message="", response="{}")
+
+    monkeypatch.setattr(TestnetExecutor, "submit", capture)
+
+    executor.run_tranche(
+        "BNB", Decimal("10"), Decimal("500"), 1, 4,
+        mode="TESTNET", submit=True, confirm="CONFIRM_TESTNET_ORDER",
+    )
+
+    assert seen["confirm"] == "CONFIRM_TESTNET_ORDER"

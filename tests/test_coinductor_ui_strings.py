@@ -45,11 +45,18 @@ def test_app_text_deploy_tranche_title_supports_placeholder_substitution() -> No
     assert rendered == "Nasadit tranši BTC"
 
 
-def test_app_text_submit_for_real_keeps_confirmation_token_intact() -> None:
-    text = UiStringsService().app_text("cs")
-    rendered = text["submit_for_real_template"].replace("{token}", "CONFIRM_MAINNET_ORDER")
+def test_the_confirmation_phrase_is_shown_to_be_copied_not_retyped() -> None:
+    """The phrase used to be interpolated into this sentence and retyped by eye.
 
-    assert "CONFIRM_MAINNET_ORDER" in rendered
+    It now sits beside the instruction as a copyable value, so the sentence
+    itself must not carry a token placeholder - a translation that kept one
+    would put the phrase back inside prose where it cannot be clicked.
+    """
+    for language in ("en", "cs"):
+        prefix = UiStringsService().app_text(language)["submit_for_real_prefix"]
+        assert prefix.strip(), f"no {language} text"
+        assert "{token}" not in prefix
+        assert "CONFIRM_" not in prefix
 
 
 def test_app_text_translates_sidebar_navigation_labels() -> None:

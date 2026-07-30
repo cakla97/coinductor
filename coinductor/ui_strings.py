@@ -1681,9 +1681,15 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Validate only",
         "cs": "Pouze validovat",
     },
-    "submit_for_real_template": {
-        "en": "To submit for real, type {token} exactly.",
-        "cs": "Pro skutečné odeslání napište přesně {token}.",
+    # The phrase is shown beside this line to be copied, rather than embedded
+    # in it and retyped by hand - which is what the wording used to ask for.
+    "submit_for_real_prefix": {
+        "en": "To submit for real, copy this phrase into the field below:",
+        "cs": "Pro skutečné odeslání zkopírujte tuhle frázi do pole níže:",
+    },
+    "copy_button": {
+        "en": "Copy",
+        "cs": "Kopírovat",
     },
     "submit_tranche_button": {
         "en": "Submit tranche",

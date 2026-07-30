@@ -140,7 +140,10 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "selectByMouse: true" in qml
     # Values are elided, so copying is a click; drag-selection is impossible.
     assert "component CopyableValue: Text {" in qml
-    assert qml.count("CopyableValue {") == 5
+    # A lower bound, not an exact count: every one of these was added because a
+    # value had to be retyped by eye, and the next one should not have to edit
+    # this number. The confirmation phrase was the sixth.
+    assert qml.count("CopyableValue {") >= 6
     assert 'modelData.value || "-"' not in qml, "a value that cannot be copied"
     assert "appController.copyValue(copyableValue.value)" in qml
     assert "strategyRegistrationDialog.open()" in qml
@@ -275,7 +278,10 @@ def test_main_qml_contains_separate_guarded_trade_and_oco_confirmations() -> Non
     assert "appController.appText.confirm_oco_warning" in qml
     assert "appController.appText.confirm_earn_redeem_warning" in qml
     assert "appController.appText.deploy_tranche_dialog_title_template.replace" in qml
-    assert "appController.appText.submit_for_real_template.replace" in qml
+    # The phrase is shown beside the instruction to be copied, not embedded in
+    # it to be retyped, so the sentence no longer interpolates the token.
+    assert "appController.appText.submit_for_real_prefix" in qml
+    assert "appController.copyValue(firstPortfolioDeployDialog.expectedConfirm)" in qml
     assert "appController.appText.mainnet_submit_warning" in qml
     assert "appController.appText.guide_footer_note" in qml
     assert "appController.appText.reset_onboarding_profile_note1" in qml

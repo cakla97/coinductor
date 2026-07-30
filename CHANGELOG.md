@@ -3,6 +3,24 @@
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
 and is pre-1.0: minor versions may still change behaviour.
 
+## [0.1.18] — 2026-07-30
+
+### Fixed
+
+- **"Validate only" reported itself as a failed confirmation.** It called the submit gate
+  with an empty confirmation string and passed the answer straight to the toast:
+  *"Confirmation string did not match CONFIRM_TESTNET_ORDER."* True, and completely
+  misleading — nobody had asked it to submit — and it read as if the tranche could never
+  be sent at all. Validate-only now stops before the gate and says what it actually did.
+- **The tranche toast was English**, on the one screen where the message is the whole
+  feedback. It is composed in the reader's language now, saying which tranche, which
+  asset, and whether anything was sent. A blocked tranche keeps the engine's reason
+  verbatim behind a translated lead, because that part is technical by nature.
+- **The confirmation phrase could not be copied.** It has to be reproduced exactly, so it
+  was the last thing that should have needed retyping from a label. It sits beside the
+  instruction now as a copyable value with a Copy button, like every other value that has
+  to be carried somewhere by hand.
+
 ## [0.1.17] — 2026-07-30
 
 ### Fixed

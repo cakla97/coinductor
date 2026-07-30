@@ -5707,9 +5707,29 @@ ApplicationWindow {
             }
             Text {
                 Layout.fillWidth: true
-                text: appController.appText.submit_for_real_template.replace("{token}", firstPortfolioDeployDialog.expectedConfirm)
+                text: appController.appText.submit_for_real_prefix
                 color: textSecondary
                 font.pixelSize: 12
+                wrapMode: Text.WordWrap
+            }
+            // The phrase has to be reproduced exactly, so it is the last thing
+            // that should have to be retyped from a label.
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+                CopyableValue {
+                    value: firstPortfolioDeployDialog.expectedConfirm
+                    font.pixelSize: 13
+                    font.bold: true
+                    font.family: "Consolas"
+                }
+                Button {
+                    Layout.preferredHeight: 28
+                    Layout.preferredWidth: 110
+                    text: appController.appText.copy_button
+                    onClicked: appController.copyValue(firstPortfolioDeployDialog.expectedConfirm)
+                }
+                Item { Layout.fillWidth: true }
             }
             TextField {
                 id: firstPortfolioConfirmInput

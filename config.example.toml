@@ -272,3 +272,15 @@ full_exit_assets = []
 reserve_source_assets = []
 max_source_pct_per_reserve_asset = 15.0
 min_remaining_value_usdt = 50.0
+
+[automation]
+# Coinductor may start an analysis on its own. It never submits an order:
+# an automatic run is the same read-only analysis the Run analysis button does.
+enabled = false
+# How often, in hours. The app must be running for this to fire; see the
+# scheduled task in Settings for runs while it is closed.
+interval_hours = 24
+# What an automatic run includes. Both default to off: unattended runs should
+# ask for as little as possible, and the AI summary needs a configured model.
+ai_summary = false
+live_preview = false

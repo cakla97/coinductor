@@ -119,6 +119,8 @@ _LITERAL_TERMS = {
     "BINANCE", "AI", "Binance API",
     # A network name beside its currency ticker: both halves are literal.
     "Testnet (USDT)",
+    # The product name and a placeholder. There is no word here to translate.
+    "Coinductor: {decision}",
 }
 
 

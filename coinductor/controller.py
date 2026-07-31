@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
 
-from PySide6.QtCore import QObject, Property, QThread, QUrl, Signal, Slot
+from PySide6.QtCore import QObject, Property, QThread, QTimer, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication, QImageReader
 
 from trading_agent.config import default_config_path, load_config
@@ -20,6 +20,12 @@ from .desktop_store import DesktopStore
 from .first_portfolio_planner import FirstPortfolioPlanner
 from .diagnostics_service import DiagnosticsService
 from .guide_service import GuideService
+from .automation import (
+    MAX_INTERVAL_HOURS,
+    MIN_INTERVAL_HOURS,
+    apply_automation_to_config,
+    read_automation,
+)
 from .local_data_reset import LocalDataResetService
 from .order_caps import (
     apply_order_caps_to_config,
@@ -84,6 +90,11 @@ class AppController(QObject):
     localDataResetChanged = Signal()
     firstPortfolioDeploymentChanged = Signal()
     orderCapsChanged = Signal()
+    automationChanged = Signal()
+    # Carried to the tray icon, which lives in desktop.py because it must
+    # outlive the window: the whole point is a run finishing while nobody is
+    # looking at one.
+    trayMessageRequested = Signal(str, str)
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
@@ -122,6 +133,11 @@ class AppController(QObject):
         self._challenged_symbol = ""
         self._challenge_outcome = ""
         self._pending_result_page = 3
+        self._pending_run_was_automatic = False
+        # Single-shot is wrong here: the schedule repeats. Started only if the
+        # saved settings say so, which they never do on a fresh install.
+        self._automation_timer = QTimer(self)
+        self._automation_timer.timeout.connect(self.runAutomaticAnalysis)
         self._pending_completion_message = "toast_analysis_done"
         self._pending_data_mode = "REAL"
         self._onboarding_path = ""
@@ -221,6 +237,9 @@ class AppController(QObject):
         self._wizard_assistant_thread: QThread | None = None
         self._wizard_assistant_worker: AssistantWorker | None = None
         self._apply_snapshot()
+        # Last, so a saved schedule cannot fire against a half-built controller.
+        # On a fresh install this stops the timer that was never started.
+        self._apply_automation_timer()
 
     @Property(bool, notify=busyChanged)
     def busy(self) -> bool:
@@ -1948,6 +1967,74 @@ class AppController(QObject):
         self.firstPortfolioDeploymentChanged.emit()
         self.notificationRequested.emit(self._first_portfolio_toast(result))
 
+    @Property("QVariantMap", notify=automationChanged)
+    def automation(self) -> dict[str, object]:
+        """Composed when read; the config is the source of truth, not a cache."""
+        settings = read_automation(default_config_path())
+        return {
+            "enabled": settings.enabled,
+            "intervalHours": settings.interval_hours,
+            "aiSummary": settings.ai_summary,
+            "livePreview": settings.live_preview,
+            "minHours": MIN_INTERVAL_HOURS,
+            "maxHours": MAX_INTERVAL_HOURS,
+        }
+
+    @Slot(bool, str, bool, bool)
+    def saveAutomation(self, enabled: bool, interval_hours: str, ai_summary: bool, live_preview: bool) -> None:
+        language = self._wizard_language
+        changed = apply_automation_to_config(
+            default_config_path(),
+            enabled=enabled,
+            interval_hours=interval_hours,
+            ai_summary=ai_summary,
+            live_preview=live_preview,
+        )
+        self._apply_automation_timer()
+        self.automationChanged.emit()
+        if not changed:
+            self.notificationRequested.emit(service_text("automation_unchanged", language))
+            return
+        key = "automation_saved_on" if enabled else "automation_saved_off"
+        self.notificationRequested.emit(
+            service_text(key, language).format(hours=read_automation(default_config_path()).interval_hours)
+        )
+
+    def _apply_automation_timer(self) -> None:
+        """Start, restart or stop the timer to match the saved settings."""
+        settings = read_automation(default_config_path())
+        if not settings.enabled:
+            self._automation_timer.stop()
+            return
+        # setInterval on a running timer restarts it, which is what a changed
+        # interval should do - otherwise the new value only takes effect after
+        # the old one has elapsed once more.
+        self._automation_timer.setInterval(settings.interval_seconds * 1000)
+        self._automation_timer.start()
+
+    @Slot()
+    def runAutomaticAnalysis(self) -> None:
+        """One scheduled run. Read-only, and silently skipped when unsafe.
+
+        Never submits: no confirmation string reaches it, and RuntimeFlags fail
+        closed without one. Skipped rather than queued when something is already
+        running, because a backlog of analyses helps nobody.
+        """
+        if self._busy:
+            return
+        settings = read_automation(default_config_path())
+        if not settings.enabled:
+            return
+        self._pending_run_was_automatic = True
+        self._start_analysis(
+            "REAL",
+            settings.ai_summary,
+            False,
+            settings.live_preview,
+            result_page=-1,
+            completion_message="toast_automatic_analysis_done",
+        )
+
     @Property("QVariantMap", notify=orderCapsChanged)
     def orderCaps(self) -> dict[str, object]:
         """Composed when read: the config is the source of truth, not a cache."""
@@ -2400,8 +2487,34 @@ class AppController(QObject):
         self.dataChanged.emit()
         self.stateChanged.emit()
         self.readinessChanged.emit()
-        self.setCurrentPage(self._pending_result_page)
+        # A negative page means "leave the user where they are". An automatic
+        # run must not yank the window to the Action Plan under someone's hands.
+        if self._pending_result_page >= 0:
+            self.setCurrentPage(self._pending_result_page)
         self.notificationRequested.emit(message)
+        if self._pending_run_was_automatic:
+            self._pending_run_was_automatic = False
+            title, body = self._tray_summary(result)
+            self.trayMessageRequested.emit(title, body)
+
+    def _tray_summary(self, result) -> tuple[str, str]:
+        """Title and one line for the desktop notification.
+
+        Deliberately short. A toast is read in the corner of an eye, so it
+        carries the verdict and the single action worth opening the app for -
+        not the summary, which needs the screen it was written for.
+        """
+        language = self._wizard_language
+        title = service_text("tray_run_finished", language).format(
+            decision=self._decision_label(result.decision)
+        )
+        actions = self._localized_actions(tuple(result.actions))
+        if actions:
+            first = actions[0]
+            body = f"{first.get('priority', '')} {first.get('action', '')}".strip()
+        else:
+            body = service_text("tray_no_action", language)
+        return title, body
 
     @Slot(str)
     def _on_failed(self, message: str) -> None:

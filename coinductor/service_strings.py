@@ -32,6 +32,31 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     },
     # Completion toasts. Keyed rather than passed as sentences so they are not
     # the last English text left on a translated screen.
+    # --- automation ---
+    "toast_automatic_analysis_done": {
+        "en": "Scheduled analysis complete. Review the Action Plan.",
+        "cs": "Naplánovaná analýza dokončena. Zkontrolujte Plán akcí.",
+    },
+    "tray_run_finished": {
+        "en": "Coinductor: {decision}",
+        "cs": "Coinductor: {decision}",
+    },
+    "tray_no_action": {
+        "en": "Nothing to do right now.",
+        "cs": "Teď není co dělat.",
+    },
+    "automation_saved_on": {
+        "en": "Scheduled analysis is on, every {hours} h while Coinductor is open.",
+        "cs": "Naplánovaná analýza je zapnutá, každých {hours} h, dokud je Coinductor spuštěný.",
+    },
+    "automation_saved_off": {
+        "en": "Scheduled analysis is off. Run analysis works as before.",
+        "cs": "Naplánovaná analýza je vypnutá. Spustit analýzu funguje jako dřív.",
+    },
+    "automation_unchanged": {
+        "en": "Nothing changed - that is already the schedule in force.",
+        "cs": "Nic se nezměnilo - tenhle rozvrh už platí.",
+    },
     "toast_analysis_done": {
         "en": "Analysis complete. Review the Action Plan.",
         "cs": "Analýza dokončena. Zkontrolujte Action Plan.",

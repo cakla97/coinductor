@@ -1,6 +1,22 @@
 # Proposal: unattended analysis, notifications, and the limits of automation
 
-Status: **draft for discussion**. Nothing here is built.
+Status: **accepted, in progress**. Decisions taken on the draft are recorded under
+"Agreed" below; the rest of the document is the reasoning they were taken from.
+
+## Agreed
+
+- **Manual analysis is untouched.** Automation is an additional way to start a run, never
+  a replacement. The Run analysis dialog keeps working exactly as it does today, including
+  for someone who never turns automation on.
+- **The schedule is the user's.** They pick when it runs, not just a cadence inherited
+  from the onboarding profile.
+- **The listing watcher records and notifies, and offers a Trade button** so someone who
+  has looked into a coin can act on it — through the ordinary guarded flow, with the
+  ordinary funding check. It never buys by itself.
+- **Listing records are capped**, like every other table subject to retention.
+- **Pre-authorised submission is worth attempting**, on the condition that it is proven by
+  tests before it is offered. If it cannot be made safe, it does not ship and Parts A, B
+  and D are still worth having on their own.
 
 Coinductor today is entirely pull-based. A person opens the app, presses *Run analysis*,
 reads the Action Plan, and types a confirmation if they want anything to happen. That is

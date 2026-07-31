@@ -13,6 +13,18 @@ ApplicationWindow {
     visible: true
     title: "Coinductor"
     color: "#0f1318"
+
+    // With a schedule running, closing the window hides it rather than ending
+    // the process - otherwise the schedule stops the moment you close the
+    // window, which is not a schedule. Without one, closing exits as it always
+    // has: an app that keeps running unannounced, holding exchange
+    // credentials, is not a surprise anyone should get.
+    onClosing: function(close) {
+        if (appController.keepRunningInTray) {
+            close.accepted = false
+            window.hide()
+        }
+    }
     Material.theme: Material.Dark
     Material.primary: "#36c98f"
     Material.accent: "#36c98f"
@@ -3827,6 +3839,89 @@ ApplicationWindow {
                         onClicked: appController.setWizardLanguage("cs")
                     }
                     Item { Layout.fillWidth: true }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: automationContent.implicitHeight + 32
+                    radius: radiusMd
+                    color: panel
+                    border.color: appController.automation.enabled ? accent : border
+                    ColumnLayout {
+                        id: automationContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 8
+                        Text {
+                            text: appController.appText.automation_title
+                            color: textPrimary
+                            font.pixelSize: 16
+                            font.bold: true
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.automation_description
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                        CheckBox {
+                            id: automationEnabled
+                            text: appController.appText.automation_enable_checkbox
+                            checked: appController.automation.enabled
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            Text {
+                                text: appController.appText.automation_interval_label
+                                color: textSecondary
+                                font.pixelSize: 12
+                            }
+                            SpinBox {
+                                id: automationInterval
+                                from: appController.automation.minHours
+                                to: appController.automation.maxHours
+                                value: appController.automation.intervalHours
+                                editable: true
+                            }
+                            CheckBox {
+                                id: automationAi
+                                text: appController.appText.automation_ai_checkbox
+                                // Same rule as the run dialog: without a model
+                                // there is nothing to ask.
+                                enabled: appController.activeAiProviderKind !== "NONE"
+                                checked: appController.automation.aiSummary
+                                        && appController.activeAiProviderKind !== "NONE"
+                            }
+                            CheckBox {
+                                id: automationPreview
+                                text: appController.appText.automation_preview_checkbox
+                                enabled: appController.safetyAllowsLivePreview
+                                checked: appController.automation.livePreview
+                                        && appController.safetyAllowsLivePreview
+                            }
+                            Button {
+                                text: appController.appText.automation_save_button
+                                onClicked: appController.saveAutomation(
+                                    automationEnabled.checked,
+                                    String(automationInterval.value),
+                                    automationAi.checked,
+                                    automationPreview.checked
+                                )
+                            }
+                            Item { Layout.fillWidth: true }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.automation_tray_note
+                            color: appController.automation.enabled ? accent : textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                    }
                 }
 
                 // The cap used to be reachable only by opening config.toml, which

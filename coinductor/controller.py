@@ -95,6 +95,7 @@ class AppController(QObject):
     # outlive the window: the whole point is a run finishing while nobody is
     # looking at one.
     trayMessageRequested = Signal(str, str)
+    trayVisibilityRequested = Signal(bool)
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
@@ -1992,6 +1993,7 @@ class AppController(QObject):
         )
         self._apply_automation_timer()
         self.automationChanged.emit()
+        self.refreshTrayVisibility()
         if not changed:
             self.notificationRequested.emit(service_text("automation_unchanged", language))
             return
@@ -1999,6 +2001,20 @@ class AppController(QObject):
         self.notificationRequested.emit(
             service_text(key, language).format(hours=read_automation(default_config_path()).interval_hours)
         )
+
+    @Property(bool, notify=automationChanged)
+    def keepRunningInTray(self) -> bool:
+        """Whether closing the window should hide it instead of exiting.
+
+        Tied to the schedule rather than a setting of its own: a schedule that
+        stops the moment you close the window is not a schedule, and an app that
+        lingers in the tray without one has no reason to.
+        """
+        return read_automation(default_config_path()).enabled
+
+    @Slot()
+    def refreshTrayVisibility(self) -> None:
+        self.trayVisibilityRequested.emit(self.keepRunningInTray)
 
     def _apply_automation_timer(self) -> None:
         """Start, restart or stop the timer to match the saved settings."""

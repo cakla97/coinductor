@@ -33,6 +33,9 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     # Completion toasts. Keyed rather than passed as sentences so they are not
     # the last English text left on a translated screen.
     # --- automation ---
+    "tray_open": {"en": "Open Coinductor", "cs": "Otevřít Coinductor"},
+    "tray_run_now": {"en": "Run analysis now", "cs": "Spustit analýzu teď"},
+    "tray_quit": {"en": "Quit", "cs": "Ukončit"},
     "toast_automatic_analysis_done": {
         "en": "Scheduled analysis complete. Review the Action Plan.",
         "cs": "Naplánovaná analýza dokončena. Zkontrolujte Plán akcí.",

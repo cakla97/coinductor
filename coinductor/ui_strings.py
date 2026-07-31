@@ -1190,6 +1190,39 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "No AI model is connected, so these two are unavailable. The analysis itself runs exactly the same without them.",
         "cs": "Není připojený žádný AI model, takže tyhle dvě volby nejsou dostupné. Samotná analýza proběhne úplně stejně i bez nich.",
     },
+    # --- scheduled analysis ---
+    "automation_title": {
+        "en": "Run the analysis on a schedule",
+        "cs": "Spouštět analýzu podle rozvrhu",
+    },
+    "automation_description": {
+        "en": "An extra way to start the same analysis the button starts — the Run analysis dialog keeps working exactly as it does now. A scheduled run only ever reads: it cannot place an order, because the confirmation you type is what authorises one and no timer can type.",
+        "cs": "Další způsob, jak spustit tutéž analýzu jako tlačítko — dialog Spustit analýzu funguje přesně jako dosud. Naplánovaný běh jen čte: příkaz zadat nemůže, protože ho povoluje potvrzení, které vypisujete vy, a to žádný časovač nenapíše.",
+    },
+    "automation_enable_checkbox": {
+        "en": "Run automatically while Coinductor is open",
+        "cs": "Spouštět automaticky, dokud je Coinductor otevřený",
+    },
+    "automation_interval_label": {
+        "en": "Every (hours)",
+        "cs": "Každých (hodin)",
+    },
+    "automation_ai_checkbox": {
+        "en": "Include the AI summary",
+        "cs": "Zahrnout shrnutí od AI",
+    },
+    "automation_preview_checkbox": {
+        "en": "Include the mainnet execution preview",
+        "cs": "Zahrnout mainnet náhled provedení",
+    },
+    "automation_save_button": {
+        "en": "Save schedule",
+        "cs": "Uložit rozvrh",
+    },
+    "automation_tray_note": {
+        "en": "With a schedule on, closing the window hides Coinductor to the notification area instead of quitting, so the schedule can keep running. The tray icon has Open, Run analysis now and Quit. Your PC has to be on — there is no server doing this for you.",
+        "cs": "Se zapnutým rozvrhem se Coinductor při zavření okna schová do oznamovací oblasti místo ukončení, aby rozvrh mohl běžet dál. V ikoně je Otevřít, Spustit analýzu teď a Ukončit. Počítač musí být zapnutý — žádný server to za vás nedělá.",
+    },
     "order_caps_title": {
         "en": "Maximum size of a single order",
         "cs": "Maximální velikost jednoho příkazu",

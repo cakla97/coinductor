@@ -4,6 +4,18 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.1.1] — 2026-07-31
+
+### Fixed
+
+- **A Czech answer about the latest run quoted the report's English inside it**: *"Běh 49
+  skončil s výsledkem HOLD. No action is recommended… Nejdůležitější navazující krok:
+  Review the Rebalancing Bot USDC funding plan."* 1.1.0 translated the frame and then
+  filled it from the run's stored English, which is worse than either language on its
+  own. The journal keeps the message behind both the summary and the top action, so those
+  are rendered too — with the English sentence still used for runs recorded before those
+  columns existed.
+
 ## [1.1.0] — 2026-07-31
 
 ### Changed

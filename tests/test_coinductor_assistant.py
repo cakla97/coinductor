@@ -1202,3 +1202,46 @@ def test_greeting_language_comes_from_the_phrase_not_the_letters() -> None:
 
     assert service.answer("Ahoj", {}).startswith("Zdravím")
     assert service.answer("Hello", {}).startswith("Hello")
+
+
+def test_a_czech_answer_does_not_quote_the_reports_english() -> None:
+    """"Běh 49 skončil s výsledkem HOLD. No action is recommended."
+
+    Translating the frame and filling it with the report's English is worse
+    than either language alone. The journal stores the message behind both the
+    summary and the top action, so those get rendered too.
+    """
+    import dataclasses
+
+    from coinductor.assistant import LocalHelpAssistant
+
+    from trading_agent.messages import MESSAGE_TEXT
+
+    # Real keys, so this asserts against rendered text rather than against a
+    # key name echoed back - an unknown key renders as itself, identically in
+    # both languages, which would let a broken fix pass.
+    summary_key, action_key = "grid_blocked_do_not_create", "grid_blocked_rerun"
+    snapshot = dataclasses.replace(
+        _snapshot(),
+        decision_summary_message=({"key": summary_key, "params": {}},),
+        recommended_actions=({"actionMessage": ({"key": action_key, "params": {}},)},),
+    )
+
+    czech = LocalHelpAssistant().answer("Co provedl posledni beh?", snapshot)
+    english = LocalHelpAssistant().answer("What happened in the latest run?", snapshot)
+
+    assert "Běh 42" in czech and "Run 42" in english
+    assert MESSAGE_TEXT[summary_key]["cs"] in czech
+    assert MESSAGE_TEXT[action_key]["cs"] in czech
+    assert MESSAGE_TEXT[summary_key]["en"] in english
+    assert "Wait for a safer entry" not in czech, "fell back to the report's English"
+
+
+def test_a_run_recorded_before_the_message_columns_still_answers() -> None:
+    """Older rows have only the English sentence, and it still has to appear."""
+    from coinductor.assistant import LocalHelpAssistant
+
+    answer = LocalHelpAssistant().answer("Co provedl posledni beh?", _snapshot())
+
+    assert "Běh 42 skončil" in answer
+    assert "Wait for a safer entry" in answer

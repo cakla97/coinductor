@@ -17,9 +17,32 @@ from trading_agent.config import default_config_path, load_config
 from .ai_provider import AiProviderService, _describe_provider_error  # noqa: F401
 from .guide_service import GuideService
 from .models import DesktopSnapshot
+from trading_agent.messages import ManualStep, render_manual_step
+
 from .secret_store import load_secrets
 from .service_strings import service_text
 from .ui_knowledge import UiKnowledgeService, is_czech
+
+
+def _render_stored(message: object, language: str) -> str:
+    """Render a message the journal stored as key + params, in one language.
+
+    Empty for a run recorded before those columns existed, which the caller
+    reads as "fall back to the English sentence stored beside it".
+    """
+    specs = list(message or ())
+    if not specs or not isinstance(specs[0], dict):
+        return ""
+    spec = specs[0]
+    params = {str(key): str(value) for key, value in dict(spec.get("params", {})).items()}
+    return render_manual_step(ManualStep(str(spec.get("key", "")), params), language)
+
+
+def _first_action_message(snapshot: DesktopSnapshot) -> object:
+    for action in snapshot.recommended_actions or ():
+        if isinstance(action, dict) and action.get("actionMessage"):
+            return action["actionMessage"]
+    return ()
 
 
 def _fold(value: str) -> str:
@@ -583,13 +606,21 @@ class LocalHelpAssistant:
         latest = snapshot.latest_run
         if latest is None:
             return service_text("help_no_run", language)
-        top_action = (
-            latest.actions[0].action if latest.actions else service_text("help_no_follow_up", language)
-        )
+        # Translating the frame and then filling it with the report's English is
+        # how "Beh 49 skoncil s vysledkem HOLD. No action is recommended." came
+        # about. The journal stores the message behind each of these, so render
+        # that instead and keep the English only as the fallback for a run
+        # recorded before the message columns existed.
+        summary = _render_stored(snapshot.decision_summary_message, language) or latest.decision_summary
+        top_action = _render_stored(_first_action_message(snapshot), language)
+        if not top_action:
+            top_action = (
+                latest.actions[0].action if latest.actions else service_text("help_no_follow_up", language)
+            )
         return service_text("help_last_run", language).format(
             run_id=latest.run_id,
             decision=latest.decision,
-            summary=latest.decision_summary,
+            summary=summary,
             action=top_action,
         )
 

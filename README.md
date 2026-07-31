@@ -3,6 +3,16 @@
 **Knowing *when* to act is the hard part of crypto. Coinductor works it out for you — and
 never acts without your say-so.**
 
+An open-source **Binance Spot portfolio assistant** for **Windows**, running entirely on
+your own machine. Deterministic risk engine, optional **local LLM** (Ollama or any
+OpenAI-compatible endpoint), no account, no telemetry, and no automatic trading.
+
+[![Latest release](https://img.shields.io/github/v/release/cakla97/coinductor?label=download&color=2ecc80)](https://github.com/cakla97/coinductor/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue)](pyproject.toml)
+[![Platform: Windows](https://img.shields.io/badge/platform-Windows-lightgrey)](#install)
+[![Offline first](https://img.shields.io/badge/runs-offline-2ecc80)](#where-your-data-lives)
+
 [**Install**](#install) · [First run](#first-run) · [What it will not do](#what-it-will-not-do) ·
 [Where your data lives](#where-your-data-lives) · [Documentation](#documentation) ·
 [**Support the project**](#support-the-project) · [Security](SECURITY.md) · [License](#license)

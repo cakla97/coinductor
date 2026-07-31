@@ -29,7 +29,9 @@ from .automation import (
     apply_automation_to_config,
     read_automation,
 )
+from .catch_up import CatchUpService
 from .local_data_reset import LocalDataResetService
+from .scheduled_task import is_supported, query_task, register_task, remove_task
 from .order_caps import (
     apply_order_caps_to_config,
     exceeds_suggestion,
@@ -150,6 +152,8 @@ class AppController(QObject):
         self._listing_worker = None
         self._listings: list[dict[str, object]] = []
         self._listing_status = ""
+        self._catch_up = CatchUpService()
+        self._scheduled_task_time = "07:30"
         self._pending_completion_message = "toast_analysis_done"
         self._pending_data_mode = "REAL"
         self._onboarding_path = ""
@@ -254,6 +258,7 @@ class AppController(QObject):
         self._apply_automation_timer()
         self._apply_listing_timer()
         self._reload_listings()
+        self._report_catch_up()
 
     @Property(bool, notify=busyChanged)
     def busy(self) -> bool:
@@ -2143,6 +2148,51 @@ class AppController(QObject):
         lingers in the tray without one has no reason to.
         """
         return read_automation(default_config_path()).enabled
+
+    @Property("QVariantMap", notify=automationChanged)
+    def scheduledTask(self) -> dict[str, object]:
+        state = query_task()
+        return {
+            "supported": is_supported(),
+            "registered": state.registered,
+            "time": self._scheduled_task_time,
+        }
+
+    @Slot(str)
+    def registerScheduledTask(self, daily_at: str) -> None:
+        language = self._wizard_language
+        ok, reason = register_task(daily_at)
+        if ok:
+            self._scheduled_task_time = daily_at.strip()
+        self.automationChanged.emit()
+        self.notificationRequested.emit(
+            service_text(reason.split(":")[0], language).format(time=daily_at.strip())
+        )
+
+    @Slot()
+    def removeScheduledTask(self) -> None:
+        _, reason = remove_task()
+        self.automationChanged.emit()
+        self.notificationRequested.emit(
+            service_text(reason.split(":")[0], self._wizard_language).format(time="")
+        )
+
+    def _report_catch_up(self) -> None:
+        """Say what arrived while the window was closed.
+
+        A schedule whose results simply appear in Run History with nothing to
+        announce them feels broken even when it worked perfectly.
+        """
+        history = list(self._snapshot.run_history) if self._snapshot is not None else []
+        result = self._catch_up.since_last_seen(history)
+        if not result.any:
+            return
+        self.notificationRequested.emit(
+            service_text("catch_up_runs", self._wizard_language).format(
+                count=result.count, decision=self._decision_label(result.latest_decision)
+            )
+        )
+        self._catch_up.mark_seen(result.latest_run_id)
 
     @Slot()
     def refreshTrayVisibility(self) -> None:

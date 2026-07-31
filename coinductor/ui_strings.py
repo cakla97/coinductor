@@ -1223,6 +1223,35 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "With a schedule on, closing the window hides Coinductor to the notification area instead of quitting, so the schedule can keep running. The tray icon has Open, Run analysis now and Quit. Your PC has to be on — there is no server doing this for you.",
         "cs": "Se zapnutým rozvrhem se Coinductor při zavření okna schová do oznamovací oblasti místo ukončení, aby rozvrh mohl běžet dál. V ikoně je Otevřít, Spustit analýzu teď a Ukončit. Počítač musí být zapnutý — žádný server to za vás nedělá.",
     },
+    # --- scheduled task ---
+    "task_title": {
+        "en": "Also run when Coinductor is closed",
+        "cs": "Spouštět i se zavřeným Coinductorem",
+    },
+    "task_description": {
+        "en": "Registers a Windows scheduled task that runs one analysis a day using this same program, with no window. It reads only — it cannot place an order, for the same reason the in-app schedule cannot. Your PC still has to be on; nothing runs it for you while the machine is off. You can inspect or delete it yourself with: schtasks /query /tn \"Coinductor scheduled analysis\"",
+        "cs": "Zaregistruje ve Windows naplánovanou úlohu, která jednou denně spustí analýzu tímhle stejným programem, bez okna. Jen čte — příkaz zadat nemůže, ze stejného důvodu jako rozvrh uvnitř aplikace. Počítač pořád musí být zapnutý; s vypnutým strojem to za vás nikdo nespustí. Sám si ji můžete prohlédnout nebo smazat příkazem: schtasks /query /tn \"Coinductor scheduled analysis\"",
+    },
+    "task_time_label": {
+        "en": "Every day at",
+        "cs": "Každý den v",
+    },
+    "task_register_button": {
+        "en": "Schedule it",
+        "cs": "Naplánovat",
+    },
+    "task_remove_button": {
+        "en": "Remove the task",
+        "cs": "Odstranit úlohu",
+    },
+    "task_state_registered": {
+        "en": "A scheduled task is registered.",
+        "cs": "Naplánovaná úloha je zaregistrovaná.",
+    },
+    "task_state_absent": {
+        "en": "No scheduled task. Nothing runs while Coinductor is closed.",
+        "cs": "Žádná naplánovaná úloha. Se zavřeným Coinductorem neběží nic.",
+    },
     "order_caps_title": {
         "en": "Maximum size of a single order",
         "cs": "Maximální velikost jednoho příkazu",

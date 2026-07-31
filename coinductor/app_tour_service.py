@@ -19,6 +19,10 @@ class AppTourService:
         return bool(state.get("completed", False))
 
     def mark_completed(self) -> None:
+        # Rewrites the whole file, so this must stay the only thing that lives
+        # in it. Anything else added here would be erased the first time the
+        # tour was replayed - see catch_up.py, which keeps its own file for
+        # exactly that reason.
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self.path.with_suffix(".tmp")
         temporary.write_text(

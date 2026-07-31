@@ -4077,6 +4077,66 @@ ApplicationWindow {
                     }
                 }
 
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: taskContent.implicitHeight + 32
+                    visible: appController.scheduledTask.supported
+                    radius: radiusMd
+                    color: panel
+                    border.color: appController.scheduledTask.registered ? accent : border
+                    ColumnLayout {
+                        id: taskContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 8
+                        Text {
+                            text: appController.appText.task_title
+                            color: textPrimary
+                            font.pixelSize: 16
+                            font.bold: true
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.task_description
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            Text { text: appController.appText.task_time_label; color: textSecondary; font.pixelSize: 12 }
+                            TextField {
+                                id: taskTime
+                                Layout.preferredWidth: 90
+                                text: appController.scheduledTask.time
+                                placeholderText: "07:30"
+                            }
+                            Button {
+                                text: appController.appText.task_register_button
+                                onClicked: appController.registerScheduledTask(taskTime.text)
+                            }
+                            Button {
+                                text: appController.appText.task_remove_button
+                                enabled: appController.scheduledTask.registered
+                                onClicked: appController.removeScheduledTask()
+                            }
+                            Item { Layout.fillWidth: true }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.scheduledTask.registered
+                                ? appController.appText.task_state_registered
+                                : appController.appText.task_state_absent
+                            color: appController.scheduledTask.registered ? accent : textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
                 // The cap used to be reachable only by opening config.toml, which
                 // is the one thing this app promises nobody has to do.
                 Rectangle {

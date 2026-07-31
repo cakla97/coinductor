@@ -81,6 +81,35 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "The allowed symbol list could not be found in the configuration.",
         "cs": "Seznam povolených symbolů se v konfiguraci nenašel.",
     },
+    # --- scheduled task and catch-up ---
+    "catch_up_runs": {
+        "en": "{count} analysis(es) ran while Coinductor was closed. The latest ended with {decision} - see Run History.",
+        "cs": "Zatímco byl Coinductor zavřený, proběhly analýzy: {count}. Poslední skončila s výsledkem {decision} - viz Historie běhů.",
+    },
+    "task_registered": {
+        "en": "Windows will run one analysis a day at {time}, whether or not Coinductor is open. Your PC has to be on.",
+        "cs": "Windows spustí jednu analýzu denně v {time}, ať je Coinductor otevřený nebo ne. Počítač musí být zapnutý.",
+    },
+    "task_removed": {
+        "en": "The scheduled task was removed. Nothing runs while Coinductor is closed.",
+        "cs": "Naplánovaná úloha byla odstraněna. Se zavřeným Coinductorem už neběží nic.",
+    },
+    "task_not_registered": {
+        "en": "There was no scheduled task to remove.",
+        "cs": "Žádná naplánovaná úloha k odstranění nebyla.",
+    },
+    "task_bad_time": {
+        "en": "The time has to look like 07:30. Nothing was scheduled.",
+        "cs": "Čas musí vypadat jako 07:30. Nic se nenaplánovalo.",
+    },
+    "task_failed": {
+        "en": "Windows refused to create the task. Nothing was scheduled.",
+        "cs": "Windows odmítly úlohu vytvořit. Nic se nenaplánovalo.",
+    },
+    "task_not_windows": {
+        "en": "Scheduled tasks are a Windows feature. The in-app schedule works everywhere.",
+        "cs": "Naplánované úlohy jsou funkce Windows. Rozvrh uvnitř aplikace funguje všude.",
+    },
     # --- automation ---
     "tray_open": {"en": "Open Coinductor", "cs": "Otevřít Coinductor"},
     "tray_run_now": {"en": "Run analysis now", "cs": "Spustit analýzu teď"},

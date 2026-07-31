@@ -20,6 +20,7 @@ from .desktop_store import DesktopStore
 from .first_portfolio_planner import FirstPortfolioPlanner
 from .diagnostics_service import DiagnosticsService
 from .guide_service import GuideService
+from .allowed_symbols import add_allowed_symbol
 from .automation import (
     MAX_INTERVAL_HOURS,
     MIN_INTERVAL_HOURS,
@@ -57,6 +58,7 @@ from .workers import (
     AssistantWorker,
     ConnectionCheckWorker,
     FirstPortfolioTrancheWorker,
+    ListingScanWorker,
     LiveTradingCheckWorker,
     LocalAiHardwareWorker,
     TestnetCheckWorker,
@@ -90,6 +92,7 @@ class AppController(QObject):
     localDataResetChanged = Signal()
     firstPortfolioDeploymentChanged = Signal()
     orderCapsChanged = Signal()
+    listingsChanged = Signal()
     automationChanged = Signal()
     # Carried to the tray icon, which lives in desktop.py because it must
     # outlive the window: the whole point is a run finishing while nobody is
@@ -139,6 +142,12 @@ class AppController(QObject):
         # saved settings say so, which they never do on a fresh install.
         self._automation_timer = QTimer(self)
         self._automation_timer.timeout.connect(self.runAutomaticAnalysis)
+        self._listing_timer = QTimer(self)
+        self._listing_timer.timeout.connect(self.scanListings)
+        self._listing_thread: QThread | None = None
+        self._listing_worker = None
+        self._listings: list[dict[str, object]] = []
+        self._listing_status = ""
         self._pending_completion_message = "toast_analysis_done"
         self._pending_data_mode = "REAL"
         self._onboarding_path = ""
@@ -241,6 +250,8 @@ class AppController(QObject):
         # Last, so a saved schedule cannot fire against a half-built controller.
         # On a fresh install this stops the timer that was never started.
         self._apply_automation_timer()
+        self._apply_listing_timer()
+        self._reload_listings()
 
     @Property(bool, notify=busyChanged)
     def busy(self) -> bool:
@@ -2000,6 +2011,121 @@ class AppController(QObject):
         key = "automation_saved_on" if enabled else "automation_saved_off"
         self.notificationRequested.emit(
             service_text(key, language).format(hours=read_automation(default_config_path()).interval_hours)
+        )
+
+    @Property("QVariantList", notify=listingsChanged)
+    def listings(self) -> list[dict[str, object]]:
+        return list(self._listings)
+
+    @Property(str, notify=listingsChanged)
+    def listingStatus(self) -> str:
+        return self._listing_status
+
+    @Slot()
+    def scanListings(self) -> None:
+        """One pass over the exchange, on a worker thread.
+
+        Reads a public endpoint and writes to the journal. It cannot trade: no
+        credentials are used and no submit path is reachable from here.
+        """
+        if self._listing_thread is not None:
+            return
+        settings = read_automation(default_config_path())
+        if not settings.watch_listings:
+            return
+        self._listing_worker = ListingScanWorker(default_config_path(), settings.listing_keep)
+        self._listing_worker.completed.connect(self._on_listing_scan_completed)
+        self._listing_thread = self._start_worker(
+            self._listing_worker, self._clear_listing_worker
+        )
+
+    @Slot(object)
+    def _on_listing_scan_completed(self, scan) -> None:
+        language = self._wizard_language
+        self._reload_listings()
+        if not scan.ok:
+            # Named, not swallowed: a watcher silently failing for a week is
+            # worse than one that says it could not reach the exchange.
+            self._listing_status = service_text("listing_scan_failed", language).format(
+                reason=scan.error
+            )
+            self.listingsChanged.emit()
+            return
+        self._listing_status = service_text("listing_scan_ok", language).format(
+            count=scan.total_known
+        )
+        self.listingsChanged.emit()
+        if not scan.new_listings:
+            return
+        symbols = ", ".join(str(item["symbol"]) for item in scan.new_listings[:5])
+        body = service_text("listing_new_body", language).format(symbols=symbols)
+        self.notificationRequested.emit(body)
+        self.trayMessageRequested.emit(service_text("listing_new_title", language), body)
+
+    def _reload_listings(self) -> None:
+        try:
+            config = load_config(default_config_path())
+            self._listings = Storage(config.database_path).get_recent_listings(50)
+        except Exception:
+            self._listings = []
+
+    @Slot()
+    def _clear_listing_worker(self) -> None:
+        self._listing_thread = None
+        self._listing_worker = None
+
+    def _apply_listing_timer(self) -> None:
+        settings = read_automation(default_config_path())
+        if not settings.watch_listings:
+            self._listing_timer.stop()
+            return
+        self._listing_timer.setInterval(settings.listing_interval_seconds * 1000)
+        self._listing_timer.start()
+
+    @Slot(bool, str)
+    def saveListingWatch(self, enabled: bool, interval_minutes: str) -> None:
+        language = self._wizard_language
+        settings = read_automation(default_config_path())
+        changed = apply_automation_to_config(
+            default_config_path(),
+            enabled=settings.enabled,
+            interval_hours=settings.interval_hours,
+            ai_summary=settings.ai_summary,
+            live_preview=settings.live_preview,
+            watch_listings=enabled,
+            listing_interval_minutes=interval_minutes,
+        )
+        self._apply_listing_timer()
+        self.automationChanged.emit()
+        self.refreshTrayVisibility()
+        if not changed:
+            self.notificationRequested.emit(service_text("automation_unchanged", language))
+            return
+        key = "listing_watch_on" if enabled else "listing_watch_off"
+        self.notificationRequested.emit(
+            service_text(key, language).format(
+                minutes=read_automation(default_config_path()).listing_interval_minutes
+            )
+        )
+
+    @Slot(str)
+    def addAllowedSymbol(self, symbol: str) -> None:
+        """The one deliberate step that makes a listing tradeable.
+
+        Not a buy. After this the pair is merely eligible for the same analysis,
+        risk checks, funding check and typed confirmation as any other.
+        """
+        changed, reason = add_allowed_symbol(default_config_path(), symbol)
+        if changed:
+            try:
+                self._manual_override_symbols = load_config(default_config_path()).allowed_symbols
+            except Exception:
+                pass
+            Storage(load_config(default_config_path()).database_path).acknowledge_listing(symbol)
+            self._reload_listings()
+            self.listingsChanged.emit()
+        self.notificationRequested.emit(
+            service_text(reason, self._wizard_language).format(symbol=str(symbol).strip().upper())
         )
 
     @Property(bool, notify=automationChanged)

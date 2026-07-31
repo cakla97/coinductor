@@ -32,6 +32,55 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     },
     # Completion toasts. Keyed rather than passed as sentences so they are not
     # the last English text left on a translated screen.
+    # --- new listings ---
+    "listing_new_title": {
+        "en": "New on Binance",
+        "cs": "Nové na Binance",
+    },
+    "listing_new_body": {
+        "en": "Newly listed: {symbols}. Coinductor has not bought anything - open New listings to look.",
+        "cs": "Nově zalistováno: {symbols}. Coinductor nic nekoupil - otevřete Nové listingy a podívejte se.",
+    },
+    "listing_scan_ok": {
+        "en": "Watching {count} pairs.",
+        "cs": "Sledováno {count} párů.",
+    },
+    "listing_scan_failed": {
+        "en": "Could not reach Binance: {reason}. The next check will try again.",
+        "cs": "Nepodařilo se spojit s Binance: {reason}. Další kontrola to zkusí znovu.",
+    },
+    "listing_watch_on": {
+        "en": "Watching for new listings every {minutes} min while Coinductor is open. It only ever notifies.",
+        "cs": "Nové listingy se sledují každých {minutes} min, dokud je Coinductor otevřený. Vždy jen upozorní.",
+    },
+    "listing_watch_off": {
+        "en": "New listing watch is off.",
+        "cs": "Sledování nových listingů je vypnuté.",
+    },
+    "allowed_symbol_added": {
+        "en": "{symbol} can now be analysed. Nothing was bought - run an analysis, then confirm as usual if you want to act.",
+        "cs": "{symbol} se teď smí analyzovat. Nic se nekoupilo - spusťte analýzu a pokud budete chtít jednat, potvrďte ji jako obvykle.",
+    },
+    "allowed_symbol_already_there": {
+        "en": "{symbol} is already on the list.",
+        "cs": "{symbol} už na seznamu je.",
+    },
+    "allowed_symbol_invalid": {
+        "en": "{symbol} does not look like a Binance pair.",
+        "cs": "{symbol} nevypadá jako pár na Binance.",
+    },
+    "allowed_symbol_list_full": {
+        "en": "The allowed list is full. Remove a pair you no longer follow first.",
+        "cs": "Seznam povolených párů je plný. Nejdřív odeberte pár, který už nesledujete.",
+    },
+    "allowed_symbol_no_config": {
+        "en": "No configuration file was found, so nothing was changed.",
+        "cs": "Konfigurační soubor se nenašel, takže se nic nezměnilo.",
+    },
+    "allowed_symbol_not_written": {
+        "en": "The allowed symbol list could not be found in the configuration.",
+        "cs": "Seznam povolených symbolů se v konfiguraci nenašel.",
+    },
     # --- automation ---
     "tray_open": {"en": "Open Coinductor", "cs": "Otevřít Coinductor"},
     "tray_run_now": {"en": "Run analysis now", "cs": "Spustit analýzu teď"},

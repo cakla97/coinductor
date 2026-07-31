@@ -241,3 +241,34 @@ class AssistantWorker(QObject):
             )
         finally:
             self.finished.emit()
+
+
+class ListingScanWorker(QObject):
+    """One pass over the exchange's symbol list, off the GUI thread.
+
+    The scan itself never raises - see ListingWatcher.scan - so this has no
+    failed signal. A watcher that reports an outage as a crash would be
+    indistinguishable from one that stopped watching.
+    """
+
+    completed = Signal(object)
+    finished = Signal()
+
+    def __init__(self, config_path: str, keep: int):
+        super().__init__()
+        self.config_path = config_path
+        self.keep = keep
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            from trading_agent.config import load_config
+            from trading_agent.storage import Storage
+
+            from .listing_watcher import ListingWatcher
+
+            config = load_config(self.config_path)
+            watcher = ListingWatcher(config.raw, Storage(config.database_path), keep=self.keep)
+            self.completed.emit(watcher.scan())
+        finally:
+            self.finished.emit()

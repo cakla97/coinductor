@@ -284,3 +284,9 @@ interval_hours = 24
 # ask for as little as possible, and the AI summary needs a configured model.
 ai_summary = false
 live_preview = false
+# Watch for pairs newly listed on Binance and say so. It records and
+# notifies; it never buys. Acting on a listing is a separate step.
+watch_listings = false
+listing_interval_minutes = 15
+# These rows have no run_id, so ordinary run retention cannot prune them.
+listing_keep = 200

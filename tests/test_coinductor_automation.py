@@ -145,3 +145,87 @@ def test_a_missing_config_is_left_alone(tmp_path) -> None:
         path, enabled=True, interval_hours=6, ai_summary=False, live_preview=False
     ) == {}
     assert not path.exists()
+
+
+PARTIAL_CONFIG = """\
+[app]
+mode = "DRY_RUN"
+
+[automation]
+# A config written against the first version of this feature.
+enabled = true
+interval_hours = 6
+ai_summary = false
+live_preview = false
+
+[retention]
+keep_database_runs = 500
+"""
+
+
+def test_a_section_missing_only_the_newer_keys_is_repaired(tmp_path) -> None:
+    """The same silent discard as a missing section, one level down.
+
+    _apply edits keys that already exist, so a config from an earlier version of
+    this feature would accept a listing schedule and drop it.
+    """
+    path = _write(tmp_path, PARTIAL_CONFIG)
+
+    assert ensure_section(path) is True
+
+    written = path.read_text(encoding="utf-8")
+    assert "watch_listings = false" in written
+    assert "listing_interval_minutes = 15" in written
+    # Inserted into the section, not after the file's last line.
+    assert written.index("watch_listings") < written.index("[retention]")
+    # Existing values are untouched, and nothing was switched on.
+    settings = read_automation(path)
+    assert settings.enabled is True
+    assert settings.interval_hours == 6
+    assert settings.watch_listings is False
+
+
+def test_a_repaired_config_actually_accepts_the_new_settings(tmp_path) -> None:
+    path = _write(tmp_path, PARTIAL_CONFIG)
+
+    changed = apply_automation_to_config(
+        path,
+        enabled=True,
+        interval_hours=6,
+        ai_summary=False,
+        live_preview=False,
+        watch_listings=True,
+        listing_interval_minutes=30,
+    )
+
+    assert changed, "the listing settings were discarded"
+    settings = read_automation(path)
+    assert settings.watch_listings is True
+    assert settings.listing_interval_minutes == 30
+
+
+def test_repairing_twice_adds_nothing_the_second_time(tmp_path) -> None:
+    path = _write(tmp_path, PARTIAL_CONFIG)
+
+    assert ensure_section(path) is True
+    assert ensure_section(path) is False
+    assert path.read_text(encoding="utf-8").count("watch_listings") == 1
+
+
+def test_omitted_listing_values_mean_leave_as_is_not_turn_off(tmp_path) -> None:
+    """Two panels save into one section; neither may undo the other."""
+    path = _write(tmp_path, PARTIAL_CONFIG)
+    apply_automation_to_config(
+        path, enabled=True, interval_hours=6, ai_summary=False, live_preview=False,
+        watch_listings=True, listing_interval_minutes=30,
+    )
+
+    apply_automation_to_config(
+        path, enabled=False, interval_hours=12, ai_summary=True, live_preview=False
+    )
+
+    settings = read_automation(path)
+    assert settings.enabled is False
+    assert settings.interval_hours == 12
+    assert settings.watch_listings is True
+    assert settings.listing_interval_minutes == 30

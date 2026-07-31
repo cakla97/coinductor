@@ -962,13 +962,21 @@ ApplicationWindow {
                                     }
                                     Rectangle {
                                         Layout.fillWidth: true
-                                        Layout.preferredHeight: 104
+                                        // Content-driven, like the notice card below it. A
+                                        // fixed 104 could not hold four wrapping lines whose
+                                        // length depends on the endpoint and both model names,
+                                        // so the text spilled past the border.
+                                        Layout.preferredHeight: currentAiProviderRow.implicitHeight + 32
                                         radius: radiusMd
                                         color: panelRaised
                                         border.color: border
                                         RowLayout {
-                                            anchors.fill: parent
-                                            anchors.margins: 16
+                                            id: currentAiProviderRow
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            anchors.leftMargin: 16
+                                            anchors.rightMargin: 16
                                             spacing: 12
                                             ColumnLayout {
                                                 Layout.fillWidth: true
@@ -1576,7 +1584,7 @@ ApplicationWindow {
                                                     height: 26
                                                     Text { Layout.preferredWidth: 120; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                                     Text { Layout.preferredWidth: 110; text: modelData.value; color: accent; font.pixelSize: 11; font.bold: true }
-                                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                                    ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 10 }
                                                 }
                                             }
                                         }
@@ -1604,7 +1612,7 @@ ApplicationWindow {
                                                     height: 26
                                                     Text { Layout.preferredWidth: 130; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                                     Text { Layout.preferredWidth: 100; text: modelData.value; color: accent; font.pixelSize: 11; font.bold: true }
-                                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                                    ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 10 }
                                                 }
                                             }
                                         }
@@ -1654,7 +1662,7 @@ ApplicationWindow {
                                                     width: ListView.view.width
                                                     height: 28
                                                     Text { Layout.preferredWidth: 110; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
-                                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                                    ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 10 }
                                                 }
                                             }
                                         }
@@ -4009,7 +4017,7 @@ ApplicationWindow {
                                         }
                                         Text { Layout.preferredWidth: 92; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                         Text { Layout.preferredWidth: 60; text: modelData.group; color: textSecondary; font.pixelSize: 10 }
-                                        Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                        ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 10 }
                                     }
                                 }
                             }
@@ -4031,7 +4039,7 @@ ApplicationWindow {
                                         anchors.margins: 10
                                         spacing: 3
                                         Text { text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
-                                        Text { width: parent.width; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                        ElidedDetail { width: parent.width; text: modelData.detail; font.pixelSize: 10 }
                                     }
                                 }
                             }
@@ -4092,7 +4100,7 @@ ApplicationWindow {
                                     spacing: 12
                                     Text { Layout.preferredWidth: 120; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                     Text { Layout.preferredWidth: 150; text: modelData.value; color: accent; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
-                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                    ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 10 }
                                 }
                             }
                         }
@@ -4160,7 +4168,7 @@ ApplicationWindow {
                                     spacing: 12
                                     Text { Layout.preferredWidth: 150; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                     Text { Layout.preferredWidth: 125; text: modelData.value; color: accent; font.pixelSize: 11; font.bold: true; elide: Text.ElideRight }
-                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                    ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 10 }
                                 }
                             }
                         }
@@ -4208,7 +4216,7 @@ ApplicationWindow {
                             }
                             Text { Layout.preferredWidth: 155; text: modelData.name; color: textPrimary; font.pixelSize: 12; font.bold: true }
                             Text { Layout.preferredWidth: 70; text: modelData.group; color: textSecondary; font.pixelSize: 10 }
-                            Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 11; elide: Text.ElideRight }
+                            ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 11 }
                             Text {
                                 Layout.preferredWidth: 55
                                 text: modelData.status
@@ -4297,7 +4305,7 @@ ApplicationWindow {
                                     spacing: 12
                                     Text { Layout.preferredWidth: 120; text: modelData.name; color: textPrimary; font.pixelSize: 11; font.bold: true }
                                     Text { Layout.preferredWidth: 100; text: modelData.status; color: modelData.status === "LOCKED" ? warning : accent; font.pixelSize: 11; font.bold: true }
-                                    Text { Layout.fillWidth: true; text: modelData.detail; color: textSecondary; font.pixelSize: 10; elide: Text.ElideRight }
+                                    ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 10 }
                                 }
                             }
                         }
@@ -6350,6 +6358,27 @@ ApplicationWindow {
     // A value the reader has to reproduce somewhere else - a price, a grid
     // count, a threshold. Elide rules these out as TextEdit (which has no
     // elide), so copying is a click rather than a drag-select.
+    // A detail line in a fixed-height row. The row cannot grow, so a long
+    // sentence can only be cut - and several of these are the only explanation
+    // of what a checkbox is about to delete. Hovering shows the whole thing.
+    component ElidedDetail: Text {
+        id: elidedDetail
+        color: textSecondary
+        font.pixelSize: 10
+        elide: Text.ElideRight
+        MouseArea {
+            anchors.fill: parent
+            enabled: elidedDetail.truncated
+            hoverEnabled: true
+            acceptedButtons: Qt.NoButton
+            cursorShape: Qt.ArrowCursor
+            ToolTip.visible: containsMouse && elidedDetail.truncated
+            ToolTip.text: elidedDetail.text
+            ToolTip.delay: 300
+            ToolTip.timeout: 12000
+        }
+    }
+
     component CopyableValue: Text {
         id: copyableValue
         property string value: ""

@@ -6,6 +6,16 @@ import shutil
 from .models import LocalDataResetSnapshot
 from .service_strings import service_text
 
+# The AI provider's own keys. Removing these is how a model gets disconnected:
+# the wizard writes them, and nothing else in the app reads an endpoint from
+# anywhere but here.
+AI_PROVIDER_KEYS: tuple[str, ...] = (
+    "LLM_API_KEY",
+    "LLM_BASE_URL",
+    "LLM_MODEL",
+    "LLM_VISION_MODEL",
+)
+
 
 class LocalDataResetService:
     def __init__(self, root: str | Path = ".", language: str = "en"):
@@ -29,7 +39,7 @@ class LocalDataResetService:
             if group["code"] not in selected:
                 continue
             if group.get("clears_keychain"):
-                removed.extend(self._clear_keychain())
+                removed.extend(self._clear_keychain(group.get("keychain_keys")))
             for raw_path in group["paths"]:
                 target = (self.root / raw_path).resolve()
                 if target == root:
@@ -129,6 +139,20 @@ class LocalDataResetService:
                 "paths": ("config.toml",),
             },
             {
+                # Disconnecting a model had no path through the app at all:
+                # clearing the fields in the wizard and saving just reloaded
+                # what was already stored, because saving nothing writes
+                # nothing. Separate from CREDENTIALS so that stepping away from
+                # AI does not also throw away the Binance keys.
+                "code": "AI_PROVIDER",
+                "name": self._t("reset_group_ai_provider"),
+                "detail": self._t("reset_group_ai_provider_detail"),
+                "default": False,
+                "paths": (),
+                "clears_keychain": True,
+                "keychain_keys": AI_PROVIDER_KEYS,
+            },
+            {
                 "code": "CREDENTIALS",
                 "name": self._t("reset_group_credentials"),
                 "detail": self._t("reset_group_credentials_detail"),
@@ -141,8 +165,11 @@ class LocalDataResetService:
             },
         )
 
-    def _clear_keychain(self) -> list[str]:
+    def _clear_keychain(self, only: object = None) -> list[str]:
         """Remove the app's keys from the OS credential store.
+
+        ``only`` narrows it to one family - the AI provider's keys, say -
+        so that disconnecting a model does not also remove Binance access.
 
         Returns what was actually held, so the summary can name it. Failure to
         reach a keychain is not an error: there may simply not be one.
@@ -152,6 +179,9 @@ class LocalDataResetService:
         store = SecretStore(env_path=self.root / ".env")
         try:
             held = store.stored_keys()
+            if only:
+                wanted = {str(key) for key in only}
+                held = tuple(key for key in held if key in wanted)
             if not held:
                 return []
             store.clear(held)

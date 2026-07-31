@@ -203,6 +203,14 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
             "nepoužívá. Hodnocení dostanete, když při spuštění zaškrtnete \"Vygenerovat shrnutí od AI\"."
         ),
     },
+    "reset_group_ai_provider": {
+        "en": "AI model connection",
+        "cs": "Připojení AI modelu",
+    },
+    "reset_group_ai_provider_detail": {
+        "en": "Disconnects the local or cloud model: its endpoint, model names and API key. Binance access, your portfolio and every run are untouched, and the analysis keeps working - it never asks a model.",
+        "cs": "Odpojí místní nebo cloudový model: endpoint, názvy modelů a API klíč. Přístup k Binance, portfolio ani žádný běh se nemění a analýza funguje dál - modelu se nikdy neptá.",
+    },
     "no_ai_provider_toast": {
         "en": "No AI provider is set up, so there is nothing to ask. Settings has the setup - it is optional.",
         "cs": "Není nastavený žádný AI model, takže není koho se zeptat. Nastavení najdete v Nastavení - je to volitelné.",

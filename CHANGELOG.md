@@ -4,6 +4,33 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.0.1] — 2026-07-31
+
+### Added
+
+- **A way to disconnect an AI model.** There was none: clearing the wizard's fields and
+  saving wrote nothing, because saving an empty value is how the app avoids wiping a
+  stored secret by accident — so the old endpoint simply reloaded. "Delete local data" has
+  its own **AI model connection** group now, separate from the credentials group so that
+  stepping away from AI does not also take Binance access with it.
+
+### Fixed
+
+- **The wizard's current-provider card spilled past its border.** Its height was a fixed
+  104 while the four lines inside wrap, and how far they wrap depends on the endpoint and
+  both model names. Content-driven now, like the card directly below it that already was.
+- **Detail lines that could only be cut now show in full on hover.** Nine of them, in the
+  reset dialog, the AI provider card and Privacy & data — several were the only
+  explanation of what a checkbox was about to delete.
+
+### Notes
+
+The `.env` mentioned when deleting API keys is not a leftover: it is the fallback used
+when the OS credential store is unavailable, and keys really can live there. Reviewed the
+cloud provider path by reading it — the engine, the assistant and the provider check all
+send `Authorization: Bearer`, and the save path is symmetric with the local one. Not
+exercised against a real cloud endpoint, so that remains unverified rather than tested.
+
 ## [1.0.0] — 2026-07-31
 
 First stable release. Nothing in the engine changed for it: the version says the desktop

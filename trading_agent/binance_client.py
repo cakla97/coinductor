@@ -89,6 +89,15 @@ class BinanceClient:
         ticker_map = {row["symbol"]: Decimal(row["price"]) for row in tickers}
         return self._price_assets_from_tickers({asset.upper() for asset in assets}, ticker_map)
 
+    def get_exchange_info(self) -> dict:
+        """The whole symbol list, for callers that need to diff it.
+
+        Public and unsigned, like every other exchangeInfo call here. Not
+        memoised: the one caller asks precisely because the answer may have
+        changed since last time.
+        """
+        return self._public_get("/api/v3/exchangeInfo", {})
+
     def get_symbol_rules(self, symbol: str) -> SymbolRules:
         # Exchange filters do not change within a run, and nine call sites ask for
         # them, so the answer is memoised for the lifetime of the client.

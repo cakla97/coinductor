@@ -428,6 +428,19 @@ class Storage:
                 cumulative_quote_qty text,
                 message text
             );
+            -- New pairs seen on the exchange. Deliberately has no run_id: a
+            -- listing is not the product of a run, and tying it to one would
+            -- let run retention delete the very history this exists to build.
+            -- Capped separately, in prune_listing_events.
+            create table if not exists listing_events (
+                symbol text primary key,
+                base_asset text,
+                quote_asset text,
+                first_seen_at text,
+                first_price text,
+                status text,
+                acknowledged integer default 0
+            );
             create table if not exists next_run_recommendations (
                 run_id integer,
                 run_again_in_hours integer,
@@ -1224,6 +1237,85 @@ class Storage:
                 (mode,),
             )
         }
+
+    def known_listing_symbols(self) -> set[str]:
+        """Every pair already recorded, which is what "new" is measured against."""
+        return {
+            str(row["symbol"])
+            for row in self.connection.execute("select symbol from listing_events")
+        }
+
+    def record_listings(self, events: list[dict[str, object]]) -> list[dict[str, object]]:
+        """Insert pairs not already known; return only the ones actually added.
+
+        The primary key does the deciding rather than a prior read, so two
+        watchers racing cannot both report the same pair as new.
+        """
+        added: list[dict[str, object]] = []
+        for event in events:
+            symbol = str(event.get("symbol", "")).strip().upper()
+            if not symbol:
+                continue
+            cursor = self.connection.execute(
+                "insert or ignore into listing_events "
+                "(symbol, base_asset, quote_asset, first_seen_at, first_price, status, acknowledged) "
+                "values (?, ?, ?, ?, ?, ?, 0)",
+                (
+                    symbol,
+                    str(event.get("baseAsset", "")),
+                    str(event.get("quoteAsset", "")),
+                    str(event.get("firstSeenAt", "")),
+                    str(event.get("firstPrice", "")),
+                    str(event.get("status", "")),
+                ),
+            )
+            if cursor.rowcount:
+                added.append({**event, "symbol": symbol})
+        self.connection.commit()
+        return added
+
+    def get_recent_listings(self, limit: int = 50) -> list[dict[str, object]]:
+        rows = self.connection.execute(
+            "select symbol, base_asset, quote_asset, first_seen_at, first_price, status, acknowledged "
+            "from listing_events order by first_seen_at desc, rowid desc limit ?",
+            (int(limit),),
+        ).fetchall()
+        return [
+            {
+                "symbol": str(row["symbol"]),
+                "baseAsset": str(row["base_asset"] or ""),
+                "quoteAsset": str(row["quote_asset"] or ""),
+                "firstSeenAt": str(row["first_seen_at"] or ""),
+                "firstPrice": str(row["first_price"] or ""),
+                "status": str(row["status"] or ""),
+                "acknowledged": bool(row["acknowledged"]),
+            }
+            for row in rows
+        ]
+
+    def prune_listing_events(self, keep: int) -> int:
+        """Keep the newest `keep` rows; return how many were removed.
+
+        Run retention cannot do this - these rows have no run_id, on purpose -
+        so without it the table is the one thing in the journal that grows
+        without limit.
+        """
+        keep = max(0, int(keep))
+        removed = self.connection.execute(
+            "delete from listing_events where rowid not in ("
+            "  select rowid from listing_events order by first_seen_at desc, rowid desc limit ?"
+            ")",
+            (keep,),
+        ).rowcount
+        self.connection.commit()
+        return max(0, removed)
+
+    def acknowledge_listing(self, symbol: str) -> None:
+        self.connection.execute(
+            "update listing_events set acknowledged = 1 where symbol = ?",
+            (str(symbol).strip().upper(),),
+        )
+        self.connection.commit()
 
     def get_first_portfolio_progress(self) -> list[dict[str, object]]:
         rows = self.connection.execute(

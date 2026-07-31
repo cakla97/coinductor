@@ -203,6 +203,10 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
             "nepoužívá. Hodnocení dostanete, když při spuštění zaškrtnete \"Vygenerovat shrnutí od AI\"."
         ),
     },
+    "no_ai_provider_toast": {
+        "en": "No AI provider is set up, so there is nothing to ask. Settings has the setup - it is optional.",
+        "cs": "Není nastavený žádný AI model, takže není koho se zeptat. Nastavení najdete v Nastavení - je to volitelné.",
+    },
     # --- per-order size cap ---
     "order_caps_saved": {
         "en": "Order size caps saved.",
@@ -213,8 +217,12 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Uloženo. Živý strop je nad hodnotou {suggested} doporučenou pro portfolio této velikosti - pokud je to záměr, v pořádku.",
     },
     "order_caps_unchanged": {
-        "en": "Nothing changed. A cap must be greater than zero.",
-        "cs": "Nic se nezměnilo. Strop musí být větší než nula.",
+        "en": "Nothing changed - those are the caps already in force.",
+        "cs": "Nic se nezměnilo - tyhle stropy už platí.",
+    },
+    "order_caps_invalid": {
+        "en": "A cap must be a number greater than zero. Nothing was saved.",
+        "cs": "Strop musí být číslo větší než nula. Nic se neuložilo.",
     },
     # --- first portfolio tranches ---
     "tranche_busy": {

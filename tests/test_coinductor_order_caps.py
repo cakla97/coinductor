@@ -126,3 +126,30 @@ def test_a_decimal_comma_is_accepted(tmp_path) -> None:
     apply_order_caps_to_config(path, "200", "84,5")
 
     assert read_order_caps(path)["mainnet"] == Decimal("84.5")
+
+
+def test_valid_caps_separates_a_bad_number_from_an_unchanged_one() -> None:
+    """Both write nothing, and both used to report the same thing.
+
+    Saving the caps already in force was reported as "a cap must be greater
+    than zero", sending a user to look for a mistake they had not made.
+    """
+    from coinductor.order_caps import valid_caps
+
+    assert valid_caps("200", "84") is True
+    assert valid_caps("200", "0") is False
+    assert valid_caps("0", "84") is False
+    assert valid_caps("200", "-1") is False
+    assert valid_caps("200", "abc") is False
+
+
+def test_saving_the_caps_already_in_force_is_valid_but_writes_nothing(tmp_path) -> None:
+    from coinductor.order_caps import valid_caps
+
+    path = _config(tmp_path)
+    apply_order_caps_to_config(path, 200, 84)
+
+    # Valid, so the controller must not report it as a bad number...
+    assert valid_caps("200", "84") is True
+    # ...but there is genuinely nothing to write.
+    assert apply_order_caps_to_config(path, 200, 84) == {}

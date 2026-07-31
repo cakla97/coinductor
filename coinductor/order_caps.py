@@ -94,6 +94,16 @@ def apply_order_caps_to_config(
     return changed
 
 
+def valid_caps(testnet_cap: object, mainnet_cap: object) -> bool:
+    """Whether both values could be written at all.
+
+    Kept apart from "nothing changed": saving the same numbers twice writes
+    nothing either, and reporting that as an invalid cap sent a user looking for
+    a mistake they had not made.
+    """
+    return _decimal(testnet_cap) > 0 and _decimal(mainnet_cap) > 0
+
+
 def _decimal(value: object) -> Decimal:
     try:
         return Decimal(str(value if value is not None else "0").strip().replace(",", "."))

@@ -1,7 +1,26 @@
 # Changelog
 
 Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
-and is pre-1.0: minor versions may still change behaviour.
+Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
+default takes a major version.
+
+## [1.0.0] — 2026-07-31
+
+First stable release. Nothing in the engine changed for it: the version says the desktop
+has been walked through by hand, in both languages, and that the config format and journal
+schema are now something to migrate rather than move.
+
+### Fixed
+
+- **Saving the caps already in force reported "a cap must be greater than zero".** Writing
+  nothing has two causes — an unusable number, and nothing to change — and both returned
+  the same empty result. They are told apart now, and the second says so plainly.
+- **With no AI model connected, the assistant accepted the question and answered
+  "LLM_BASE_URL is not set."** — an environment variable name, in English, to someone who
+  never chose to have one. The assistant now says what is missing and offers Settings; its
+  input and Send are disabled; and the two AI options in the run dialog are unavailable
+  with a line explaining that the analysis runs exactly the same without them. A guard in
+  the controller backs the disabled input, because that is what decides what happens.
 
 ## [0.1.21] — 2026-07-31
 

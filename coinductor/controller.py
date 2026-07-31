@@ -26,6 +26,7 @@ from .order_caps import (
     exceeds_suggestion,
     read_order_caps,
     suggested_mainnet_cap,
+    valid_caps,
 )
 from .paths import data_dir_label
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions, SafetySnapshot
@@ -1602,6 +1603,14 @@ class AppController(QObject):
         text = question.strip()
         if (not text and not self._assistant_attachment) or self._assistant_busy:
             return
+        # The QML disables the input too, but this is the guard that matters:
+        # without it the question reaches a worker that answers with the name of
+        # an unset environment variable.
+        if self.activeAiProviderKind == "NONE":
+            self.notificationRequested.emit(
+                service_text("no_ai_provider_toast", self._wizard_language)
+            )
+            return
         if self._assistant_attachment and not self._assistant_vision_available:
             self.notificationRequested.emit(self._assistant_vision_detail)
             return
@@ -1966,6 +1975,12 @@ class AppController(QObject):
         around by editing the file - which is the problem this replaced.
         """
         language = self._wizard_language
+        # "Nothing was written" has two very different causes, and reporting the
+        # rarer one for both told a user who had simply saved the same numbers
+        # twice that their cap was not greater than zero.
+        if not valid_caps(testnet, mainnet):
+            self.notificationRequested.emit(service_text("order_caps_invalid", language))
+            return
         changed = apply_order_caps_to_config(default_config_path(), testnet, mainnet)
         self.orderCapsChanged.emit()
         if not changed:

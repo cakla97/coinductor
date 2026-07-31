@@ -1169,6 +1169,27 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Setup wizard",
         "cs": "Průvodce nastavením",
     },
+    # --- no AI provider configured ---
+    "no_ai_provider_title": {
+        "en": "No AI model is connected",
+        "cs": "Není připojený žádný AI model",
+    },
+    "no_ai_provider_assistant_detail": {
+        "en": "The assistant needs a local or cloud model to answer. Everything else in Coinductor works without one - the analysis is deterministic and never asks a model.",
+        "cs": "Asistent potřebuje místní nebo cloudový model, aby mohl odpovídat. Všechno ostatní v Coinductoru funguje i bez něj - analýza je deterministická a model se jí nikdy neptá.",
+    },
+    "no_ai_provider_input_placeholder": {
+        "en": "Connect a model in Settings to ask questions",
+        "cs": "Pro dotazy připojte model v Nastavení",
+    },
+    "no_ai_provider_setup_button": {
+        "en": "Open Settings",
+        "cs": "Otevřít Nastavení",
+    },
+    "no_ai_provider_run_detail": {
+        "en": "No AI model is connected, so these two are unavailable. The analysis itself runs exactly the same without them.",
+        "cs": "Není připojený žádný AI model, takže tyhle dvě volby nejsou dostupné. Samotná analýza proběhne úplně stejně i bez nich.",
+    },
     "order_caps_title": {
         "en": "Maximum size of a single order",
         "cs": "Maximální velikost jednoho příkazu",

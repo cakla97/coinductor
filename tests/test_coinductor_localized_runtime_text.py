@@ -428,3 +428,35 @@ class _StubWorker:
 
     def moveToThread(self, *_args):
         return None
+
+
+def test_the_assistant_refuses_a_question_when_no_model_is_connected(monkeypatch, tmp_path) -> None:
+    """It used to accept the question and answer "LLM_BASE_URL is not set."
+
+    An environment variable name, in English, to someone who never chose to
+    have one. The QML disables the input too, but this is the guard that
+    decides what actually happens.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("cs")
+    notes: list[str] = []
+    controller.notificationRequested.connect(notes.append)
+
+    assert controller.activeAiProviderKind == "NONE"
+    controller.askAssistant("Proč je verdikt HOLD?")
+
+    assert notes and notes[-1].startswith("Není nastavený žádný AI model")
+    # Nothing was queued: no question, no typing indicator, not busy.
+    assert controller.assistantBusy is False
+    assert not [m for m in controller.assistantMessages if m.get("role") == "user"]
+
+
+def test_the_refusal_is_in_the_readers_language(monkeypatch, tmp_path) -> None:
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("en")
+    notes: list[str] = []
+    controller.notificationRequested.connect(notes.append)
+
+    controller.askAssistant("Why HOLD?")
+
+    assert notes and notes[-1].startswith("No AI provider is set up")

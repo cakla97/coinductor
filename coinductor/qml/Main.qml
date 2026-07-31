@@ -3269,19 +3269,63 @@ ApplicationWindow {
                     }
                 }
 
+                // With no provider the assistant used to accept the question and
+                // answer "LLM_BASE_URL is not set." - an environment variable
+                // name, in English, to someone who never chose to have one.
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: noAiContent.implicitHeight + 28
+                    visible: appController.activeAiProviderKind === "NONE"
+                    radius: radiusMd
+                    color: panelRaised
+                    border.color: warning
+                    RowLayout {
+                        id: noAiContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        spacing: 12
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 4
+                            Text {
+                                text: appController.appText.no_ai_provider_title
+                                color: warning
+                                font.pixelSize: 14
+                                font.bold: true
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.no_ai_provider_assistant_detail
+                                color: textSecondary
+                                font.pixelSize: 11
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                        Button {
+                            text: appController.appText.no_ai_provider_setup_button
+                            onClicked: appController.setCurrentPage(8)
+                        }
+                    }
+                }
+
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: 10
                     Button {
                         text: appController.appText.assistant_attach_image_button
-                        enabled: !appController.assistantBusy
+                        enabled: !appController.assistantBusy && appController.activeAiProviderKind !== "NONE"
                         onClicked: assistantImageDialog.open()
                     }
                     TextField {
                         id: assistantInput
                         Layout.fillWidth: true
-                        placeholderText: appController.appText.assistant_input_placeholder
-                        enabled: !appController.assistantBusy
+                        placeholderText: appController.activeAiProviderKind === "NONE"
+                            ? appController.appText.no_ai_provider_input_placeholder
+                            : appController.appText.assistant_input_placeholder
+                        enabled: !appController.assistantBusy && appController.activeAiProviderKind !== "NONE"
                         Keys.onPressed: function(event) {
                             if (event.key === Qt.Key_V && (event.modifiers & Qt.ControlModifier)) {
                                 event.accepted = appController.pasteAssistantImageFromClipboard()
@@ -3306,7 +3350,8 @@ ApplicationWindow {
                     Button {
                         visible: !appController.assistantBusy
                         text: appController.appText.assistant_send_button
-                        enabled: (assistantInput.text.trim().length > 0 || Object.keys(appController.assistantAttachment).length > 0)
+                        enabled: appController.activeAiProviderKind !== "NONE"
+                                 && (assistantInput.text.trim().length > 0 || Object.keys(appController.assistantAttachment).length > 0)
                                  && (Object.keys(appController.assistantAttachment).length === 0 || appController.assistantVisionAvailable)
                         onClicked: {
                             appController.askAssistant(assistantInput.text)
@@ -6145,8 +6190,28 @@ ApplicationWindow {
                 Layout.fillWidth: true
                 model: ["REAL", "MOCK"]
             }
-            CheckBox { id: aiSummary; text: appController.appText.generate_ai_summary_checkbox; checked: true }
-            CheckBox { id: aiProposals; text: appController.appText.allow_ai_market_ranking_checkbox; checked: false }
+            CheckBox {
+                id: aiSummary
+                text: appController.appText.generate_ai_summary_checkbox
+                // Ticking these without a provider produced a run that asked
+                // nothing and then explained itself in a panel afterwards.
+                enabled: appController.activeAiProviderKind !== "NONE"
+                checked: appController.activeAiProviderKind !== "NONE"
+            }
+            CheckBox {
+                id: aiProposals
+                text: appController.appText.allow_ai_market_ranking_checkbox
+                enabled: appController.activeAiProviderKind !== "NONE"
+                checked: false
+            }
+            Text {
+                Layout.fillWidth: true
+                visible: appController.activeAiProviderKind === "NONE"
+                text: appController.appText.no_ai_provider_run_detail
+                color: warning
+                font.pixelSize: 11
+                wrapMode: Text.WordWrap
+            }
             CheckBox {
                 id: livePreview
                 text: appController.safetyAllowsLivePreview ? appController.appText.include_mainnet_preview_checkbox : appController.appText.mainnet_preview_locked_checkbox

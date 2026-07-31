@@ -271,3 +271,47 @@ def test_no_engine_prose_is_left_where_a_message_belongs() -> None:
             if re.search(r'(reason|summary|action|blockers)\w*\s*(=|\.append\()\s*f?"[A-Z][a-z]+ \w+ \w+', stripped):
                 offenders.append(f"{name}: {stripped[:70]}")
     assert offenders == [], "prose where a message belongs:\n  " + "\n  ".join(offenders)
+
+
+def test_the_offline_help_has_no_english_literals_left() -> None:
+    """This corpus sat outside every guard test, which is why it stayed English.
+
+    LocalHelpAssistant answers whenever no model is connected - for many users
+    that is every answer they will ever see from it.
+    """
+    source = _source("coinductor", "assistant.py")
+    body = source.split("class LocalHelpAssistant", 1)[1].split("\nclass ", 1)[0]
+
+    # A returned sentence rather than a key lookup is the shape that regressed.
+    offenders = [
+        line.strip()[:70]
+        for line in body.splitlines()
+        if re.search(r'return\s+(f?")[A-Z][a-z]+ \w+ \w+', line.strip())
+    ]
+    assert offenders == [], "prose returned instead of a message:\n  " + "\n  ".join(offenders)
+
+
+def test_every_offline_help_key_resolves_in_both_languages() -> None:
+    keys = set(re.findall(r'service_text\(\s*"(help_\w+)"', _source("coinductor", "assistant.py")))
+    assert keys, "the extraction pattern is stale"
+
+    missing = [
+        f"{key}/{language}"
+        for key in keys
+        for language in LANGUAGES
+        if not SERVICE_STRINGS.get(key, {}).get(language, "").strip()
+    ]
+    assert missing == [], f"offline help text missing: {missing}"
+
+
+def test_every_offline_help_topic_has_a_handler() -> None:
+    """The topic name is turned into a method name with getattr.
+
+    A topic without its method raises AttributeError at the moment someone asks
+    a question, which is the worst possible time to find out.
+    """
+    from coinductor.assistant import LocalHelpAssistant
+
+    for topic, keywords in LocalHelpAssistant._TOPICS:
+        assert keywords, f"{topic} has no keywords"
+        assert callable(getattr(LocalHelpAssistant, f"_{topic}", None)), f"no handler for {topic}"

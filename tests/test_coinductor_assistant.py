@@ -28,9 +28,34 @@ def test_local_assistant_answers_from_latest_snapshot() -> None:
     assistant = LocalHelpAssistant()
 
     assert "Run 42 ended with HOLD" in assistant.answer("What happened in the latest run?", snapshot)
-    assert "Run 42 ended with HOLD" in assistant.answer("Co provedl posledni beh?", snapshot)
+    # A Czech question gets a Czech answer. It used to be matched in Czech and
+    # answered in English, so the greeting above it and the answer below it
+    # disagreed about the language.
+    assert "Běh 42 skončil s výsledkem HOLD" in assistant.answer("Co provedl posledni beh?", snapshot)
     assert "BTC 60.00%" in assistant.answer("Describe my portfolio", snapshot)
     assert "Grid is blocked" in assistant.answer("What about grid?", snapshot)
+
+
+def test_a_topic_is_not_matched_by_a_word_that_merely_contains_it() -> None:
+    """"Co mam delat v sekci Profile?" was answered with where the report files are.
+
+    Matching was `in`, and "profile" contains "file". Whole words now, so an
+    unrecognised question is admitted rather than answered by coincidence.
+    """
+    assistant = LocalHelpAssistant()
+
+    answer = assistant.answer("Co mám dělat v sekci Profile?", _snapshot())
+
+    assert "outputs/reports" not in answer
+    assert "Téhle otázce jsem nerozuměl" in answer
+
+
+def test_an_unknown_question_admits_it_in_the_language_it_was_asked() -> None:
+    assistant = LocalHelpAssistant()
+    snapshot = _snapshot()
+
+    assert "I did not understand" in assistant.answer("What is the weather?", snapshot)
+    assert "nerozuměl" in assistant.answer("Jaké bude počasí?", snapshot)
 
 
 def test_market_data_assistant_answers_a_recognized_asset_price_question(tmp_path, monkeypatch) -> None:
@@ -287,7 +312,7 @@ def test_provider_backed_assistant_falls_back_when_provider_missing(tmp_path, mo
 
     answer = ProviderBackedAssistant("config.toml", ".env").answer("Explain risk", _snapshot())
 
-    assert "Coinductor keeps execution deterministic" in answer
+    assert "Execution stays deterministic" in answer
     # Not "fallback" and not the name of an unset variable: nothing failed and
     # nothing was asked. The built-in help simply answered, which is what this
     # screen offers whether or not a model is connected.

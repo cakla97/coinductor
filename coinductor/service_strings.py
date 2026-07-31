@@ -203,6 +203,53 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
             "nepoužívá. Hodnocení dostanete, když při spuštění zaškrtnete \"Vygenerovat shrnutí od AI\"."
         ),
     },
+    # --- built-in offline help ---
+    # Answers the assistant gives when no model is connected. The language
+    # follows the question, not the app: someone asking in Czech gets Czech.
+    "help_no_question": {
+        "en": "Ask about the latest run, portfolio roles, risk controls, Grid, Rebalancing, or where your data is kept.",
+        "cs": "Zeptejte se na poslední běh, role v portfoliu, bezpečnostní pojistky, Grid, Rebalancing nebo kde jsou uložená data.",
+    },
+    "help_not_understood": {
+        "en": "I did not understand that one. Without a connected model I answer from a short list of topics: the latest run, your portfolio, risk controls, Grid, Rebalancing, and where your data is kept. Connect an AI model in Settings for anything broader.",
+        "cs": "Téhle otázce jsem nerozuměl. Bez připojeného modelu odpovídám z krátkého seznamu témat: poslední běh, portfolio, bezpečnostní pojistky, Grid, Rebalancing a kde jsou uložená data. Na cokoli dalšího připojte AI model v Nastavení.",
+    },
+    "help_no_run": {
+        "en": "No completed run on real data yet.",
+        "cs": "Zatím neproběhl žádný běh nad skutečnými daty.",
+    },
+    "help_no_follow_up": {
+        "en": "no follow-up action was recorded",
+        "cs": "žádná navazující akce nebyla zaznamenána",
+    },
+    "help_last_run": {
+        "en": "Run {run_id} ended with {decision}. {summary} Highest-priority follow-up: {action}",
+        "cs": "Běh {run_id} skončil s výsledkem {decision}. {summary} Nejdůležitější navazující krok: {action}",
+    },
+    "help_risk": {
+        "en": "Execution stays deterministic: the AI cannot get past the symbol allowlist, protected assets, position limits, daily and weekly loss limits, cooldowns, liquidity checks, or the confirmation you type yourself.",
+        "cs": "Provádění zůstává deterministické: AI se nedostane přes seznam povolených symbolů, chráněná aktiva, limity pozic, denní a týdenní ztrátové limity, cooldowny, kontrolu likvidity ani přes potvrzení, které vypisujete vy.",
+    },
+    "help_no_grid": {
+        "en": "No Grid recommendation is stored for the latest run on real data.",
+        "cs": "Pro poslední běh nad skutečnými daty není uložené žádné doporučení pro Grid.",
+    },
+    "help_no_rebalancing": {
+        "en": "No Rebalancing recommendation is stored for the latest run on real data.",
+        "cs": "Pro poslední běh nad skutečnými daty není uložené žádné doporučení pro Rebalancing.",
+    },
+    "help_no_portfolio": {
+        "en": "Portfolio data is not loaded yet.",
+        "cs": "Data portfolia zatím nejsou načtená.",
+    },
+    "help_portfolio": {
+        "en": "Largest holdings in the latest run: {assets}. Open Portfolio for roles and liquidity.",
+        "cs": "Největší pozice v posledním běhu: {assets}. Role a likviditu najdete v Portfoliu.",
+    },
+    "help_data": {
+        "en": "Reports are in outputs/reports and the run history is in work/trading_agent.sqlite3. Open detailed report on Overview opens the latest one.",
+        "cs": "Reporty jsou v outputs/reports a historie běhů v work/trading_agent.sqlite3. Tlačítko Otevřít podrobný report na Přehledu otevře ten poslední.",
+    },
     "reset_group_ai_provider": {
         "en": "AI model connection",
         "cs": "Připojení AI modelu",

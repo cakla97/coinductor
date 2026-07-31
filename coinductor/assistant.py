@@ -18,7 +18,17 @@ from .ai_provider import AiProviderService, _describe_provider_error  # noqa: F4
 from .guide_service import GuideService
 from .models import DesktopSnapshot
 from .secret_store import load_secrets
+from .service_strings import service_text
 from .ui_knowledge import UiKnowledgeService, is_czech
+
+
+def _fold(value: str) -> str:
+    """Lowercase and strip diacritics, so "poslední" matches "posledni"."""
+    return "".join(
+        character
+        for character in unicodedata.normalize("NFKD", value.strip().lower())
+        if not unicodedata.combining(character)
+    )
 
 
 @dataclass(frozen=True)
@@ -525,50 +535,83 @@ class MarketDataAssistant:
 
 
 class LocalHelpAssistant:
+    """The built-in help, used whenever no model answers.
+
+    Every reply used to be an English literal, so a Czech question got a Czech
+    greeting from the layer above and an English answer from here. And matching
+    was done with `in`, which is how "Co mam delat v sekci Profile?" was
+    answered with the location of the report files: "profile" contains "file".
+    """
+
+    # Topic, then the words that mean it. Matched on whole words, so a topic
+    # cannot be triggered by a word that merely contains it.
+    _TOPICS: tuple[tuple[str, tuple[str, ...]], ...] = (
+        ("last_run", ("last run", "latest run", "posledni", "posledniho", "beh", "behu", "dnes", "provedl")),
+        ("risk", ("risk", "risks", "riziko", "rizika", "bezpecnost", "bezpecnostni", "guard", "guards", "limit", "limity")),
+        ("grid", ("grid", "gridu", "gridy")),
+        ("rebalancing", ("rebalancing", "rebalancovani", "rebalance", "kos", "kosik", "basket")),
+        ("portfolio", ("portfolio", "portfolia", "asset", "assets", "aktivum", "aktiva", "token", "tokeny", "coin", "coins")),
+        ("data", ("report", "reporty", "soubor", "soubory", "file", "files", "database", "databaze", "sqlite", "kde")),
+    )
+
     def answer(self, question: str, snapshot: DesktopSnapshot) -> str:
-        query = "".join(
-            character
-            for character in unicodedata.normalize("NFKD", question.strip().lower())
-            if not unicodedata.combining(character)
-        )
+        query = _fold(question)
+        language = "cs" if is_czech(question) else "en"
         if not query:
-            return "Ask about the latest run, portfolio roles, risk controls, Grid, Rebalancing, or where data is stored."
+            return service_text("help_no_question", language)
+
+        topic = self._topic(query)
+        if topic is None:
+            # An answer to a question nobody asked is worse than admitting the
+            # question was not understood: it reads as a confident non-sequitur.
+            return service_text("help_not_understood", language)
+        return getattr(self, f"_{topic}")(snapshot, language)
+
+    def _topic(self, query: str) -> str | None:
+        words = set(re.findall(r"[a-z0-9]+", query))
+        for topic, keywords in self._TOPICS:
+            for keyword in keywords:
+                parts = keyword.split()
+                if len(parts) > 1:
+                    if keyword in query:
+                        return topic
+                elif keyword in words:
+                    return topic
+        return None
+
+    def _last_run(self, snapshot: DesktopSnapshot, language: str) -> str:
         latest = snapshot.latest_run
-        if any(word in query for word in ("last run", "latest run", "poslední", "dnes", "provedl")):
-            if latest is None:
-                return "No completed real-data run is available yet."
-            top_action = latest.actions[0].action if latest.actions else "No follow-up action was recorded."
-            return (
-                f"Run {latest.run_id} ended with {latest.decision}. {latest.decision_summary} "
-                f"Highest-priority follow-up: {top_action}"
-            )
-        if any(word in query for word in ("risk", "bezpe", "guard", "limit")):
-            return (
-                "Coinductor keeps execution deterministic: AI cannot bypass symbol allowlists, protected assets, "
-                "position limits, daily/weekly loss limits, cooldowns, liquidity checks, or explicit submit confirmations."
-            )
-        if "grid" in query:
-            strategy = next((item for item in snapshot.strategies if item["type"] == "Spot Grid"), None)
-            return strategy["detail"] if strategy else "No Grid recommendation is stored for the latest real run."
-        if any(word in query for word in ("rebalanc", "koš", "basket")):
-            strategy = next((item for item in snapshot.strategies if item["type"] == "Rebalancing"), None)
-            return strategy["detail"] if strategy else "No Rebalancing recommendation is stored for the latest real run."
-        if any(word in query for word in ("portfolio", "asset", "token", "coin")):
-            if not snapshot.portfolio_assets:
-                return "Portfolio data is not loaded."
-            top = ", ".join(
-                f"{item['asset']} {item['allocation']}" for item in snapshot.portfolio_assets[:5]
-            )
-            return f"Largest assets in the latest real run: {top}. Open Portfolio for role and liquidity details."
-        if any(word in query for word in ("report", "file", "database", "sqlite", "kde")):
-            return (
-                "Detailed reports are in outputs/reports and structured history is in work/trading_agent.sqlite3. "
-                "Use Open detailed report from Overview for the latest real run."
-            )
-        return (
-            "I am currently the offline project-help assistant. I can explain the latest run, portfolio, risk controls, "
-            "Grid/Rebalancing recommendations, and local data locations. Configure an AI provider in Settings for broader read-only Q&A."
+        if latest is None:
+            return service_text("help_no_run", language)
+        top_action = (
+            latest.actions[0].action if latest.actions else service_text("help_no_follow_up", language)
         )
+        return service_text("help_last_run", language).format(
+            run_id=latest.run_id,
+            decision=latest.decision,
+            summary=latest.decision_summary,
+            action=top_action,
+        )
+
+    def _risk(self, snapshot: DesktopSnapshot, language: str) -> str:
+        return service_text("help_risk", language)
+
+    def _grid(self, snapshot: DesktopSnapshot, language: str) -> str:
+        strategy = next((item for item in snapshot.strategies if item["type"] == "Spot Grid"), None)
+        return strategy["detail"] if strategy else service_text("help_no_grid", language)
+
+    def _rebalancing(self, snapshot: DesktopSnapshot, language: str) -> str:
+        strategy = next((item for item in snapshot.strategies if item["type"] == "Rebalancing"), None)
+        return strategy["detail"] if strategy else service_text("help_no_rebalancing", language)
+
+    def _portfolio(self, snapshot: DesktopSnapshot, language: str) -> str:
+        if not snapshot.portfolio_assets:
+            return service_text("help_no_portfolio", language)
+        top = ", ".join(f"{item['asset']} {item['allocation']}" for item in snapshot.portfolio_assets[:5])
+        return service_text("help_portfolio", language).format(assets=top)
+
+    def _data(self, snapshot: DesktopSnapshot, language: str) -> str:
+        return service_text("help_data", language)
 
 
 class ProviderBackedAssistant:

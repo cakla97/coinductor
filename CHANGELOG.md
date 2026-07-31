@@ -4,6 +4,26 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.1.0] — 2026-07-31
+
+### Changed
+
+- **The built-in offline help answers in the language it was asked in.** Every reply was
+  an English literal, so a Czech question got a Czech greeting from one layer and an
+  English answer from the next. For anyone running without a model this is the only
+  assistant there is.
+- **A question it does not recognise is admitted, not answered anyway.** It used to fall
+  through to a summary of what it can do, phrased as though it had understood.
+- **Topics match whole words.** Matching was `in`, so *"Co mám dělat v sekci Profile?"* was
+  answered with the location of the report files — because "profile" contains "file". That
+  one wrong answer is what sent us looking at this corpus at all.
+
+### Added
+
+- Guard tests over the offline help: no prose returned in place of a message, every key
+  resolving in both languages, and every topic having the handler its name implies —
+  a missing one would have raised at the moment somebody asked a question.
+
 ## [1.0.2] — 2026-07-31
 
 ### Fixed

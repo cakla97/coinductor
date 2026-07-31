@@ -14,6 +14,7 @@ research/requests/*
 !research/requests/.gitkeep
 state/active_strategies.toml
 state/app_ui_state.toml
+state/last_seen_run.toml
 state/app_safety_state.toml
 state/asset_policy_overrides.toml
 state/user_profile.toml

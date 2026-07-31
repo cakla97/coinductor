@@ -23,7 +23,9 @@ from .guide_service import GuideService
 from .allowed_symbols import add_allowed_symbol
 from .automation import (
     MAX_INTERVAL_HOURS,
+    MAX_LISTING_MINUTES,
     MIN_INTERVAL_HOURS,
+    MIN_LISTING_MINUTES,
     apply_automation_to_config,
     read_automation,
 )
@@ -1990,6 +1992,10 @@ class AppController(QObject):
             "livePreview": settings.live_preview,
             "minHours": MIN_INTERVAL_HOURS,
             "maxHours": MAX_INTERVAL_HOURS,
+            "watchListings": settings.watch_listings,
+            "listingIntervalMinutes": settings.listing_interval_minutes,
+            "minListingMinutes": MIN_LISTING_MINUTES,
+            "maxListingMinutes": MAX_LISTING_MINUTES,
         }
 
     @Slot(bool, str, bool, bool)

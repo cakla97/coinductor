@@ -111,6 +111,7 @@ ApplicationWindow {
         { label: "Action Plan", page: 3 },
         { label: "Active Strategies", page: 4 },
         { label: "Run History", page: 5 },
+        { label: "New listings", page: 9 },
         { label: "AI Assistant", page: 6 },
         { label: "Help & Guides", page: 7 },
         { label: "Settings", page: 8 }
@@ -131,6 +132,7 @@ ApplicationWindow {
             3: appController.appText.nav_action_plan,
             4: appController.appText.nav_active_strategies,
             5: appController.appText.nav_run_history,
+            9: appController.appText.nav_new_listings,
             6: appController.appText.nav_ai_assistant,
             7: appController.appText.nav_help_guides,
             8: appController.appText.nav_settings,
@@ -3783,6 +3785,157 @@ ApplicationWindow {
             }
         }
 
+
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            visible: appController.currentPage === 9
+            contentWidth: availableWidth
+            contentHeight: listingsPageContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+            ColumnLayout {
+                id: listingsPageContent
+                x: 28
+                y: 28
+                width: window.pageContentWidth()
+                spacing: 18
+
+                Text { text: appController.appText.listings_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text {
+                    Layout.fillWidth: true
+                    text: appController.appText.listings_subtitle
+                    color: textSecondary
+                    font.pixelSize: 13
+                    wrapMode: Text.WordWrap
+                }
+
+                // Says plainly what this is not, on the screen where someone
+                // would otherwise assume it is a trading signal.
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: listingsWarning.implicitHeight + 28
+                    radius: radiusMd
+                    color: warningSoft
+                    border.color: warning
+                    Text {
+                        id: listingsWarning
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        text: appController.appText.listings_not_a_signal
+                        color: warning
+                        font.pixelSize: 12
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: listingsControls.implicitHeight + 32
+                    radius: radiusMd
+                    color: panel
+                    border.color: appController.automation.watchListings ? accent : border
+                    ColumnLayout {
+                        id: listingsControls
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 8
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            CheckBox {
+                                id: listingWatchEnabled
+                                text: appController.appText.listings_watch_checkbox
+                                checked: appController.automation.watchListings
+                            }
+                            Text { text: appController.appText.listings_interval_label; color: textSecondary; font.pixelSize: 12 }
+                            SpinBox {
+                                id: listingWatchInterval
+                                from: appController.automation.minListingMinutes
+                                to: appController.automation.maxListingMinutes
+                                value: appController.automation.listingIntervalMinutes
+                                editable: true
+                            }
+                            Button {
+                                text: appController.appText.listings_save_button
+                                onClicked: appController.saveListingWatch(
+                                    listingWatchEnabled.checked, String(listingWatchInterval.value))
+                            }
+                            Button {
+                                text: appController.appText.listings_check_now_button
+                                enabled: appController.automation.watchListings
+                                onClicked: appController.scanListings()
+                            }
+                            Item { Layout.fillWidth: true }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            visible: appController.listingStatus.length > 0
+                            text: appController.listingStatus
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: appController.listings.length === 0
+                    text: appController.appText.listings_empty
+                    color: textSecondary
+                    font.pixelSize: 12
+                    wrapMode: Text.WordWrap
+                }
+
+                Repeater {
+                    model: appController.listings
+                    delegate: Rectangle {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 62
+                        radius: radiusSm
+                        color: panelRaised
+                        border.color: modelData.acknowledged ? accent : border
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            spacing: 12
+                            ColumnLayout {
+                                Layout.preferredWidth: 190
+                                spacing: 2
+                                CopyableValue { value: modelData.symbol; font.pixelSize: 14; font.bold: true }
+                                Text {
+                                    text: modelData.baseAsset + " / " + modelData.quoteAsset
+                                    color: textSecondary
+                                    font.pixelSize: 10
+                                }
+                            }
+                            ElidedDetail {
+                                Layout.fillWidth: true
+                                text: appController.appText.listings_first_seen_template
+                                    .replace("{when}", modelData.firstSeenAt)
+                                font.pixelSize: 11
+                            }
+                            Button {
+                                text: modelData.acknowledged
+                                    ? appController.appText.listings_allowed_button
+                                    : appController.appText.listings_allow_button
+                                enabled: !modelData.acknowledged
+                                onClicked: appController.addAllowedSymbol(modelData.symbol)
+                            }
+                        }
+                    }
+                }
+            }
+        }
         ScrollView {
             Layout.fillWidth: true
             Layout.fillHeight: true

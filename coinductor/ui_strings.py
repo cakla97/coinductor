@@ -1878,6 +1878,52 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     "nav_ai_assistant": {"en": "AI Assistant", "cs": "AI asistent"},
     "nav_help_guides": {"en": "Help & Guides", "cs": "Nápověda a návody"},
     "nav_settings": {"en": "Settings", "cs": "Nastavení"},
+    "nav_new_listings": {"en": "New listings", "cs": "Nové listingy"},
+    # --- new listings page ---
+    "listings_title": {
+        "en": "New listings",
+        "cs": "Nové listingy",
+    },
+    "listings_subtitle": {
+        "en": "Pairs that appeared on Binance since Coinductor started watching.",
+        "cs": "Páry, které se na Binance objevily od chvíle, kdy je Coinductor začal sledovat.",
+    },
+    "listings_not_a_signal": {
+        "en": "This is a record, not a trade signal. Coinductor never buys a listing, and buying one at market in its first minutes is how the bots that got there first get paid — the book is thin and the price you see is not the price you fill at. Use this to watch what actually happens, and decide later.",
+        "cs": "Tohle je záznam, ne obchodní signál. Coinductor listing nikdy nekoupí a nákup za tržní cenu v prvních minutách je přesně to, čím se platí botům, kteří tam byli dřív — kniha je tenká a cena, kterou vidíte, není cena, za kterou nakoupíte. Berte to jako pozorování a rozhodujte se až podle něj.",
+    },
+    "listings_watch_checkbox": {
+        "en": "Watch for new listings",
+        "cs": "Sledovat nové listingy",
+    },
+    "listings_interval_label": {
+        "en": "Check every (minutes)",
+        "cs": "Kontrolovat každých (minut)",
+    },
+    "listings_save_button": {
+        "en": "Save",
+        "cs": "Uložit",
+    },
+    "listings_check_now_button": {
+        "en": "Check now",
+        "cs": "Zkontrolovat teď",
+    },
+    "listings_empty": {
+        "en": "Nothing yet. The first check records what is already listed as a starting point, so only pairs that appear after that show up here.",
+        "cs": "Zatím nic. První kontrola si zapíše, co už je zalistované, jako výchozí stav — objeví se tu tedy jen páry, které přibydou potom.",
+    },
+    "listings_first_seen_template": {
+        "en": "First seen {when}",
+        "cs": "Poprvé zaznamenáno {when}",
+    },
+    "listings_allow_button": {
+        "en": "Allow analysis",
+        "cs": "Povolit analýzu",
+    },
+    "listings_allowed_button": {
+        "en": "Analysis allowed",
+        "cs": "Analýza povolena",
+    },
     # --- app tour ---
     # One entry per step of the guided tour behind Settings > Replay app tour.
     # The nav label of each step is reused from the nav_* keys above.

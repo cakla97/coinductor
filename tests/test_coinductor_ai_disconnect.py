@@ -59,3 +59,17 @@ def test_the_ai_group_names_every_key_the_wizard_writes() -> None:
 
     llm_keys = tuple(key for key in MANAGED_KEYS if key.startswith("LLM_"))
     assert set(AI_PROVIDER_KEYS) == set(llm_keys)
+
+
+def test_an_unconfigured_provider_is_not_reported_as_a_failure() -> None:
+    """"Poskytovatel AI selhal: LLM_BASE_URL is not set." named an unset
+    environment variable to someone who never chose to have a model, and called
+    it a failure when nothing had been asked.
+    """
+    from coinductor.assistant import _is_unconfigured
+
+    assert _is_unconfigured(RuntimeError("LLM_BASE_URL is not set.")) is True
+    assert _is_unconfigured(RuntimeError("LLM_MODEL is not set.")) is True
+    # A provider that really did answer badly still says so.
+    assert _is_unconfigured(RuntimeError("HTTP 500 from the model")) is False
+    assert _is_unconfigured(TimeoutError("timed out")) is False

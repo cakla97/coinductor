@@ -4,6 +4,23 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.0.2] — 2026-07-31
+
+### Fixed
+
+- **The wizard's assistant called an unconfigured provider a failure**: *"Poskytovatel AI
+  selhal: LLM_BASE_URL is not set."* Nothing had failed and nothing had been asked — the
+  built-in offline help had answered, which is what that box offers with or without a
+  model. It now says so, and points at the step where a model can be added. A provider
+  that genuinely answered badly still reports the failure it was.
+
+### Known gaps
+
+- The wizard assistant's **offline answers are only partly translated**: some match in
+  Czech, others reply in English on a Czech screen, and a question it does not recognise
+  gets a related answer rather than an admission. It is a separate body of text from the
+  message registry and is not covered by the guard tests. Worth doing; not done here.
+
 ## [1.0.1] — 2026-07-31
 
 ### Added

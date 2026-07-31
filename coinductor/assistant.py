@@ -600,6 +600,17 @@ class ProviderBackedAssistant:
             # exactly when the provider was down. "Local" is also wrong now that
             # a cloud provider is a first-class choice.
             offline = self.fallback.answer(question, snapshot)
+            # "Failed" is wrong when nothing was ever asked. Naming an unset
+            # environment variable to someone who never chose to have a model
+            # reads as a malfunction they caused; it is simply the built-in
+            # help answering, which is what this screen promises anyway.
+            if _is_unconfigured(exc):
+                note = (
+                    "Odpovězeno bez AI modelu - žádný není připojený. Připojit ho můžete v kroku 4."
+                    if czech
+                    else "Answered without an AI model - none is connected. You can add one in step 4."
+                )
+                return f"{offline}\n\n{note}"
             label = "Poskytovatel AI selhal" if czech else "AI provider fallback"
             return f"{offline}\n\n{label}: {detail}"
 
@@ -885,6 +896,17 @@ def _extract_provider_answer(content: object) -> str:
                 return value.strip()
         return ""
     return cleaned
+
+
+def _is_unconfigured(exc: BaseException) -> bool:
+    """Whether nothing was ever asked, as opposed to something going wrong.
+
+    _provider_answer raises RuntimeError naming the unset variable. Matching on
+    that text is not lovely, but it is raised in exactly one place and the two
+    cases deserve opposite wording: one is a setting the user never filled in,
+    the other is a provider that answered badly.
+    """
+    return isinstance(exc, RuntimeError) and "is not set" in str(exc)
 
 
 def _is_local_endpoint(base_url: str) -> bool:

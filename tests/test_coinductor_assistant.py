@@ -288,7 +288,12 @@ def test_provider_backed_assistant_falls_back_when_provider_missing(tmp_path, mo
     answer = ProviderBackedAssistant("config.toml", ".env").answer("Explain risk", _snapshot())
 
     assert "Coinductor keeps execution deterministic" in answer
-    assert "AI provider fallback" in answer
+    # Not "fallback" and not the name of an unset variable: nothing failed and
+    # nothing was asked. The built-in help simply answered, which is what this
+    # screen offers whether or not a model is connected.
+    assert "Answered without an AI model" in answer
+    assert "LLM_BASE_URL" not in answer
+    assert "fallback" not in answer.lower()
 
 
 def test_provider_backed_assistant_hides_raw_connection_error_in_english(tmp_path, monkeypatch) -> None:

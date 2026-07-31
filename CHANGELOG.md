@@ -4,6 +4,43 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.2.0-rc1] — 2026-07-31
+
+Not a public release. Built from `feature/automation` for testing before anything
+reaches `master`.
+
+### Added
+
+- **The analysis can run on a schedule**, as an addition to the Run analysis button and
+  never as a replacement — that dialog behaves exactly as it always has, including for
+  anyone who never turns this on. A scheduled run cannot submit: the tests assert that the
+  arguments which authorise a submission never reach it at all, and it does not take the
+  window away from whoever is using it.
+- **A tray icon** with Open, Run analysis now, and Quit. Closing to the tray is tied to the
+  schedule: a schedule that stops when you close the window is not a schedule, and an app
+  that lingers unannounced while holding exchange credentials is a surprise nobody should
+  get.
+- **Windows scheduled task**, registered from Settings, running this same executable with
+  `--run-once`. That path loads no GUI toolkit at all — on a session without a desktop,
+  importing one can fail outright. The panel tells you the `schtasks` command to inspect or
+  delete it yourself, because the task outlives this app.
+- **A report of what ran while the window was closed.** A schedule whose results simply
+  appear in Run History with nothing to announce them feels broken even when it worked.
+- **A new-listing watcher** that records and notifies and never buys. Its first pass stores
+  the existing exchange as a baseline and reports none of it; an outage is reported rather
+  than swallowed; one base asset against eight quotes is one listing.
+- **A listings page** that says what it is not, and offers one deliberate step — allow this
+  pair to be analysed — rather than a buy button. From there the ordinary analysis, risk
+  checks, funding check and typed confirmation apply as they do for any pair.
+
+### Notes
+
+`coinductor/standing_authorisation.py` is complete and proven by 22 tests written before
+it, and is **not connected to any submit path**. The reasoning is in
+`docs/automation-proposal.md`: connecting it would mean the app typing the confirmation a
+person types, which does not add a gate but replaces the one the design rests on, and the
+result is the one path here I cannot verify safely. It is one deliberate change away.
+
 ## [1.1.1] — 2026-07-31
 
 ### Fixed

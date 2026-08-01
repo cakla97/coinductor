@@ -86,13 +86,27 @@ jobs:
             dist/SHA256SUMS.txt
           retention-days: 14
 
+      # Only this release's section. The whole changelog as the body meant the release
+      # page opened on the file header and the reader scrolled past every past version
+      # to reach the one they had come for.
+      - name: Cut this release's notes out of the changelog
+        shell: pwsh
+        run: |
+          $lines = Get-Content CHANGELOG.md
+          $starts = @(0..($lines.Count - 1) | Where-Object { $lines[$_] -like '## `[*' })
+          if ($starts.Count -eq 0) { throw "no version heading in CHANGELOG.md" }
+          $from = $starts[0]
+          $to = if ($starts.Count -gt 1) { $starts[1] - 1 } else { $lines.Count - 1 }
+          $lines[($from + 1)..$to] | Set-Content release-notes.md -Encoding utf8
+          Write-Host "notes from '$($lines[$from])' ($($to - $from) lines)"
+
       - name: Publish GitHub Release
         if: startsWith(github.ref, 'refs/tags/v') || inputs.publish
         uses: softprops/action-gh-release@v2
         with:
           draft: true
           generate_release_notes: true
-          body_path: CHANGELOG.md
+          body_path: release-notes.md
           files: |
             dist/*.zip
             dist/installer/*.exe

@@ -74,14 +74,22 @@ class ListingWatcher:
             if symbol not in known
         ]
 
+        # The baseline goes into its own uncapped table, always. Storing it in
+        # the capped one meant the cap silently discarded most of it, and every
+        # discarded pair looked new again on the next pass - 400 false listings
+        # on the second scan of a real exchange.
+        self.storage.remember_listing_symbols([(symbol, seen_at) for symbol, _, _ in symbols])
+
+        # The first scan sees the entire exchange, which is true and useless:
+        # nobody wants six hundred notifications on the day they switch this on.
+        # The baseline is remembered; only what appears after it is news, and
+        # only news is stored where the screen will show it.
+        if first_ever:
+            return ListingScan((), self._known_count())
+
         added = self.storage.record_listings(candidates)
         self.storage.prune_listing_events(self.keep)
-
-        # The first scan records the entire exchange as "new", which is true and
-        # useless - nobody wants six hundred notifications on the day they turn
-        # this on. The baseline is stored; only what appears after it is news.
-        reported = () if first_ever else tuple(added)
-        return ListingScan(reported, self._known_count())
+        return ListingScan(tuple(added), self._known_count())
 
     def _trading_symbols(self) -> list[tuple[str, str, str]]:
         client = BinanceClient(self.config)

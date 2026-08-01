@@ -20,6 +20,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -34,10 +35,35 @@ _TIME = re.compile(r"^([01]\d|2[0-3]):([0-5]\d)$")
 class TaskState:
     registered: bool
     detail: str = ""
+    next_run: str = ""
+    status: str = ""
 
     @property
     def supported(self) -> bool:
         return sys.platform == "win32"
+
+
+def parse_task_details(output: str) -> tuple[str, str]:
+    """Next run time and status out of `schtasks /fo LIST`.
+
+    Parsed rather than shown raw because the raw form is a wall of fields, and
+    because the labels are localised - matching the value after the first colon
+    on a line whose label contains a known stem works on a Czech Windows too.
+    """
+    next_run, status = "", ""
+    for line in output.splitlines():
+        if ":" not in line:
+            continue
+        label, _, value = line.partition(":")
+        label = label.strip().lower()
+        value = value.strip()
+        if not value:
+            continue
+        if not next_run and ("next run" in label or "příští" in label or "pristi" in label):
+            next_run = value
+        elif not status and label.endswith("status") or label.endswith("stav"):
+            status = status or value
+    return next_run, status
 
 
 def is_supported() -> bool:
@@ -69,7 +95,7 @@ def query_task() -> TaskState:
         return TaskState(False, "not Windows")
     try:
         completed = subprocess.run(  # noqa: S603
-            ["schtasks", "/query", "/tn", TASK_NAME],
+            ["schtasks", "/query", "/tn", TASK_NAME, "/fo", "LIST"],
             capture_output=True,
             text=True,
             timeout=20,
@@ -77,7 +103,10 @@ def query_task() -> TaskState:
         )
     except Exception as exc:  # noqa: BLE001
         return TaskState(False, type(exc).__name__)
-    return TaskState(completed.returncode == 0, completed.stdout.strip()[:200])
+    if completed.returncode != 0:
+        return TaskState(False, "")
+    next_run, status = parse_task_details(completed.stdout)
+    return TaskState(True, completed.stdout.strip()[:200], next_run, status)
 
 
 def register_task(daily_at: str) -> tuple[bool, str]:
@@ -107,7 +136,52 @@ def register_task(daily_at: str) -> tuple[bool, str]:
         return False, f"task_failed:{type(exc).__name__}"
     if completed.returncode != 0:
         return False, "task_failed"
+    _enable_catch_up()
     return True, "task_registered"
+
+
+def _enable_catch_up() -> bool:
+    """Run a missed start as soon as the machine is next on.
+
+    schtasks has no flag for this - StartWhenAvailable is an XML setting and
+    defaults to false, which was verified on a real task rather than assumed.
+    Without it a machine that was off at 07:30 simply skips that day, silently,
+    which is the least useful behaviour available to a daily analysis.
+
+    Best effort: if the export/import round trip fails the task still exists and
+    still runs on time, so a failure here is not worth refusing the whole thing.
+    """
+    try:
+        exported = subprocess.run(  # noqa: S603
+            ["schtasks", "/query", "/tn", TASK_NAME, "/xml"],
+            capture_output=True, text=True, timeout=20, creationflags=_no_window(),
+        )
+        if exported.returncode != 0 or "<Settings>" not in exported.stdout:
+            return False
+        xml = exported.stdout
+        if "<StartWhenAvailable>" in xml:
+            xml = re.sub(
+                r"<StartWhenAvailable>.*?</StartWhenAvailable>",
+                "<StartWhenAvailable>true</StartWhenAvailable>",
+                xml,
+            )
+        else:
+            xml = xml.replace("<Settings>", "<Settings>\n    <StartWhenAvailable>true</StartWhenAvailable>", 1)
+        with tempfile.NamedTemporaryFile(
+            "w", suffix=".xml", delete=False, encoding="utf-16"
+        ) as handle:
+            handle.write(xml)
+            path = handle.name
+        try:
+            imported = subprocess.run(  # noqa: S603
+                ["schtasks", "/create", "/f", "/tn", TASK_NAME, "/xml", path],
+                capture_output=True, text=True, timeout=20, creationflags=_no_window(),
+            )
+            return imported.returncode == 0
+        finally:
+            Path(path).unlink(missing_ok=True)
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def remove_task() -> tuple[bool, str]:

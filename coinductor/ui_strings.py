@@ -1248,6 +1248,12 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "A scheduled task is registered.",
         "cs": "Naplánovaná úloha je zaregistrovaná.",
     },
+    "task_next_run_label": {"en": "Next run", "cs": "Příští spuštění"},
+    "task_status_label": {"en": "Status", "cs": "Stav"},
+    "task_catch_up_note": {
+        "en": "A run missed because the PC was off happens as soon as it is next on, not silently skipped.",
+        "cs": "Běh zmeškaný kvůli vypnutému počítači proběhne, jakmile ho příště zapnete — nepřeskočí se potichu.",
+    },
     "task_state_absent": {
         "en": "No scheduled task. Nothing runs while Coinductor is closed.",
         "cs": "Žádná naplánovaná úloha. Se zavřeným Coinductorem neběží nic.",
@@ -1908,6 +1914,19 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     "nav_help_guides": {"en": "Help & Guides", "cs": "Nápověda a návody"},
     "nav_settings": {"en": "Settings", "cs": "Nastavení"},
     "nav_new_listings": {"en": "New listings", "cs": "Nové listingy"},
+    "nav_automation": {"en": "Automation", "cs": "Automatizace"},
+    "automation_page_title": {"en": "Automation", "cs": "Automatizace"},
+    "automation_page_subtitle": {
+        "en": "Everything that starts on its own, and when it runs next. Nothing here can place an order — a scheduled run only ever reads.",
+        "cs": "Všechno, co se spouští samo, a kdy poběží příště. Nic z toho nemůže zadat příkaz — naplánovaný běh jen čte.",
+    },
+    "automation_page_empty": {
+        "en": "Nothing is scheduled. Coinductor runs only when you press Run analysis.",
+        "cs": "Nic není naplánované. Coinductor běží jen tehdy, když stisknete Spustit analýzu.",
+    },
+    "automation_next_run": {"en": "Next", "cs": "Příště"},
+    "automation_inactive": {"en": "Off", "cs": "Vypnuto"},
+    "automation_configure": {"en": "Set up", "cs": "Nastavit"},
     # --- new listings page ---
     "listings_title": {
         "en": "New listings",

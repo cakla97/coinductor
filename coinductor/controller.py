@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
@@ -2032,6 +2033,10 @@ class AppController(QObject):
     def listingStatus(self) -> str:
         return self._listing_status
 
+    @Property(bool, notify=listingsChanged)
+    def listingScanBusy(self) -> bool:
+        return self._listing_thread is not None
+
     @Slot()
     def scanListings(self) -> None:
         """One pass over the exchange, on a worker thread.
@@ -2049,6 +2054,7 @@ class AppController(QObject):
         self._listing_thread = self._start_worker(
             self._listing_worker, self._clear_listing_worker
         )
+        self.listingsChanged.emit()
 
     @Slot(object)
     def _on_listing_scan_completed(self, scan) -> None:
@@ -2084,6 +2090,7 @@ class AppController(QObject):
     def _clear_listing_worker(self) -> None:
         self._listing_thread = None
         self._listing_worker = None
+        self.listingsChanged.emit()
 
     def _apply_listing_timer(self) -> None:
         settings = read_automation(default_config_path())
@@ -2149,6 +2156,64 @@ class AppController(QObject):
         """
         return read_automation(default_config_path()).enabled
 
+    @Property("QVariantList", notify=automationChanged)
+    def schedules(self) -> list[dict[str, object]]:
+        """Everything that will start on its own, in one list.
+
+        Three separate things across two screens is three answers to "what
+        happens next"; this is the one. Composed when read, from the same
+        sources the individual panels use, so it cannot drift from them.
+        """
+        settings = read_automation(default_config_path())
+        task = query_task()
+        language = self._wizard_language
+        return [
+            {
+                "name": service_text("schedule_analysis_name", language),
+                "active": settings.enabled,
+                "cadence": service_text("schedule_every_hours", language).format(
+                    hours=settings.interval_hours
+                ),
+                "nextRun": self._next_fire(self._automation_timer),
+                "detail": service_text("schedule_while_open", language),
+                "page": 8,
+            },
+            {
+                "name": service_text("schedule_task_name", language),
+                "active": task.registered,
+                "cadence": service_text("schedule_daily_at", language).format(
+                    time=self._scheduled_task_time
+                ),
+                "nextRun": task.next_run,
+                "detail": service_text("schedule_while_closed", language),
+                "page": 8,
+            },
+            {
+                "name": service_text("schedule_listings_name", language),
+                "active": settings.watch_listings,
+                "cadence": service_text("schedule_every_minutes", language).format(
+                    minutes=settings.listing_interval_minutes
+                ),
+                "nextRun": self._next_fire(self._listing_timer),
+                "detail": service_text("schedule_while_open", language),
+                "page": 9,
+            },
+        ]
+
+    def _next_fire(self, timer: QTimer) -> str:
+        """Wall-clock time of the next tick, or empty when it is not running.
+
+        A countdown in milliseconds is what the timer knows; "at 14:32" is what
+        a person wants, and it is the only form that can be compared against
+        the Windows task sitting beside it.
+        """
+        if not timer.isActive():
+            return ""
+        remaining = timer.remainingTime()
+        if remaining < 0:
+            return ""
+        return (datetime.now() + timedelta(milliseconds=remaining)).strftime("%H:%M")
+
     @Property("QVariantMap", notify=automationChanged)
     def scheduledTask(self) -> dict[str, object]:
         state = query_task()
@@ -2156,6 +2221,8 @@ class AppController(QObject):
             "supported": is_supported(),
             "registered": state.registered,
             "time": self._scheduled_task_time,
+            "nextRun": state.next_run,
+            "status": state.status,
         }
 
     @Slot(str)

@@ -112,6 +112,7 @@ ApplicationWindow {
         { label: "Active Strategies", page: 4 },
         { label: "Run History", page: 5 },
         { label: "New listings", page: 9 },
+        { label: "Automation", page: 10 },
         { label: "AI Assistant", page: 6 },
         { label: "Help & Guides", page: 7 },
         { label: "Settings", page: 8 }
@@ -133,6 +134,7 @@ ApplicationWindow {
             4: appController.appText.nav_active_strategies,
             5: appController.appText.nav_run_history,
             9: appController.appText.nav_new_listings,
+            10: appController.appText.nav_automation,
             6: appController.appText.nav_ai_assistant,
             7: appController.appText.nav_help_guides,
             8: appController.appText.nav_settings,
@@ -3869,9 +3871,12 @@ ApplicationWindow {
                             }
                             Button {
                                 text: appController.appText.listings_check_now_button
-                                enabled: appController.automation.watchListings
+                                enabled: appController.automation.watchListings && !appController.listingScanBusy
                                 onClicked: appController.scanListings()
                             }
+                            // A scan finishes in about a second, which is long
+                            // enough to wonder whether the click registered.
+                            BusyDots { visible: appController.listingScanBusy }
                             Item { Layout.fillWidth: true }
                         }
                         Text {
@@ -3930,6 +3935,95 @@ ApplicationWindow {
                                     : appController.appText.listings_allow_button
                                 enabled: !modelData.acknowledged
                                 onClicked: appController.addAllowedSymbol(modelData.symbol)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            visible: appController.currentPage === 10
+            contentWidth: availableWidth
+            contentHeight: automationPageContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+            ColumnLayout {
+                id: automationPageContent
+                x: 28
+                y: 28
+                width: window.pageContentWidth()
+                spacing: 18
+
+                Text { text: appController.appText.automation_page_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text {
+                    Layout.fillWidth: true
+                    text: appController.appText.automation_page_subtitle
+                    color: textSecondary
+                    font.pixelSize: 13
+                    wrapMode: Text.WordWrap
+                }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: !appController.schedules.some(function (item) { return item.active })
+                    text: appController.appText.automation_page_empty
+                    color: textSecondary
+                    font.pixelSize: 12
+                    wrapMode: Text.WordWrap
+                }
+
+                Repeater {
+                    model: appController.schedules
+                    delegate: Rectangle {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 74
+                        radius: radiusSm
+                        color: panelRaised
+                        border.color: modelData.active ? accent : border
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            spacing: 16
+                            Rectangle {
+                                Layout.preferredWidth: 10
+                                Layout.preferredHeight: 10
+                                radius: 5
+                                color: modelData.active ? accent : border
+                            }
+                            ColumnLayout {
+                                Layout.preferredWidth: 250
+                                spacing: 2
+                                Text { text: modelData.name; color: textPrimary; font.pixelSize: 14; font.bold: true }
+                                ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 10 }
+                            }
+                            ColumnLayout {
+                                Layout.preferredWidth: 150
+                                spacing: 2
+                                Text { text: appController.appText.automation_next_run; color: textSecondary; font.pixelSize: 10 }
+                                Text {
+                                    text: modelData.active
+                                        ? (modelData.nextRun || modelData.cadence)
+                                        : appController.appText.automation_inactive
+                                    color: modelData.active ? accent : textSecondary
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                }
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: modelData.active ? modelData.cadence : ""
+                                color: textSecondary
+                                font.pixelSize: 11
+                            }
+                            Button {
+                                text: appController.appText.automation_configure
+                                onClicked: appController.setCurrentPage(modelData.page)
                             }
                         }
                     }
@@ -4127,12 +4221,54 @@ ApplicationWindow {
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: appController.scheduledTask.registered
-                                ? appController.appText.task_state_registered
-                                : appController.appText.task_state_absent
-                            color: appController.scheduledTask.registered ? accent : textSecondary
+                            visible: !appController.scheduledTask.registered
+                            text: appController.appText.task_state_absent
+                            color: textSecondary
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
+                        }
+                        // The registered task, shown here rather than left to a
+                        // terminal: someone should be able to see what they
+                        // scheduled without leaving the app that scheduled it.
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 56
+                            visible: appController.scheduledTask.registered
+                            radius: radiusSm
+                            color: panelRaised
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 14
+                                anchors.rightMargin: 14
+                                spacing: 16
+                                ColumnLayout {
+                                    Layout.preferredWidth: 230
+                                    spacing: 2
+                                    Text {
+                                        text: appController.appText.task_state_registered
+                                        color: accent
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                    }
+                                    Text {
+                                        text: appController.appText.task_catch_up_note
+                                        color: textSecondary
+                                        font.pixelSize: 10
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                                ColumnLayout {
+                                    spacing: 2
+                                    Text { text: appController.appText.task_next_run_label; color: textSecondary; font.pixelSize: 10 }
+                                    Text { text: appController.scheduledTask.nextRun || "-"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                }
+                                ColumnLayout {
+                                    spacing: 2
+                                    Text { text: appController.appText.task_status_label; color: textSecondary; font.pixelSize: 10 }
+                                    Text { text: appController.scheduledTask.status || "-"; color: textPrimary; font.pixelSize: 12 }
+                                }
+                                Item { Layout.fillWidth: true }
+                            }
                         }
                     }
                 }

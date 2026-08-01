@@ -432,6 +432,15 @@ class Storage:
             -- listing is not the product of a run, and tying it to one would
             -- let run retention delete the very history this exists to build.
             -- Capped separately, in prune_listing_events.
+            -- Every pair the watcher has ever seen. Uncapped on purpose: this
+            -- is what "new" is measured against, and pruning it makes pruned
+            -- pairs look new again on the very next pass. Six hundred short
+            -- strings cost nothing; getting this wrong cost a flood of false
+            -- notifications.
+            create table if not exists listing_symbols (
+                symbol text primary key,
+                first_seen_at text
+            );
             create table if not exists listing_events (
                 symbol text primary key,
                 base_asset text,
@@ -1239,11 +1248,24 @@ class Storage:
         }
 
     def known_listing_symbols(self) -> set[str]:
-        """Every pair already recorded, which is what "new" is measured against."""
+        """Every pair ever seen. Read from the uncapped table, never from the
+        capped one - see the comment on listing_symbols."""
         return {
             str(row["symbol"])
-            for row in self.connection.execute("select symbol from listing_events")
+            for row in self.connection.execute("select symbol from listing_symbols")
         }
+
+    def remember_listing_symbols(self, symbols: list[tuple[str, str]]) -> int:
+        """Add to the baseline. Returns how many were not already there."""
+        added = 0
+        for symbol, seen_at in symbols:
+            cursor = self.connection.execute(
+                "insert or ignore into listing_symbols (symbol, first_seen_at) values (?, ?)",
+                (str(symbol).strip().upper(), str(seen_at)),
+            )
+            added += cursor.rowcount
+        self.connection.commit()
+        return added
 
     def record_listings(self, events: list[dict[str, object]]) -> list[dict[str, object]]:
         """Insert pairs not already known; return only the ones actually added.

@@ -145,16 +145,25 @@ def test_an_unexpected_error_is_survived_too(tmp_path, monkeypatch) -> None:
     assert scan.error == "ValueError"
 
 
-def test_the_table_is_capped_because_run_retention_cannot_see_it(tmp_path, monkeypatch) -> None:
-    """These rows have no run_id on purpose, so nothing else prunes them."""
+def test_the_shown_listings_are_capped_because_run_retention_cannot_see_them(tmp_path, monkeypatch) -> None:
+    """These rows have no run_id on purpose, so nothing else prunes them.
+
+    The cap applies to what the page shows, never to the baseline - that
+    distinction is the whole of the bug this file's later tests describe.
+    """
     storage = _storage(tmp_path)
     watcher = ListingWatcher(CONFIG, storage, keep=5)
-    pairs = [(f"C{index}USDC", f"C{index}", "USDC") for index in range(20)]
-    _serve(monkeypatch, _info(*pairs))
-
+    existing = tuple((f"OLD{index}USDC", f"OLD{index}", "USDC") for index in range(3))
+    _serve(monkeypatch, _info(*existing))
     watcher.scan()
 
-    assert len(storage.known_listing_symbols()) == 5
+    arrivals = tuple((f"NEW{index}USDC", f"NEW{index}", "USDC") for index in range(20))
+    _serve(monkeypatch, _info(*existing, *arrivals))
+    watcher.scan()
+
+    assert len(storage.get_recent_listings(100)) == 5
+    # The baseline keeps every pair, capped or not.
+    assert len(storage.known_listing_symbols()) == 23
 
 
 def test_the_newest_listings_are_the_ones_kept(tmp_path) -> None:
@@ -168,7 +177,7 @@ def test_the_newest_listings_are_the_ones_kept(tmp_path) -> None:
 
     storage.prune_listing_events(1)
 
-    assert storage.known_listing_symbols() == {"NEWUSDC"}
+    assert [row["symbol"] for row in storage.get_recent_listings()] == ["NEWUSDC"]
 
 
 def test_recording_the_same_symbol_twice_adds_it_once(tmp_path) -> None:
@@ -201,3 +210,49 @@ def test_every_interesting_quote_is_actually_recorded(tmp_path, monkeypatch, quo
     _serve(monkeypatch, _info(("BTCUSDC", "BTC", "USDC"), (f"NEW{quote}", "NEW", quote)))
 
     assert [item["symbol"] for item in watcher.scan().new_listings] == [f"NEW{quote}"]
+
+
+def test_the_cap_does_not_make_pruned_pairs_look_new_again(tmp_path, monkeypatch) -> None:
+    """The bug a tester found by asking what "watching 200 pairs" meant.
+
+    The baseline used to be stored in the capped table, so the cap discarded
+    most of it - and every discarded pair was reported as a new listing on the
+    very next pass. Against a real exchange that was 400 false notifications,
+    fifteen minutes after switching the watcher on.
+    """
+    storage = _storage(tmp_path)
+    watcher = ListingWatcher(CONFIG, storage, keep=5)
+    many = tuple((f"C{index}USDC", f"C{index}", "USDC") for index in range(50))
+    _serve(monkeypatch, _info(*many))
+
+    assert watcher.scan().new_listings == ()
+    second = watcher.scan()
+
+    assert second.new_listings == (), "pruned baseline pairs came back as new"
+    assert second.total_known == 50, "the baseline must not be capped"
+
+
+def test_only_genuinely_new_pairs_reach_the_page(tmp_path, monkeypatch) -> None:
+    """The page reads listing_events; the baseline must never land there."""
+    storage = _storage(tmp_path)
+    watcher = ListingWatcher(CONFIG, storage, keep=200)
+    existing = tuple((f"C{index}USDC", f"C{index}", "USDC") for index in range(30))
+    _serve(monkeypatch, _info(*existing))
+    watcher.scan()
+
+    assert storage.get_recent_listings() == [], "the baseline was shown as listings"
+
+    _serve(monkeypatch, _info(*existing, ("GENUINEUSDC", "GENUINE", "USDC")))
+    watcher.scan()
+
+    rows = storage.get_recent_listings()
+    assert [row["symbol"] for row in rows] == ["GENUINEUSDC"]
+
+
+def test_the_watched_count_is_the_whole_exchange_not_the_cap(tmp_path, monkeypatch) -> None:
+    """"Watching 200 pairs" was the cap talking, not the exchange."""
+    storage = _storage(tmp_path)
+    watcher = ListingWatcher(CONFIG, storage, keep=5)
+    _serve(monkeypatch, _info(*((f"C{i}USDC", f"C{i}", "USDC") for i in range(40))))
+
+    assert watcher.scan().total_known == 40

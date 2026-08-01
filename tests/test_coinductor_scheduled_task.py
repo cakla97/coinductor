@@ -158,3 +158,63 @@ def test_valid_times_are_the_ones_schtasks_accepts() -> None:
     assert is_valid_time("07:30") is True
     assert is_valid_time(" 07:30 ") is True
     assert is_valid_time("24:00") is False
+
+
+def test_a_missed_run_is_caught_up_rather_than_skipped(monkeypatch) -> None:
+    """StartWhenAvailable is an XML setting with no schtasks flag, and it
+    defaults to false - verified on a real task, not assumed. Without it a
+    machine that was off at 07:30 silently skips that day."""
+    calls: list[list[str]] = []
+
+    def fake(argv, **kwargs):
+        calls.append(list(argv))
+        if "/xml" in argv and "/query" in argv:
+            return subprocess.CompletedProcess(
+                argv, 0, "<Task><Settings><Enabled>true</Enabled></Settings></Task>", ""
+            )
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake)
+
+    ok, _ = register_task("07:30")
+
+    assert ok is True
+    reimport = [c for c in calls if "/xml" in c and "/create" in c]
+    assert reimport, "the task was never re-imported with the catch-up setting"
+
+
+def test_a_failed_catch_up_does_not_undo_a_working_task(monkeypatch) -> None:
+    """The task still exists and still runs on time, so this is best effort."""
+    def fake(argv, **kwargs):
+        if "/xml" in argv:
+            return subprocess.CompletedProcess(argv, 1, "", "nope")
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(subprocess, "run", fake)
+
+    assert register_task("07:30") == (True, "task_registered")
+
+
+def test_the_next_run_and_status_are_parsed_for_the_screen() -> None:
+    """Shown in the app so nobody needs a terminal to see what they scheduled.
+
+    The labels are localised, so matching is on a stem rather than the whole
+    English phrase.
+    """
+    from coinductor.scheduled_task import parse_task_details
+
+    english = r"""
+    TaskName:      \Coinductor scheduled analysis
+    Next Run Time: 02.08.2026 7:30:00
+    Status:        Ready
+    """
+    next_run, status = parse_task_details(english)
+    assert next_run == "02.08.2026 7:30:00"
+    assert status == "Ready"
+
+
+def test_details_missing_from_the_output_read_as_empty() -> None:
+    from coinductor.scheduled_task import parse_task_details
+
+    assert parse_task_details("") == ("", "")
+    assert parse_task_details("nothing useful here") == ("", "")

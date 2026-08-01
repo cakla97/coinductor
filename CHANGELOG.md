@@ -4,6 +4,52 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.2.0] — 2026-08-01
+
+The analysis can now run on its own. An order still cannot.
+
+### Added
+
+- **A schedule for the analysis**, as an addition to the Run analysis button and never as
+  a replacement — that dialog behaves exactly as it always has, including for anyone who
+  never turns this on. A scheduled run cannot submit: the tests assert that the arguments
+  which authorise a submission never reach it at all.
+- **A tray icon** with Open, Run analysis now, and Quit. Closing to the tray is tied to
+  the schedule: a schedule that stops when you close the window is not a schedule, and an
+  app that lingers unannounced while holding exchange credentials is a surprise nobody
+  should get.
+- **A Windows scheduled task**, running this same executable with `--run-once` and no
+  window, so the analysis happens with Coinductor closed. That path loads no GUI toolkit
+  at all. A run missed because the machine was off happens as soon as it is next on, and
+  what ran while you were away is reported when you return.
+- **A new-listing watcher** that records and notifies and **never buys**. Buying a listing
+  at market in its first minutes is a losing trade from a desktop app; the first seconds
+  belong to bots beside the exchange. Its page says so, and offers one deliberate step —
+  allow this pair to be analysed — rather than a buy button. From there the ordinary
+  analysis, risk checks, funding check and typed confirmation apply as they do for any
+  pair.
+- **An Automation page** gathering everything that starts on its own, with the wall-clock
+  time each runs next. All of it is off on a fresh install.
+
+### Changed
+
+- **The order size cap moved to Live Actions**, beside the safety stage. The stage decides
+  whether an order goes and the cap decides how big; someone enabling live trading should
+  meet both at once rather than find the second later, after a toast has told them their
+  order was quietly truncated.
+- The app tour covers the two new pages, and no longer describes Settings as holding what
+  has moved off it.
+
+### Notes
+
+`coinductor/standing_authorisation.py` is complete, proven by 22 tests written before it,
+and **connected to no submit path**. The reasoning is in `docs/automation-proposal.md`:
+connecting it would mean the app typing the confirmation a person types, which does not
+add a gate but replaces the one the design rests on. It is one deliberate change away,
+and that change has not been made.
+
+Released after four internal release candidates; what testing them found is below.
+
 ## [1.2.0-rc4] — 2026-08-01
 
 Not a public release.

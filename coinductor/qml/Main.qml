@@ -3788,7 +3788,8 @@ ApplicationWindow {
                         Text { Layout.fillWidth: true; text: appController.appText.safety_stage_disclaimer; color: warning; font.pixelSize: 11; font.bold: true; wrapMode: Text.WordWrap }
                     }
                 }
-                Item { Layout.row: 4; Layout.fillWidth: true; Layout.preferredHeight: 44 }
+                // Bottom spacer, so it has to stay the last row on the page.
+                Item { Layout.row: 6; Layout.fillWidth: true; Layout.preferredHeight: 44 }
                 // The cap used to be reachable only by opening config.toml, which
                 // is the one thing this app promises nobody has to do.
                 Rectangle {

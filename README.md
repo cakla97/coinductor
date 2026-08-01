@@ -13,7 +13,8 @@ OpenAI-compatible endpoint), no account, no telemetry, and no automatic trading.
 [![Platform: Windows](https://img.shields.io/badge/platform-Windows-lightgrey)](#install)
 [![Offline first](https://img.shields.io/badge/runs-offline-2ecc80)](#where-your-data-lives)
 
-[**Install**](#install) · [First run](#first-run) · [What it will not do](#what-it-will-not-do) ·
+[**Install**](#install) · [First run](#first-run) · [Automation](#automation) ·
+[What it will not do](#what-it-will-not-do) ·
 [Where your data lives](#where-your-data-lives) · [Documentation](#documentation) ·
 [**Support the project**](#support-the-project) · [Security](SECURITY.md) · [License](#license)
 
@@ -68,11 +69,15 @@ This is the part worth reading before installing anything that touches an exchan
 - **It cannot place an order on its own.** Live submission requires all of: the safety stage
   raised to `LIVE_ENABLED` by hand, an automation level of *Guarded automation* in your
   profile, verified live-key permissions, and a typed confirmation phrase — per action.
+  That last one is what makes a scheduled run safe: no timer can type it.
 - **No futures, no margin, no leverage.** Spot and Simple Earn Flexible only; Locked Earn is
   read-only.
 - **The AI never decides anything.** It proposes; deterministic code disposes. See
   [the invariant](#the-invariant) below.
-- **It is not a 24/7 bot.** It runs when you open it and press a button.
+- **It is not a 24/7 bot.** The analysis can run on a schedule — see
+  [Automation](#automation) — but every order still waits for you, and nothing runs while
+  your machine is off. There is no server doing this on your behalf, which is the same
+  reason there is no account and no telemetry.
 
 ## What to expect from the AI
 
@@ -292,6 +297,37 @@ also how the repository and the test suite run fully offline.
 `config.example.toml` is the tracked, neutral template. Copy it to `config.toml` (gitignored)
 and edit that; when a `config.toml` exists the CLI and the app both pick it up automatically.
 Set `COINDUCTOR_CONFIG` to point somewhere else.
+
+## Automation
+
+Coinductor is pull-based by default: you open it and press *Run analysis*. That is still
+exactly how it works, and turning none of this on changes nothing.
+
+What can be automated is **the analysis, never the order**.
+
+| | |
+| --- | --- |
+| **Scheduled analysis** | Runs on your interval while Coinductor is open. The window closes to the notification area so the schedule can continue; the tray icon has *Quit*. |
+| **Windows scheduled task** | Runs the same analysis with Coinductor closed, once a day at a time you pick, using this same executable with no window. A run missed because the PC was off happens as soon as it is next on. |
+| **New listing watch** | Notices pairs newly listed on Binance and tells you. It records and notifies — it never buys. |
+
+All three are listed on the **Automation** page with the time each runs next, and all three
+are off on a fresh install.
+
+**A scheduled run only ever reads.** It cannot place an order, for the same reason nothing
+else can without you: the confirmation phrase is typed by a person, and no timer can type.
+
+**Your PC has to be on.** Nothing runs while the machine is off, and there is no server
+doing it for you — that is the price of the app having no account and no telemetry.
+
+### About new listings
+
+Buying a new listing at market in its first minutes is a losing trade from a desktop app:
+the first seconds belong to bots colocated with the exchange, the order book is thin, and
+the price you see is not the price you fill at. Coinductor therefore **watches and tells
+you, and never acts**. If you decide a pair is worth analysing, one deliberate step adds it
+to your allowed symbols — after which the ordinary analysis, risk checks, funding check and
+typed confirmation apply exactly as they do for any other pair.
 
 ## Where your data lives
 

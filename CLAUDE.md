@@ -33,6 +33,9 @@ submit path without passing through the risk engine.
 | Per-run submit authority | `trading_agent/runtime_flags.py` |
 | Run orchestration | `trading_agent/runner.py` + `run_phases.py` |
 | Background jobs off the GUI thread | `coinductor/workers.py` |
+| Schedules, tray, headless `--run-once` | `coinductor/automation.py`, `tray.py`, `scheduled_task.py`, `desktop.py` |
+| New-listing watch (records and notifies; never buys) | `coinductor/listing_watcher.py` |
+| Permission to submit unattended | `coinductor/standing_authorisation.py` — built, tested, **wired to nothing** |
 | User-facing text the engine produces | `trading_agent/messages.py` — key + params, never a finished sentence |
 
 ## Things that will bite you
@@ -46,6 +49,13 @@ submit path without passing through the risk engine.
   (`first_portfolio_tranches`, `oco_protection_orders`, `oco_status_checks`).
   They hold the intent ids that stop an executed order being sent twice. See
   `_RETENTION_EXEMPT_TABLES` in `storage.py`.
+- **A schedule must never reach a submit path.** An automatic run passes no confirmation
+  string, and the tests assert those arguments never reach it at all rather than arriving
+  false. `standing_authorisation.py` is the only thing that could change that; it is
+  deliberately unconnected, and connecting it is a decision, not a refactor.
+- **Two panels write into one `[automation]` section**, so an omitted value means "leave it"
+  rather than "turn it off". `_apply` only edits keys that already exist, so a new key needs
+  `ensure_section` or it is accepted and silently discarded.
 - **`config.toml` and `state/` are gitignored.** `config.example.toml` is the tracked
   template and is what the tests load.
 - **Version lives only in `trading_agent/__init__.py`.** pyproject reads it dynamically,

@@ -145,16 +145,25 @@ def test_an_unexpected_error_is_survived_too(tmp_path, monkeypatch) -> None:
     assert scan.error == "ValueError"
 
 
-def test_the_table_is_capped_because_run_retention_cannot_see_it(tmp_path, monkeypatch) -> None:
-    """These rows have no run_id on purpose, so nothing else prunes them."""
+def test_the_shown_listings_are_capped_because_run_retention_cannot_see_them(tmp_path, monkeypatch) -> None:
+    """These rows have no run_id on purpose, so nothing else prunes them.
+
+    The cap applies to what the page shows, never to the baseline - that
+    distinction is the whole of the bug this file's later tests describe.
+    """
     storage = _storage(tmp_path)
     watcher = ListingWatcher(CONFIG, storage, keep=5)
-    pairs = [(f"C{index}USDC", f"C{index}", "USDC") for index in range(20)]
-    _serve(monkeypatch, _info(*pairs))
-
+    existing = tuple((f"OLD{index}USDC", f"OLD{index}", "USDC") for index in range(3))
+    _serve(monkeypatch, _info(*existing))
     watcher.scan()
 
-    assert len(storage.known_listing_symbols()) == 5
+    arrivals = tuple((f"NEW{index}USDC", f"NEW{index}", "USDC") for index in range(20))
+    _serve(monkeypatch, _info(*existing, *arrivals))
+    watcher.scan()
+
+    assert len(storage.get_recent_listings(100)) == 5
+    # The baseline keeps every pair, capped or not.
+    assert len(storage.known_listing_symbols()) == 23
 
 
 def test_the_newest_listings_are_the_ones_kept(tmp_path) -> None:
@@ -168,7 +177,7 @@ def test_the_newest_listings_are_the_ones_kept(tmp_path) -> None:
 
     storage.prune_listing_events(1)
 
-    assert storage.known_listing_symbols() == {"NEWUSDC"}
+    assert [row["symbol"] for row in storage.get_recent_listings()] == ["NEWUSDC"]
 
 
 def test_recording_the_same_symbol_twice_adds_it_once(tmp_path) -> None:
@@ -201,3 +210,102 @@ def test_every_interesting_quote_is_actually_recorded(tmp_path, monkeypatch, quo
     _serve(monkeypatch, _info(("BTCUSDC", "BTC", "USDC"), (f"NEW{quote}", "NEW", quote)))
 
     assert [item["symbol"] for item in watcher.scan().new_listings] == [f"NEW{quote}"]
+
+
+def test_the_cap_does_not_make_pruned_pairs_look_new_again(tmp_path, monkeypatch) -> None:
+    """The bug a tester found by asking what "watching 200 pairs" meant.
+
+    The baseline used to be stored in the capped table, so the cap discarded
+    most of it - and every discarded pair was reported as a new listing on the
+    very next pass. Against a real exchange that was 400 false notifications,
+    fifteen minutes after switching the watcher on.
+    """
+    storage = _storage(tmp_path)
+    watcher = ListingWatcher(CONFIG, storage, keep=5)
+    many = tuple((f"C{index}USDC", f"C{index}", "USDC") for index in range(50))
+    _serve(monkeypatch, _info(*many))
+
+    assert watcher.scan().new_listings == ()
+    second = watcher.scan()
+
+    assert second.new_listings == (), "pruned baseline pairs came back as new"
+    assert second.total_known == 50, "the baseline must not be capped"
+
+
+def test_only_genuinely_new_pairs_reach_the_page(tmp_path, monkeypatch) -> None:
+    """The page reads listing_events; the baseline must never land there."""
+    storage = _storage(tmp_path)
+    watcher = ListingWatcher(CONFIG, storage, keep=200)
+    existing = tuple((f"C{index}USDC", f"C{index}", "USDC") for index in range(30))
+    _serve(monkeypatch, _info(*existing))
+    watcher.scan()
+
+    assert storage.get_recent_listings() == [], "the baseline was shown as listings"
+
+    _serve(monkeypatch, _info(*existing, ("GENUINEUSDC", "GENUINE", "USDC")))
+    watcher.scan()
+
+    rows = storage.get_recent_listings()
+    assert [row["symbol"] for row in rows] == ["GENUINEUSDC"]
+
+
+def test_the_watched_count_is_the_whole_exchange_not_the_cap(tmp_path, monkeypatch) -> None:
+    """"Watching 200 pairs" was the cap talking, not the exchange."""
+    storage = _storage(tmp_path)
+    watcher = ListingWatcher(CONFIG, storage, keep=5)
+    _serve(monkeypatch, _info(*((f"C{i}USDC", f"C{i}", "USDC") for i in range(40))))
+
+    assert watcher.scan().total_known == 40
+
+
+def test_a_baseline_written_by_an_earlier_build_is_cleared_once(tmp_path) -> None:
+    """Before listing_symbols existed the baseline went into the display table.
+
+    Those rows are not listings; they are hundreds of pairs listed years ago,
+    shown on the New listings page as if they had just appeared.
+    """
+    path = tmp_path / "journal.sqlite3"
+    first = Storage(path)
+    first.record_listings(
+        [
+            {"symbol": f"OLD{i}USDC", "baseAsset": f"OLD{i}", "quoteAsset": "USDC",
+             "firstSeenAt": "2026-08-01 19:32:53"}
+            for i in range(200)
+        ]
+    )
+    # Undo the flag the constructor set, to stand in for a journal written
+    # before this repair existed.
+    first.connection.execute("delete from schema_flags")
+    first.connection.commit()
+    first.connection.close()
+
+    repaired = Storage(path)
+
+    assert repaired.get_recent_listings(500) == []
+
+
+def test_the_repair_does_not_run_a_second_time(tmp_path) -> None:
+    """A genuine listing recorded after the repair must survive a restart."""
+    path = tmp_path / "journal.sqlite3"
+    Storage(path).record_listings(
+        [{"symbol": "GENUINEUSDC", "baseAsset": "GENUINE", "quoteAsset": "USDC",
+          "firstSeenAt": "2026-08-02 10:00:00"}]
+    )
+
+    reopened = Storage(path)
+
+    assert [row["symbol"] for row in reopened.get_recent_listings()] == ["GENUINEUSDC"]
+
+
+def test_the_repair_leaves_the_detection_baseline_alone(tmp_path) -> None:
+    """Clearing what is shown must not make every pair look new again."""
+    path = tmp_path / "journal.sqlite3"
+    first = Storage(path)
+    first.remember_listing_symbols([(f"C{i}USDC", "2026-08-01 20:00:00") for i in range(50)])
+    first.connection.execute("delete from schema_flags")
+    first.connection.commit()
+    first.connection.close()
+
+    repaired = Storage(path)
+
+    assert len(repaired.known_listing_symbols()) == 50

@@ -167,6 +167,38 @@ we should find out from Part D's data rather than from a drawdown.
 
 ---
 
+## Decision on Part C, taken after building it
+
+The module exists and is proven: 22 tests, written before the implementation,
+covering every gate and every refusal. `coinductor/standing_authorisation.py`.
+
+**It is not connected to any submit path, and I recommend leaving it that way
+for now.** Not because it is unsound — the tests say otherwise — but because of
+what connecting it would require and what I cannot verify.
+
+To submit unattended, the scheduled run would have to construct
+`mainnet_confirm="CONFIRM_MAINNET_ORDER"` itself. That string exists precisely
+because a person types it. Having the app type it on their behalf does not add
+a gate to the design; it removes the one the whole design rests on and replaces
+it with a narrower one. That may well be an acceptable trade, but it is the
+user's trade to make knowingly, not a detail of an automation feature.
+
+And I cannot test the result. Everything else built here is read-only, so a
+mistake costs an unnecessary API call. This path spends real money with nobody
+watching, and there is no way for me to exercise a live mainnet submission
+safely — the testnet path does not share the code that would run.
+
+So the honest position: the hard part is done and reviewable, the risky part is
+not connected, and connecting it is one deliberate change away whenever the
+evidence or the appetite justifies it.
+
+What would make me confident:
+
+- a fortnight of the scheduled analysis running, showing what it *would* have
+  submitted, before anything actually is
+- the per-order and window caps set to numbers the user would shrug at losing
+- a revoke reachable without opening the app, which the tray already is
+
 ## Suggested order
 
 1. **Part A** — tray, timer, toast. Useful on its own, and nothing else depends on it.

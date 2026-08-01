@@ -81,7 +81,59 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "The allowed symbol list could not be found in the configuration.",
         "cs": "Seznam povolených symbolů se v konfiguraci nenašel.",
     },
+    # --- the schedules overview ---
+    "schedule_analysis_name": {"en": "Portfolio analysis", "cs": "Analýza portfolia"},
+    "schedule_task_name": {"en": "Analysis via Windows", "cs": "Analýza přes Windows"},
+    "schedule_listings_name": {"en": "New listing watch", "cs": "Sledování nových listingů"},
+    "schedule_every_hours": {"en": "Every {hours} h", "cs": "Každých {hours} h"},
+    "schedule_every_minutes": {"en": "Every {minutes} min", "cs": "Každých {minutes} min"},
+    "schedule_daily_at": {"en": "Daily at {time}", "cs": "Denně v {time}"},
+    "schedule_while_open": {
+        "en": "Runs only while Coinductor is open.",
+        "cs": "Běží, jen dokud je Coinductor otevřený.",
+    },
+    "schedule_while_closed": {
+        "en": "Runs with Coinductor closed. A run missed because the PC was off happens when it is next on.",
+        "cs": "Běží i se zavřeným Coinductorem. Běh zmeškaný kvůli vypnutému počítači proběhne, jakmile ho příště zapnete.",
+    },
+    # --- scheduled task and catch-up ---
+    "catch_up_runs": {
+        "en": "{count} analysis(es) ran while Coinductor was closed. The latest ended with {decision} - see Run History.",
+        "cs": "Zatímco byl Coinductor zavřený, proběhly analýzy: {count}. Poslední skončila s výsledkem {decision} - viz Historie běhů.",
+    },
+    "task_registered": {
+        "en": "Windows will run one analysis a day at {time}, whether or not Coinductor is open, and will catch up a missed one when the machine is next on. Everything scheduled is listed under Automation.",
+        "cs": "Windows spustí jednu analýzu denně v {time}, ať je Coinductor otevřený nebo ne, a zmeškanou dožene, jakmile počítač příště zapnete. Všechny naplánované úlohy vidíte v sekci Automatizace.",
+    },
+    "task_removed": {
+        "en": "The scheduled task was removed. Nothing runs while Coinductor is closed.",
+        "cs": "Naplánovaná úloha byla odstraněna. Se zavřeným Coinductorem už neběží nic.",
+    },
+    "task_not_registered": {
+        "en": "There was no scheduled task to remove.",
+        "cs": "Žádná naplánovaná úloha k odstranění nebyla.",
+    },
+    "task_bad_time": {
+        "en": "The time has to look like 07:30. Nothing was scheduled.",
+        "cs": "Čas musí vypadat jako 07:30. Nic se nenaplánovalo.",
+    },
+    "task_failed": {
+        "en": "Windows refused to create the task. Nothing was scheduled.",
+        "cs": "Windows odmítly úlohu vytvořit. Nic se nenaplánovalo.",
+    },
+    "task_not_windows": {
+        "en": "Scheduled tasks are a Windows feature. The in-app schedule works everywhere.",
+        "cs": "Naplánované úlohy jsou funkce Windows. Rozvrh uvnitř aplikace funguje všude.",
+    },
     # --- automation ---
+    "tray_still_running_title": {
+        "en": "Coinductor is still running",
+        "cs": "Coinductor běží dál",
+    },
+    "tray_still_running_body": {
+        "en": "Running in the notification area so the schedule can continue. Right-click the icon and choose Quit to stop it.",
+        "cs": "Běží v oznamovací oblasti, aby mohl rozvrh pokračovat. Zastavíte ho pravým tlačítkem na ikonu a Ukončit.",
+    },
     "tray_open": {"en": "Open Coinductor", "cs": "Otevřít Coinductor"},
     "tray_run_now": {"en": "Run analysis now", "cs": "Spustit analýzu teď"},
     "tray_quit": {"en": "Quit", "cs": "Ukončit"},

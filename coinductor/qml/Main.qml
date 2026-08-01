@@ -23,6 +23,10 @@ ApplicationWindow {
         if (appController.keepRunningInTray) {
             close.accepted = false
             window.hide()
+            // Said once per close, because an app that keeps running after you
+            // closed it has to say so - and because an installer cannot replace
+            // a running Coinductor, which is how someone first found out.
+            appController.announceTrayHide()
         }
     }
     Material.theme: Material.Dark
@@ -112,6 +116,7 @@ ApplicationWindow {
         { label: "Active Strategies", page: 4 },
         { label: "Run History", page: 5 },
         { label: "New listings", page: 9 },
+        { label: "Automation", page: 10 },
         { label: "AI Assistant", page: 6 },
         { label: "Help & Guides", page: 7 },
         { label: "Settings", page: 8 }
@@ -133,6 +138,7 @@ ApplicationWindow {
             4: appController.appText.nav_active_strategies,
             5: appController.appText.nav_run_history,
             9: appController.appText.nav_new_listings,
+            10: appController.appText.nav_automation,
             6: appController.appText.nav_ai_assistant,
             7: appController.appText.nav_help_guides,
             8: appController.appText.nav_settings,
@@ -3490,6 +3496,7 @@ ApplicationWindow {
                 }
 
                 Rectangle {
+                    objectName: "guardedCentrePanel"
                     Layout.row: 3
                     Layout.fillWidth: true
                     Layout.preferredHeight: 330
@@ -3781,7 +3788,85 @@ ApplicationWindow {
                         Text { Layout.fillWidth: true; text: appController.appText.safety_stage_disclaimer; color: warning; font.pixelSize: 11; font.bold: true; wrapMode: Text.WordWrap }
                     }
                 }
-                Item { Layout.row: 4; Layout.fillWidth: true; Layout.preferredHeight: 44 }
+                // Bottom spacer, so it has to stay the last row on the page.
+                Item { Layout.row: 6; Layout.fillWidth: true; Layout.preferredHeight: 44 }
+                // The cap used to be reachable only by opening config.toml, which
+                // is the one thing this app promises nobody has to do.
+                Rectangle {
+                    objectName: "orderCapsPanel"
+                    Layout.row: 5
+                    Layout.fillWidth: true
+                    // Fixed, like every other card on this page. Deriving the
+                    // height from a child that is anchored to this Rectangle
+                    // is circular inside a GridLayout: it resolved to zero, the
+                    // panel collapsed, and its anchored contents drew at 0,0 -
+                    // on top of the page title. It works on the ColumnLayout
+                    // pages, which is why it survived the move unnoticed.
+                    Layout.preferredHeight: 210
+                    radius: radiusMd
+                    color: panel
+                    border.color: appController.orderCaps.aboveSuggestion ? warning : border
+                    ColumnLayout {
+                        id: orderCapsContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 8
+                        Text {
+                            text: appController.appText.order_caps_title
+                            color: textPrimary
+                            font.pixelSize: 16
+                            font.bold: true
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.order_caps_description
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            Text {
+                                text: appController.appText.order_caps_testnet_label
+                                color: textSecondary
+                                font.pixelSize: 12
+                            }
+                            TextField {
+                                id: testnetCapInput
+                                Layout.preferredWidth: 110
+                                text: appController.orderCaps.testnet
+                            }
+                            Item { Layout.preferredWidth: 12 }
+                            Text {
+                                text: appController.appText.order_caps_mainnet_label
+                                color: textSecondary
+                                font.pixelSize: 12
+                            }
+                            TextField {
+                                id: mainnetCapInput
+                                Layout.preferredWidth: 110
+                                text: appController.orderCaps.mainnet
+                            }
+                            Button {
+                                text: appController.appText.order_caps_save_button
+                                onClicked: appController.saveOrderCaps(testnetCapInput.text, mainnetCapInput.text)
+                            }
+                            Item { Layout.fillWidth: true }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            visible: appController.orderCaps.hasPortfolio
+                            text: appController.appText.order_caps_suggestion_template
+                                .replace("{suggested}", appController.orderCaps.suggested)
+                            color: appController.orderCaps.aboveSuggestion ? warning : textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
             }
         }
 
@@ -3869,9 +3954,12 @@ ApplicationWindow {
                             }
                             Button {
                                 text: appController.appText.listings_check_now_button
-                                enabled: appController.automation.watchListings
+                                enabled: appController.automation.watchListings && !appController.listingScanBusy
                                 onClicked: appController.scanListings()
                             }
+                            // A scan finishes in about a second, which is long
+                            // enough to wonder whether the click registered.
+                            BusyDots { visible: appController.listingScanBusy }
                             Item { Layout.fillWidth: true }
                         }
                         Text {
@@ -3936,64 +4024,31 @@ ApplicationWindow {
                 }
             }
         }
+
         ScrollView {
             Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
-            visible: appController.currentPage === 8
+            visible: appController.currentPage === 10
             contentWidth: availableWidth
-            contentHeight: settingsPageContent.implicitHeight + 72
+            contentHeight: automationPageContent.implicitHeight + 72
             ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
             ColumnLayout {
-                id: settingsPageContent
+                id: automationPageContent
                 x: 28
                 y: 28
                 width: window.pageContentWidth()
                 spacing: 18
-                Text { text: appController.appText.settings_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
-                RowLayout {
-                    Layout.fillWidth: true
-                    Text {
-                        Layout.fillWidth: true
-                        text: appController.appText.settings_subtitle
-                        color: textSecondary
-                        font.pixelSize: 13
-                        elide: Text.ElideRight
-                    }
-                    Button {
-                        text: appController.appText.setup_wizard_button
-                        onClicked: appController.openOnboardingWizard()
-                    }
-                    Button {
-                        text: appController.appText.replay_app_tour_button
-                        onClicked: appController.startAppTour()
-                    }
-                    Button {
-                        text: appController.appText.refresh_checks_button
-                        onClicked: appController.refreshSetup()
-                    }
-                }
 
-                RowLayout {
+                Text { text: appController.appText.automation_page_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                Text {
                     Layout.fillWidth: true
-                    spacing: 8
-                    Text { text: appController.appText.language_toggle_label; color: textSecondary; font.pixelSize: 12 }
-                    Button {
-                        text: "English"
-                        flat: appController.wizardLanguage !== "en"
-                        highlighted: appController.wizardLanguage === "en"
-                        onClicked: appController.setWizardLanguage("en")
-                    }
-                    Button {
-                        text: "Čeština"
-                        flat: appController.wizardLanguage !== "cs"
-                        highlighted: appController.wizardLanguage === "cs"
-                        onClicked: appController.setWizardLanguage("cs")
-                    }
-                    Item { Layout.fillWidth: true }
+                    text: appController.appText.automation_page_subtitle
+                    color: textSecondary
+                    font.pixelSize: 13
+                    wrapMode: Text.WordWrap
                 }
-
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: automationContent.implicitHeight + 32
@@ -4076,31 +4131,29 @@ ApplicationWindow {
                         }
                     }
                 }
-
-                // The cap used to be reachable only by opening config.toml, which
-                // is the one thing this app promises nobody has to do.
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: orderCapsContent.implicitHeight + 32
+                    Layout.preferredHeight: taskContent.implicitHeight + 32
+                    visible: appController.scheduledTask.supported
                     radius: radiusMd
                     color: panel
-                    border.color: appController.orderCaps.aboveSuggestion ? warning : border
+                    border.color: appController.scheduledTask.registered ? accent : border
                     ColumnLayout {
-                        id: orderCapsContent
+                        id: taskContent
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
                         anchors.margins: 16
                         spacing: 8
                         Text {
-                            text: appController.appText.order_caps_title
+                            text: appController.appText.task_title
                             color: textPrimary
                             font.pixelSize: 16
                             font.bold: true
                         }
                         Text {
                             Layout.fillWidth: true
-                            text: appController.appText.order_caps_description
+                            text: appController.appText.task_description
                             color: textSecondary
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
@@ -4108,44 +4161,204 @@ ApplicationWindow {
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 8
-                            Text {
-                                text: appController.appText.order_caps_testnet_label
-                                color: textSecondary
-                                font.pixelSize: 12
-                            }
+                            Text { text: appController.appText.task_time_label; color: textSecondary; font.pixelSize: 12 }
                             TextField {
-                                id: testnetCapInput
-                                Layout.preferredWidth: 110
-                                text: appController.orderCaps.testnet
-                            }
-                            Item { Layout.preferredWidth: 12 }
-                            Text {
-                                text: appController.appText.order_caps_mainnet_label
-                                color: textSecondary
-                                font.pixelSize: 12
-                            }
-                            TextField {
-                                id: mainnetCapInput
-                                Layout.preferredWidth: 110
-                                text: appController.orderCaps.mainnet
+                                id: taskTime
+                                Layout.preferredWidth: 90
+                                text: appController.scheduledTask.time
+                                placeholderText: "07:30"
                             }
                             Button {
-                                text: appController.appText.order_caps_save_button
-                                onClicked: appController.saveOrderCaps(testnetCapInput.text, mainnetCapInput.text)
+                                text: appController.appText.task_register_button
+                                onClicked: appController.registerScheduledTask(taskTime.text)
+                            }
+                            Button {
+                                text: appController.appText.task_remove_button
+                                enabled: appController.scheduledTask.registered
+                                onClicked: appController.removeScheduledTask()
                             }
                             Item { Layout.fillWidth: true }
                         }
                         Text {
                             Layout.fillWidth: true
-                            visible: appController.orderCaps.hasPortfolio
-                            text: appController.appText.order_caps_suggestion_template
-                                .replace("{suggested}", appController.orderCaps.suggested)
-                            color: appController.orderCaps.aboveSuggestion ? warning : textSecondary
+                            visible: !appController.scheduledTask.registered
+                            text: appController.appText.task_state_absent
+                            color: textSecondary
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
                         }
+                        // The registered task, shown here rather than left to a
+                        // terminal: someone should be able to see what they
+                        // scheduled without leaving the app that scheduled it.
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 56
+                            visible: appController.scheduledTask.registered
+                            radius: radiusSm
+                            color: panelRaised
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 14
+                                anchors.rightMargin: 14
+                                spacing: 16
+                                ColumnLayout {
+                                    Layout.preferredWidth: 230
+                                    spacing: 2
+                                    Text {
+                                        text: appController.appText.task_state_registered
+                                        color: accent
+                                        font.pixelSize: 12
+                                        font.bold: true
+                                    }
+                                    Text {
+                                        text: appController.appText.task_catch_up_note
+                                        color: textSecondary
+                                        font.pixelSize: 10
+                                        elide: Text.ElideRight
+                                    }
+                                }
+                                ColumnLayout {
+                                    spacing: 2
+                                    Text { text: appController.appText.task_next_run_label; color: textSecondary; font.pixelSize: 10 }
+                                    Text { text: appController.scheduledTask.nextRun || "-"; color: textPrimary; font.pixelSize: 12; font.bold: true }
+                                }
+                                ColumnLayout {
+                                    spacing: 2
+                                    Text { text: appController.appText.task_status_label; color: textSecondary; font.pixelSize: 10 }
+                                    Text { text: appController.scheduledTask.status || "-"; color: textPrimary; font.pixelSize: 12 }
+                                }
+                                Item { Layout.fillWidth: true }
+                            }
+                        }
                     }
                 }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: !appController.schedules.some(function (item) { return item.active })
+                    text: appController.appText.automation_page_empty
+                    color: textSecondary
+                    font.pixelSize: 12
+                    wrapMode: Text.WordWrap
+                }
+
+                Repeater {
+                    model: appController.schedules
+                    delegate: Rectangle {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 74
+                        radius: radiusSm
+                        color: panelRaised
+                        border.color: modelData.active ? accent : border
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            spacing: 16
+                            Rectangle {
+                                Layout.preferredWidth: 10
+                                Layout.preferredHeight: 10
+                                radius: 5
+                                color: modelData.active ? accent : border
+                            }
+                            ColumnLayout {
+                                Layout.preferredWidth: 250
+                                spacing: 2
+                                Text { text: modelData.name; color: textPrimary; font.pixelSize: 14; font.bold: true }
+                                ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 10 }
+                            }
+                            ColumnLayout {
+                                Layout.preferredWidth: 150
+                                spacing: 2
+                                Text { text: appController.appText.automation_next_run; color: textSecondary; font.pixelSize: 10 }
+                                Text {
+                                    text: modelData.active
+                                        ? (modelData.nextRun || modelData.cadence)
+                                        : appController.appText.automation_inactive
+                                    color: modelData.active ? accent : textSecondary
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                }
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: modelData.active ? modelData.cadence : ""
+                                color: textSecondary
+                                font.pixelSize: 11
+                            }
+                            Button {
+                                // Only for a schedule configured elsewhere; the
+                                // other two have their panels directly above.
+                                visible: modelData.page !== appController.currentPage
+                                text: appController.appText.automation_configure
+                                onClicked: appController.setCurrentPage(modelData.page)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            visible: appController.currentPage === 8
+            contentWidth: availableWidth
+            contentHeight: settingsPageContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+            ColumnLayout {
+                id: settingsPageContent
+                x: 28
+                y: 28
+                width: window.pageContentWidth()
+                spacing: 18
+                Text { text: appController.appText.settings_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        Layout.fillWidth: true
+                        text: appController.appText.settings_subtitle
+                        color: textSecondary
+                        font.pixelSize: 13
+                        elide: Text.ElideRight
+                    }
+                    Button {
+                        text: appController.appText.setup_wizard_button
+                        onClicked: appController.openOnboardingWizard()
+                    }
+                    Button {
+                        text: appController.appText.replay_app_tour_button
+                        onClicked: appController.startAppTour()
+                    }
+                    Button {
+                        text: appController.appText.refresh_checks_button
+                        onClicked: appController.refreshSetup()
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Text { text: appController.appText.language_toggle_label; color: textSecondary; font.pixelSize: 12 }
+                    Button {
+                        text: "English"
+                        flat: appController.wizardLanguage !== "en"
+                        highlighted: appController.wizardLanguage === "en"
+                        onClicked: appController.setWizardLanguage("en")
+                    }
+                    Button {
+                        text: "Čeština"
+                        flat: appController.wizardLanguage !== "cs"
+                        highlighted: appController.wizardLanguage === "cs"
+                        onClicked: appController.setWizardLanguage("cs")
+                    }
+                    Item { Layout.fillWidth: true }
+                }
+
+
+
 
                 Rectangle {
                     Layout.fillWidth: true

@@ -4,6 +4,165 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.2.0] — 2026-08-01
+
+The analysis can now run on its own. An order still cannot.
+
+### Added
+
+- **A schedule for the analysis**, as an addition to the Run analysis button and never as
+  a replacement — that dialog behaves exactly as it always has, including for anyone who
+  never turns this on. A scheduled run cannot submit: the tests assert that the arguments
+  which authorise a submission never reach it at all.
+- **A tray icon** with Open, Run analysis now, and Quit. Closing to the tray is tied to
+  the schedule: a schedule that stops when you close the window is not a schedule, and an
+  app that lingers unannounced while holding exchange credentials is a surprise nobody
+  should get.
+- **A Windows scheduled task**, running this same executable with `--run-once` and no
+  window, so the analysis happens with Coinductor closed. That path loads no GUI toolkit
+  at all. A run missed because the machine was off happens as soon as it is next on, and
+  what ran while you were away is reported when you return.
+- **A new-listing watcher** that records and notifies and **never buys**. Buying a listing
+  at market in its first minutes is a losing trade from a desktop app; the first seconds
+  belong to bots beside the exchange. Its page says so, and offers one deliberate step —
+  allow this pair to be analysed — rather than a buy button. From there the ordinary
+  analysis, risk checks, funding check and typed confirmation apply as they do for any
+  pair.
+- **An Automation page** gathering everything that starts on its own, with the wall-clock
+  time each runs next. All of it is off on a fresh install.
+
+### Changed
+
+- **The order size cap moved to Live Actions**, beside the safety stage. The stage decides
+  whether an order goes and the cap decides how big; someone enabling live trading should
+  meet both at once rather than find the second later, after a toast has told them their
+  order was quietly truncated.
+- The app tour covers the two new pages, and no longer describes Settings as holding what
+  has moved off it.
+
+### Notes
+
+`coinductor/standing_authorisation.py` is complete, proven by 22 tests written before it,
+and **connected to no submit path**. The reasoning is in `docs/automation-proposal.md`:
+connecting it would mean the app typing the confirmation a person types, which does not
+add a gate but replaces the one the design rests on. It is one deliberate change away,
+and that change has not been made.
+
+Released after four internal release candidates; what testing them found is below.
+
+## [1.2.0-rc4] — 2026-08-01
+
+Not a public release.
+
+### Fixed
+
+- **The order size cap panel drew on top of the page title**, for the second release
+  running. The first fix gave it a grid row it was never going to use: the real problem
+  was that it had landed inside another card's `Rectangle`, which is not a layout, so its
+  `Layout.*` properties did nothing and it sized to zero. Nothing about that is invalid
+  QML, so there were no warnings either time. What misled me twice was indentation — the
+  block sat at a sibling's indent while nested a level deeper. Measured this time
+  (`y=0 h=0 w=0` beside a working card at `y=657 h=330 w=936`), then located with a brace
+  matcher that skips strings and comments. That matcher is now a test.
+- **The tray notification was cut off mid-word** by Windows. Shortened to what has to
+  survive truncation, with a length assertion so the next edit cannot overflow it again.
+
+## [1.2.0-rc3] — 2026-08-01
+
+Not a public release. Everything from rc2, plus what testing it found.
+
+### Fixed
+
+- **Closing the window left an invisible process behind.** `quitOnLastWindowClosed` was set
+  False once at startup so hiding to the tray would not end the app; without a schedule
+  that meant every close left a process with no window and no tray icon, holding exchange
+  credentials and the executable an installer wanted to replace. Found by an installer
+  refusing to continue. The flag now follows the tray in both directions. With a schedule
+  on, the app is *meant* to keep running, so hiding now says so and how to quit.
+- **The order size cap drew on top of the page title.** Live Actions is a grid where every
+  child declares its row; the panel moved there declared none, so it landed on row 0. Zero
+  QML warnings throughout, because nothing about it is invalid — it is just wrong. A sweep
+  now confirms no other child of an explicit-row grid is missing one.
+- **"Watching N pairs" kept the language of the last scan.** Stored as a finished sentence
+  instead of composed when read — the third time that shape has bitten, so it is a key and
+  parameters like everything else.
+- **The tour said "Delete local data" was a preview that would not be executed.** It calls
+  `rmtree`, `unlink`, and clears the OS keychain. Telling someone a destructive action is
+  safe is worse than saying nothing; a test now holds the claim against the code.
+- **Rows an earlier build wrote into the listings table are cleared once.** They were a
+  baseline, not listings, and showed as hundreds of pairs listed years ago. The repair
+  touches only that display table — the detection baseline, runs and history are untouched.
+
+## [1.2.0-rc2] — 2026-07-31
+
+Not a public release. Everything from rc1, plus what testing it found.
+
+### Fixed
+
+- **The listing watcher reported hundreds of false new listings.** The baseline of what is
+  already on the exchange lived in the table the retention cap prunes, so the cap
+  discarded most of it — and every discarded pair looked new again on the next pass.
+  Against 600 real pairs that was 400 false listings on the second scan, which at a
+  fifteen-minute interval is a flood of notifications about pairs listed years ago. Found
+  by a tester asking what "watching 200 pairs" was supposed to mean; the honest answer was
+  that it was the cap talking, not the exchange.
+- **A run missed because the PC was off was silently skipped**, contradicting what the
+  proposal claimed. `schtasks` has no flag for it and `StartWhenAvailable` defaults to
+  false — verified on a real task rather than assumed — so the task is now amended after
+  creation. A missed 07:30 runs as soon as the machine is next on.
+- **The app tour still described the nine pages it was written against**, walking a new
+  user past two sections without mentioning either, and describing a Settings page that no
+  longer holds what it said. A test now ties the tour to the navigation in both directions.
+
+### Changed
+
+- **An Automation page** gathers everything that starts on its own — the in-app schedule,
+  the Windows task and the listing watch — with the wall-clock time each runs next. Both
+  schedule panels moved there from Settings.
+- **The order size cap moved to Live Actions**, beside the safety stage. The stage decides
+  whether an order goes and the cap decides how big; someone enabling live trading should
+  meet both at once rather than find the second later, after a toast has told them their
+  order was quietly truncated.
+- The scheduled task's next run and status are shown in the app, so nobody needs a
+  terminal to see what they scheduled. "Check now" has a busy indicator.
+
+## [1.2.0-rc1] — 2026-07-31
+
+Not a public release. Built from `feature/automation` for testing before anything
+reaches `master`.
+
+### Added
+
+- **The analysis can run on a schedule**, as an addition to the Run analysis button and
+  never as a replacement — that dialog behaves exactly as it always has, including for
+  anyone who never turns this on. A scheduled run cannot submit: the tests assert that the
+  arguments which authorise a submission never reach it at all, and it does not take the
+  window away from whoever is using it.
+- **A tray icon** with Open, Run analysis now, and Quit. Closing to the tray is tied to the
+  schedule: a schedule that stops when you close the window is not a schedule, and an app
+  that lingers unannounced while holding exchange credentials is a surprise nobody should
+  get.
+- **Windows scheduled task**, registered from Settings, running this same executable with
+  `--run-once`. That path loads no GUI toolkit at all — on a session without a desktop,
+  importing one can fail outright. The panel tells you the `schtasks` command to inspect or
+  delete it yourself, because the task outlives this app.
+- **A report of what ran while the window was closed.** A schedule whose results simply
+  appear in Run History with nothing to announce them feels broken even when it worked.
+- **A new-listing watcher** that records and notifies and never buys. Its first pass stores
+  the existing exchange as a baseline and reports none of it; an outage is reported rather
+  than swallowed; one base asset against eight quotes is one listing.
+- **A listings page** that says what it is not, and offers one deliberate step — allow this
+  pair to be analysed — rather than a buy button. From there the ordinary analysis, risk
+  checks, funding check and typed confirmation apply as they do for any pair.
+
+### Notes
+
+`coinductor/standing_authorisation.py` is complete and proven by 22 tests written before
+it, and is **not connected to any submit path**. The reasoning is in
+`docs/automation-proposal.md`: connecting it would mean the app typing the confirmation a
+person types, which does not add a gate but replaces the one the design rests on, and the
+result is the one path here I cannot verify safely. It is one deliberate change away.
+
 ## [1.1.1] — 2026-07-31
 
 ### Fixed

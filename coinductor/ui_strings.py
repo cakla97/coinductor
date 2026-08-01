@@ -1223,6 +1223,41 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "With a schedule on, closing the window hides Coinductor to the notification area instead of quitting, so the schedule can keep running. The tray icon has Open, Run analysis now and Quit. Your PC has to be on — there is no server doing this for you.",
         "cs": "Se zapnutým rozvrhem se Coinductor při zavření okna schová do oznamovací oblasti místo ukončení, aby rozvrh mohl běžet dál. V ikoně je Otevřít, Spustit analýzu teď a Ukončit. Počítač musí být zapnutý — žádný server to za vás nedělá.",
     },
+    # --- scheduled task ---
+    "task_title": {
+        "en": "Also run when Coinductor is closed",
+        "cs": "Spouštět i se zavřeným Coinductorem",
+    },
+    "task_description": {
+        "en": "Registers a Windows scheduled task that runs one analysis a day using this same program, with no window. It reads only — it cannot place an order, for the same reason the in-app schedule cannot. Your PC still has to be on; nothing runs it for you while the machine is off. You can inspect or delete it yourself with: schtasks /query /tn \"Coinductor scheduled analysis\"",
+        "cs": "Zaregistruje ve Windows naplánovanou úlohu, která jednou denně spustí analýzu tímhle stejným programem, bez okna. Jen čte — příkaz zadat nemůže, ze stejného důvodu jako rozvrh uvnitř aplikace. Počítač pořád musí být zapnutý; s vypnutým strojem to za vás nikdo nespustí. Sám si ji můžete prohlédnout nebo smazat příkazem: schtasks /query /tn \"Coinductor scheduled analysis\"",
+    },
+    "task_time_label": {
+        "en": "Every day at",
+        "cs": "Každý den v",
+    },
+    "task_register_button": {
+        "en": "Schedule it",
+        "cs": "Naplánovat",
+    },
+    "task_remove_button": {
+        "en": "Remove the task",
+        "cs": "Odstranit úlohu",
+    },
+    "task_state_registered": {
+        "en": "A scheduled task is registered.",
+        "cs": "Naplánovaná úloha je zaregistrovaná.",
+    },
+    "task_next_run_label": {"en": "Next run", "cs": "Příští spuštění"},
+    "task_status_label": {"en": "Status", "cs": "Stav"},
+    "task_catch_up_note": {
+        "en": "A run missed because the PC was off happens as soon as it is next on, not silently skipped.",
+        "cs": "Běh zmeškaný kvůli vypnutému počítači proběhne, jakmile ho příště zapnete — nepřeskočí se potichu.",
+    },
+    "task_state_absent": {
+        "en": "No scheduled task. Nothing runs while Coinductor is closed.",
+        "cs": "Žádná naplánovaná úloha. Se zavřeným Coinductorem neběží nic.",
+    },
     "order_caps_title": {
         "en": "Maximum size of a single order",
         "cs": "Maximální velikost jednoho příkazu",
@@ -1879,6 +1914,19 @@ APP_STRINGS: dict[str, dict[str, str]] = {
     "nav_help_guides": {"en": "Help & Guides", "cs": "Nápověda a návody"},
     "nav_settings": {"en": "Settings", "cs": "Nastavení"},
     "nav_new_listings": {"en": "New listings", "cs": "Nové listingy"},
+    "nav_automation": {"en": "Automation", "cs": "Automatizace"},
+    "automation_page_title": {"en": "Automation", "cs": "Automatizace"},
+    "automation_page_subtitle": {
+        "en": "Everything that starts on its own, and when it runs next. Nothing here can place an order — a scheduled run only ever reads.",
+        "cs": "Všechno, co se spouští samo, a kdy poběží příště. Nic z toho nemůže zadat příkaz — naplánovaný běh jen čte.",
+    },
+    "automation_page_empty": {
+        "en": "Nothing is scheduled. Coinductor runs only when you press Run analysis.",
+        "cs": "Nic není naplánované. Coinductor běží jen tehdy, když stisknete Spustit analýzu.",
+    },
+    "automation_next_run": {"en": "Next", "cs": "Příště"},
+    "automation_inactive": {"en": "Off", "cs": "Vypnuto"},
+    "automation_configure": {"en": "Set up", "cs": "Nastavit"},
     # --- new listings page ---
     "listings_title": {
         "en": "New listings",
@@ -1956,12 +2004,12 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Nejdřív zabezpečení, potom provedení",
     },
     "app_tour_live_actions_detail": {
-        "en": "Live Actions contains analysis controls, the staged safety lock, and the separate live API management workflow.",
-        "cs": "Živé akce obsahují ovládání analýzy, stupňovaný bezpečnostní zámek a samostatnou správu živého API klíče.",
+        "en": "Live Actions holds the staged safety lock, the live API management workflow, and the cap on how large a single order may be.",
+        "cs": "Živé akce obsahují stupňovaný bezpečnostní zámek, správu živého API klíče a strop na velikost jednoho příkazu.",
     },
     "app_tour_live_actions_tip": {
-        "en": "Preview, Armed, and Live Enabled are local gates. Every real order still needs its own confirmation.",
-        "cs": "Náhled, Připraveno a Živě povoleno jsou místní pojistky. Každý skutečný příkaz stejně potřebuje vlastní potvrzení.",
+        "en": "Preview, Armed and Live Enabled decide whether an order may go; the size cap decides how big. Every real order still needs its own typed confirmation.",
+        "cs": "Náhled, Připraveno a Živě povoleno rozhodují, jestli příkaz smí odejít; strop rozhoduje, jak velký. Každý skutečný příkaz stejně potřebuje vlastní vypsané potvrzení.",
     },
     "app_tour_action_plan_title": {
         "en": "One place for every run result",
@@ -1999,6 +2047,30 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "REAL runs read your live Binance account. MOCK runs use example data and never touch it.",
         "cs": "Běhy REAL čtou váš skutečný účet na Binance. Běhy MOCK používají ukázková data a na účet vůbec nesáhnou.",
     },
+    "app_tour_new_listings_title": {
+        "en": "See what Binance just listed",
+        "cs": "Uvidíte, co Binance právě zalistoval",
+    },
+    "app_tour_new_listings_detail": {
+        "en": "Coinductor can watch for newly listed pairs and tell you when one appears. It records and notifies; it never buys.",
+        "cs": "Coinductor umí sledovat nově zalistované páry a dát vědět, když nějaký přibude. Zaznamenává a upozorňuje; nikdy nenakupuje.",
+    },
+    "app_tour_new_listings_tip": {
+        "en": "Buying a listing at market in its first minutes is how the bots that got there first get paid. Use this to watch, and decide later.",
+        "cs": "Nákup listingu za tržní cenu v prvních minutách je to, čím se platí botům, kteří tam byli dřív. Berte to jako pozorování a rozhodujte se až podle něj.",
+    },
+    "app_tour_automation_title": {
+        "en": "Everything that starts on its own",
+        "cs": "Všechno, co se spouští samo",
+    },
+    "app_tour_automation_detail": {
+        "en": "Set the analysis to run on a schedule while Coinductor is open, or register a Windows task so it also runs when it is closed. The list below shows what is active and when each one runs next.",
+        "cs": "Nastavte, aby analýza běžela podle rozvrhu, dokud je Coinductor otevřený, nebo zaregistrujte úlohu ve Windows, ať běží i zavřený. Seznam pod tím ukazuje, co je aktivní a kdy co poběží příště.",
+    },
+    "app_tour_automation_tip": {
+        "en": "A scheduled run only ever reads. It cannot place an order, because the confirmation you type is what authorises one and no timer can type.",
+        "cs": "Naplánovaný běh jen čte. Příkaz zadat nemůže, protože ho povoluje potvrzení, které vypisujete vy, a to žádný časovač nenapíše.",
+    },
     "app_tour_ai_assistant_title": {
         "en": "Ask for explanations, not permission bypasses",
         "cs": "Ptejte se na vysvětlení, ne na obejití pojistek",
@@ -2028,12 +2100,12 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Nastavení a stav systému najdete tady",
     },
     "app_tour_settings_detail": {
-        "en": "Settings holds your Binance and AI connections, onboarding profile, privacy controls, and the detailed Safety stage state.",
-        "cs": "V Nastavení je připojení k Binance a k AI, profil z průvodce, ovládání soukromí a podrobný stav bezpečnostního stupně.",
+        "en": "Settings holds your Binance and AI connections, the onboarding profile, and privacy controls - including disconnecting an AI model or deleting local data.",
+        "cs": "V Nastavení je připojení k Binance a k AI, profil z průvodce a ovládání soukromí - včetně odpojení AI modelu nebo smazání lokálních dat.",
     },
     "app_tour_settings_tip": {
-        "en": "Nothing here places an order. \"Delete local data\" is currently a preview only and is not executed.",
-        "cs": "Nic tady nezadá příkaz. \"Smazat lokální data\" je zatím jen náhled a neprovede se.",
+        "en": "Nothing here places an order. \"Delete local data\" does delete - it lists what it will remove and asks you to type DELETE first.",
+        "cs": "Nic tady nezadá příkaz. \"Smazat lokální data\" opravdu maže - napřed vypíše, co odstraní, a chce po vás napsat DELETE.",
     },
 }
 

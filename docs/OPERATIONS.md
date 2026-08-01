@@ -69,9 +69,14 @@ create the key.
 
 ## Remote and always-on operation
 
-Coinductor is a **desktop GUI application designed for periodic, hands-on runs**, not a 24/7
-unattended bot. Guarded live actions always require explicit typed confirmations, so it is
-deliberately not "set and forget". Practical patterns:
+Coinductor can run its **analysis** unattended; it can never place an **order** unattended.
+Guarded live actions require a typed confirmation per action, and no schedule can type one,
+so it is deliberately not "set and forget". Practical patterns:
+
+- **Built-in automation.** *Automation* in the app runs the analysis on an interval while
+  Coinductor is open, and can register a Windows scheduled task that runs it once a day with
+  the app closed - the same executable, with `--run-once`, no window. A run missed because
+  the machine was off happens as soon as it is next on. Both are off until switched on.
 
 - **Home machine you leave on.** Run the desktop app on a machine that stays powered, and
   reach it remotely with Windows Remote Desktop (RDP) or a VNC tool when you want to review or

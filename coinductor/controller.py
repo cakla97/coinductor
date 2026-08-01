@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
@@ -29,7 +30,9 @@ from .automation import (
     apply_automation_to_config,
     read_automation,
 )
+from .catch_up import CatchUpService
 from .local_data_reset import LocalDataResetService
+from .scheduled_task import is_supported, query_task, register_task, remove_task
 from .order_caps import (
     apply_order_caps_to_config,
     exceeds_suggestion,
@@ -149,7 +152,10 @@ class AppController(QObject):
         self._listing_thread: QThread | None = None
         self._listing_worker = None
         self._listings: list[dict[str, object]] = []
-        self._listing_status = ""
+        self._listing_status_key = ""
+        self._listing_status_params: dict[str, object] = {}
+        self._catch_up = CatchUpService()
+        self._scheduled_task_time = "07:30"
         self._pending_completion_message = "toast_analysis_done"
         self._pending_data_mode = "REAL"
         self._onboarding_path = ""
@@ -185,6 +191,8 @@ class AppController(QObject):
             {"page": 3, "nav": "nav_action_plan", "key": "action_plan"},
             {"page": 4, "nav": "nav_active_strategies", "key": "active_strategies"},
             {"page": 5, "nav": "nav_run_history", "key": "run_history"},
+            {"page": 9, "nav": "nav_new_listings", "key": "new_listings"},
+            {"page": 10, "nav": "nav_automation", "key": "automation"},
             {"page": 6, "nav": "nav_ai_assistant", "key": "ai_assistant"},
             {"page": 7, "nav": "nav_help_guides", "key": "help_guides"},
             {"page": 8, "nav": "nav_settings", "key": "settings"},
@@ -254,6 +262,7 @@ class AppController(QObject):
         self._apply_automation_timer()
         self._apply_listing_timer()
         self._reload_listings()
+        self._report_catch_up()
 
     @Property(bool, notify=busyChanged)
     def busy(self) -> bool:
@@ -612,6 +621,8 @@ class AppController(QObject):
         self.localAiRecommendationChanged.emit()
         # The tour composes its step when read, so it needs telling too.
         self.appTourChanged.emit()
+        # And the listing status, for the same reason.
+        self.listingsChanged.emit()
         # The first-portfolio plan is built once and held, so unlike the tour it
         # has to be rebuilt before its signal means anything.
         self._refresh_first_portfolio_plan()
@@ -2025,7 +2036,21 @@ class AppController(QObject):
 
     @Property(str, notify=listingsChanged)
     def listingStatus(self) -> str:
-        return self._listing_status
+        """Composed when read, so a language switch reaches it.
+
+        It used to be a finished sentence stored at scan time, which meant it
+        kept the language of the last scan until the next one - the same defect
+        the risk gate and the latest decision had, for the same reason.
+        """
+        if not self._listing_status_key:
+            return ""
+        return service_text(self._listing_status_key, self._wizard_language).format(
+            **self._listing_status_params
+        )
+
+    @Property(bool, notify=listingsChanged)
+    def listingScanBusy(self) -> bool:
+        return self._listing_thread is not None
 
     @Slot()
     def scanListings(self) -> None:
@@ -2044,6 +2069,7 @@ class AppController(QObject):
         self._listing_thread = self._start_worker(
             self._listing_worker, self._clear_listing_worker
         )
+        self.listingsChanged.emit()
 
     @Slot(object)
     def _on_listing_scan_completed(self, scan) -> None:
@@ -2052,14 +2078,12 @@ class AppController(QObject):
         if not scan.ok:
             # Named, not swallowed: a watcher silently failing for a week is
             # worse than one that says it could not reach the exchange.
-            self._listing_status = service_text("listing_scan_failed", language).format(
-                reason=scan.error
-            )
+            self._listing_status_key = "listing_scan_failed"
+            self._listing_status_params = {"reason": scan.error}
             self.listingsChanged.emit()
             return
-        self._listing_status = service_text("listing_scan_ok", language).format(
-            count=scan.total_known
-        )
+        self._listing_status_key = "listing_scan_ok"
+        self._listing_status_params = {"count": scan.total_known}
         self.listingsChanged.emit()
         if not scan.new_listings:
             return
@@ -2079,6 +2103,7 @@ class AppController(QObject):
     def _clear_listing_worker(self) -> None:
         self._listing_thread = None
         self._listing_worker = None
+        self.listingsChanged.emit()
 
     def _apply_listing_timer(self) -> None:
         settings = read_automation(default_config_path())
@@ -2143,6 +2168,120 @@ class AppController(QObject):
         lingers in the tray without one has no reason to.
         """
         return read_automation(default_config_path()).enabled
+
+    @Property("QVariantList", notify=automationChanged)
+    def schedules(self) -> list[dict[str, object]]:
+        """Everything that will start on its own, in one list.
+
+        Three separate things across two screens is three answers to "what
+        happens next"; this is the one. Composed when read, from the same
+        sources the individual panels use, so it cannot drift from them.
+        """
+        settings = read_automation(default_config_path())
+        task = query_task()
+        language = self._wizard_language
+        return [
+            {
+                "name": service_text("schedule_analysis_name", language),
+                "active": settings.enabled,
+                "cadence": service_text("schedule_every_hours", language).format(
+                    hours=settings.interval_hours
+                ),
+                "nextRun": self._next_fire(self._automation_timer),
+                "detail": service_text("schedule_while_open", language),
+                "page": 10,
+            },
+            {
+                "name": service_text("schedule_task_name", language),
+                "active": task.registered,
+                "cadence": service_text("schedule_daily_at", language).format(
+                    time=self._scheduled_task_time
+                ),
+                "nextRun": task.next_run,
+                "detail": service_text("schedule_while_closed", language),
+                "page": 10,
+            },
+            {
+                "name": service_text("schedule_listings_name", language),
+                "active": settings.watch_listings,
+                "cadence": service_text("schedule_every_minutes", language).format(
+                    minutes=settings.listing_interval_minutes
+                ),
+                "nextRun": self._next_fire(self._listing_timer),
+                "detail": service_text("schedule_while_open", language),
+                "page": 9,
+            },
+        ]
+
+    def _next_fire(self, timer: QTimer) -> str:
+        """Wall-clock time of the next tick, or empty when it is not running.
+
+        A countdown in milliseconds is what the timer knows; "at 14:32" is what
+        a person wants, and it is the only form that can be compared against
+        the Windows task sitting beside it.
+        """
+        if not timer.isActive():
+            return ""
+        remaining = timer.remainingTime()
+        if remaining < 0:
+            return ""
+        return (datetime.now() + timedelta(milliseconds=remaining)).strftime("%H:%M")
+
+    @Property("QVariantMap", notify=automationChanged)
+    def scheduledTask(self) -> dict[str, object]:
+        state = query_task()
+        return {
+            "supported": is_supported(),
+            "registered": state.registered,
+            "time": self._scheduled_task_time,
+            "nextRun": state.next_run,
+            "status": state.status,
+        }
+
+    @Slot(str)
+    def registerScheduledTask(self, daily_at: str) -> None:
+        language = self._wizard_language
+        ok, reason = register_task(daily_at)
+        if ok:
+            self._scheduled_task_time = daily_at.strip()
+        self.automationChanged.emit()
+        self.notificationRequested.emit(
+            service_text(reason.split(":")[0], language).format(time=daily_at.strip())
+        )
+
+    @Slot()
+    def removeScheduledTask(self) -> None:
+        _, reason = remove_task()
+        self.automationChanged.emit()
+        self.notificationRequested.emit(
+            service_text(reason.split(":")[0], self._wizard_language).format(time="")
+        )
+
+    def _report_catch_up(self) -> None:
+        """Say what arrived while the window was closed.
+
+        A schedule whose results simply appear in Run History with nothing to
+        announce them feels broken even when it worked perfectly.
+        """
+        history = list(self._snapshot.run_history) if self._snapshot is not None else []
+        result = self._catch_up.since_last_seen(history)
+        if not result.any:
+            return
+        self.notificationRequested.emit(
+            service_text("catch_up_runs", self._wizard_language).format(
+                count=result.count, decision=self._decision_label(result.latest_decision)
+            )
+        )
+        self._catch_up.mark_seen(result.latest_run_id)
+
+    @Slot()
+    def announceTrayHide(self) -> None:
+        """Tell the user the app is still running, and how to stop it."""
+        language = self._wizard_language
+        self.trayMessageRequested.emit(
+            service_text("tray_still_running_title", language),
+            service_text("tray_still_running_body", language),
+        )
 
     @Slot()
     def refreshTrayVisibility(self) -> None:

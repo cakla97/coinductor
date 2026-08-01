@@ -91,6 +91,30 @@ class Storage:
         self.connection.row_factory = sqlite3.Row
         apply_connection_pragmas(self.connection)
         self._migrate()
+        self._repair_listing_events()
+
+    def _repair_listing_events(self) -> None:
+        """Clear a baseline that an earlier build wrote into the wrong table.
+
+        Before listing_symbols existed, the whole exchange was recorded as
+        "listings" and then truncated by the retention cap. Those rows are not
+        listings, they are a baseline, and they show on the New listings page as
+        hundreds of pairs that were listed years ago.
+
+        Done once, guarded by a flag, and only to a display table: the worst it
+        can cost is a genuinely new listing recorded by that same build, against
+        hundreds of wrong rows removed. The detection baseline is untouched.
+        """
+        already = self.connection.execute(
+            "select 1 from schema_flags where name = 'listing_events_baseline_purge'"
+        ).fetchone()
+        if already:
+            return
+        self.connection.execute("delete from listing_events")
+        self.connection.execute(
+            "insert into schema_flags (name) values ('listing_events_baseline_purge')"
+        )
+        self.connection.commit()
 
     def _migrate(self) -> None:
         self.connection.executescript(
@@ -440,6 +464,11 @@ class Storage:
             create table if not exists listing_symbols (
                 symbol text primary key,
                 first_seen_at text
+            );
+            -- One row per one-off repair that must not run twice.
+            create table if not exists schema_flags (
+                name text primary key,
+                applied_at text default current_timestamp
             );
             create table if not exists listing_events (
                 symbol text primary key,

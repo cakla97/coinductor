@@ -256,3 +256,56 @@ def test_the_watched_count_is_the_whole_exchange_not_the_cap(tmp_path, monkeypat
     _serve(monkeypatch, _info(*((f"C{i}USDC", f"C{i}", "USDC") for i in range(40))))
 
     assert watcher.scan().total_known == 40
+
+
+def test_a_baseline_written_by_an_earlier_build_is_cleared_once(tmp_path) -> None:
+    """Before listing_symbols existed the baseline went into the display table.
+
+    Those rows are not listings; they are hundreds of pairs listed years ago,
+    shown on the New listings page as if they had just appeared.
+    """
+    path = tmp_path / "journal.sqlite3"
+    first = Storage(path)
+    first.record_listings(
+        [
+            {"symbol": f"OLD{i}USDC", "baseAsset": f"OLD{i}", "quoteAsset": "USDC",
+             "firstSeenAt": "2026-08-01 19:32:53"}
+            for i in range(200)
+        ]
+    )
+    # Undo the flag the constructor set, to stand in for a journal written
+    # before this repair existed.
+    first.connection.execute("delete from schema_flags")
+    first.connection.commit()
+    first.connection.close()
+
+    repaired = Storage(path)
+
+    assert repaired.get_recent_listings(500) == []
+
+
+def test_the_repair_does_not_run_a_second_time(tmp_path) -> None:
+    """A genuine listing recorded after the repair must survive a restart."""
+    path = tmp_path / "journal.sqlite3"
+    Storage(path).record_listings(
+        [{"symbol": "GENUINEUSDC", "baseAsset": "GENUINE", "quoteAsset": "USDC",
+          "firstSeenAt": "2026-08-02 10:00:00"}]
+    )
+
+    reopened = Storage(path)
+
+    assert [row["symbol"] for row in reopened.get_recent_listings()] == ["GENUINEUSDC"]
+
+
+def test_the_repair_leaves_the_detection_baseline_alone(tmp_path) -> None:
+    """Clearing what is shown must not make every pair look new again."""
+    path = tmp_path / "journal.sqlite3"
+    first = Storage(path)
+    first.remember_listing_symbols([(f"C{i}USDC", "2026-08-01 20:00:00") for i in range(50)])
+    first.connection.execute("delete from schema_flags")
+    first.connection.commit()
+    first.connection.close()
+
+    repaired = Storage(path)
+
+    assert len(repaired.known_listing_symbols()) == 50

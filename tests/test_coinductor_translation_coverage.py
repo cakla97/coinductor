@@ -341,3 +341,22 @@ def test_the_tour_visits_every_page_the_navigation_offers() -> None:
     assert missing == [], f"pages in the navigation with no tour step: {missing}"
     stray = sorted(tour_pages - nav_pages)
     assert stray == [], f"tour steps for pages that are not in the navigation: {stray}"
+
+
+def test_the_tour_does_not_call_a_destructive_action_a_preview() -> None:
+    """It said "Delete local data" was a preview and would not be executed.
+
+    LocalDataResetService.execute really does rmtree and unlink, and clears the
+    OS keychain. Telling someone a destructive action is safe is worse than
+    saying nothing about it.
+    """
+    from coinductor.ui_strings import APP_STRINGS
+
+    for language in LANGUAGES:
+        tip = APP_STRINGS["app_tour_settings_tip"][language]
+        assert "preview only" not in tip
+        assert "jen náhled" not in tip
+    # And the thing it describes really is destructive, so the claim would be
+    # wrong rather than merely out of date.
+    source = _source("coinductor", "local_data_reset.py")
+    assert "shutil.rmtree" in source and "unlink()" in source

@@ -152,7 +152,8 @@ class AppController(QObject):
         self._listing_thread: QThread | None = None
         self._listing_worker = None
         self._listings: list[dict[str, object]] = []
-        self._listing_status = ""
+        self._listing_status_key = ""
+        self._listing_status_params: dict[str, object] = {}
         self._catch_up = CatchUpService()
         self._scheduled_task_time = "07:30"
         self._pending_completion_message = "toast_analysis_done"
@@ -620,6 +621,8 @@ class AppController(QObject):
         self.localAiRecommendationChanged.emit()
         # The tour composes its step when read, so it needs telling too.
         self.appTourChanged.emit()
+        # And the listing status, for the same reason.
+        self.listingsChanged.emit()
         # The first-portfolio plan is built once and held, so unlike the tour it
         # has to be rebuilt before its signal means anything.
         self._refresh_first_portfolio_plan()
@@ -2033,7 +2036,17 @@ class AppController(QObject):
 
     @Property(str, notify=listingsChanged)
     def listingStatus(self) -> str:
-        return self._listing_status
+        """Composed when read, so a language switch reaches it.
+
+        It used to be a finished sentence stored at scan time, which meant it
+        kept the language of the last scan until the next one - the same defect
+        the risk gate and the latest decision had, for the same reason.
+        """
+        if not self._listing_status_key:
+            return ""
+        return service_text(self._listing_status_key, self._wizard_language).format(
+            **self._listing_status_params
+        )
 
     @Property(bool, notify=listingsChanged)
     def listingScanBusy(self) -> bool:
@@ -2065,14 +2078,12 @@ class AppController(QObject):
         if not scan.ok:
             # Named, not swallowed: a watcher silently failing for a week is
             # worse than one that says it could not reach the exchange.
-            self._listing_status = service_text("listing_scan_failed", language).format(
-                reason=scan.error
-            )
+            self._listing_status_key = "listing_scan_failed"
+            self._listing_status_params = {"reason": scan.error}
             self.listingsChanged.emit()
             return
-        self._listing_status = service_text("listing_scan_ok", language).format(
-            count=scan.total_known
-        )
+        self._listing_status_key = "listing_scan_ok"
+        self._listing_status_params = {"count": scan.total_known}
         self.listingsChanged.emit()
         if not scan.new_listings:
             return

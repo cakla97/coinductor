@@ -3612,6 +3612,7 @@ ApplicationWindow {
                 // The cap used to be reachable only by opening config.toml, which
                 // is the one thing this app promises nobody has to do.
                 Rectangle {
+                    Layout.row: 5
                     Layout.fillWidth: true
                     Layout.preferredHeight: orderCapsContent.implicitHeight + 32
                     radius: radiusMd

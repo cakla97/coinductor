@@ -2104,8 +2104,8 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "cs": "V Nastavení je připojení k Binance a k AI, profil z průvodce a ovládání soukromí - včetně odpojení AI modelu nebo smazání lokálních dat.",
     },
     "app_tour_settings_tip": {
-        "en": "Nothing here places an order. \"Delete local data\" is currently a preview only and is not executed.",
-        "cs": "Nic tady nezadá příkaz. \"Smazat lokální data\" je zatím jen náhled a neprovede se.",
+        "en": "Nothing here places an order. \"Delete local data\" does delete - it lists what it will remove and asks you to type DELETE first.",
+        "cs": "Nic tady nezadá příkaz. \"Smazat lokální data\" opravdu maže - napřed vypíše, co odstraní, a chce po vás napsat DELETE.",
     },
 }
 

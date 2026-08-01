@@ -84,3 +84,32 @@ def test_desktop_ties_the_quit_flag_to_the_tray_rather_than_setting_it_once() ->
     )
     assert "setQuitOnLastWindowClosed(not visible)" in source
     assert "setQuitOnLastWindowClosed(False)" not in source, "set once again"
+
+
+def test_the_listing_status_is_composed_when_read(monkeypatch, tmp_path) -> None:
+    """It was a finished sentence stored at scan time, so it kept the language
+    of the last scan until the next one - the same defect the risk gate had."""
+    from coinductor.listing_watcher import ListingScan
+
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("cs")
+    controller._on_listing_scan_completed(ListingScan((), total_known=832))
+    assert "Sledováno 832 párů" in controller.listingStatus
+
+    controller.setWizardLanguage("en")
+
+    assert "Watching 832 pairs" in controller.listingStatus, "kept the old language"
+
+
+def test_a_failed_scan_message_switches_language_too(monkeypatch, tmp_path) -> None:
+    from coinductor.listing_watcher import ListingScan
+
+    controller = _controller(monkeypatch, tmp_path)
+    controller.setWizardLanguage("en")
+    controller._on_listing_scan_completed(ListingScan((), total_known=0, error="503"))
+    assert "Could not reach Binance" in controller.listingStatus
+
+    controller.setWizardLanguage("cs")
+
+    assert "Nepodařilo se spojit" in controller.listingStatus
+    assert "503" in controller.listingStatus, "the cause must survive the switch"

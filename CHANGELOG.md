@@ -4,6 +4,32 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.2.0-rc3] — 2026-08-01
+
+Not a public release. Everything from rc2, plus what testing it found.
+
+### Fixed
+
+- **Closing the window left an invisible process behind.** `quitOnLastWindowClosed` was set
+  False once at startup so hiding to the tray would not end the app; without a schedule
+  that meant every close left a process with no window and no tray icon, holding exchange
+  credentials and the executable an installer wanted to replace. Found by an installer
+  refusing to continue. The flag now follows the tray in both directions. With a schedule
+  on, the app is *meant* to keep running, so hiding now says so and how to quit.
+- **The order size cap drew on top of the page title.** Live Actions is a grid where every
+  child declares its row; the panel moved there declared none, so it landed on row 0. Zero
+  QML warnings throughout, because nothing about it is invalid — it is just wrong. A sweep
+  now confirms no other child of an explicit-row grid is missing one.
+- **"Watching N pairs" kept the language of the last scan.** Stored as a finished sentence
+  instead of composed when read — the third time that shape has bitten, so it is a key and
+  parameters like everything else.
+- **The tour said "Delete local data" was a preview that would not be executed.** It calls
+  `rmtree`, `unlink`, and clears the OS keychain. Telling someone a destructive action is
+  safe is worse than saying nothing; a test now holds the claim against the code.
+- **Rows an earlier build wrote into the listings table are cleared once.** They were a
+  baseline, not listings, and showed as hundreds of pairs listed years ago. The repair
+  touches only that display table — the detection baseline, runs and history are untouched.
+
 ## [1.2.0-rc2] — 2026-07-31
 
 Not a public release. Everything from rc1, plus what testing it found.

@@ -2264,6 +2264,15 @@ class AppController(QObject):
         self._catch_up.mark_seen(result.latest_run_id)
 
     @Slot()
+    def announceTrayHide(self) -> None:
+        """Tell the user the app is still running, and how to stop it."""
+        language = self._wizard_language
+        self.trayMessageRequested.emit(
+            service_text("tray_still_running_title", language),
+            service_text("tray_still_running_body", language),
+        )
+
+    @Slot()
     def refreshTrayVisibility(self) -> None:
         self.trayVisibilityRequested.emit(self.keepRunningInTray)
 

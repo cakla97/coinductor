@@ -80,14 +80,22 @@ def main() -> int:
         return 1
 
     tray = CoinductorTray(controller, icon_path)
-    controller.trayVisibilityRequested.connect(
-        lambda visible: tray.show() if visible else tray.hide()
-    )
+
+    def follow_tray(visible: bool) -> None:
+        if visible:
+            tray.show()
+        else:
+            tray.hide()
+        # Tied to the tray, never set once. Closing the last window normally
+        # ends the process; with the tray active the window is hidden instead,
+        # so quitting then would defeat the point. Setting it False
+        # unconditionally left an invisible process with no window and no tray
+        # icon behind every close - which is also why an installer could not
+        # replace a "closed" Coinductor.
+        app.setQuitOnLastWindowClosed(not visible)
+
+    controller.trayVisibilityRequested.connect(follow_tray)
     controller.wizardLanguageChanged.connect(tray.retranslate)
-    # Closing the last window normally ends the process. With the tray active
-    # the window is hidden rather than closed, so this has to be off or the app
-    # would exit the moment it went to the tray.
-    app.setQuitOnLastWindowClosed(False)
     controller.refreshTrayVisibility()
     return app.exec()
 

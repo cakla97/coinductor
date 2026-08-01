@@ -23,6 +23,10 @@ ApplicationWindow {
         if (appController.keepRunningInTray) {
             close.accepted = false
             window.hide()
+            // Said once per close, because an app that keeps running after you
+            // closed it has to say so - and because an installer cannot replace
+            // a running Coinductor, which is how someone first found out.
+            appController.announceTrayHide()
         }
     }
     Material.theme: Material.Dark

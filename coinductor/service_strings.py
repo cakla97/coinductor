@@ -126,6 +126,14 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Naplánované úlohy jsou funkce Windows. Rozvrh uvnitř aplikace funguje všude.",
     },
     # --- automation ---
+    "tray_still_running_title": {
+        "en": "Coinductor is still running",
+        "cs": "Coinductor běží dál",
+    },
+    "tray_still_running_body": {
+        "en": "The schedule needs it open, so it went to the notification area. Right-click the icon and choose Quit to stop it - an installer cannot update Coinductor while it runs.",
+        "cs": "Rozvrh ho potřebuje spuštěný, tak se schoval do oznamovací oblasti. Zastavíte ho pravým tlačítkem na ikonu a Ukončit - dokud běží, nejde ho aktualizovat instalátorem.",
+    },
     "tray_open": {"en": "Open Coinductor", "cs": "Otevřít Coinductor"},
     "tray_run_now": {"en": "Run analysis now", "cs": "Spustit analýzu teď"},
     "tray_quit": {"en": "Quit", "cs": "Ukončit"},

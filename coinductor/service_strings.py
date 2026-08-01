@@ -131,8 +131,8 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Coinductor běží dál",
     },
     "tray_still_running_body": {
-        "en": "The schedule needs it open, so it went to the notification area. Right-click the icon and choose Quit to stop it - an installer cannot update Coinductor while it runs.",
-        "cs": "Rozvrh ho potřebuje spuštěný, tak se schoval do oznamovací oblasti. Zastavíte ho pravým tlačítkem na ikonu a Ukončit - dokud běží, nejde ho aktualizovat instalátorem.",
+        "en": "Running in the notification area so the schedule can continue. Right-click the icon and choose Quit to stop it.",
+        "cs": "Běží v oznamovací oblasti, aby mohl rozvrh pokračovat. Zastavíte ho pravým tlačítkem na ikonu a Ukončit.",
     },
     "tray_open": {"en": "Open Coinductor", "cs": "Otevřít Coinductor"},
     "tray_run_now": {"en": "Run analysis now", "cs": "Spustit analýzu teď"},

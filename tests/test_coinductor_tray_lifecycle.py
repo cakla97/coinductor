@@ -59,7 +59,9 @@ def test_hiding_to_the_tray_says_the_app_is_still_running(monkeypatch, tmp_path)
     title, body = messages[-1]
     assert "běží dál" in title
     assert "Ukončit" in body, "it must say how to stop it"
-    assert "instalátorem" in body, "and why that matters"
+    # A Windows toast truncates a long body mid-word - the first version ended
+    # on "instalát". Whatever else it says, the way to quit has to fit.
+    assert len(body) <= 140, f"too long for a toast: {len(body)} chars"
 
 
 def test_the_announcement_is_in_the_readers_language(monkeypatch, tmp_path) -> None:

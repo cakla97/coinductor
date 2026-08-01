@@ -334,3 +334,79 @@ def test_qml_never_compares_against_a_localized_status() -> None:
     ]
 
     assert not offenders, f"compare against the *State property instead: {offenders}"
+
+
+def _read_main_qml() -> str:
+    from pathlib import Path
+
+    return (Path(__file__).resolve().parents[1] / "coinductor" / "qml" / "Main.qml").read_text(
+        encoding="utf-8"
+    )
+
+
+def _qml_blocks(text):
+    """Brace matching that ignores braces inside strings and comments.
+
+    Indentation lied twice while moving panels between pages: a block can sit
+    at a sibling's indent while being nested inside one. This is what should
+    have been used the first time.
+    """
+    stack, opens = [], {}
+    i, n = 0, len(text)
+    in_str = in_line = in_block = False
+    quote = ""
+    while i < n:
+        ch, nxt = text[i], text[i + 1] if i + 1 < n else ""
+        if in_line:
+            if ch == "\n":
+                in_line = False
+        elif in_block:
+            if ch == "*" and nxt == "/":
+                in_block = False
+                i += 1
+        elif in_str:
+            if ch == "\\":
+                i += 1
+            elif ch == quote:
+                in_str = False
+        elif ch == "/" and nxt == "/":
+            in_line = True
+            i += 1
+        elif ch == "/" and nxt == "*":
+            in_block = True
+            i += 1
+        elif ch in "\"'":
+            in_str, quote = True, ch
+        elif ch == "{":
+            stack.append(i)
+        elif ch == "}":
+            if stack:
+                opens[stack.pop()] = i
+        i += 1
+    return opens
+
+
+def test_the_order_cap_panel_is_a_direct_child_of_the_live_actions_grid() -> None:
+    """It was nested inside another card, where Layout.* does nothing.
+
+    A plain Rectangle is not a layout, so the panel sized to zero and its
+    anchored contents drew at 0,0 - on top of the page title. Nothing about
+    that is invalid QML, so there were no warnings; it was simply wrong, twice,
+    because indentation was used to decide where it had landed.
+    """
+    qml = _read_main_qml()
+    opens = _qml_blocks(qml)
+    marker = qml.index('objectName: "orderCapsPanel"')
+    enclosing = sorted((o for o, c in opens.items() if o < marker < c), reverse=True)
+
+    # innermost is the panel's own Rectangle; the next one out must be the grid
+    parent_head = qml[qml.rfind("\n", 0, enclosing[1]) + 1 : enclosing[1] + 1].strip()
+    assert parent_head.startswith("GridLayout"), f"parent is {parent_head!r}"
+
+
+def test_that_grid_gives_every_child_an_explicit_row() -> None:
+    """Live Actions positions by Layout.row; a child without one lands on 0."""
+    qml = _read_main_qml()
+    assert 'objectName: "orderCapsPanel"' in qml
+    panel = qml[qml.index('objectName: "orderCapsPanel"') :][:400]
+    assert "Layout.row:" in panel

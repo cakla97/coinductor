@@ -11,7 +11,7 @@
 ; code-signing certificate is added (out of scope for this step).
 
 #define AppName "Coinductor"
-#define AppVersion "1.2.0-rc3"
+#define AppVersion "1.2.0-rc4"
 #define AppPublisher "Coinductor"
 #define AppExeName "Coinductor.exe"
 

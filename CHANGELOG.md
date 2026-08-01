@@ -4,6 +4,23 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.2.0-rc4] — 2026-08-01
+
+Not a public release.
+
+### Fixed
+
+- **The order size cap panel drew on top of the page title**, for the second release
+  running. The first fix gave it a grid row it was never going to use: the real problem
+  was that it had landed inside another card's `Rectangle`, which is not a layout, so its
+  `Layout.*` properties did nothing and it sized to zero. Nothing about that is invalid
+  QML, so there were no warnings either time. What misled me twice was indentation — the
+  block sat at a sibling's indent while nested a level deeper. Measured this time
+  (`y=0 h=0 w=0` beside a working card at `y=657 h=330 w=936`), then located with a brace
+  matcher that skips strings and comments. That matcher is now a test.
+- **The tray notification was cut off mid-word** by Windows. Shortened to what has to
+  survive truncation, with a length assertion so the next edit cannot overflow it again.
+
 ## [1.2.0-rc3] — 2026-08-01
 
 Not a public release. Everything from rc2, plus what testing it found.

@@ -190,6 +190,8 @@ class AppController(QObject):
             {"page": 3, "nav": "nav_action_plan", "key": "action_plan"},
             {"page": 4, "nav": "nav_active_strategies", "key": "active_strategies"},
             {"page": 5, "nav": "nav_run_history", "key": "run_history"},
+            {"page": 9, "nav": "nav_new_listings", "key": "new_listings"},
+            {"page": 10, "nav": "nav_automation", "key": "automation"},
             {"page": 6, "nav": "nav_ai_assistant", "key": "ai_assistant"},
             {"page": 7, "nav": "nav_help_guides", "key": "help_guides"},
             {"page": 8, "nav": "nav_settings", "key": "settings"},

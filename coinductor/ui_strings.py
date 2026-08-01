@@ -2004,12 +2004,12 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Nejdřív zabezpečení, potom provedení",
     },
     "app_tour_live_actions_detail": {
-        "en": "Live Actions contains analysis controls, the staged safety lock, and the separate live API management workflow.",
-        "cs": "Živé akce obsahují ovládání analýzy, stupňovaný bezpečnostní zámek a samostatnou správu živého API klíče.",
+        "en": "Live Actions holds the staged safety lock, the live API management workflow, and the cap on how large a single order may be.",
+        "cs": "Živé akce obsahují stupňovaný bezpečnostní zámek, správu živého API klíče a strop na velikost jednoho příkazu.",
     },
     "app_tour_live_actions_tip": {
-        "en": "Preview, Armed, and Live Enabled are local gates. Every real order still needs its own confirmation.",
-        "cs": "Náhled, Připraveno a Živě povoleno jsou místní pojistky. Každý skutečný příkaz stejně potřebuje vlastní potvrzení.",
+        "en": "Preview, Armed and Live Enabled decide whether an order may go; the size cap decides how big. Every real order still needs its own typed confirmation.",
+        "cs": "Náhled, Připraveno a Živě povoleno rozhodují, jestli příkaz smí odejít; strop rozhoduje, jak velký. Každý skutečný příkaz stejně potřebuje vlastní vypsané potvrzení.",
     },
     "app_tour_action_plan_title": {
         "en": "One place for every run result",
@@ -2047,6 +2047,30 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "REAL runs read your live Binance account. MOCK runs use example data and never touch it.",
         "cs": "Běhy REAL čtou váš skutečný účet na Binance. Běhy MOCK používají ukázková data a na účet vůbec nesáhnou.",
     },
+    "app_tour_new_listings_title": {
+        "en": "See what Binance just listed",
+        "cs": "Uvidíte, co Binance právě zalistoval",
+    },
+    "app_tour_new_listings_detail": {
+        "en": "Coinductor can watch for newly listed pairs and tell you when one appears. It records and notifies; it never buys.",
+        "cs": "Coinductor umí sledovat nově zalistované páry a dát vědět, když nějaký přibude. Zaznamenává a upozorňuje; nikdy nenakupuje.",
+    },
+    "app_tour_new_listings_tip": {
+        "en": "Buying a listing at market in its first minutes is how the bots that got there first get paid. Use this to watch, and decide later.",
+        "cs": "Nákup listingu za tržní cenu v prvních minutách je to, čím se platí botům, kteří tam byli dřív. Berte to jako pozorování a rozhodujte se až podle něj.",
+    },
+    "app_tour_automation_title": {
+        "en": "Everything that starts on its own",
+        "cs": "Všechno, co se spouští samo",
+    },
+    "app_tour_automation_detail": {
+        "en": "Set the analysis to run on a schedule while Coinductor is open, or register a Windows task so it also runs when it is closed. The list below shows what is active and when each one runs next.",
+        "cs": "Nastavte, aby analýza běžela podle rozvrhu, dokud je Coinductor otevřený, nebo zaregistrujte úlohu ve Windows, ať běží i zavřený. Seznam pod tím ukazuje, co je aktivní a kdy co poběží příště.",
+    },
+    "app_tour_automation_tip": {
+        "en": "A scheduled run only ever reads. It cannot place an order, because the confirmation you type is what authorises one and no timer can type.",
+        "cs": "Naplánovaný běh jen čte. Příkaz zadat nemůže, protože ho povoluje potvrzení, které vypisujete vy, a to žádný časovač nenapíše.",
+    },
     "app_tour_ai_assistant_title": {
         "en": "Ask for explanations, not permission bypasses",
         "cs": "Ptejte se na vysvětlení, ne na obejití pojistek",
@@ -2076,8 +2100,8 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Nastavení a stav systému najdete tady",
     },
     "app_tour_settings_detail": {
-        "en": "Settings holds your Binance and AI connections, onboarding profile, privacy controls, and the detailed Safety stage state.",
-        "cs": "V Nastavení je připojení k Binance a k AI, profil z průvodce, ovládání soukromí a podrobný stav bezpečnostního stupně.",
+        "en": "Settings holds your Binance and AI connections, the onboarding profile, and privacy controls - including disconnecting an AI model or deleting local data.",
+        "cs": "V Nastavení je připojení k Binance a k AI, profil z průvodce a ovládání soukromí - včetně odpojení AI modelu nebo smazání lokálních dat.",
     },
     "app_tour_settings_tip": {
         "en": "Nothing here places an order. \"Delete local data\" is currently a preview only and is not executed.",

@@ -317,3 +317,27 @@ def test_every_offline_help_topic_has_a_handler() -> None:
     for topic, keywords in LocalHelpAssistant._TOPICS:
         assert keywords, f"{topic} has no keywords"
         assert callable(getattr(LocalHelpAssistant, f"_{topic}", None)), f"no handler for {topic}"
+
+
+def test_the_tour_visits_every_page_the_navigation_offers() -> None:
+    """The drift this catches actually happened.
+
+    Two pages were added to the navigation and the tour kept showing the nine
+    it was written with, so a new user was walked past features nobody had
+    mentioned to them.
+    """
+    source = _source("coinductor", "qml", "Main.qml")
+    nav_pages = {int(page) for page in re.findall(r'\{ label: "[^"]+", page: (\d+) \}', source)}
+    assert nav_pages, "the extraction pattern is stale"
+
+    tour_pages = {
+        int(page)
+        for page in re.findall(r'\{"page": (\d+), "nav": "\w+", "key": "\w+"\}',
+                               _source("coinductor", "controller.py"))
+    }
+    assert tour_pages, "the extraction pattern is stale"
+
+    missing = sorted(nav_pages - tour_pages)
+    assert missing == [], f"pages in the navigation with no tour step: {missing}"
+    stray = sorted(tour_pages - nav_pages)
+    assert stray == [], f"tour steps for pages that are not in the navigation: {stray}"

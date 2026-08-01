@@ -4,6 +4,39 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.2.0-rc2] — 2026-07-31
+
+Not a public release. Everything from rc1, plus what testing it found.
+
+### Fixed
+
+- **The listing watcher reported hundreds of false new listings.** The baseline of what is
+  already on the exchange lived in the table the retention cap prunes, so the cap
+  discarded most of it — and every discarded pair looked new again on the next pass.
+  Against 600 real pairs that was 400 false listings on the second scan, which at a
+  fifteen-minute interval is a flood of notifications about pairs listed years ago. Found
+  by a tester asking what "watching 200 pairs" was supposed to mean; the honest answer was
+  that it was the cap talking, not the exchange.
+- **A run missed because the PC was off was silently skipped**, contradicting what the
+  proposal claimed. `schtasks` has no flag for it and `StartWhenAvailable` defaults to
+  false — verified on a real task rather than assumed — so the task is now amended after
+  creation. A missed 07:30 runs as soon as the machine is next on.
+- **The app tour still described the nine pages it was written against**, walking a new
+  user past two sections without mentioning either, and describing a Settings page that no
+  longer holds what it said. A test now ties the tour to the navigation in both directions.
+
+### Changed
+
+- **An Automation page** gathers everything that starts on its own — the in-app schedule,
+  the Windows task and the listing watch — with the wall-clock time each runs next. Both
+  schedule panels moved there from Settings.
+- **The order size cap moved to Live Actions**, beside the safety stage. The stage decides
+  whether an order goes and the cap decides how big; someone enabling live trading should
+  meet both at once rather than find the second later, after a toast has told them their
+  order was quietly truncated.
+- The scheduled task's next run and status are shown in the app, so nobody needs a
+  terminal to see what they scheduled. "Check now" has a busy indicator.
+
 ## [1.2.0-rc1] — 2026-07-31
 
 Not a public release. Built from `feature/automation` for testing before anything

@@ -3966,128 +3966,6 @@ ApplicationWindow {
                     font.pixelSize: 13
                     wrapMode: Text.WordWrap
                 }
-
-                Text {
-                    Layout.fillWidth: true
-                    visible: !appController.schedules.some(function (item) { return item.active })
-                    text: appController.appText.automation_page_empty
-                    color: textSecondary
-                    font.pixelSize: 12
-                    wrapMode: Text.WordWrap
-                }
-
-                Repeater {
-                    model: appController.schedules
-                    delegate: Rectangle {
-                        required property var modelData
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 74
-                        radius: radiusSm
-                        color: panelRaised
-                        border.color: modelData.active ? accent : border
-                        RowLayout {
-                            anchors.fill: parent
-                            anchors.leftMargin: 14
-                            anchors.rightMargin: 14
-                            spacing: 16
-                            Rectangle {
-                                Layout.preferredWidth: 10
-                                Layout.preferredHeight: 10
-                                radius: 5
-                                color: modelData.active ? accent : border
-                            }
-                            ColumnLayout {
-                                Layout.preferredWidth: 250
-                                spacing: 2
-                                Text { text: modelData.name; color: textPrimary; font.pixelSize: 14; font.bold: true }
-                                ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 10 }
-                            }
-                            ColumnLayout {
-                                Layout.preferredWidth: 150
-                                spacing: 2
-                                Text { text: appController.appText.automation_next_run; color: textSecondary; font.pixelSize: 10 }
-                                Text {
-                                    text: modelData.active
-                                        ? (modelData.nextRun || modelData.cadence)
-                                        : appController.appText.automation_inactive
-                                    color: modelData.active ? accent : textSecondary
-                                    font.pixelSize: 13
-                                    font.bold: true
-                                }
-                            }
-                            Text {
-                                Layout.fillWidth: true
-                                text: modelData.active ? modelData.cadence : ""
-                                color: textSecondary
-                                font.pixelSize: 11
-                            }
-                            Button {
-                                text: appController.appText.automation_configure
-                                onClicked: appController.setCurrentPage(modelData.page)
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        ScrollView {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            clip: true
-            visible: appController.currentPage === 8
-            contentWidth: availableWidth
-            contentHeight: settingsPageContent.implicitHeight + 72
-            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-
-            ColumnLayout {
-                id: settingsPageContent
-                x: 28
-                y: 28
-                width: window.pageContentWidth()
-                spacing: 18
-                Text { text: appController.appText.settings_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
-                RowLayout {
-                    Layout.fillWidth: true
-                    Text {
-                        Layout.fillWidth: true
-                        text: appController.appText.settings_subtitle
-                        color: textSecondary
-                        font.pixelSize: 13
-                        elide: Text.ElideRight
-                    }
-                    Button {
-                        text: appController.appText.setup_wizard_button
-                        onClicked: appController.openOnboardingWizard()
-                    }
-                    Button {
-                        text: appController.appText.replay_app_tour_button
-                        onClicked: appController.startAppTour()
-                    }
-                    Button {
-                        text: appController.appText.refresh_checks_button
-                        onClicked: appController.refreshSetup()
-                    }
-                }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 8
-                    Text { text: appController.appText.language_toggle_label; color: textSecondary; font.pixelSize: 12 }
-                    Button {
-                        text: "English"
-                        flat: appController.wizardLanguage !== "en"
-                        highlighted: appController.wizardLanguage === "en"
-                        onClicked: appController.setWizardLanguage("en")
-                    }
-                    Button {
-                        text: "Čeština"
-                        flat: appController.wizardLanguage !== "cs"
-                        highlighted: appController.wizardLanguage === "cs"
-                        onClicked: appController.setWizardLanguage("cs")
-                    }
-                    Item { Layout.fillWidth: true }
-                }
-
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: automationContent.implicitHeight + 32
@@ -4170,7 +4048,6 @@ ApplicationWindow {
                         }
                     }
                 }
-
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: taskContent.implicitHeight + 32
@@ -4272,6 +4149,132 @@ ApplicationWindow {
                         }
                     }
                 }
+
+                Text {
+                    Layout.fillWidth: true
+                    visible: !appController.schedules.some(function (item) { return item.active })
+                    text: appController.appText.automation_page_empty
+                    color: textSecondary
+                    font.pixelSize: 12
+                    wrapMode: Text.WordWrap
+                }
+
+                Repeater {
+                    model: appController.schedules
+                    delegate: Rectangle {
+                        required property var modelData
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 74
+                        radius: radiusSm
+                        color: panelRaised
+                        border.color: modelData.active ? accent : border
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            spacing: 16
+                            Rectangle {
+                                Layout.preferredWidth: 10
+                                Layout.preferredHeight: 10
+                                radius: 5
+                                color: modelData.active ? accent : border
+                            }
+                            ColumnLayout {
+                                Layout.preferredWidth: 250
+                                spacing: 2
+                                Text { text: modelData.name; color: textPrimary; font.pixelSize: 14; font.bold: true }
+                                ElidedDetail { Layout.fillWidth: true; text: modelData.detail; font.pixelSize: 10 }
+                            }
+                            ColumnLayout {
+                                Layout.preferredWidth: 150
+                                spacing: 2
+                                Text { text: appController.appText.automation_next_run; color: textSecondary; font.pixelSize: 10 }
+                                Text {
+                                    text: modelData.active
+                                        ? (modelData.nextRun || modelData.cadence)
+                                        : appController.appText.automation_inactive
+                                    color: modelData.active ? accent : textSecondary
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                }
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: modelData.active ? modelData.cadence : ""
+                                color: textSecondary
+                                font.pixelSize: 11
+                            }
+                            Button {
+                                // Only for a schedule configured elsewhere; the
+                                // other two have their panels directly above.
+                                visible: modelData.page !== appController.currentPage
+                                text: appController.appText.automation_configure
+                                onClicked: appController.setCurrentPage(modelData.page)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        ScrollView {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            visible: appController.currentPage === 8
+            contentWidth: availableWidth
+            contentHeight: settingsPageContent.implicitHeight + 72
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+
+            ColumnLayout {
+                id: settingsPageContent
+                x: 28
+                y: 28
+                width: window.pageContentWidth()
+                spacing: 18
+                Text { text: appController.appText.settings_title; color: textPrimary; font.pixelSize: 26; font.bold: true }
+                RowLayout {
+                    Layout.fillWidth: true
+                    Text {
+                        Layout.fillWidth: true
+                        text: appController.appText.settings_subtitle
+                        color: textSecondary
+                        font.pixelSize: 13
+                        elide: Text.ElideRight
+                    }
+                    Button {
+                        text: appController.appText.setup_wizard_button
+                        onClicked: appController.openOnboardingWizard()
+                    }
+                    Button {
+                        text: appController.appText.replay_app_tour_button
+                        onClicked: appController.startAppTour()
+                    }
+                    Button {
+                        text: appController.appText.refresh_checks_button
+                        onClicked: appController.refreshSetup()
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Text { text: appController.appText.language_toggle_label; color: textSecondary; font.pixelSize: 12 }
+                    Button {
+                        text: "English"
+                        flat: appController.wizardLanguage !== "en"
+                        highlighted: appController.wizardLanguage === "en"
+                        onClicked: appController.setWizardLanguage("en")
+                    }
+                    Button {
+                        text: "Čeština"
+                        flat: appController.wizardLanguage !== "cs"
+                        highlighted: appController.wizardLanguage === "cs"
+                        onClicked: appController.setWizardLanguage("cs")
+                    }
+                    Item { Layout.fillWidth: true }
+                }
+
+
 
                 // The cap used to be reachable only by opening config.toml, which
                 // is the one thing this app promises nobody has to do.

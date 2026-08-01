@@ -2176,7 +2176,7 @@ class AppController(QObject):
                 ),
                 "nextRun": self._next_fire(self._automation_timer),
                 "detail": service_text("schedule_while_open", language),
-                "page": 8,
+                "page": 10,
             },
             {
                 "name": service_text("schedule_task_name", language),
@@ -2186,7 +2186,7 @@ class AppController(QObject):
                 ),
                 "nextRun": task.next_run,
                 "detail": service_text("schedule_while_closed", language),
-                "page": 8,
+                "page": 10,
             },
             {
                 "name": service_text("schedule_listings_name", language),

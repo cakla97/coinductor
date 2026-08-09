@@ -4,6 +4,35 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.2.1] — 2026-08-09
+
+Three things the automation got wrong once it had been left running for a week.
+
+### Fixed
+
+- **Launching Coinductor again now returns to the running one** instead of starting a
+  rival. The tray's *Open Coinductor* always worked, because it is inside the app; the
+  desktop shortcut had nothing to find it with, so a second click built a second schedule,
+  a second listing watch and a second writer for one journal. The duplicate schedule was
+  the visible half — the half that mattered is that a limit enforced per run or per window
+  was being enforced once per process.
+- **The Automation page's next-run time now moves when a run happens.** The timer was
+  always firing on schedule; the label was derived from it only when something said the
+  settings had changed, and a tick said nothing. It showed the run that had just finished,
+  which read as a schedule that had stopped.
+- **The Windows scheduled task's time survives a restart.** The chosen time was held in
+  memory and rebuilt as the 07:30 default on every launch, so from the second launch
+  onwards the panel reported 07:30 whatever was really registered — and said the same to
+  anyone who had set the time in Task Scheduler rather than in Coinductor. It is now read
+  back from the task itself, out of its XML definition, whose tag names are not localised.
+
+### Changed
+
+- The README no longer sends anyone to a text editor to look around the app before
+  connecting an account: **Run analysis** has a `REAL`/`MOCK` data source, chosen per run.
+  Editing `config.toml` is now described as what it is — how the headless CLI is
+  configured, not something the desktop app asks of anyone.
+
 ## [1.2.0] — 2026-08-01
 
 The analysis can now run on its own. An order still cannot.

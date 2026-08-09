@@ -143,12 +143,74 @@ def test_the_settings_the_user_saved_are_what_the_run_uses(monkeypatch, tmp_path
     assert live_preview is False
 
 
+def test_a_tick_tells_the_panel_that_the_next_run_moved(monkeypatch, tmp_path) -> None:
+    """The timer was always right; the label was what went stale.
+
+    `schedules` derives its next-run time from the timer's remaining
+    milliseconds, and QML recomputes that only when automationChanged says to.
+    A tick that fires silently therefore leaves the panel showing the run that
+    has just finished - a repeating timer that looks stuck while working.
+
+    Emitted through the timer's own signal rather than by calling the slot, so
+    this asserts the connection and not merely that the slot exists.
+    """
+    controller = _controller(monkeypatch, tmp_path)
+    _enable(controller)
+    monkeypatch.setattr(controller, "_start_analysis", lambda *a, **k: None)
+    changed: list[int] = []
+    controller.automationChanged.connect(lambda: changed.append(1))
+
+    controller._automation_timer.timeout.emit()
+
+    assert changed, "a tick left the schedule panel showing a stale next run"
+
+
+def test_a_listing_tick_refreshes_the_panel_too(monkeypatch, tmp_path) -> None:
+    """The listing watch has its own next-fire in the same list."""
+    controller = _controller(monkeypatch, tmp_path)
+    changed: list[int] = []
+    controller.automationChanged.connect(lambda: changed.append(1))
+
+    controller._listing_timer.timeout.emit()
+
+    assert changed
+
+
 def test_an_out_of_range_interval_is_clamped_before_it_reaches_the_timer(monkeypatch, tmp_path) -> None:
     controller = _controller(monkeypatch, tmp_path)
 
     controller.saveAutomation(True, "0", False, False)
 
     assert controller._automation_timer.interval() == 1 * 3600 * 1000
+
+
+def test_the_panel_shows_the_time_windows_holds_not_the_startup_default(monkeypatch, tmp_path) -> None:
+    """The task outlives the app, so the app must not be the source of truth.
+
+    `_scheduled_task_time` is rebuilt as "07:30" on every start-up, and used to
+    be the only thing the panel read - so a task registered for 22:45 was
+    reported as 07:30 from the next launch onwards.
+    """
+    from coinductor.scheduled_task import TaskState
+
+    controller = _controller(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        "coinductor.controller.query_task",
+        lambda: TaskState(True, "", "10.08.2026 22:45:00", "Ready", "22:45"),
+    )
+
+    assert controller.scheduledTask["time"] == "22:45"
+    assert "22:45" in controller.schedules[1]["cadence"]
+
+
+def test_with_no_task_registered_the_picker_keeps_its_default(monkeypatch, tmp_path) -> None:
+    """Nothing to read back, so the default is all there is to offer."""
+    from coinductor.scheduled_task import TaskState
+
+    controller = _controller(monkeypatch, tmp_path)
+    monkeypatch.setattr("coinductor.controller.query_task", lambda: TaskState(False))
+
+    assert controller.scheduledTask["time"] == "07:30"
 
 
 def test_saving_the_same_schedule_twice_says_nothing_changed(monkeypatch, tmp_path) -> None:

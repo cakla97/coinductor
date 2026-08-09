@@ -289,14 +289,22 @@ account** — it only writes a local profile and shows what still needs verifyin
 
 Live trading stays locked until you deliberately walk the safety stages in **Live Actions**.
 
-An installed build starts with `app.mock_data = false`, so an analysis works on your real
-account or honestly fails - it will never present example figures as if they were yours. To
-explore the app before connecting anything, set `mock_data = true` in `config.toml`; that is
-also how the repository and the test suite run fully offline.
+An installed build works on your real account or honestly fails — it will never present
+example figures as if they were yours. To look around before connecting anything, open
+**Run analysis** and switch the data source from `REAL` to `MOCK`: that run reads a fixed
+example portfolio and touches no account. It is chosen per run, so there is no file to edit
+and nothing to remember to switch back.
 
-`config.example.toml` is the tracked, neutral template. Copy it to `config.toml` (gitignored)
-and edit that; when a `config.toml` exists the CLI and the app both pick it up automatically.
-Set `COINDUCTOR_CONFIG` to point somewhere else.
+**Nothing in the desktop app requires editing a config file.** Every setting it offers is on
+one of its own screens, and it writes the file for you.
+
+### Configuring the CLI
+
+The headless CLI has no screens, so it is configured by hand. `config.example.toml` is the
+tracked, neutral template: copy it to `config.toml` (gitignored) and edit that. When a
+`config.toml` exists, both the CLI and the app pick it up automatically; set
+`COINDUCTOR_CONFIG` to point somewhere else. The `MOCK` data source above is the same switch
+as `app.mock_data = true`, which is how the repository and the test suite run fully offline.
 
 ## Automation
 

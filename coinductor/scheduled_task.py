@@ -31,12 +31,23 @@ TASK_NAME = "Coinductor scheduled analysis"
 _TIME = re.compile(r"^([01]\d|2[0-3]):([0-5]\d)$")
 
 
+# The daily start out of the task's own XML. Read from there rather than from
+# `/fo LIST`, because the XML schema's tag names are fixed while the LIST
+# labels are localised - the same problem parse_task_details has to work
+# around by matching Czech stems.
+_START_BOUNDARY = re.compile(r"<StartBoundary>\s*\d{4}-\d{2}-\d{2}T(\d{2}:\d{2})")
+
+
 @dataclass(frozen=True)
 class TaskState:
     registered: bool
     detail: str = ""
     next_run: str = ""
     status: str = ""
+    # What Windows actually has, which is not necessarily what this app last
+    # registered: the task outlives the process, and can be edited in Task
+    # Scheduler by someone who never opens Coinductor.
+    start_time: str = ""
 
     @property
     def supported(self) -> bool:
@@ -64,6 +75,12 @@ def parse_task_details(output: str) -> tuple[str, str]:
         elif not status and label.endswith("status") or label.endswith("stav"):
             status = status or value
     return next_run, status
+
+
+def parse_start_time(xml: str) -> str:
+    """`HH:MM` out of a task's XML definition, or empty when it has none."""
+    match = _START_BOUNDARY.search(xml)
+    return match.group(1) if match else ""
 
 
 def is_supported() -> bool:
@@ -106,7 +123,28 @@ def query_task() -> TaskState:
     if completed.returncode != 0:
         return TaskState(False, "")
     next_run, status = parse_task_details(completed.stdout)
-    return TaskState(True, completed.stdout.strip()[:200], next_run, status)
+    return TaskState(True, completed.stdout.strip()[:200], next_run, status, _query_start_time())
+
+
+def _query_start_time() -> str:
+    """The registered daily time, via a second query for the XML definition.
+
+    Only reached once the LIST query has already established the task exists,
+    so this is not a cost paid on a machine that has never registered one.
+    Best effort: a panel showing the time it was last told beats a panel
+    showing nothing because a subprocess had a bad day.
+    """
+    try:
+        exported = subprocess.run(  # noqa: S603
+            ["schtasks", "/query", "/tn", TASK_NAME, "/xml"],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            creationflags=_no_window(),
+        )
+    except Exception:  # noqa: BLE001
+        return ""
+    return parse_start_time(exported.stdout) if exported.returncode == 0 else ""
 
 
 def register_task(daily_at: str) -> tuple[bool, str]:

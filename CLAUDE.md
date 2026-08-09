@@ -8,7 +8,7 @@ Local Binance Spot assistant. Two packages, one direction of dependency:
 ## Commands
 
 ```bash
-python -m pytest -q                                   # 467 tests, ~10s, fully offline
+python -m pytest -q                                   # 654 tests, ~30s, fully offline
 python -m ruff check trading_agent coinductor tests   # must be clean
 python -m trading_agent run --config config.example.toml
 coinductor                                            # desktop app (needs the desktop extra)
@@ -34,6 +34,7 @@ submit path without passing through the risk engine.
 | Run orchestration | `trading_agent/runner.py` + `run_phases.py` |
 | Background jobs off the GUI thread | `coinductor/workers.py` |
 | Schedules, tray, headless `--run-once` | `coinductor/automation.py`, `tray.py`, `scheduled_task.py`, `desktop.py` |
+| One window per data directory | `coinductor/single_instance.py` |
 | New-listing watch (records and notifies; never buys) | `coinductor/listing_watcher.py` |
 | Permission to submit unattended | `coinductor/standing_authorisation.py` — built, tested, **wired to nothing** |
 | User-facing text the engine produces | `trading_agent/messages.py` — key + params, never a finished sentence |
@@ -53,6 +54,13 @@ submit path without passing through the risk engine.
   string, and the tests assert those arguments never reach it at all rather than arriving
   false. `standing_authorisation.py` is the only thing that could change that; it is
   deliberately unconnected, and connecting it is a decision, not a refactor.
+- **The single-instance handshake carries no payload, on purpose.** A second instance
+  connects and exits, and on Windows anything written into a `QLocalSocket` is discarded
+  when it closes or the process leaves, before the server ever accepts. Measured, not
+  assumed. The connection itself is the whole message; a message added here will vanish.
+- **Anything the schedule panel derives from a `QTimer` needs `automationChanged`.** The
+  next-run time is computed from `remainingTime()` when QML reads it, so a timer that
+  fires without emitting leaves a correct schedule looking stopped.
 - **Two panels write into one `[automation]` section**, so an omitted value means "leave it"
   rather than "turn it off". `_apply` only edits keys that already exist, so a new key needs
   `ensure_section` or it is accepted and silently discarded.

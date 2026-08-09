@@ -59,6 +59,7 @@ def main() -> int:
     from PySide6.QtWidgets import QApplication
 
     from .controller import AppController
+    from .single_instance import SingleInstanceGuard, instance_key
     from .tray import CoinductorTray
 
     # QApplication rather than QGuiApplication: QSystemTrayIcon lives in
@@ -71,6 +72,15 @@ def main() -> int:
     if icon_path.exists():
         app.setWindowIcon(QIcon(str(icon_path)))
 
+    # Before the engine, the controller or the schedule: a second launch should
+    # cost a pipe round trip and exit, not build all of that and throw it away.
+    # The tray menu could always find the running app because it lives inside
+    # it; until this, the desktop shortcut could not, and started a rival.
+    guard = SingleInstanceGuard(instance_key(data_dir))
+    if not guard.acquire():
+        return 0
+    app.aboutToQuit.connect(guard.release)
+
     engine = QQmlApplicationEngine()
     controller = AppController(engine)
     engine.rootContext().setContextProperty("appController", controller)
@@ -80,6 +90,9 @@ def main() -> int:
         return 1
 
     tray = CoinductorTray(controller, icon_path)
+    # Launching again is a request to see the window, which is exactly what the
+    # tray's Open does - so it is the same call, not a parallel one.
+    guard.on_activate(tray.show_window)
 
     def follow_tray(visible: bool) -> None:
         if visible:

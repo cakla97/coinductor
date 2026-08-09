@@ -218,3 +218,73 @@ def test_details_missing_from_the_output_read_as_empty() -> None:
 
     assert parse_task_details("") == ("", "")
     assert parse_task_details("nothing useful here") == ("", "")
+
+
+def test_the_registered_time_is_read_from_the_task_not_remembered() -> None:
+    """The task outlives the process that made it.
+
+    Nothing persisted the chosen time, so every restart reported the built-in
+    default - including to someone who had set the time in Task Scheduler and
+    never in Coinductor.
+    """
+    from coinductor.scheduled_task import parse_start_time
+
+    xml = """<?xml version="1.0" encoding="UTF-16"?>
+    <Task version="1.2">
+      <Triggers>
+        <CalendarTrigger>
+          <StartBoundary>2026-08-09T06:15:00</StartBoundary>
+          <ScheduleByDay><DaysInterval>1</DaysInterval></ScheduleByDay>
+        </CalendarTrigger>
+      </Triggers>
+    </Task>"""
+
+    assert parse_start_time(xml) == "06:15"
+
+
+def test_a_task_definition_without_a_start_reads_as_empty() -> None:
+    """Empty means "fall back", so it must not be a wrong-but-plausible time."""
+    from coinductor.scheduled_task import parse_start_time
+
+    assert parse_start_time("") == ""
+    assert parse_start_time("<Task><Triggers /></Task>") == ""
+
+
+def test_querying_reports_the_time_the_task_actually_holds(monkeypatch) -> None:
+    """End to end over the two schtasks calls query_task makes."""
+    from coinductor.scheduled_task import query_task
+
+    monkeypatch.setattr(sys, "platform", "win32")
+
+    def fake(argv, **kwargs):
+        if "/xml" in argv:
+            return subprocess.CompletedProcess(
+                argv, 0, "<StartBoundary>2026-08-09T22:45:00</StartBoundary>", ""
+            )
+        return subprocess.CompletedProcess(argv, 0, "Next Run Time: 10.08.2026 22:45:00\n", "")
+
+    monkeypatch.setattr(subprocess, "run", fake)
+
+    state = query_task()
+
+    assert state.registered is True
+    assert state.start_time == "22:45"
+
+
+def test_an_unreadable_definition_leaves_the_time_empty(monkeypatch) -> None:
+    """A failed second query must not claim the task has no schedule."""
+    from coinductor.scheduled_task import query_task
+
+    monkeypatch.setattr(sys, "platform", "win32")
+
+    def fake(argv, **kwargs):
+        if "/xml" in argv:
+            return subprocess.CompletedProcess(argv, 1, "", "nope")
+        return subprocess.CompletedProcess(argv, 0, "Status: Ready\n", "")
+
+    monkeypatch.setattr(subprocess, "run", fake)
+
+    state = query_task()
+
+    assert state.registered is True
+    assert state.start_time == ""

@@ -146,9 +146,9 @@ class AppController(QObject):
         # Single-shot is wrong here: the schedule repeats. Started only if the
         # saved settings say so, which they never do on a fresh install.
         self._automation_timer = QTimer(self)
-        self._automation_timer.timeout.connect(self.runAutomaticAnalysis)
+        self._automation_timer.timeout.connect(self._on_automation_tick)
         self._listing_timer = QTimer(self)
-        self._listing_timer.timeout.connect(self.scanListings)
+        self._listing_timer.timeout.connect(self._on_listing_tick)
         self._listing_thread: QThread | None = None
         self._listing_worker = None
         self._listings: list[dict[str, object]] = []
@@ -2195,7 +2195,7 @@ class AppController(QObject):
                 "name": service_text("schedule_task_name", language),
                 "active": task.registered,
                 "cadence": service_text("schedule_daily_at", language).format(
-                    time=self._scheduled_task_time
+                    time=self._task_time(task)
                 ),
                 "nextRun": task.next_run,
                 "detail": service_text("schedule_while_closed", language),
@@ -2233,10 +2233,21 @@ class AppController(QObject):
         return {
             "supported": is_supported(),
             "registered": state.registered,
-            "time": self._scheduled_task_time,
+            "time": self._task_time(state),
             "nextRun": state.next_run,
             "status": state.status,
         }
+
+    def _task_time(self, task) -> str:
+        """What the panel shows: what Windows has, when Windows has anything.
+
+        `_scheduled_task_time` is only a default for the picker before a task
+        exists. It used to be the sole source, and it is set fresh on every
+        start-up - so after a restart the panel claimed 07:30 no matter what
+        was really registered, and said the same thing to anyone who had
+        changed the time in Task Scheduler instead of here.
+        """
+        return task.start_time or self._scheduled_task_time
 
     @Slot(str)
     def registerScheduledTask(self, daily_at: str) -> None:
@@ -2298,6 +2309,29 @@ class AppController(QObject):
         # the old one has elapsed once more.
         self._automation_timer.setInterval(settings.interval_seconds * 1000)
         self._automation_timer.start()
+
+    @Slot()
+    def _on_automation_tick(self) -> None:
+        """A tick moved the next fire, so say so before running.
+
+        The schedule panel shows a wall-clock time derived from the timer's
+        remaining milliseconds, and QML only recomputes it when
+        automationChanged says to. Nothing said so on a tick, so the panel kept
+        showing the time of the run that had just finished - a repeating timer
+        that looked stuck while it was in fact firing perfectly.
+
+        Emitted before the run rather than after: `_start_analysis` is what the
+        user is waiting on, and the timer has already restarted by now, so the
+        new value is available and correct either way.
+        """
+        self.automationChanged.emit()
+        self.runAutomaticAnalysis()
+
+    @Slot()
+    def _on_listing_tick(self) -> None:
+        """As `_on_automation_tick`, for the listing watch's own next-fire."""
+        self.automationChanged.emit()
+        self.scanListings()
 
     @Slot()
     def runAutomaticAnalysis(self) -> None:

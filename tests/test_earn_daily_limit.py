@@ -48,34 +48,34 @@ def _balances(spot="0", flexible="500") -> list[Balance]:
 def test_the_day_still_has_room(manager) -> None:
     """24 spent of 30 leaves 6, below the per-run 12."""
     assert manager().spendable_quote(
-        _balances(), "USDC", redeemed_today=Decimal("24")
+        _balances(), "USDC", redeemed_today=Decimal("24"), portfolio_value=Decimal("1000000")
     ) == Decimal("6")
 
 
 def test_an_exhausted_day_reaches_nothing(manager) -> None:
     assert manager().spendable_quote(
-        _balances(), "USDC", redeemed_today=Decimal("30")
+        _balances(), "USDC", redeemed_today=Decimal("30"), portfolio_value=Decimal("1000000")
     ) == Decimal("0")
 
 
 def test_overshooting_the_day_does_not_go_negative(manager) -> None:
     """A cap lowered after the fact must not produce a negative allowance."""
     assert manager().spendable_quote(
-        _balances(), "USDC", redeemed_today=Decimal("100")
+        _balances(), "USDC", redeemed_today=Decimal("100"), portfolio_value=Decimal("1000000")
     ) == Decimal("0")
 
 
 def test_the_per_run_cap_still_binds_when_it_is_tighter(manager) -> None:
     """Nothing spent today, so the per-run 12 decides rather than the daily 30."""
     assert manager().spendable_quote(
-        _balances(), "USDC", redeemed_today=Decimal("0")
+        _balances(), "USDC", redeemed_today=Decimal("0"), portfolio_value=Decimal("1000000")
     ) == Decimal("12")
 
 
 def test_spot_is_untouched_by_the_daily_cap(manager) -> None:
     """The limit is on releasing Earn, not on spending money already in Spot."""
     assert manager().spendable_quote(
-        _balances(spot="40"), "USDC", redeemed_today=Decimal("30")
+        _balances(spot="40"), "USDC", redeemed_today=Decimal("30"), portfolio_value=Decimal("1000000")
     ) == Decimal("40")
 
 
@@ -85,13 +85,13 @@ def test_no_daily_cap_configured_means_no_daily_limit(manager) -> None:
     del built.config["earn"]["max_redeem_per_day_usdt"]
 
     assert built.spendable_quote(
-        _balances(), "USDC", redeemed_today=Decimal("9999")
+        _balances(), "USDC", redeemed_today=Decimal("9999"), portfolio_value=Decimal("1000000")
     ) == Decimal("12")
 
 
 def test_the_liquidity_check_respects_the_day(manager) -> None:
     decision = manager().ensure_quote_liquidity(
-        _balances(), "USDC", Decimal("25"), redeemed_today=Decimal("28")
+        _balances(), "USDC", Decimal("25"), redeemed_today=Decimal("28"), portfolio_value=Decimal("1000000")
     )
 
     assert decision.redeem_amount == Decimal("2")
@@ -120,7 +120,7 @@ def test_the_submitted_plan_cannot_exceed_the_day(manager, monkeypatch) -> None:
         LiquidityDecision(True, "ok", "USDC", Decimal("12")),
         bankroll,
         existing_intents=set(),
-        redeemed_today=Decimal("25"),
+        redeemed_today=Decimal("25"), portfolio_value=Decimal("1000000"),
     )
 
     assert plan.amount == Decimal("5")
@@ -180,3 +180,75 @@ def test_an_empty_journal_has_spent_nothing(tmp_path) -> None:
     storage = Storage(tmp_path / "j.sqlite3")
 
     assert storage.get_earn_redeemed_today(storage.start_run("DRY_RUN")) == Decimal("0")
+
+
+# ---------------------------------------------------------------------------
+# The percentage companions, so both Earn limits react to portfolio size.
+# ---------------------------------------------------------------------------
+
+
+def test_the_per_run_draw_scales_with_the_portfolio(manager) -> None:
+    """2% of 1000 is 20, under the flat 100 once that is out of the way."""
+    built = manager(max_auto_redeem_usdc_per_run="100", max_auto_redeem_pct_of_portfolio="2",
+                    max_redeem_per_day_usdt="10000")
+
+    assert built.spendable_quote(
+        _balances(), "USDC", redeemed_today=Decimal("0"), portfolio_value=Decimal("1000")
+    ) == Decimal("20")
+
+
+def test_the_flat_per_run_amount_still_wins_when_smaller(manager) -> None:
+    """It is a hard backstop, not a suggestion the percentage overrides."""
+    built = manager(max_auto_redeem_usdc_per_run="12", max_auto_redeem_pct_of_portfolio="50",
+                    max_redeem_per_day_usdt="10000")
+
+    assert built.spendable_quote(
+        _balances(), "USDC", redeemed_today=Decimal("0"), portfolio_value=Decimal("1000")
+    ) == Decimal("12")
+
+
+def test_the_daily_allowance_scales_with_the_portfolio(manager) -> None:
+    """1% of 1000 is 10; 6 already spent leaves 4."""
+    built = manager(max_auto_redeem_usdc_per_run="100", max_redeem_per_day_usdt="10000",
+                    max_redeem_pct_of_portfolio_per_day="1")
+
+    assert built.spendable_quote(
+        _balances(), "USDC", redeemed_today=Decimal("6"), portfolio_value=Decimal("1000")
+    ) == Decimal("4")
+
+
+def test_a_config_without_the_percentages_is_unchanged(manager) -> None:
+    """Absence must mean no extra ceiling, not a silently shrunken one."""
+    built = manager(max_auto_redeem_usdc_per_run="12", max_redeem_per_day_usdt="10000")
+    assert "max_auto_redeem_pct_of_portfolio" not in built.config["earn"]
+
+    assert built.spendable_quote(
+        _balances(), "USDC", redeemed_today=Decimal("0"), portfolio_value=Decimal("1000")
+    ) == Decimal("12")
+
+
+def test_an_unknown_portfolio_value_applies_no_percentage(manager) -> None:
+    """A run with no valuation must not be starved by a percentage of zero."""
+    built = manager(max_auto_redeem_usdc_per_run="12", max_auto_redeem_pct_of_portfolio="2",
+                    max_redeem_per_day_usdt="10000")
+
+    assert built.spendable_quote(
+        _balances(), "USDC", redeemed_today=Decimal("0"), portfolio_value=Decimal("0")
+    ) == Decimal("12")
+
+
+def test_the_shipped_template_lets_the_percentage_decide(manager) -> None:
+    """The point of raising the flat defaults: they must not bind first."""
+    from pathlib import Path
+
+    from trading_agent.config import load_config
+
+    raw = load_config(str(Path(__file__).resolve().parents[1] / "config.example.toml")).raw
+    built = manager(**raw["earn"])
+
+    # 2% of 5000 is 100, equal to the flat backstop; below that the percentage
+    # decides, which is what makes the template portfolio-aware.
+    assert built.spendable_quote(
+        _balances(flexible="100000"), "USDC", redeemed_today=Decimal("0"),
+        portfolio_value=Decimal("2000"),
+    ) == Decimal("40")

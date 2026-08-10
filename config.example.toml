@@ -117,9 +117,21 @@ allow_locked_redeem = false
 redeem_destination = "SPOT"
 allowed_redeem_assets = ["USDC"]
 auto_redeem_assets = ["USDC"]
+# How much may move from Flexible Earn to Spot, so an approved action can be
+# paid for. This is a transfer inside your own account, not a withdrawal -
+# Coinductor cannot withdraw, and refuses an API key that could.
+#
+# Each limit is a flat amount and a percentage of portfolio value, and the
+# smaller wins. The percentage is meant to decide; the flat amount is the
+# backstop for the far end. A flat number small enough to bind on every
+# portfolio is how this stopped reacting to portfolio size.
 max_redeem_per_run_usdt = 50.0
-max_redeem_per_day_usdt = 100.0
-max_auto_redeem_usdc_per_run = 12.0
+max_redeem_per_day_usdt = 250.0
+max_redeem_pct_of_portfolio_per_day = 5.0
+max_auto_redeem_usdc_per_run = 100.0
+max_auto_redeem_pct_of_portfolio = 2.0
+# Left behind in Earn. The first applies to assets redeemed by hand, the
+# second to the ones listed in auto_redeem_assets.
 min_flexible_reserve_usdt = 25.0
 min_auto_redeem_reserve_usdc = 0.0
 wait_for_redeem_seconds = 30

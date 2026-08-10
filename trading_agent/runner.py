@@ -175,6 +175,7 @@ class AgentRunner:
                     market.balances,
                     self._live_quote_asset(),
                     redeemed_today=self.storage.get_earn_redeemed_today(run_id),
+                    portfolio_value=market.portfolio_analysis.total_value_usdt,
                 ),
             ),
         )
@@ -186,12 +187,14 @@ class AgentRunner:
         # check all size against the same remaining allowance rather than
         # each rediscovering it.
         redeemed_today = self.storage.get_earn_redeemed_today(run_id)
+        portfolio_value = market.portfolio_analysis.total_value_usdt
         if risk_decision.approved:
             liquidity_decision = self.earn.ensure_quote_liquidity(
                 balances=market.balances,
                 quote_asset=self._live_quote_asset(),
                 required_amount=risk_decision.adjusted_quote_amount_usdt,
                 redeemed_today=redeemed_today,
+                portfolio_value=portfolio_value,
             )
         else:
             liquidity_decision = LiquidityDecision(False, "Risk engine rejected proposal before liquidity check.", None, Decimal("0"))
@@ -205,6 +208,7 @@ class AgentRunner:
             bankroll_report,
             existing_intents=self.storage.get_existing_earn_redeem_intents(),
             redeemed_today=redeemed_today,
+            portfolio_value=portfolio_value,
         )
         grid_recommendation = self.grid.recommend(
             snapshots=market.snapshots,
@@ -219,6 +223,7 @@ class AgentRunner:
                 quote_asset=self._live_quote_asset(),
                 required_amount=grid_recommendation.investment_usdt,
                 redeemed_today=redeemed_today,
+                portfolio_value=portfolio_value,
             )
             grid_capital_plan = self.capital_sourcing.plan(
                 market.balances, market.portfolio_analysis, grid_recommendation.investment_usdt

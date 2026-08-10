@@ -23,6 +23,7 @@ class EarnLiquidityManager:
         required_amount: Decimal,
         *,
         redeemed_today: Decimal,
+        portfolio_value: Decimal,
     ) -> LiquidityDecision:
         spot = self._balance_for(balances, quote_asset).spot_free
         if spot >= required_amount:
@@ -36,7 +37,7 @@ class EarnLiquidityManager:
 
         balance = self._balance_for(balances, quote_asset)
         missing = required_amount - spot
-        reserve, max_per_run = self._redeem_bounds(quote_asset, redeemed_today)
+        reserve, max_per_run = self._redeem_bounds(quote_asset, redeemed_today, portfolio_value)
         available_after_reserve = max(Decimal("0"), balance.flexible_amount - reserve)
         redeem_amount = min(missing, max_per_run, available_after_reserve)
 
@@ -46,7 +47,9 @@ class EarnLiquidityManager:
             return LiquidityDecision(False, "Redeem limits are not enough for the requested trade.", quote_asset, redeem_amount)
         return LiquidityDecision(True, "Flexible redeem would satisfy missing Spot liquidity.", quote_asset, redeem_amount)
 
-    def _redeem_bounds(self, quote_asset: str, redeemed_today: Decimal) -> tuple[Decimal, Decimal]:
+    def _redeem_bounds(
+        self, quote_asset: str, redeemed_today: Decimal, portfolio_value: Decimal
+    ) -> tuple[Decimal, Decimal]:
         """Reserve to leave behind, and the most this run may release.
 
         The auto pair when the asset is auto-redeemable, the manual pair
@@ -67,9 +70,10 @@ class EarnLiquidityManager:
         else:
             reserve = Decimal(str(earn["min_flexible_reserve_usdt"]))
             per_run = Decimal(str(earn["max_redeem_per_run_usdt"]))
-        return reserve, min(per_run, self._remaining_today(redeemed_today))
+        per_run = min(per_run, self._pct_of(portfolio_value, earn.get("max_auto_redeem_pct_of_portfolio")))
+        return reserve, min(per_run, self._remaining_today(redeemed_today, portfolio_value))
 
-    def _remaining_today(self, redeemed_today: Decimal) -> Decimal:
+    def _remaining_today(self, redeemed_today: Decimal, portfolio_value: Decimal) -> Decimal:
         """What the day's allowance still has room for.
 
         An absent or non-positive `max_redeem_per_day_usdt` means "no daily
@@ -77,13 +81,38 @@ class EarnLiquidityManager:
         validator refuses a non-positive value when the key is present, so the
         only way to reach that branch is by leaving it out on purpose.
         """
-        daily_cap = Decimal(str(self.config["earn"].get("max_redeem_per_day_usdt", "0")))
+        earn = self.config["earn"]
+        daily_cap = Decimal(str(earn.get("max_redeem_per_day_usdt", "0")))
+        daily_cap = min(daily_cap, self._pct_of(portfolio_value, earn.get("max_redeem_pct_of_portfolio_per_day"))) if daily_cap > 0 else daily_cap
         if daily_cap <= 0:
             return Decimal("Infinity")
         return max(Decimal("0"), daily_cap - redeemed_today)
 
+    @staticmethod
+    def _pct_of(portfolio_value: Decimal, percent: object) -> Decimal:
+        """A percentage ceiling, or no ceiling when it is not configured.
+
+        Absent means infinity rather than zero: these are companions to flat
+        amounts that already work on their own, and a missing key must not
+        silently stop a config from releasing anything.
+        """
+        if percent is None or portfolio_value <= 0:
+            return Decimal("Infinity")
+        try:
+            share = Decimal(str(percent))
+        except (ArithmeticError, ValueError):
+            return Decimal("Infinity")
+        if share <= 0:
+            return Decimal("Infinity")
+        return portfolio_value * share / Decimal("100")
+
     def spendable_quote(
-        self, balances: list[Balance], quote_asset: str, *, redeemed_today: Decimal
+        self,
+        balances: list[Balance],
+        quote_asset: str,
+        *,
+        redeemed_today: Decimal,
+        portfolio_value: Decimal,
     ) -> Decimal:
         """Free Spot plus whatever Flexible Earn this run is allowed to release.
 
@@ -97,7 +126,7 @@ class EarnLiquidityManager:
         earn = self.config["earn"]
         if not earn["allow_flexible_redeem"] or quote_asset not in set(earn["allowed_redeem_assets"]):
             return balance.spot_free
-        reserve, max_per_run = self._redeem_bounds(quote_asset, redeemed_today)
+        reserve, max_per_run = self._redeem_bounds(quote_asset, redeemed_today, portfolio_value)
         available_after_reserve = max(Decimal("0"), balance.flexible_amount - reserve)
         return balance.spot_free + min(max_per_run, available_after_reserve)
 
@@ -111,6 +140,7 @@ class EarnLiquidityManager:
         existing_intents: set[str] | None = None,
         *,
         redeemed_today: Decimal,
+        portfolio_value: Decimal,
     ) -> EarnRedeemPlan:
         if liquidity.redeem_amount <= 0 or liquidity.redeem_asset is None:
             return self._empty("No Flexible Earn redeem is needed for this run.")
@@ -122,7 +152,7 @@ class EarnLiquidityManager:
         if bankroll.preferred_source != "FLEXIBLE_EARN_REDEEM_REQUIRED":
             return self._blocked(asset, liquidity.redeem_amount, f"Bankroll source is {bankroll.preferred_source}, not FLEXIBLE_EARN_REDEEM_REQUIRED.")
 
-        _, max_auto = self._redeem_bounds(asset, redeemed_today)
+        _, max_auto = self._redeem_bounds(asset, redeemed_today, portfolio_value)
         reserve = Decimal(str(earn.get("min_auto_redeem_reserve_usdc", "0")))
         amount = min(liquidity.redeem_amount, bankroll.flexible_draw_needed, max_auto)
         amount = self._money(amount)

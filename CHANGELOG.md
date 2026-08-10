@@ -4,6 +4,51 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.3.0] — 2026-08-10
+
+Order size stops being a flat number in a file nobody was meant to open.
+
+### Added
+
+- **Order sizing is derived from the portfolio.** The approved amount is now the smallest
+  of what you allow as a share of the portfolio, what the risk limits permit, what the
+  analyst proposed, and **what the account can actually pay** — that last one is new, and
+  it is why a trade the balance could not fund used to be approved at a size that only
+  failed later, against the exchange minimum.
+- **`strategy.max_trade_pct_of_portfolio`**, the portfolio-relative companion to the flat
+  `quote_amount_usdt`. The shipped template now leads with the percentage and keeps the
+  flat amount as a backstop, so the same configuration behaves sensibly on a 500 account
+  and a 50,000 one.
+- **An order-sizing panel in Live Actions**, below the existing cap, with each setting
+  spelled out in terms of what raising and lowering it does. Three of these settings were
+  previously readable only by opening `config.toml`.
+- **The journal records which ceiling decided the size** (`risk_decisions.binding_limit`),
+  and the panel says so in the current language. Added by migration, so existing journals
+  open unchanged and simply read as empty.
+
+### Fixed
+
+- **`risk.max_position_pct_per_asset`, `max_total_trading_capital_pct` and
+  `max_risk_per_trade_pct` now do something.** They were validated on load, written by the
+  wizard, displayed in the app, and read by no engine code at all. The README already
+  listed "position caps" among the checks a buy runs through; that sentence is true for
+  the first time.
+- **An Earn redemption limit no longer caps trade size.** `earn.max_redeem_per_run_usdt`
+  is how much Flexible Earn one run may release, and it was bounding orders even when the
+  money came entirely from Spot and no redeem was going to happen. It also silently
+  truncated confirmed first-portfolio tranches to a number the user never agreed to. Where
+  it genuinely applies it is already accounted for, in what the account can pay.
+
+### Notes
+
+The percentage ceilings bound **one order**, not the position it builds towards: what is
+already held is not part of the arithmetic, so repeated buys can accumulate past
+`max_position_pct_per_asset`. The panel and the config template both say so. Making them
+position-aware is a separate change, and a larger one.
+
+Nothing here loosens what may reach an exchange. The per-run Earn draw, the reserve, and
+`live_confirm.max_quote_amount_usdt` are all unchanged.
+
 ## [1.2.1] — 2026-08-09
 
 Three things the automation got wrong once it had been left running for a week.

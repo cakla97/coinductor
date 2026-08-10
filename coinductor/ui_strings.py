@@ -2112,12 +2112,12 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Nejdřív zabezpečení, potom provedení",
     },
     "app_tour_live_actions_detail": {
-        "en": "Live Actions holds the staged safety lock, the live API management workflow, and the cap on how large a single order may be.",
-        "cs": "Živé akce obsahují stupňovaný bezpečnostní zámek, správu živého API klíče a strop na velikost jednoho příkazu.",
+        "en": "Live Actions holds the staged safety lock, the live API management workflow, the cap on a single order, and two panels that decide how large an order the analysis proposes and how much may move from Earn to Spot to pay for it.",
+        "cs": "Živé akce obsahují stupňovaný bezpečnostní zámek, správu živého API klíče, strop na jeden příkaz a dvě karty, které rozhodují, jak velký příkaz analýza navrhne a kolik se smí přesunout z Earnu na Spot, aby šel zaplatit.",
     },
     "app_tour_live_actions_tip": {
-        "en": "Preview, Armed and Live Enabled decide whether an order may go; the size cap decides how big. Every real order still needs its own typed confirmation.",
-        "cs": "Náhled, Připraveno a Živě povoleno rozhodují, jestli příkaz smí odejít; strop rozhoduje, jak velký. Každý skutečný příkaz stejně potřebuje vlastní vypsané potvrzení.",
+        "en": "Preview, Armed and Live Enabled decide whether an order may go; the sizing panel decides how big, from your portfolio rather than a fixed number. Both panels suggest a starting point once an analysis has valued what you hold. Every real order still needs its own typed confirmation.",
+        "cs": "Náhled, Připraveno a Živě povoleno rozhodují, jestli příkaz smí odejít; karta velikosti rozhoduje, jak velký bude — podle portfolia, ne podle pevného čísla. Obě karty nabídnou výchozí hodnoty, jakmile analýza ocení, co držíte. Každý skutečný příkaz stejně potřebuje vlastní vypsané potvrzení.",
     },
     "app_tour_action_plan_title": {
         "en": "One place for every run result",

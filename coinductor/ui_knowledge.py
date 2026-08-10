@@ -384,6 +384,54 @@ UI_KNOWLEDGE = (
         "Next review separates timing from prerequisites. Suggested timing says when the next normal analysis is useful. Run earlier if lists market or portfolio events that justify an earlier refresh. Resolve before rerunning lists manual or funding blockers that another unchanged run cannot fix.",
         "Next review odděluje načasování od podmínek. Suggested timing říká, kdy dává smysl další běžná analýza. Run earlier if uvádí tržní nebo portfolio události, kvůli kterým má smysl spustit ji dříve. Resolve before rerunning vypisuje manuální nebo funding blokery, které další nezměněný běh sám nevyřeší.",
     ),
+    UiKnowledgeEntry(
+        "Order sizing panel",
+        "Live Actions",
+        ("order sizing", "how large an order", "velikost prikaz", "jak velky prikaz",
+         "trade size", "max trade pct", "order size percent"),
+        "The order sizing panel decides what size the analysis considers appropriate, one layer before the cap that guards what may reach the exchange. The approved amount is the smallest of: what the analyst proposed, your order-size percentage of the portfolio, the flat never-more-than amount, the per-asset and trading-capital percentages, the risk-per-trade percentage measured against the stop loss, and what your account can actually pay. Every value is a ceiling, so raising one alone cannot enlarge an order - another ceiling then binds. The percentages bound a single order, not the position it builds towards: what you already hold is not counted, so repeated buys can accumulate past them.",
+        "Panel velikosti příkazu rozhoduje, jakou velikost analýza považuje za přiměřenou - o úroveň dřív než strop, který hlídá, co smí odejít na burzu. Schválená částka je minimum z: návrhu analytika, vašeho procenta portfolia na příkaz, ploché meze „nikdy víc než“, procent na aktivum a na obchodní kapitál, procenta rizika na obchod měřeného proti stop lossu, a toho, co účet reálně zaplatí. Každá hodnota je strop, takže zvýšení jediné z nich příkaz zvětšit nemůže - pak váže jiná. Procenta omezují jeden příkaz, ne výslednou pozici: to, co už držíte, se nezapočítává, takže opakované nákupy se přes ně můžou nasčítat.",
+    ),
+    UiKnowledgeEntry(
+        "Earn funding panel",
+        "Live Actions",
+        ("earn funding", "earn to spot", "presun z earnu", "financovani z earnu",
+         "redeem limit", "auto funding", "automaticky presun", "z earnu na spot"),
+        "The Earn funding panel decides how much may move from Simple Earn Flexible to Spot so an approved action can be paid for. This is a transfer inside your own account, not a withdrawal: Coinductor cannot withdraw and refuses an API key that could. Each limit is a flat amount and a percentage of portfolio value, and the smaller wins; there is a per-run limit, a per-day limit counted across every run, and a reserve that is never touched. Only redemptions that actually went through count against the day. Automatic funding is off by default and is ignored below the LIVE_ENABLED safety stage.",
+        "Panel financování z Earnu rozhoduje, kolik se smí přesunout ze Simple Earn Flexible na Spot, aby šla zaplatit schválená akce. Jde o přesun uvnitř vašeho účtu, ne o výběr: Coinductor vybírat neumí a API klíč, který by to uměl, odmítne. Každá mez je plochá částka i procento portfolia a platí menší; je tam mez na běh, mez na den počítaná napříč všemi běhy, a rezerva, na kterou se nesahá. Do denního součtu se počítají jen výběry, které skutečně proběhly. Automatický přesun je ve výchozím stavu vypnutý a pod stupněm LIVE_ENABLED se ignoruje.",
+    ),
+    UiKnowledgeEntry(
+        "Automatic Earn funding",
+        "Live Actions",
+        ("auto funding enabled", "automatic funding", "automaticke financovani",
+         "move earn automatically", "presune si to samo", "unattended transfer"),
+        "Automatic Earn funding lets a run move money from Flexible Earn to Spot without you present, but only when an action the risk engine already approved is waiting on that money. It requires the switch turned on and the LIVE_ENABLED safety stage; an unreadable stage is not permission. It is a separate authority from a manual redeem, which still needs CONFIRM_EARN_REDEEM typed for the exact amount. It does not fund a Grid or Rebalancing bot: those are recommend-only, because Binance has no public API to create them, so the money would move and the bot would still have to be created by hand.",
+        "Automatické financování z Earnu umožní běhu přesunout peníze z Flexible Earnu na Spot bez vaší přítomnosti, ale jen když na ty peníze čeká akce, kterou risk engine už schválil. Vyžaduje zapnutý přepínač a bezpečnostní stupeň LIVE_ENABLED; nečitelný stupeň není povolení. Je to jiná autorita než ruční výběr, který dál potřebuje napsané CONFIRM_EARN_REDEEM pro přesnou částku. Nefinancuje Grid ani Rebalancing bota: ti jsou pouze doporučující, protože Binance nemá veřejné API na jejich vytvoření, takže by se peníze přesunuly a bota byste stejně musel založit ručně.",
+    ),
+    UiKnowledgeEntry(
+        "Use suggested limits",
+        "Live Actions",
+        ("use suggested", "pouzit doporucen", "suggested limits", "doporucen hodnot",
+         "recommended settings", "co mam nastavit", "doporucen"),
+        "Use suggested fills the sizing or funding limits with a starting point derived from your portfolio and saves it. Percentages are suggested as constants, because a percentage already scales with what you hold; the flat backstops scale, and are placed well above where the percentage binds so the percentage is what normally decides. It is disabled until an analysis has valued your portfolio. Everything it writes is reversible from the same screen, and each percentage field also shows what it is worth in money right now.",
+        "Tlačítko Použít doporučené vyplní meze velikosti nebo financování výchozím bodem odvozeným z vašeho portfolia a uloží ho. Procenta se navrhují jako konstanty, protože procento už samo škáluje podle toho, co držíte; ploché pojistky škálují a jsou umístěné výrazně nad tím, kde by procento vázalo, takže normálně rozhoduje procento. Do první analýzy, která portfolio ocení, je tlačítko nedostupné. Vše, co zapíše, jde ze stejné obrazovky vrátit, a u každého procentního pole navíc vidíte, kolik to je právě teď v penězích.",
+    ),
+    UiKnowledgeEntry(
+        "Why an order was this size",
+        "Live Actions",
+        ("binding limit", "why this size", "proc je prikaz", "co omezilo prikaz",
+         "limited by", "omezil", "jak velky byl prikaz"),
+        "The sizing panel reports which ceiling produced the last analysed order - for example available funding, the per-asset share, or the risk allowed per trade. It is recorded in the journal per run, so the reason survives a later config change. It stays empty for a rejected proposal, because no size was approved, and for runs recorded before this was added.",
+        "Panel velikosti hlásí, který strop určil poslední analyzovaný příkaz - například dostupné financování, podíl na aktivum nebo riziko povolené na obchod. Ukládá se do journalu ke každému běhu, takže důvod přežije pozdější změnu konfigurace. U zamítnutého návrhu zůstává prázdný, protože žádná velikost schválená nebyla, stejně jako u běhů zaznamenaných dřív, než tohle přibylo.",
+    ),
+    UiKnowledgeEntry(
+        "Updating Coinductor",
+        "Settings",
+        ("update", "upgrade", "aktualizac", "nova verz", "install new version",
+         "quit before installing"),
+        "Quit a running Coinductor from the tray icon before installing a new version. The single-instance guard only recognises instances that have it, so upgrading while an older one runs can leave two instances with two schedules writing one journal. From one guarded version to the next, launching again simply returns to the window that is already open.",
+        "Před instalací nové verze ukončete běžící Coinductor přes ikonu v oznamovací oblasti (Quit). Ochrana proti druhé instanci pozná jen instance, které ji samy mají, takže upgrade při běžící starší verzi může nechat dvě instance se dvěma rozvrhy zapisující do jednoho journalu. Mezi verzemi, které ochranu mají, další spuštění jen vrátí okno, které už je otevřené.",
+    ),
 )
 
 
@@ -393,6 +441,8 @@ def is_czech(value: str) -> bool:
     czech_words = {
         "co", "jak", "kde", "kdy", "proc", "udela", "dela", "znamena", "tlacitko",
         "sekce", "aplikace", "muzu", "otevre", "spusti", "nastaveni", "prosim", "chci", "shrn",
+        "cemu", "kolik", "ktery", "ktera", "ktere", "mam", "musim", "kdyz", "nebo",
+        "penize", "presun", "castka", "vypnuty", "zapnuty", "prikaz",
     }
     return bool(tokens & czech_words) or any(character in value.lower() for character in "áčďéěíňóřšťúůýž")
 
@@ -405,6 +455,8 @@ def _looks_like_explanation_request(query: str) -> bool:
             "co znamena", "k cemu", "jak funguje", "jak spolu", "souvisi", "vysvetli", "co se stane",
             "summarize", "tell me about", "shrn", "relationship between", "how are",
             "why cant", "why can t", "cannot", "how can i", "how do i", "what should i do",
+            "why is", "why was", "why did", "why does", "proc je", "proc byl", "proc se",
+            "proc ma", "proc mi", "how much", "how many", "kolik", "kdy se", "when does",
             "not working", "proc nemohu", "proc nemuzu", "co mam udelat", "jak mohu", "jak muzu",
             "jak mam", "jak zprovoznit", "nejde mi", "nefunguje", "co si mam",
         )

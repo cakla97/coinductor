@@ -160,6 +160,17 @@ Download `Coinductor-<version>-portable.zip`, extract it anywhere, and run
 > Launching straight after extracting can fail with "Access is denied" while Windows
 > Defender is still scanning the files. Wait a few seconds and try again.
 
+### Updating
+
+**Quit a running Coinductor from its tray icon before installing a new version.** Closing
+the window is not enough when a schedule is active — that is the point of the tray icon,
+and the process keeps running behind it.
+
+Coinductor allows one instance per data folder, so an ordinary second launch just returns
+to the window you already have open. That guard can only recognise instances that have it,
+which is why an upgrade is the one case where two can end up running at once: two
+schedules, two listing watchers, and two processes writing one journal.
+
 ### Verify your download
 
 Every release ships `SHA256SUMS.txt`. The binaries are **not code-signed** (see below), so

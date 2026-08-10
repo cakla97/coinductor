@@ -1334,6 +1334,10 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Save funding limits",
         "cs": "Uložit meze financování",
     },
+    "limits_suggested_button": {
+        "en": "Use suggested",
+        "cs": "Použít doporučené",
+    },
     "trade_sizing_title": {
         "en": "How large an order the analysis proposes",
         "cs": "Jak velký příkaz analýza navrhne",

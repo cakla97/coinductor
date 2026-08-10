@@ -3797,8 +3797,8 @@ ApplicationWindow {
                     Layout.row: 7
                     Layout.fillWidth: true
                     // Fixed, like every card on this page; measured rather than
-                    // guessed, see the panel above.
-                    Layout.preferredHeight: 500
+                    // guessed, see the panel above. Same 490 + margins.
+                    Layout.preferredHeight: 530
                     radius: radiusMd
                     color: panel
                     border.color: border
@@ -3828,7 +3828,7 @@ ApplicationWindow {
                             rowSpacing: 6
 
                             Text {
-                                text: appController.appText.earn_funding_run_pct_label
+                                text: appController.appText.earn_funding_run_pct_label + (appController.earnFunding.runPctMoney ? "  ·  " + appController.earnFunding.runPctMoney + " USDC" : "")
                                 color: textSecondary; font.pixelSize: 12
                                 Layout.preferredWidth: 230
                                 Layout.maximumWidth: 230
@@ -3856,7 +3856,7 @@ ApplicationWindow {
                             }
 
                             Text {
-                                text: appController.appText.earn_funding_day_pct_label
+                                text: appController.appText.earn_funding_day_pct_label + (appController.earnFunding.dayPctMoney ? "  ·  " + appController.earnFunding.dayPctMoney + " USDC" : "")
                                 color: textSecondary; font.pixelSize: 12
                                 Layout.preferredWidth: 230
                                 Layout.maximumWidth: 230
@@ -3910,7 +3910,19 @@ ApplicationWindow {
                                     "reserve": reserveInput.text
                                 })
                             }
+                            Button {
+                                text: appController.appText.limits_suggested_button
+                                enabled: appController.earnFunding.hasPortfolio
+                                onClicked: appController.applySuggestedFunding()
+                            }
                             Item { Layout.fillWidth: true }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.earnFunding.suggestionHint
+                            color: textSecondary
+                            font.pixelSize: 10
+                            wrapMode: Text.WordWrap
                         }
                     }
                 }
@@ -4005,10 +4017,10 @@ ApplicationWindow {
                     // derived from anchored children is circular in a
                     // GridLayout and collapses the card to zero.
                     //
-                    // 500 rather than a guess: the content measures 462 at its
-                    // tallest, which is English at the window's minimum width
-                    // (Czech wraps to 451), plus the 16px margin at each end.
-                    Layout.preferredHeight: 500
+                    // Measured, not guessed: the content reaches 490 at its
+                    // tallest, which is English at the window's minimum width,
+                    // plus the 16px margin at each end.
+                    Layout.preferredHeight: 530
                     radius: radiusMd
                     color: panel
                     border.color: border
@@ -4039,7 +4051,7 @@ ApplicationWindow {
                             rowSpacing: 6
 
                             Text {
-                                text: appController.appText.trade_sizing_trade_pct_label
+                                text: appController.appText.trade_sizing_trade_pct_label + (appController.tradeSizing.tradePctMoney ? "  ·  " + appController.tradeSizing.tradePctMoney + " USDC" : "")
                                 color: textSecondary; font.pixelSize: 12
                                 // Wraps rather than overflowing: a label wider
                                 // than its column drew straight over the input
@@ -4075,7 +4087,7 @@ ApplicationWindow {
                             }
 
                             Text {
-                                text: appController.appText.trade_sizing_position_pct_label
+                                text: appController.appText.trade_sizing_position_pct_label + (appController.tradeSizing.positionPctMoney ? "  ·  " + appController.tradeSizing.positionPctMoney + " USDC" : "")
                                 color: textSecondary; font.pixelSize: 12
                                 // Wraps rather than overflowing: a label wider
                                 // than its column drew straight over the input
@@ -4093,7 +4105,7 @@ ApplicationWindow {
                             }
 
                             Text {
-                                text: appController.appText.trade_sizing_capital_pct_label
+                                text: appController.appText.trade_sizing_capital_pct_label + (appController.tradeSizing.capitalPctMoney ? "  ·  " + appController.tradeSizing.capitalPctMoney + " USDC" : "")
                                 color: textSecondary; font.pixelSize: 12
                                 // Wraps rather than overflowing: a label wider
                                 // than its column drew straight over the input
@@ -4111,7 +4123,7 @@ ApplicationWindow {
                             }
 
                             Text {
-                                text: appController.appText.trade_sizing_risk_pct_label
+                                text: appController.appText.trade_sizing_risk_pct_label + (appController.tradeSizing.riskPctMoney ? "  ·  " + appController.tradeSizing.riskPctMoney + " USDC" : "")
                                 color: textSecondary; font.pixelSize: 12
                                 // Wraps rather than overflowing: a label wider
                                 // than its column drew straight over the input
@@ -4141,7 +4153,19 @@ ApplicationWindow {
                                     "riskPct": riskPctInput.text
                                 })
                             }
+                            Button {
+                                text: appController.appText.limits_suggested_button
+                                enabled: appController.tradeSizing.hasPortfolio
+                                onClicked: appController.applySuggestedSizing()
+                            }
                             Item { Layout.fillWidth: true }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.tradeSizing.suggestionHint
+                            color: textSecondary
+                            font.pixelSize: 10
+                            wrapMode: Text.WordWrap
                         }
                         Text {
                             Layout.fillWidth: true

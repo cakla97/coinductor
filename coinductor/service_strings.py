@@ -404,6 +404,14 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Nothing changed - those are the caps already in force.",
         "cs": "Nic se nezměnilo - tyhle stropy už platí.",
     },
+    "limits_suggested_hint": {
+        "en": "For a portfolio this size a cautious starting point is {suggestion}. Adjust from there — these are a place to start, not an optimum.",
+        "cs": "Pro portfolio této velikosti je opatrný začátek {suggestion}. Dál si to upravte — je to výchozí bod, ne optimum.",
+    },
+    "limits_no_portfolio_hint": {
+        "en": "Run an analysis first and these will be suggested from what you actually hold.",
+        "cs": "Nejdřív spusťte analýzu a tyhle hodnoty se doporučí podle toho, co skutečně držíte.",
+    },
     "earn_funding_invalid": {
         "en": "Limits must be above zero, a reserve may be zero, and a percentage cannot exceed 100.",
         "cs": "Meze musí být větší než nula, rezerva smí být nula a procento nesmí přesáhnout 100.",

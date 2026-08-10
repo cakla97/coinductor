@@ -42,6 +42,7 @@ from .order_caps import (
 )
 from .paths import data_dir_label
 from .earn_funding import apply_funding_to_config, read_funding, valid_funding
+from .suggested_limits import money_for_percent, suggested_limits
 from .trade_sizing import apply_sizing_to_config, read_sizing, valid_sizing
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions, SafetySnapshot
 from .readiness_service import ReadinessService
@@ -2379,6 +2380,7 @@ class AppController(QObject):
         """Composed when read: the config is the source of truth, not a cache."""
         values = dict(read_sizing(default_config_path()))
         values["lastBoundBy"] = self._last_binding_limit_text()
+        self._add_guidance(values, ("tradePct", "positionPct", "capitalPct", "riskPct"))
         return values
 
     def _last_binding_limit_text(self) -> str:
@@ -2418,7 +2420,9 @@ class AppController(QObject):
     @Property("QVariantMap", notify=earnFundingChanged)
     def earnFunding(self) -> dict[str, object]:
         """Composed when read: the config is the source of truth, not a cache."""
-        return dict(read_funding(default_config_path()))
+        values = dict(read_funding(default_config_path()))
+        self._add_guidance(values, ("runPct", "dayPct"))
+        return values
 
     @Slot("QVariantMap")
     def saveEarnFunding(self, values: dict) -> None:
@@ -2433,6 +2437,50 @@ class AppController(QObject):
             self.notificationRequested.emit(service_text("earn_funding_unchanged", language))
             return
         self.notificationRequested.emit(service_text("earn_funding_saved", language))
+
+    def _add_guidance(self, values: dict[str, object], percent_fields: tuple[str, ...]) -> None:
+        """Attach the suggestion and what each percentage is worth in money.
+
+        Composed here rather than stored, so both follow the portfolio as it
+        changes. `3%` and `26 USDC` land very differently, and only the second
+        tells somebody whether the number they typed is sane.
+        """
+        portfolio = self._portfolio_value_amount()
+        suggested = suggested_limits(portfolio)
+        for name in list(values):
+            if name in suggested:
+                values[f"{name}Suggested"] = suggested[name]
+        for name in percent_fields:
+            values[f"{name}Money"] = money_for_percent(portfolio, values.get(name))
+        values["hasPortfolio"] = portfolio > 0
+        # One line rather than a suggestion beside every field: the percentages
+        # are what a person actually chooses between, and repeating a backstop
+        # they will not touch crowds out the numbers that matter.
+        language = self._wizard_language
+        if portfolio > 0:
+            values["suggestionHint"] = service_text("limits_suggested_hint", language).format(
+                suggestion=", ".join(f"{suggested[name]}%" for name in percent_fields)
+            )
+        else:
+            values["suggestionHint"] = service_text("limits_no_portfolio_hint", language)
+
+    @Slot()
+    def applySuggestedSizing(self) -> None:
+        """Fill the sizing panel with the suggestion, without saving it.
+
+        Written to the config rather than only to the fields, because a
+        suggestion the user cannot see the effect of is not much of a starting
+        point - and everything it writes is reversible from the same screen.
+        """
+        suggested = suggested_limits(self._portfolio_value_amount())
+        self.saveTradeSizing({name: suggested[name] for name in
+                              ("tradePct", "tradeAmount", "positionPct", "capitalPct", "riskPct")})
+
+    @Slot()
+    def applySuggestedFunding(self) -> None:
+        suggested = suggested_limits(self._portfolio_value_amount())
+        self.saveEarnFunding({name: suggested[name] for name in
+                              ("runPct", "runAmount", "dayPct", "dayAmount", "reserve")})
 
     def _portfolio_value_amount(self) -> Decimal:
         latest = self._snapshot.latest_run if self._snapshot is not None else None

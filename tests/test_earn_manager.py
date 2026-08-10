@@ -69,7 +69,7 @@ def test_repeated_redeem_plan_blocks_on_already_submitted_intent(monkeypatch):
     liquidity = LiquidityDecision(True, "ok", "USDC", Decimal("30"))
     bankroll = _bankroll()
 
-    first = manager.plan_flexible_redeem(liquidity, bankroll, existing_intents=set())
+    first = manager.plan_flexible_redeem(liquidity, bankroll, existing_intents=set(), redeemed_today=Decimal("0"))
     assert first.status == "PREVIEW_READY"
     assert first.intent_id
 
@@ -78,7 +78,9 @@ def test_repeated_redeem_plan_blocks_on_already_submitted_intent(monkeypatch):
 
     monkeypatch.setattr(manager.client, "get_flexible_positions", fail_if_called)
 
-    second = manager.plan_flexible_redeem(liquidity, bankroll, existing_intents={first.intent_id})
+    second = manager.plan_flexible_redeem(
+        liquidity, bankroll, existing_intents={first.intent_id}, redeemed_today=Decimal("0")
+    )
 
     assert second.status == "BLOCKED"
     assert second.intent_id == first.intent_id
@@ -110,7 +112,7 @@ def test_spendable_is_spot_plus_what_this_run_may_redeem(monkeypatch) -> None:
     manager = EarnLiquidityManager(_spendable_config())
 
     # 5 free, 11.89 in Earn, per-run cap 12, no reserve for an auto asset.
-    assert manager.spendable_quote(_balances("5", "11.89"), "USDC") == Decimal("16.89")
+    assert manager.spendable_quote(_balances("5", "11.89"), "USDC", redeemed_today=Decimal("0")) == Decimal("16.89")
 
 
 def test_the_per_run_cap_limits_what_counts_as_spendable(monkeypatch) -> None:
@@ -118,7 +120,7 @@ def test_the_per_run_cap_limits_what_counts_as_spendable(monkeypatch) -> None:
     monkeypatch.setenv("BINANCE_LIVE_TRADE_API_SECRET", "s")
     manager = EarnLiquidityManager(_spendable_config())
 
-    assert manager.spendable_quote(_balances("0", "500"), "USDC") == Decimal("12")
+    assert manager.spendable_quote(_balances("0", "500"), "USDC", redeemed_today=Decimal("0")) == Decimal("12")
 
 
 def test_a_non_auto_asset_uses_the_manual_reserve(monkeypatch) -> None:
@@ -127,7 +129,7 @@ def test_a_non_auto_asset_uses_the_manual_reserve(monkeypatch) -> None:
     monkeypatch.setenv("BINANCE_LIVE_TRADE_API_SECRET", "s")
     manager = EarnLiquidityManager(_spendable_config(auto_redeem_assets=[]))
 
-    assert manager.spendable_quote(_balances("0", "30"), "USDC") == Decimal("5")
+    assert manager.spendable_quote(_balances("0", "30"), "USDC", redeemed_today=Decimal("0")) == Decimal("5")
 
 
 def test_redeem_disabled_leaves_only_the_spot_balance(monkeypatch) -> None:
@@ -135,7 +137,7 @@ def test_redeem_disabled_leaves_only_the_spot_balance(monkeypatch) -> None:
     monkeypatch.setenv("BINANCE_LIVE_TRADE_API_SECRET", "s")
     manager = EarnLiquidityManager(_spendable_config(allow_flexible_redeem=False))
 
-    assert manager.spendable_quote(_balances("7", "500"), "USDC") == Decimal("7")
+    assert manager.spendable_quote(_balances("7", "500"), "USDC", redeemed_today=Decimal("0")) == Decimal("7")
 
 
 def test_an_asset_outside_the_allowed_list_cannot_be_drawn(monkeypatch) -> None:
@@ -143,4 +145,4 @@ def test_an_asset_outside_the_allowed_list_cannot_be_drawn(monkeypatch) -> None:
     monkeypatch.setenv("BINANCE_LIVE_TRADE_API_SECRET", "s")
     manager = EarnLiquidityManager(_spendable_config(allowed_redeem_assets=["BUSD"]))
 
-    assert manager.spendable_quote(_balances("3", "500"), "USDC") == Decimal("3")
+    assert manager.spendable_quote(_balances("3", "500"), "USDC", redeemed_today=Decimal("0")) == Decimal("3")

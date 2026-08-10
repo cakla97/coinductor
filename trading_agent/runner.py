@@ -86,7 +86,7 @@ class AgentRunner:
             research = self._load_research(market)
             oco_status_report = self.oco_status.sync(run_id)
             decision = self._decide_trade(run_id, market)
-            capital = self._plan_capital(market, decision)
+            capital = self._plan_capital(run_id, market, decision)
             previews = self._preview_executions(market, decision, capital)
             summary = self._summarise(run_id, market, portfolio_plans, research, decision, capital, previews)
 
@@ -172,18 +172,26 @@ class AgentRunner:
                 # the size cannot exceed what the account can actually pay.
                 portfolio_value=market.portfolio_analysis.total_value_usdt,
                 spendable_quote=self.earn.spendable_quote(
-                    market.balances, self._live_quote_asset()
+                    market.balances,
+                    self._live_quote_asset(),
+                    redeemed_today=self.storage.get_earn_redeemed_today(run_id),
                 ),
             ),
         )
 
-    def _plan_capital(self, market: MarketView, decision: TradeDecision) -> CapitalPlan:
+    def _plan_capital(self, run_id: int, market: MarketView, decision: TradeDecision) -> CapitalPlan:
         risk_decision = decision.risk_decision
+        # What the day's Earn allowance has already spent. Read once and
+        # passed down, so the liquidity check, the redeem plan and the grid
+        # check all size against the same remaining allowance rather than
+        # each rediscovering it.
+        redeemed_today = self.storage.get_earn_redeemed_today(run_id)
         if risk_decision.approved:
             liquidity_decision = self.earn.ensure_quote_liquidity(
                 balances=market.balances,
                 quote_asset=self._live_quote_asset(),
                 required_amount=risk_decision.adjusted_quote_amount_usdt,
+                redeemed_today=redeemed_today,
             )
         else:
             liquidity_decision = LiquidityDecision(False, "Risk engine rejected proposal before liquidity check.", None, Decimal("0"))
@@ -196,6 +204,7 @@ class AgentRunner:
             liquidity_decision,
             bankroll_report,
             existing_intents=self.storage.get_existing_earn_redeem_intents(),
+            redeemed_today=redeemed_today,
         )
         grid_recommendation = self.grid.recommend(
             snapshots=market.snapshots,
@@ -209,6 +218,7 @@ class AgentRunner:
                 balances=market.balances,
                 quote_asset=self._live_quote_asset(),
                 required_amount=grid_recommendation.investment_usdt,
+                redeemed_today=redeemed_today,
             )
             grid_capital_plan = self.capital_sourcing.plan(
                 market.balances, market.portfolio_analysis, grid_recommendation.investment_usdt

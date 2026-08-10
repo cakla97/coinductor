@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 import sqlite3
 
@@ -1262,6 +1262,40 @@ class Storage:
                 "select intent_id from oco_protection_orders where intent_id is not null and submitted = 1 and status not in ('SUBMIT_ERROR', 'SUBMIT_SKIPPED')"
             )
         }
+
+    def get_earn_redeemed_today(self, current_run_id: int) -> Decimal:
+        """How much Flexible Earn has already been released on this run's day.
+
+        The day boundary is the one `get_live_risk_state` uses for the daily
+        trade count, deliberately: two limits that both say "today" and mean
+        subtly different days is a bug nobody finds until it matters.
+
+        Only submitted plans count. A plan that was prepared and never
+        confirmed moved no money, and counting it would let an unconfirmed
+        preview exhaust the day's allowance.
+
+        Summed in Python rather than by SQL, because the amounts are stored as
+        text and `sum(cast(... as real))` would round money.
+        """
+        rows = self.connection.execute(
+            """
+            select plan.amount as amount
+            from earn_redeem_plans plan
+            join runs plan_run on plan_run.id = plan.run_id
+            join runs current_run on current_run.id = ?
+            where plan.submitted = 1
+              and plan.status not in ('SUBMIT_ERROR', 'SUBMIT_SKIPPED')
+              and date(plan_run.started_at) = date(current_run.started_at)
+            """,
+            (current_run_id,),
+        )
+        total = Decimal("0")
+        for row in rows:
+            try:
+                total += Decimal(str(row["amount"] or "0"))
+            except (InvalidOperation, ValueError):
+                continue
+        return total
 
     def get_existing_earn_redeem_intents(self) -> set[str]:
         return {

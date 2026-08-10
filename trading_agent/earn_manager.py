@@ -16,7 +16,14 @@ class EarnLiquidityManager:
         self.client = BinanceClient(config)
         self.live_client = BinanceClient(config, credential_profile="live_trade")
 
-    def ensure_quote_liquidity(self, balances: list[Balance], quote_asset: str, required_amount: Decimal) -> LiquidityDecision:
+    def ensure_quote_liquidity(
+        self,
+        balances: list[Balance],
+        quote_asset: str,
+        required_amount: Decimal,
+        *,
+        redeemed_today: Decimal,
+    ) -> LiquidityDecision:
         spot = self._balance_for(balances, quote_asset).spot_free
         if spot >= required_amount:
             return LiquidityDecision(True, "Sufficient Spot balance.", None, Decimal("0"))
@@ -29,7 +36,7 @@ class EarnLiquidityManager:
 
         balance = self._balance_for(balances, quote_asset)
         missing = required_amount - spot
-        reserve, max_per_run = self._redeem_bounds(quote_asset)
+        reserve, max_per_run = self._redeem_bounds(quote_asset, redeemed_today)
         available_after_reserve = max(Decimal("0"), balance.flexible_amount - reserve)
         redeem_amount = min(missing, max_per_run, available_after_reserve)
 
@@ -39,26 +46,45 @@ class EarnLiquidityManager:
             return LiquidityDecision(False, "Redeem limits are not enough for the requested trade.", quote_asset, redeem_amount)
         return LiquidityDecision(True, "Flexible redeem would satisfy missing Spot liquidity.", quote_asset, redeem_amount)
 
-    def _redeem_bounds(self, quote_asset: str) -> tuple[Decimal, Decimal]:
-        """Reserve to leave behind, and the most one run may release.
+    def _redeem_bounds(self, quote_asset: str, redeemed_today: Decimal) -> tuple[Decimal, Decimal]:
+        """Reserve to leave behind, and the most this run may release.
 
         The auto pair when the asset is auto-redeemable, the manual pair
         otherwise. One place, because two copies of this choice would let a
         trade be sized against limits a redeem then refuses to honour.
+
+        `max_redeem_per_day_usdt` is folded in here rather than checked at the
+        point of submission, so a run cannot be sized against an allowance the
+        day has already spent. It used to be read by nothing at all: the
+        validator required it to be positive and no code ever compared
+        anything to it, which made a daily cap that read like a guarantee.
         """
         earn = self.config["earn"]
         auto_assets = {str(item).upper() for item in earn.get("auto_redeem_assets", [])}
         if quote_asset.upper() in auto_assets:
-            return (
-                Decimal(str(earn.get("min_auto_redeem_reserve_usdc", "0"))),
-                Decimal(str(earn.get("max_auto_redeem_usdc_per_run", earn.get("max_redeem_per_run_usdt", "0")))),
-            )
-        return (
-            Decimal(str(earn["min_flexible_reserve_usdt"])),
-            Decimal(str(earn["max_redeem_per_run_usdt"])),
-        )
+            reserve = Decimal(str(earn.get("min_auto_redeem_reserve_usdc", "0")))
+            per_run = Decimal(str(earn.get("max_auto_redeem_usdc_per_run", earn.get("max_redeem_per_run_usdt", "0"))))
+        else:
+            reserve = Decimal(str(earn["min_flexible_reserve_usdt"]))
+            per_run = Decimal(str(earn["max_redeem_per_run_usdt"]))
+        return reserve, min(per_run, self._remaining_today(redeemed_today))
 
-    def spendable_quote(self, balances: list[Balance], quote_asset: str) -> Decimal:
+    def _remaining_today(self, redeemed_today: Decimal) -> Decimal:
+        """What the day's allowance still has room for.
+
+        An absent or non-positive `max_redeem_per_day_usdt` means "no daily
+        limit", which is how every config written before this did behave. The
+        validator refuses a non-positive value when the key is present, so the
+        only way to reach that branch is by leaving it out on purpose.
+        """
+        daily_cap = Decimal(str(self.config["earn"].get("max_redeem_per_day_usdt", "0")))
+        if daily_cap <= 0:
+            return Decimal("Infinity")
+        return max(Decimal("0"), daily_cap - redeemed_today)
+
+    def spendable_quote(
+        self, balances: list[Balance], quote_asset: str, *, redeemed_today: Decimal
+    ) -> Decimal:
         """Free Spot plus whatever Flexible Earn this run is allowed to release.
 
         The ceiling funding can actually reach, as distinct from the ceiling
@@ -71,7 +97,7 @@ class EarnLiquidityManager:
         earn = self.config["earn"]
         if not earn["allow_flexible_redeem"] or quote_asset not in set(earn["allowed_redeem_assets"]):
             return balance.spot_free
-        reserve, max_per_run = self._redeem_bounds(quote_asset)
+        reserve, max_per_run = self._redeem_bounds(quote_asset, redeemed_today)
         available_after_reserve = max(Decimal("0"), balance.flexible_amount - reserve)
         return balance.spot_free + min(max_per_run, available_after_reserve)
 
@@ -83,6 +109,8 @@ class EarnLiquidityManager:
         liquidity: LiquidityDecision,
         bankroll: TradingBankrollReport,
         existing_intents: set[str] | None = None,
+        *,
+        redeemed_today: Decimal,
     ) -> EarnRedeemPlan:
         if liquidity.redeem_amount <= 0 or liquidity.redeem_asset is None:
             return self._empty("No Flexible Earn redeem is needed for this run.")
@@ -94,7 +122,7 @@ class EarnLiquidityManager:
         if bankroll.preferred_source != "FLEXIBLE_EARN_REDEEM_REQUIRED":
             return self._blocked(asset, liquidity.redeem_amount, f"Bankroll source is {bankroll.preferred_source}, not FLEXIBLE_EARN_REDEEM_REQUIRED.")
 
-        max_auto = Decimal(str(earn.get("max_auto_redeem_usdc_per_run", "0")))
+        _, max_auto = self._redeem_bounds(asset, redeemed_today)
         reserve = Decimal(str(earn.get("min_auto_redeem_reserve_usdc", "0")))
         amount = min(liquidity.redeem_amount, bankroll.flexible_draw_needed, max_auto)
         amount = self._money(amount)

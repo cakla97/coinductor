@@ -4,6 +4,56 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.4.0] — 2026-08-10
+
+Coinductor can now pay for what it approved, within limits that finally hold.
+
+### Added
+
+- **A run can move Earn to Spot on its own**, when an approved action is already waiting on
+  the money. The plan was always built automatically; only the transfer waited, for a
+  phrase a schedule can never type — so unattended runs could never fund anything.
+
+  This is a **separate authority**, not a loosening of the existing one. A manual redeem
+  still requires `CONFIRM_EARN_REDEEM` typed for the amount in front of you. The automatic
+  one requires a switch turned on once **and** the `LIVE_ENABLED` safety stage, reached by
+  hand on screen; an unreadable stage is not permission. Off by default.
+
+  A redemption is not an order and not a withdrawal: it moves USDC between parts of one
+  account, changes no exposure, can lose nothing to the market, and reverses by
+  subscribing again. **Nothing here changes how an order is authorised.**
+- **An Earn funding panel in Live Actions**, so the setting that decides whether an
+  approved action can be paid for at all is no longer readable only in `config.toml`. Kept
+  as its own card, because sizing decides how large an order is worth making and this
+  decides how much of your savings the app may reach for.
+- **Suggested limits, derived from your portfolio**, on both the sizing and funding panels,
+  with a button that applies them. Percentages are suggested as constants — that is the
+  point of a percentage — while the flat backstops scale, and are placed well above where
+  the percentage binds.
+- **Every percentage now shows what it is worth in money**. `3%` and `26 USDC` land very
+  differently, and only the second says whether the number you typed is sane.
+
+### Fixed
+
+- **`earn.max_redeem_per_day_usdt` now does something.** It appeared in the validator and
+  a test fixture, and no code ever compared anything to it — a daily cap that guaranteed
+  nothing. On a two-hourly schedule the per-run limit is twelve times weaker than it looks.
+  The day's spend is read from the journal and folded into the per-run bound, so a run is
+  sized against the allowance actually left. Only submitted redemptions count; a plan that
+  was prepared and never confirmed moved no money.
+- **Both Earn limits scale with the portfolio.** Each gained a percentage companion and the
+  smaller wins, matching what the order size gained in 1.3.0. The template leads with the
+  percentage and keeps the flat amount as a backstop.
+
+### Notes
+
+The daily limit had to start working before the automatic transfer could be offered:
+without it, an unattended run bounded only per-run would have had no daily ceiling at all.
+
+Upgrading changes nothing on its own. Automatic funding is off, an absent percentage means
+no extra ceiling, and an absent daily cap means no daily limit — which is how every config
+written before this behaved.
+
 ## [1.3.0] — 2026-08-10
 
 Order size stops being a flat number in a file nobody was meant to open.

@@ -75,6 +75,13 @@ This is the part worth reading before installing anything that touches an exchan
   raised to `LIVE_ENABLED` by hand, an automation level of *Guarded automation* in your
   profile, verified live-key permissions, and a typed confirmation phrase — per action.
   That last one is what makes a scheduled run safe: no timer can type it.
+- **It can move money between Earn and Spot on its own — if you switch that on.** This is
+  the one unattended action it has, it is off by default, and it is ignored below the
+  `LIVE_ENABLED` stage. It only happens when an action it already approved is waiting on
+  the funding, and it is bounded per run and per day. A redemption is not an order and not
+  a withdrawal: USDC moves between parts of your own account, your exposure does not
+  change, nothing can be lost to the market, and subscribing again reverses it. What it
+  costs is forgone yield.
 - **No futures, no margin, no leverage.** Spot and Simple Earn Flexible only; Locked Earn is
   read-only.
 - **The AI never decides anything.** It proposes; deterministic code disposes. See

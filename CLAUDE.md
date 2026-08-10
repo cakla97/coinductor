@@ -8,7 +8,7 @@ Local Binance Spot assistant. Two packages, one direction of dependency:
 ## Commands
 
 ```bash
-python -m pytest -q                                   # 706 tests, ~30s, fully offline
+python -m pytest -q                                   # 777 tests, ~35s, fully offline
 python -m ruff check trading_agent coinductor tests   # must be clean
 python -m trading_agent run --config config.example.toml
 python -m coinductor.desktop                          # desktop app (needs the desktop extra)
@@ -36,6 +36,9 @@ submit path without passing through the risk engine.
 | Schedules, tray, headless `--run-once` | `coinductor/automation.py`, `tray.py`, `scheduled_task.py`, `desktop.py` |
 | One window per data directory | `coinductor/single_instance.py` |
 | How large an approved order may be | `RiskEngine.sizing_caps` + `coinductor/trade_sizing.py` (its screen) |
+| How much Earn may fund it | `EarnLiquidityManager` + `coinductor/earn_funding.py` (its screen) |
+| Numeric settings on a screen | `coinductor/config_fields.py` — shared read/validate/write |
+| Starting values derived from the portfolio | `coinductor/suggested_limits.py` |
 | New-listing watch (records and notifies; never buys) | `coinductor/listing_watcher.py` |
 | Permission to submit unattended | `coinductor/standing_authorisation.py` — built, tested, **wired to nothing** |
 | User-facing text the engine produces | `trading_agent/messages.py` — key + params, never a finished sentence |
@@ -51,10 +54,20 @@ submit path without passing through the risk engine.
   (`first_portfolio_tranches`, `oco_protection_orders`, `oco_status_checks`).
   They hold the intent ids that stop an executed order being sent twice. See
   `_RETENTION_EXEMPT_TABLES` in `storage.py`.
-- **A schedule must never reach a submit path.** An automatic run passes no confirmation
-  string, and the tests assert those arguments never reach it at all rather than arriving
-  false. `standing_authorisation.py` is the only thing that could change that; it is
-  deliberately unconnected, and connecting it is a decision, not a refactor.
+- **A schedule must never reach an *order* submit path.** An automatic run passes no
+  confirmation string, and the tests assert those arguments never reach it at all rather
+  than arriving false. `standing_authorisation.py` is the only thing that could change
+  that; it is deliberately unconnected, and connecting it is a decision, not a refactor.
+- **One exception, and only one: `earn.auto_funding_enabled`.** A run may move Earn to
+  Spot unattended, because that is a transfer inside one account — no exposure changes,
+  nothing can be lost to the market, and subscribing again reverses it. It is a second
+  authority in `EarnLiquidityManager.redeem_authority()`, not a weakening of the first:
+  MANUAL still demands `CONFIRM_EARN_REDEEM` for the exact amount, AUTOMATIC demands the
+  switch plus `LIVE_ENABLED`. Do not extend this shape to orders.
+- **The per-day Earn limit is enforced by subtracting the journal's total from the per-run
+  cap**, not by a check at submission, so a run cannot be sized against an allowance the
+  day has spent. Only submitted plans count; counting previews would let an unconfirmed
+  one exhaust the day.
 - **The single-instance handshake carries no payload, on purpose.** A second instance
   connects and exits, and on Windows anything written into a `QLocalSocket` is discarded
   when it closes or the process leaves, before the server ever accepts. Measured, not

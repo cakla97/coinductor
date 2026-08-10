@@ -4,6 +4,25 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.4.2] — 2026-08-10
+
+### Fixed
+
+- **The unattended-funding switch is now on the screen it belongs to.** 1.4.0 added a whole
+  Earn funding panel and left `auto_funding_enabled` readable only in `config.toml` — the
+  one file this app promises nobody has to open. It is a checkbox on that panel now, with
+  what it does spelled out beside it, and turning it on or off says which it did rather
+  than reporting "saved".
+- **Turning it on below `LIVE_ENABLED` now says so.** It was already ignored there, which
+  meant a switch that silently did nothing. The panel warns while it is on but cannot act.
+- A config written before the switch existed gains the key when the toggle is used, rather
+  than accepting the change and discarding it.
+
+### Notes
+
+Nothing about when or how much moves changed. Off is still the default, absence still reads
+as off, and the limits and safety stage still apply exactly as in 1.4.0.
+
 ## [1.4.1] — 2026-08-10
 
 1.4.0 shipped two panels the built-in assistant knew nothing about.

@@ -41,6 +41,7 @@ from .order_caps import (
     valid_caps,
 )
 from .paths import data_dir_label
+from .earn_funding import apply_funding_to_config, read_funding, valid_funding
 from .trade_sizing import apply_sizing_to_config, read_sizing, valid_sizing
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions, SafetySnapshot
 from .readiness_service import ReadinessService
@@ -99,6 +100,7 @@ class AppController(QObject):
     firstPortfolioDeploymentChanged = Signal()
     orderCapsChanged = Signal()
     tradeSizingChanged = Signal()
+    earnFundingChanged = Signal()
     listingsChanged = Signal()
     automationChanged = Signal()
     # Carried to the tray icon, which lives in desktop.py because it must
@@ -2412,6 +2414,25 @@ class AppController(QObject):
             self.notificationRequested.emit(service_text("trade_sizing_unchanged", language))
             return
         self.notificationRequested.emit(service_text("trade_sizing_saved", language))
+
+    @Property("QVariantMap", notify=earnFundingChanged)
+    def earnFunding(self) -> dict[str, object]:
+        """Composed when read: the config is the source of truth, not a cache."""
+        return dict(read_funding(default_config_path()))
+
+    @Slot("QVariantMap")
+    def saveEarnFunding(self, values: dict) -> None:
+        """Write the Earn funding limits, refusing only what cannot be written."""
+        language = self._wizard_language
+        if not valid_funding(values):
+            self.notificationRequested.emit(service_text("earn_funding_invalid", language))
+            return
+        changed = apply_funding_to_config(default_config_path(), values)
+        self.earnFundingChanged.emit()
+        if not changed:
+            self.notificationRequested.emit(service_text("earn_funding_unchanged", language))
+            return
+        self.notificationRequested.emit(service_text("earn_funding_saved", language))
 
     def _portfolio_value_amount(self) -> Decimal:
         latest = self._snapshot.latest_run if self._snapshot is not None else None

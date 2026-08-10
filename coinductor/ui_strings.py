@@ -1282,6 +1282,58 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "For a portfolio this size, {suggested} is a conservative live cap. Raise it deliberately, not to make one blocked order go through.",
         "cs": "Pro portfolio této velikosti je {suggested} konzervativní živý strop. Zvyšujte ho vědomě, ne kvůli jednomu zablokovanému příkazu.",
     },
+    "earn_funding_title": {
+        "en": "How much may move from Earn to Spot",
+        "cs": "Kolik se smí přesunout z Earnu na Spot",
+    },
+    "earn_funding_description": {
+        "en": "This is a transfer inside your own Binance account, not a withdrawal - Coinductor cannot withdraw and refuses an API key that could. It exists so an approved action can be paid for when the money is sitting in Simple Earn Flexible. What it costs is forgone yield, and subscribing again reverses it. Each limit below is a flat amount and a percentage of your portfolio, and the smaller one wins.",
+        "cs": "Jde o přesun uvnitř vašeho Binance účtu, ne o výběr - Coinductor vybírat neumí a API klíč, který by to uměl, odmítne. Slouží k tomu, aby šla zaplatit schválená akce, když peníze leží v Simple Earn Flexible. Stojí to jen ušlý výnos a opětovným vložením se to vrátí. Každá mez níže je plochá částka a zároveň procento portfolia; platí ta menší.",
+    },
+    "earn_funding_run_pct_label": {
+        "en": "One run may release (% of portfolio)",
+        "cs": "Jeden běh smí uvolnit (% portfolia)",
+    },
+    "earn_funding_run_pct_help": {
+        "en": "Raising it lets a single run reach further into Earn, so a larger order can be funded. This is what makes the limit scale with your portfolio instead of staying a fixed number of USDC.",
+        "cs": "Zvýšení pustí jeden běh hlouběji do Earnu, takže lze zafinancovat větší příkaz. Právě tohle dělá z meze číslo, které roste s portfoliem, místo pevné částky v USDC.",
+    },
+    "earn_funding_run_amount_label": {
+        "en": "But never more per run (USDC)",
+        "cs": "Ale nikdy víc na běh (USDC)",
+    },
+    "earn_funding_run_amount_help": {
+        "en": "A flat backstop on a single run. Set it low enough to bind on every portfolio and the percentage above stops having any effect.",
+        "cs": "Plochá pojistka na jeden běh. Když ji nastavíte tak nízko, že váže na každém portfoliu, procento výše přestane mít jakýkoli vliv.",
+    },
+    "earn_funding_day_pct_label": {
+        "en": "One day may release (% of portfolio)",
+        "cs": "Jeden den smí uvolnit (% portfolia)",
+    },
+    "earn_funding_day_pct_help": {
+        "en": "The whole day's allowance, counted across every run. Lowering it slows how fast savings can be drawn down when the schedule runs often; a two-hourly schedule reaches the per-run limit twelve times a day.",
+        "cs": "Denní příděl napříč všemi běhy. Snížení zpomalí, jak rychle se spoření rozpouští při častém rozvrhu; dvouhodinový rozvrh sáhne na strop běhu dvanáctkrát denně.",
+    },
+    "earn_funding_day_amount_label": {
+        "en": "But never more per day (USDC)",
+        "cs": "Ale nikdy víc za den (USDC)",
+    },
+    "earn_funding_day_amount_help": {
+        "en": "A flat backstop on the day. Only redemptions that actually went through count against it; a plan that was prepared and never confirmed moved no money.",
+        "cs": "Plochá pojistka na den. Počítají se jen výběry, které skutečně proběhly; připravený a nepotvrzený plán žádné peníze nepřesunul.",
+    },
+    "earn_funding_reserve_label": {
+        "en": "Always leave in Earn (USDC)",
+        "cs": "Vždy nechat v Earnu (USDC)",
+    },
+    "earn_funding_reserve_help": {
+        "en": "Untouchable, whatever the limits above allow. Zero is a real answer and means the balance may be drawn to nothing.",
+        "cs": "Nedotknutelné bez ohledu na meze výše. Nula je platná odpověď a znamená, že zůstatek smí být vyčerpán do nuly.",
+    },
+    "earn_funding_save_button": {
+        "en": "Save funding limits",
+        "cs": "Uložit meze financování",
+    },
     "trade_sizing_title": {
         "en": "How large an order the analysis proposes",
         "cs": "Jak velký příkaz analýza navrhne",

@@ -3788,8 +3788,134 @@ ApplicationWindow {
                         Text { Layout.fillWidth: true; text: appController.appText.safety_stage_disclaimer; color: warning; font.pixelSize: 11; font.bold: true; wrapMode: Text.WordWrap }
                     }
                 }
+                // Funding, not sizing: how much of the user's savings the app
+                // may reach for to pay for an approved action. Kept as its own
+                // card because merging it with the sizing panel above is the
+                // same confusion that had an Earn limit capping trade size.
+                Rectangle {
+                    objectName: "earnFundingPanel"
+                    Layout.row: 7
+                    Layout.fillWidth: true
+                    // Fixed, like every card on this page; measured rather than
+                    // guessed, see the panel above.
+                    Layout.preferredHeight: 500
+                    radius: radiusMd
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 8
+                        Text {
+                            text: appController.appText.earn_funding_title
+                            color: textPrimary
+                            font.pixelSize: 16
+                            font.bold: true
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.earn_funding_description
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: 3
+                            columnSpacing: 10
+                            rowSpacing: 6
+
+                            Text {
+                                text: appController.appText.earn_funding_run_pct_label
+                                color: textSecondary; font.pixelSize: 12
+                                Layout.preferredWidth: 230
+                                Layout.maximumWidth: 230
+                                wrapMode: Text.WordWrap
+                            }
+                            TextField { id: runPctInput; Layout.preferredWidth: 90; text: appController.earnFunding.runPct }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.earn_funding_run_pct_help
+                                color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
+                            }
+
+                            Text {
+                                text: appController.appText.earn_funding_run_amount_label
+                                color: textSecondary; font.pixelSize: 12
+                                Layout.preferredWidth: 230
+                                Layout.maximumWidth: 230
+                                wrapMode: Text.WordWrap
+                            }
+                            TextField { id: runAmountInput; Layout.preferredWidth: 90; text: appController.earnFunding.runAmount }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.earn_funding_run_amount_help
+                                color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
+                            }
+
+                            Text {
+                                text: appController.appText.earn_funding_day_pct_label
+                                color: textSecondary; font.pixelSize: 12
+                                Layout.preferredWidth: 230
+                                Layout.maximumWidth: 230
+                                wrapMode: Text.WordWrap
+                            }
+                            TextField { id: dayPctInput; Layout.preferredWidth: 90; text: appController.earnFunding.dayPct }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.earn_funding_day_pct_help
+                                color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
+                            }
+
+                            Text {
+                                text: appController.appText.earn_funding_day_amount_label
+                                color: textSecondary; font.pixelSize: 12
+                                Layout.preferredWidth: 230
+                                Layout.maximumWidth: 230
+                                wrapMode: Text.WordWrap
+                            }
+                            TextField { id: dayAmountInput; Layout.preferredWidth: 90; text: appController.earnFunding.dayAmount }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.earn_funding_day_amount_help
+                                color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
+                            }
+
+                            Text {
+                                text: appController.appText.earn_funding_reserve_label
+                                color: textSecondary; font.pixelSize: 12
+                                Layout.preferredWidth: 230
+                                Layout.maximumWidth: 230
+                                wrapMode: Text.WordWrap
+                            }
+                            TextField { id: reserveInput; Layout.preferredWidth: 90; text: appController.earnFunding.reserve }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.earn_funding_reserve_help
+                                color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
+                            }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            Button {
+                                text: appController.appText.earn_funding_save_button
+                                onClicked: appController.saveEarnFunding({
+                                    "runPct": runPctInput.text,
+                                    "runAmount": runAmountInput.text,
+                                    "dayPct": dayPctInput.text,
+                                    "dayAmount": dayAmountInput.text,
+                                    "reserve": reserveInput.text
+                                })
+                            }
+                            Item { Layout.fillWidth: true }
+                        }
+                    }
+                }
                 // Bottom spacer, so it has to stay the last row on the page.
-                Item { Layout.row: 7; Layout.fillWidth: true; Layout.preferredHeight: 44 }
+                Item { Layout.row: 8; Layout.fillWidth: true; Layout.preferredHeight: 44 }
                 // The cap used to be reachable only by opening config.toml, which
                 // is the one thing this app promises nobody has to do.
                 Rectangle {

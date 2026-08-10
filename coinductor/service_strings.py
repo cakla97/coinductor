@@ -404,6 +404,18 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Nothing changed - those are the caps already in force.",
         "cs": "Nic se nezměnilo - tyhle stropy už platí.",
     },
+    "earn_funding_invalid": {
+        "en": "Limits must be above zero, a reserve may be zero, and a percentage cannot exceed 100.",
+        "cs": "Meze musí být větší než nula, rezerva smí být nula a procento nesmí přesáhnout 100.",
+    },
+    "earn_funding_unchanged": {
+        "en": "Nothing changed.",
+        "cs": "Nic se nezměnilo.",
+    },
+    "earn_funding_saved": {
+        "en": "Earn funding limits saved.",
+        "cs": "Meze financování z Earnu uloženy.",
+    },
     "trade_sizing_invalid": {
         "en": "Every value must be above zero, and a percentage cannot exceed 100.",
         "cs": "Každá hodnota musí být větší než nula a procento nesmí přesáhnout 100.",

@@ -4,6 +4,41 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.4.1] — 2026-08-10
+
+1.4.0 shipped two panels the built-in assistant knew nothing about.
+
+### Added
+
+- **The offline assistant answers questions about everything added since 1.3.0** — order
+  sizing, Earn funding, automatic funding, the suggested limits, why an order came out the
+  size it did, and how to update. In both languages, as the rest of it already was.
+- Two of those entries correct assumptions worth correcting unprompted: **a redemption is
+  not a withdrawal**, and **automatic funding does not fund a Grid or Rebalancing bot** —
+  those are recommend-only because Binance has no public API to create them, so the money
+  would move and the bot would still have to be made by hand.
+- **An *Updating* section in the README**, and the same answer in the assistant: quit a
+  running Coinductor from the tray before installing. The single-instance guard only
+  recognises instances that have it, so an upgrade is the one case where two can run.
+
+### Fixed
+
+- **"Why is it like that" never reached the assistant's knowledge at all.** The question
+  gate recognised `why cant` but not plain `why is` or `proc je`, which is how anybody asks
+  about a limit — the whole category fell through.
+- **Czech typed without diacritics was often answered in English.** The language check
+  relied on a short word list, so a question like *k čemu je automatické financování* did
+  not read as Czech.
+- **Aliases now match Czech declension.** Matching is by substring and Czech declines, so
+  `aktualizace` never matched *aktualizaci*.
+- The Live Actions tour step described a page that had since grown two panels.
+
+### Notes
+
+Nothing about trading, sizing or funding behaviour changed. The widened question gate is
+covered by a test asserting that an unrelated question is still left to the model rather
+than answered from a fixed entry.
+
 ## [1.4.0] — 2026-08-10
 
 Coinductor can now pay for what it approved, within limits that finally hold.

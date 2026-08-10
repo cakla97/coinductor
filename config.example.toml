@@ -134,6 +134,17 @@ max_auto_redeem_pct_of_portfolio = 2.0
 # second to the ones listed in auto_redeem_assets.
 min_flexible_reserve_usdt = 25.0
 min_auto_redeem_reserve_usdc = 0.0
+# Let a run move Earn to Spot on its own, when an approved action is already
+# waiting on the money. Off unless you turn it on, and ignored below the
+# LIVE_ENABLED safety stage, which is reached by hand on screen.
+#
+# It is deliberately not the same authority as a manual redeem: that one still
+# needs CONFIRM_EARN_REDEEM typed for the exact amount. What bounds this one
+# instead is the switch, the stage, and the per-run and per-day limits above.
+#
+# A redemption is not an order and not a withdrawal. It moves USDC between
+# parts of your own account, changes no exposure, and costs only forgone yield.
+auto_funding_enabled = false
 wait_for_redeem_seconds = 30
 require_redeem_success_before_order = true
 execute_real_redeem = false

@@ -3,6 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 
 from .binance_client import BinanceApiError, BinanceClient
+from .safety_state import SafetyStateStore
 from .decimal_utils import money
 from .models import Balance, EarnRedeemPlan, LiquidityDecision, TradingBankrollReport
 from .order_journal import OrderIntentFactory
@@ -15,6 +16,10 @@ class EarnLiquidityManager:
         self.runtime = RuntimeFlags.from_config(config)
         self.client = BinanceClient(config)
         self.live_client = BinanceClient(config, credential_profile="live_trade")
+        # Held as an attribute so a test can substitute one; the engine has
+        # never read the safety stage before, and auto-funding is the first
+        # thing that must not act below LIVE_ENABLED.
+        self.safety = SafetyStateStore()
 
     def ensure_quote_liquidity(
         self,
@@ -178,7 +183,8 @@ class EarnLiquidityManager:
         if not can_redeem:
             return self._blocked(asset, amount, f"Flexible Earn product {product_id} is not currently redeemable.", intent_id=intent_id)
 
-        if not self._submit_requested():
+        authority = self.redeem_authority()
+        if authority == "NONE":
             return EarnRedeemPlan(
                 intent_id=intent_id,
                 enabled=True,
@@ -193,7 +199,7 @@ class EarnLiquidityManager:
                 message="Flexible Earn redeem is ready but was not submitted.",
             )
 
-        if self.runtime.earn_redeem_confirm != "CONFIRM_EARN_REDEEM":
+        if authority == "MANUAL" and self.runtime.earn_redeem_confirm != "CONFIRM_EARN_REDEEM":
             return EarnRedeemPlan(
                 intent_id=intent_id,
                 enabled=True,
@@ -236,7 +242,7 @@ class EarnLiquidityManager:
             can_redeem=True,
             submitted=True,
             confirmation_required="CONFIRM_EARN_REDEEM",
-            message=f"Flexible Earn redeem submitted: {response}",
+            message=f"Flexible Earn redeem submitted ({authority.lower()} funding): {response}",
         )
 
     def _select_position(self, asset: str, minimum_total: Decimal) -> dict | None:
@@ -251,8 +257,38 @@ class EarnLiquidityManager:
         candidates.sort(key=lambda row: Decimal(str(row.get("totalAmount", "0"))), reverse=True)
         return candidates[0]
 
-    def _submit_requested(self) -> bool:
-        return self.runtime.earn_redeem_submit
+    def redeem_authority(self) -> str:
+        """Who is authorising this redemption: a person, a standing setting, or nobody.
+
+        Two authorities, deliberately not one, and neither weakens the other.
+        MANUAL is somebody pressing Redeem and typing the phrase for this exact
+        amount, and it still requires that phrase. AUTOMATIC is a standing
+        arrangement turned on once, and it is bounded by things a click is not:
+        it is only ever reached when an approved action is already waiting on
+        the money, and the per-run and per-day limits have been applied before
+        this point.
+
+        NONE is the default and the answer for every run that says nothing.
+        """
+        if self.runtime.earn_redeem_submit:
+            return "MANUAL"
+        if self._auto_funding_permitted():
+            return "AUTOMATIC"
+        return "NONE"
+
+    def _auto_funding_permitted(self) -> bool:
+        """The standing arrangement, and the stage it is useless without.
+
+        Off unless switched on, and refused below LIVE_ENABLED - the stage a
+        person has to reach by hand, on screen. Reused rather than paralleled:
+        a second notion of "armed" would be a second thing to get wrong.
+        """
+        if not bool(self.config.get("earn", {}).get("auto_funding_enabled", False)):
+            return False
+        try:
+            return self.safety.load().allows_live_submit
+        except Exception:  # noqa: BLE001 - an unreadable stage is not permission
+            return False
 
     def _empty(self, message: str) -> EarnRedeemPlan:
         return EarnRedeemPlan("", False, None, Decimal("0"), "NOT_NEEDED", "", "", False, False, "CONFIRM_EARN_REDEEM", message)

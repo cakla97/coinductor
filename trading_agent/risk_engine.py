@@ -18,7 +18,19 @@ class RiskEngine:
         snapshots: list[MarketSnapshot],
         skip_consensus: bool = False,
         allowed_symbols: set[str] | None = None,
+        *,
+        portfolio_value: Decimal | None,
+        spendable_quote: Decimal | None,
     ) -> RiskDecision:
+        """Rule on a proposal, and decide how large it may actually be.
+
+        `portfolio_value` and `spendable_quote` are keyword-only and have no
+        default on purpose. They shrink the approved amount, so a caller that
+        forgot them would silently get the most permissive sizing available -
+        exactly the failure mode `RuntimeFlags` is built to avoid. Passing
+        `None` is allowed but has to be written down at the call site, where
+        the reason for it can be read.
+        """
         risk = self.config["risk"]
         # allowed_symbols lets a caller substitute a different, still-enforced
         # whitelist (e.g. a first-portfolio template's basket) instead of
@@ -53,12 +65,82 @@ class RiskEngine:
         if self.config["orders"]["require_stop_loss"] and proposal.stop_loss_pct <= 0:
             return self._reject(Message("risk_stop_loss_required"))
 
-        max_redeem = Decimal(str(self.config["earn"]["max_redeem_per_run_usdt"]))
-        adjusted = min(proposal.quote_amount_usdt, max_redeem)
+        binding, adjusted = self._size(proposal, portfolio_value, spendable_quote)
         approved = Message(
             "risk_approved" if not skip_consensus else "risk_approved_skip_consensus"
         )
-        return RiskDecision(True, render_message(approved), adjusted, reason_message=approved)
+        return RiskDecision(
+            True,
+            render_message(approved),
+            adjusted,
+            reason_message=approved,
+            binding_limit=binding,
+        )
+
+    def _size(
+        self,
+        proposal: TradeProposal,
+        portfolio_value: Decimal | None,
+        spendable_quote: Decimal | None,
+    ) -> tuple[str, Decimal]:
+        """The smallest ceiling that applies, and which one it was."""
+        return min(self.sizing_caps(proposal, portfolio_value, spendable_quote), key=lambda cap: cap[1])
+
+    def sizing_caps(
+        self,
+        proposal: TradeProposal,
+        portfolio_value: Decimal | None,
+        spendable_quote: Decimal | None,
+    ) -> list[tuple[str, Decimal]]:
+        """Every ceiling that applies to this order, named.
+
+        Every entry is a ceiling and the answer is their minimum, so adding one
+        here can only ever shrink an approved order. That property is what
+        makes this safe to extend: no limit added to this list can authorise
+        something the same config would have refused before it existed.
+
+        Public because "why is the order this size" is a question worth being
+        able to ask without re-deriving the arithmetic.
+        """
+        risk = self.config["risk"]
+        # `earn.max_redeem_per_run_usdt` used to sit here, and does not belong:
+        # it is how much Flexible Earn one run may release, not how large a
+        # trade may be, and it applied even when the money came entirely from
+        # Spot and no redeem was going to happen. Where it is genuinely
+        # relevant it is already accounted for - `spendable_quote` is built
+        # from exactly these redeem bounds - so keeping it here both
+        # double-counted and truncated confirmed first-portfolio tranches to a
+        # number the user never agreed to.
+        caps: list[tuple[str, Decimal]] = [("proposal", proposal.quote_amount_usdt)]
+        if portfolio_value is not None and portfolio_value > 0:
+            # The portfolio-relative companion to strategy.quote_amount_usdt,
+            # which is a flat number and so means something different on a 500
+            # account than on a 50,000 one. Absent from older configs, where
+            # 100% leaves the flat number in charge exactly as before.
+            trade_pct = self.config["strategy"].get("max_trade_pct_of_portfolio", 100)
+            caps.append(("trade_size_pct", self._pct_of(portfolio_value, trade_pct)))
+        if portfolio_value is not None and portfolio_value > 0:
+            caps.append(
+                ("total_trading_capital", self._pct_of(portfolio_value, risk["max_total_trading_capital_pct"]))
+            )
+            caps.append(
+                ("position_per_asset", self._pct_of(portfolio_value, risk["max_position_pct_per_asset"]))
+            )
+            # How much can be bought so that the stop loss costs at most
+            # max_risk_per_trade_pct of the portfolio. Skipped without a stop:
+            # there is no defined loss to size against, and `orders
+            # .require_stop_loss` has already had its say above.
+            stop_loss_pct = Decimal(str(proposal.stop_loss_pct))
+            if stop_loss_pct > 0:
+                budget = self._pct_of(portfolio_value, risk["max_risk_per_trade_pct"])
+                caps.append(("risk_per_trade", budget / (stop_loss_pct / Decimal("100"))))
+        if spendable_quote is not None:
+            caps.append(("funding", max(Decimal("0"), spendable_quote)))
+        return caps
+
+    @staticmethod
+    def _pct_of(value: Decimal, percent: object) -> Decimal:
+        return value * Decimal(str(percent)) / Decimal("100")
 
     def _reject(self, message: Message) -> RiskDecision:
         """Render English once, here, so the string cannot drift from the key."""

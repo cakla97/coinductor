@@ -163,7 +163,18 @@ class AgentRunner:
             pre_trade_live_positions=pre_trade_live_positions,
             proposal=proposal,
             risk_state=risk_state,
-            risk_decision=self.risk.evaluate(proposal=proposal, risk_state=risk_state, snapshots=market.snapshots),
+            risk_decision=self.risk.evaluate(
+                proposal=proposal,
+                risk_state=risk_state,
+                snapshots=market.snapshots,
+                # The tactical trade is what the [risk] percentages are written
+                # about, so this is where they bind. Funding is passed too, so
+                # the size cannot exceed what the account can actually pay.
+                portfolio_value=market.portfolio_analysis.total_value_usdt,
+                spendable_quote=self.earn.spendable_quote(
+                    market.balances, self._live_quote_asset()
+                ),
+            ),
         )
 
     def _plan_capital(self, market: MarketView, decision: TradeDecision) -> CapitalPlan:

@@ -144,7 +144,7 @@ def test_risk_engine_blocks_kill_switch_before_trade() -> None:
         summary="blocked",
     )
 
-    decision = RiskEngine(_config()).evaluate(_buy_proposal(), state, [_risk_on_snapshot()])
+    decision = RiskEngine(_config()).evaluate(_buy_proposal(), state, [_risk_on_snapshot()], portfolio_value=None, spendable_quote=None)
 
     assert decision.approved is False
     assert "kill switch" in decision.reason
@@ -182,7 +182,7 @@ def test_consensus_rejects_buy_outside_risk_on() -> None:
         trend_regime="RISK_OFF",
     )
 
-    decision = RiskEngine(_config()).evaluate(_buy_proposal(), state, [snapshot])
+    decision = RiskEngine(_config()).evaluate(_buy_proposal(), state, [snapshot], portfolio_value=None, spendable_quote=None)
 
     assert decision.approved is False
     assert "Consensus gate" in decision.reason
@@ -222,7 +222,8 @@ def test_skip_consensus_lets_a_risk_off_proposal_through() -> None:
         trend_regime="RISK_OFF",
     )
 
-    decision = RiskEngine(_config()).evaluate(_buy_proposal(), state, [risk_off_snapshot], skip_consensus=True)
+    decision = RiskEngine(_config()).evaluate(_buy_proposal(), state, [risk_off_snapshot], skip_consensus=True,
+                                            portfolio_value=None, spendable_quote=None)
 
     assert decision.approved is True
     assert "intentionally skipped" in decision.reason
@@ -252,7 +253,8 @@ def test_skip_consensus_still_enforces_every_other_guard() -> None:
     )
 
     decision = RiskEngine(_config()).evaluate(
-        _buy_proposal(), kill_switch_state, [_risk_on_snapshot()], skip_consensus=True
+        _buy_proposal(), kill_switch_state, [_risk_on_snapshot()], skip_consensus=True,
+        portfolio_value=None, spendable_quote=None,
     )
 
     assert decision.approved is False
@@ -291,9 +293,10 @@ def test_allowed_symbols_override_lets_a_non_strategy_symbol_through() -> None:
         reason="First portfolio basket.",
     )
 
-    without_override = RiskEngine(_config()).evaluate(proposal, state, [], skip_consensus=True)
+    without_override = RiskEngine(_config()).evaluate(proposal, state, [], skip_consensus=True, portfolio_value=None, spendable_quote=None)
     with_override = RiskEngine(_config()).evaluate(
-        proposal, state, [], skip_consensus=True, allowed_symbols={"BNBUSDC"}
+        proposal, state, [], skip_consensus=True, allowed_symbols={"BNBUSDC"},
+        portfolio_value=None, spendable_quote=None,
     )
 
     assert without_override.approved is False
@@ -321,7 +324,7 @@ def test_consensus_approves_valid_buy() -> None:
         summary="clear",
     )
 
-    decision = RiskEngine(_config()).evaluate(_buy_proposal(), state, [_risk_on_snapshot()])
+    decision = RiskEngine(_config()).evaluate(_buy_proposal(), state, [_risk_on_snapshot()], portfolio_value=None, spendable_quote=None)
 
     assert decision.approved is True
     assert decision.adjusted_quote_amount_usdt == Decimal("10")

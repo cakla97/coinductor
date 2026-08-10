@@ -590,6 +590,11 @@ class Storage:
         self._ensure_column("recommended_actions", "reason_message", "text")
         self._ensure_column("recommended_actions", "reason_part_messages", "text")
         self._ensure_column("risk_decisions", "reason_message", "text")
+        # Which ceiling produced the approved amount. Without it the journal
+        # records the size but not the reason, and "why was this order that
+        # big" can only be answered by re-deriving the arithmetic from a
+        # config that may have changed since.
+        self._ensure_column("risk_decisions", "binding_limit", "text")
         self._ensure_column("ai_proposals", "reason_message", "text")
         self._ensure_column("ai_proposals", "reason_part_messages", "text")
         self._ensure_column("strategy_decisions", "summary_message", "text")
@@ -1103,8 +1108,8 @@ class Storage:
         self.connection.execute(
             """
             insert into risk_decisions
-                (run_id, approved, reason, adjusted_quote_amount_usdt, reason_message)
-            values (?, ?, ?, ?, ?)
+                (run_id, approved, reason, adjusted_quote_amount_usdt, reason_message, binding_limit)
+            values (?, ?, ?, ?, ?, ?)
             """,
             (
                 run_id,
@@ -1112,6 +1117,7 @@ class Storage:
                 decision.reason,
                 str(decision.adjusted_quote_amount_usdt),
                 manual_steps_to_json((decision.reason_message,) if decision.reason_message else ()),
+                decision.binding_limit,
             ),
         )
         self.connection.commit()

@@ -57,6 +57,11 @@ An AI model can propose; only deterministic code can approve. And nothing reache
 exchange account until you have unlocked it in stages and typed a confirmation for that
 specific action.
 
+How *much* it would buy is decided the same way. The size is the smallest of what you allow
+as a share of your portfolio, what the risk limits permit, and what your account can
+actually pay — so the same settings behave sensibly whether you hold 500 or 50,000, and an
+order is never proposed at a size the balance cannot fund.
+
 Everything runs on your machine: keys in the operating system's credential store, history in
 a local SQLite file, nothing uploaded anywhere.
 

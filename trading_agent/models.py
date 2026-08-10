@@ -167,6 +167,10 @@ class RiskDecision:
     reason: str
     adjusted_quote_amount_usdt: Decimal
     reason_message: Message | None = None
+    # Which ceiling produced the amount, e.g. "funding" or "position_per_asset".
+    # A machine-readable key, not user text: it answers "why is the order this
+    # size" for a reader of the code or a test, and is empty on a rejection.
+    binding_limit: str = ""
 
 
 @dataclass(frozen=True)

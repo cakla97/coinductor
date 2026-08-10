@@ -8,10 +8,10 @@ Local Binance Spot assistant. Two packages, one direction of dependency:
 ## Commands
 
 ```bash
-python -m pytest -q                                   # 654 tests, ~30s, fully offline
+python -m pytest -q                                   # 706 tests, ~30s, fully offline
 python -m ruff check trading_agent coinductor tests   # must be clean
 python -m trading_agent run --config config.example.toml
-coinductor                                            # desktop app (needs the desktop extra)
+python -m coinductor.desktop                          # desktop app (needs the desktop extra)
 ```
 
 Everything runs offline by default: `app.mock_data = true` serves a fixed portfolio
@@ -35,6 +35,7 @@ submit path without passing through the risk engine.
 | Background jobs off the GUI thread | `coinductor/workers.py` |
 | Schedules, tray, headless `--run-once` | `coinductor/automation.py`, `tray.py`, `scheduled_task.py`, `desktop.py` |
 | One window per data directory | `coinductor/single_instance.py` |
+| How large an approved order may be | `RiskEngine.sizing_caps` + `coinductor/trade_sizing.py` (its screen) |
 | New-listing watch (records and notifies; never buys) | `coinductor/listing_watcher.py` |
 | Permission to submit unattended | `coinductor/standing_authorisation.py` — built, tested, **wired to nothing** |
 | User-facing text the engine produces | `trading_agent/messages.py` — key + params, never a finished sentence |
@@ -58,6 +59,17 @@ submit path without passing through the risk engine.
   connects and exits, and on Windows anything written into a `QLocalSocket` is discarded
   when it closes or the process leaves, before the server ever accepts. Measured, not
   assumed. The connection itself is the whole message; a message added here will vanish.
+- **Every entry in `RiskEngine.sizing_caps` is a ceiling, and the order is their minimum.**
+  That is what makes the list safe to extend: nothing added there can enlarge an order.
+  A limit written as a floor breaks the property, and
+  `test_no_limit_can_ever_enlarge_the_proposal` is what catches it.
+- **Those ceilings bound one order, not the position it builds towards.** Current holdings
+  are not in the arithmetic, so repeated buys can accumulate past
+  `max_position_pct_per_asset`. The UI and the config template say so; do not reword them
+  into a promise the code does not keep.
+- **`evaluate()` takes `portfolio_value` and `spendable_quote` keyword-only with no
+  default.** They shrink the order, so a caller that forgot them would silently get the
+  most permissive sizing. `None` is allowed but has to be written at the call site.
 - **Anything the schedule panel derives from a `QTimer` needs `automationChanged`.** The
   next-run time is computed from `remainingTime()` when QML reads it, so a timer that
   fires without emitting leaves a correct schedule looking stopped.

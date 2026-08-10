@@ -41,6 +41,7 @@ from .order_caps import (
     valid_caps,
 )
 from .paths import data_dir_label
+from .trade_sizing import apply_sizing_to_config, read_sizing, valid_sizing
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions, SafetySnapshot
 from .readiness_service import ReadinessService
 from .profile_choices import profile_choices, toggle_help
@@ -97,6 +98,7 @@ class AppController(QObject):
     localDataResetChanged = Signal()
     firstPortfolioDeploymentChanged = Signal()
     orderCapsChanged = Signal()
+    tradeSizingChanged = Signal()
     listingsChanged = Signal()
     automationChanged = Signal()
     # Carried to the tray icon, which lives in desktop.py because it must
@@ -2369,6 +2371,47 @@ class AppController(QObject):
             "hasPortfolio": portfolio > 0,
             "aboveSuggestion": exceeds_suggestion(caps["mainnet"], portfolio),
         }
+
+    @Property("QVariantMap", notify=tradeSizingChanged)
+    def tradeSizing(self) -> dict[str, object]:
+        """Composed when read: the config is the source of truth, not a cache."""
+        values = dict(read_sizing(default_config_path()))
+        values["lastBoundBy"] = self._last_binding_limit_text()
+        return values
+
+    def _last_binding_limit_text(self) -> str:
+        """Which ceiling decided the most recent order, as a sentence.
+
+        Reads the machine key the journal stores and renders it here, so the
+        explanation follows the language setting rather than the language the
+        run happened in - the same reason the risk gate and latest decision are
+        composed at read time.
+        """
+        latest = self._snapshot.latest_run if self._snapshot is not None else None
+        key = str(getattr(latest, "binding_limit", "") or "") if latest is not None else ""
+        if not key:
+            return ""
+        language = self._wizard_language
+        return service_text("trade_sizing_last_bound_template", language).format(
+            limit=service_text(f"trade_sizing_limit_{key}", language)
+        )
+
+    @Slot("QVariantMap")
+    def saveTradeSizing(self, values: dict) -> None:
+        """Write the sizing ceilings, refusing only what cannot be written."""
+        language = self._wizard_language
+        # As with the order caps: "nothing was written" has two very different
+        # causes, and reporting the rarer one for both sends someone who simply
+        # saved the same numbers twice looking for a mistake they did not make.
+        if not valid_sizing(values):
+            self.notificationRequested.emit(service_text("trade_sizing_invalid", language))
+            return
+        changed = apply_sizing_to_config(default_config_path(), values)
+        self.tradeSizingChanged.emit()
+        if not changed:
+            self.notificationRequested.emit(service_text("trade_sizing_unchanged", language))
+            return
+        self.notificationRequested.emit(service_text("trade_sizing_saved", language))
 
     def _portfolio_value_amount(self) -> Decimal:
         latest = self._snapshot.latest_run if self._snapshot is not None else None

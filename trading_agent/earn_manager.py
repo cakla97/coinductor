@@ -29,13 +29,7 @@ class EarnLiquidityManager:
 
         balance = self._balance_for(balances, quote_asset)
         missing = required_amount - spot
-        auto_assets = {str(item).upper() for item in earn.get("auto_redeem_assets", [])}
-        if quote_asset.upper() in auto_assets:
-            reserve = Decimal(str(earn.get("min_auto_redeem_reserve_usdc", "0")))
-            max_per_run = Decimal(str(earn.get("max_auto_redeem_usdc_per_run", earn.get("max_redeem_per_run_usdt", "0"))))
-        else:
-            reserve = Decimal(str(earn["min_flexible_reserve_usdt"]))
-            max_per_run = Decimal(str(earn["max_redeem_per_run_usdt"]))
+        reserve, max_per_run = self._redeem_bounds(quote_asset)
         available_after_reserve = max(Decimal("0"), balance.flexible_amount - reserve)
         redeem_amount = min(missing, max_per_run, available_after_reserve)
 
@@ -44,6 +38,42 @@ class EarnLiquidityManager:
         if spot + redeem_amount < required_amount:
             return LiquidityDecision(False, "Redeem limits are not enough for the requested trade.", quote_asset, redeem_amount)
         return LiquidityDecision(True, "Flexible redeem would satisfy missing Spot liquidity.", quote_asset, redeem_amount)
+
+    def _redeem_bounds(self, quote_asset: str) -> tuple[Decimal, Decimal]:
+        """Reserve to leave behind, and the most one run may release.
+
+        The auto pair when the asset is auto-redeemable, the manual pair
+        otherwise. One place, because two copies of this choice would let a
+        trade be sized against limits a redeem then refuses to honour.
+        """
+        earn = self.config["earn"]
+        auto_assets = {str(item).upper() for item in earn.get("auto_redeem_assets", [])}
+        if quote_asset.upper() in auto_assets:
+            return (
+                Decimal(str(earn.get("min_auto_redeem_reserve_usdc", "0"))),
+                Decimal(str(earn.get("max_auto_redeem_usdc_per_run", earn.get("max_redeem_per_run_usdt", "0")))),
+            )
+        return (
+            Decimal(str(earn["min_flexible_reserve_usdt"])),
+            Decimal(str(earn["max_redeem_per_run_usdt"])),
+        )
+
+    def spendable_quote(self, balances: list[Balance], quote_asset: str) -> Decimal:
+        """Free Spot plus whatever Flexible Earn this run is allowed to release.
+
+        The ceiling funding can actually reach, as distinct from the ceiling
+        risk policy permits. Sizing a trade without it produces an amount the
+        account cannot pay, which surfaces much later as an order below the
+        exchange minimum - the shape of every blocked deployment in the
+        journal so far.
+        """
+        balance = self._balance_for(balances, quote_asset)
+        earn = self.config["earn"]
+        if not earn["allow_flexible_redeem"] or quote_asset not in set(earn["allowed_redeem_assets"]):
+            return balance.spot_free
+        reserve, max_per_run = self._redeem_bounds(quote_asset)
+        available_after_reserve = max(Decimal("0"), balance.flexible_amount - reserve)
+        return balance.spot_free + min(max_per_run, available_after_reserve)
 
     def _balance_for(self, balances: list[Balance], asset: str) -> Balance:
         return next((balance for balance in balances if balance.asset == asset), Balance(asset=asset, spot_free=Decimal("0")))

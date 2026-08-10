@@ -47,7 +47,7 @@ def _snapshot(regime, price, ema50, ema200, rsi):
 
 def _approves(config_path, snapshot) -> bool:
     config = tomllib.loads(config_path.read_text(encoding="utf-8"))
-    return RiskEngine(config).evaluate(_proposal(), _state(), [snapshot]).approved
+    return RiskEngine(config).evaluate(_proposal(), _state(), [snapshot], portfolio_value=None, spendable_quote=None).approved
 
 
 def test_every_style_only_moves_the_trend_filter() -> None:

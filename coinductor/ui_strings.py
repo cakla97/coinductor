@@ -1282,6 +1282,58 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "For a portfolio this size, {suggested} is a conservative live cap. Raise it deliberately, not to make one blocked order go through.",
         "cs": "Pro portfolio této velikosti je {suggested} konzervativní živý strop. Zvyšujte ho vědomě, ne kvůli jednomu zablokovanému příkazu.",
     },
+    "trade_sizing_title": {
+        "en": "How large an order the analysis proposes",
+        "cs": "Jak velký příkaz analýza navrhne",
+    },
+    "trade_sizing_description": {
+        "en": "One layer before the cap above. These decide what size the analysis considers appropriate; the cap decides what may reach the exchange whatever the analysis concluded. Every value here is a ceiling and the order becomes the smallest of them, together with what your account can actually pay - so raising any one of them on its own cannot enlarge an order, because another ceiling then binds instead.",
+        "cs": "O úroveň dřív než strop výše. Tohle rozhoduje, jakou velikost analýza považuje za přiměřenou; strop rozhoduje, co smí odejít na burzu bez ohledu na to, k čemu analýza došla. Každá hodnota je strop a příkaz je jejich minimem spolu s tím, co účet reálně zaplatí - zvýšení jediné z nich proto příkaz zvětšit nemůže, protože pak váže jiný strop.",
+    },
+    "trade_sizing_trade_pct_label": {
+        "en": "Order size (% of portfolio)",
+        "cs": "Velikost příkazu (% portfolia)",
+    },
+    "trade_sizing_trade_pct_help": {
+        "en": "Raising it allows larger orders on every portfolio. This is the setting that makes the same configuration behave sensibly whether you hold 500 or 50,000.",
+        "cs": "Zvýšení dovolí větší příkazy na každém portfoliu. Právě tohle nastavení zajišťuje, že se stejná konfigurace chová rozumně, ať držíte 500 nebo 50 000.",
+    },
+    "trade_sizing_trade_amount_label": {
+        "en": "Never more than (USDC)",
+        "cs": "Nikdy víc než (USDC)",
+    },
+    "trade_sizing_trade_amount_help": {
+        "en": "A flat backstop for the far end. Lowering it tightens every order; set low enough it binds on every portfolio and the percentage above stops having any effect.",
+        "cs": "Plochá pojistka pro krajní případ. Snížení stáhne každý příkaz; když ji nastavíte tak nízko, že váže na každém portfoliu, procento výše přestane mít jakýkoli vliv.",
+    },
+    "trade_sizing_position_pct_label": {
+        "en": "One order into one asset (% of portfolio)",
+        "cs": "Jeden příkaz do jednoho aktiva (% portfolia)",
+    },
+    "trade_sizing_position_pct_help": {
+        "en": "Lowering it tightens how much of the portfolio a single buy may put into one asset. It bounds the order, not what you end up holding - repeated buys can still accumulate past it, and what you already own is not counted.",
+        "cs": "Snížení stáhne, kolik z portfolia smí jeden nákup vložit do jednoho aktiva. Omezuje příkaz, ne výsledný stav - opakované nákupy se přes něj pořád můžou nasčítat a to, co už držíte, se nezapočítává.",
+    },
+    "trade_sizing_capital_pct_label": {
+        "en": "One order from trading capital (% of portfolio)",
+        "cs": "Jeden příkaz z obchodního kapitálu (% portfolia)",
+    },
+    "trade_sizing_capital_pct_help": {
+        "en": "The share of the portfolio a single tactical order may draw on. Like the one above it bounds each order rather than the running total, so lowering it slows how fast trading can build a position rather than capping the position itself.",
+        "cs": "Podíl portfolia, ze kterého smí čerpat jeden taktický příkaz. Stejně jako výše omezuje jednotlivý příkaz, ne průběžný součet - snížení tedy zpomalí, jak rychle obchodování pozici vybuduje, spíš než že by pozici zastropovalo.",
+    },
+    "trade_sizing_risk_pct_label": {
+        "en": "Risked per trade (% of portfolio)",
+        "cs": "Riskováno na obchod (% portfolia)",
+    },
+    "trade_sizing_risk_pct_help": {
+        "en": "How much of the portfolio is lost if the stop loss is hit. Sized against the stop, so a tighter stop allows a larger position for the same risk. Ignored when an order has no stop loss, because there is then no defined loss to size against.",
+        "cs": "Kolik z portfolia se ztratí, když se dosáhne stop lossu. Počítá se proti stopu, takže těsnější stop dovolí větší pozici při stejném riziku. Bez stop lossu se ignoruje, protože pak není definovaná ztráta, proti které měřit.",
+    },
+    "trade_sizing_save_button": {
+        "en": "Save sizing",
+        "cs": "Uložit velikosti",
+    },
     "replay_app_tour_button": {
         "en": "Replay app tour",
         "cs": "Zopakovat prohlídku aplikace",

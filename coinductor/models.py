@@ -52,6 +52,10 @@ class DesktopRunResult:
     # Empty for a run recorded before the report carried it, and for a summary
     # that is ours rather than the model's - both mean "nothing to explain".
     ai_language: str = ""
+    # Which ceiling produced the approved order size, as the machine key the
+    # journal stores. Empty for a rejected proposal and for any run from before
+    # sizing recorded it; the screen shows nothing rather than guessing.
+    binding_limit: str = ""
 
 
 @dataclass(frozen=True)

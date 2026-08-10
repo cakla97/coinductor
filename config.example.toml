@@ -74,8 +74,23 @@ decision_threshold_pct = 0.5
 max_trades_per_day = 1
 max_daily_loss_pct = 1.0
 max_weekly_loss_pct = 3.0
+# The three percentages below are of total portfolio value, and each is a
+# ceiling on how large one approved order may be. The order becomes the
+# smallest of them, of what the analyst proposed, and of what the account can
+# actually pay - so on a small account funding usually decides, and on a large
+# one these do. Percentages rather than amounts so the same config behaves
+# sensibly whatever the portfolio is worth.
+#
+# Note what these bound: a single order, not the position it builds towards.
+# What is already held is not part of the arithmetic, so repeated buys can
+# accumulate past max_position_pct_per_asset. Read it as "how big a bite",
+# not as "never hold more than this".
 max_position_pct_per_asset = 10.0
 max_total_trading_capital_pct = 20.0
+# Sized against the stop loss: at most this much of the portfolio is lost if
+# the stop is hit. A tighter stop therefore allows a larger position for the
+# same risk. Ignored when there is no stop loss, because there is then no
+# defined loss to size against.
 max_risk_per_trade_pct = 0.25
 min_ai_confidence = 0.65
 cooldown_after_loss_hours = 24
@@ -114,7 +129,21 @@ redeem_type = "FAST"
 
 [strategy]
 allowed_symbols = ["BTCUSDC", "ETHUSDC"]
-quote_amount_usdt = 25.0
+# Two ceilings on one order, and the smaller wins.
+#
+# The percentage is meant to be the one that normally decides, so that the
+# same config behaves sensibly on a 500 account and a 50,000 one. The flat
+# amount is a backstop for the far end - "whatever the percentage says, never
+# more than this much money in one order" - and is deliberately set high
+# enough not to be what limits an ordinary portfolio. Lower it if you want a
+# hard cash ceiling; a flat number small enough to bind everywhere is how this
+# stopped reacting to portfolio size in the first place.
+#
+# Both are cut down further by the [risk] percentages and by what the account
+# can actually pay, and neither is what guards a real order: that is
+# live_confirm.max_quote_amount_usdt.
+quote_amount_usdt = 250.0
+max_trade_pct_of_portfolio = 3.0
 timeframes = ["4h", "1d"]
 decision_modes = ["HOLD", "SPOT_TRADE_RECOMMENDATION", "REBALANCE_RECOMMENDATION", "GRID_BOT_RECOMMENDATION"]
 

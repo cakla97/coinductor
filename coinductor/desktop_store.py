@@ -55,7 +55,11 @@ class DesktopStore:
                         str(report_path),
                     )
                     trade_proposal = self._trade_proposal(connection, int(latest["id"]))
-                    latest_result = latest_result.__class__(**{**latest_result.__dict__, "trade_proposal": trade_proposal})
+                    latest_result = latest_result.__class__(**{
+                        **latest_result.__dict__,
+                        "trade_proposal": trade_proposal,
+                        "binding_limit": self._binding_limit(connection, int(latest["id"])),
+                    })
                 portfolio = self._portfolio(connection, int(latest["id"]))
                 strategies = self._strategies(connection, int(latest["id"]))
                 position_protection = self._position_protection(connection, int(latest["id"]))
@@ -807,6 +811,25 @@ class DesktopStore:
             (run_id,),
         ).fetchone()
         return self._manual_step_specs(row["summary_message"]) if row is not None else []
+
+    def _binding_limit(self, connection: sqlite3.Connection, run_id: int) -> str:
+        """Which ceiling produced the approved order size.
+
+        `_column_expr` covers the journals written before the column existed,
+        which is every install upgrading to it - they read as empty, and the
+        screen then says nothing rather than inventing a reason.
+        """
+        if not self._table_exists(connection, "risk_decisions"):
+            return ""
+        columns = self._columns(connection, "risk_decisions")
+        row = connection.execute(
+            f"""
+            select {self._column_expr(columns, "binding_limit")}
+            from risk_decisions where run_id = ? order by rowid desc limit 1
+            """,
+            (run_id,),
+        ).fetchone()
+        return str(row["binding_limit"] or "") if row is not None else ""
 
     def _risk_decision(self, connection: sqlite3.Connection, run_id: int) -> list[dict[str, object]]:
         """The verdict behind the Risk gate tile, unrendered."""

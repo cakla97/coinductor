@@ -3789,7 +3789,7 @@ ApplicationWindow {
                     }
                 }
                 // Bottom spacer, so it has to stay the last row on the page.
-                Item { Layout.row: 6; Layout.fillWidth: true; Layout.preferredHeight: 44 }
+                Item { Layout.row: 7; Layout.fillWidth: true; Layout.preferredHeight: 44 }
                 // The cap used to be reachable only by opening config.toml, which
                 // is the one thing this app promises nobody has to do.
                 Rectangle {
@@ -3862,6 +3862,166 @@ ApplicationWindow {
                             text: appController.appText.order_caps_suggestion_template
                                 .replace("{suggested}", appController.orderCaps.suggested)
                             color: appController.orderCaps.aboveSuggestion ? warning : textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+                // One layer earlier than the cap above: what size the analysis
+                // considers appropriate, rather than what may reach the
+                // exchange. Three of these were readable only in config.toml
+                // and, until the sizing change, did nothing at all.
+                Rectangle {
+                    objectName: "tradeSizingPanel"
+                    Layout.row: 6
+                    Layout.fillWidth: true
+                    // Fixed for the same reason as the panel above: a height
+                    // derived from anchored children is circular in a
+                    // GridLayout and collapses the card to zero.
+                    //
+                    // 500 rather than a guess: the content measures 462 at its
+                    // tallest, which is English at the window's minimum width
+                    // (Czech wraps to 451), plus the 16px margin at each end.
+                    Layout.preferredHeight: 500
+                    radius: radiusMd
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        id: tradeSizingContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 8
+                        Text {
+                            text: appController.appText.trade_sizing_title
+                            color: textPrimary
+                            font.pixelSize: 16
+                            font.bold: true
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.trade_sizing_description
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                        GridLayout {
+                            Layout.fillWidth: true
+                            columns: 3
+                            columnSpacing: 10
+                            rowSpacing: 6
+
+                            Text {
+                                text: appController.appText.trade_sizing_trade_pct_label
+                                color: textSecondary; font.pixelSize: 12
+                                // Wraps rather than overflowing: a label wider
+                                // than its column drew straight over the input
+                                // beside it, and label lengths change with both
+                                // the language and the user's font.
+                                Layout.preferredWidth: 230
+                                Layout.maximumWidth: 230
+                                wrapMode: Text.WordWrap
+                            }
+                            TextField { id: tradePctInput; Layout.preferredWidth: 90; text: appController.tradeSizing.tradePct }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.trade_sizing_trade_pct_help
+                                color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
+                            }
+
+                            Text {
+                                text: appController.appText.trade_sizing_trade_amount_label
+                                color: textSecondary; font.pixelSize: 12
+                                // Wraps rather than overflowing: a label wider
+                                // than its column drew straight over the input
+                                // beside it, and label lengths change with both
+                                // the language and the user's font.
+                                Layout.preferredWidth: 230
+                                Layout.maximumWidth: 230
+                                wrapMode: Text.WordWrap
+                            }
+                            TextField { id: tradeAmountInput; Layout.preferredWidth: 90; text: appController.tradeSizing.tradeAmount }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.trade_sizing_trade_amount_help
+                                color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
+                            }
+
+                            Text {
+                                text: appController.appText.trade_sizing_position_pct_label
+                                color: textSecondary; font.pixelSize: 12
+                                // Wraps rather than overflowing: a label wider
+                                // than its column drew straight over the input
+                                // beside it, and label lengths change with both
+                                // the language and the user's font.
+                                Layout.preferredWidth: 230
+                                Layout.maximumWidth: 230
+                                wrapMode: Text.WordWrap
+                            }
+                            TextField { id: positionPctInput; Layout.preferredWidth: 90; text: appController.tradeSizing.positionPct }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.trade_sizing_position_pct_help
+                                color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
+                            }
+
+                            Text {
+                                text: appController.appText.trade_sizing_capital_pct_label
+                                color: textSecondary; font.pixelSize: 12
+                                // Wraps rather than overflowing: a label wider
+                                // than its column drew straight over the input
+                                // beside it, and label lengths change with both
+                                // the language and the user's font.
+                                Layout.preferredWidth: 230
+                                Layout.maximumWidth: 230
+                                wrapMode: Text.WordWrap
+                            }
+                            TextField { id: capitalPctInput; Layout.preferredWidth: 90; text: appController.tradeSizing.capitalPct }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.trade_sizing_capital_pct_help
+                                color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
+                            }
+
+                            Text {
+                                text: appController.appText.trade_sizing_risk_pct_label
+                                color: textSecondary; font.pixelSize: 12
+                                // Wraps rather than overflowing: a label wider
+                                // than its column drew straight over the input
+                                // beside it, and label lengths change with both
+                                // the language and the user's font.
+                                Layout.preferredWidth: 230
+                                Layout.maximumWidth: 230
+                                wrapMode: Text.WordWrap
+                            }
+                            TextField { id: riskPctInput; Layout.preferredWidth: 90; text: appController.tradeSizing.riskPct }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.trade_sizing_risk_pct_help
+                                color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
+                            }
+                        }
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 8
+                            Button {
+                                text: appController.appText.trade_sizing_save_button
+                                onClicked: appController.saveTradeSizing({
+                                    "tradePct": tradePctInput.text,
+                                    "tradeAmount": tradeAmountInput.text,
+                                    "positionPct": positionPctInput.text,
+                                    "capitalPct": capitalPctInput.text,
+                                    "riskPct": riskPctInput.text
+                                })
+                            }
+                            Item { Layout.fillWidth: true }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            visible: appController.tradeSizing.lastBoundBy !== ""
+                            text: appController.tradeSizing.lastBoundBy
+                            color: textSecondary
                             font.pixelSize: 11
                             wrapMode: Text.WordWrap
                         }

@@ -227,7 +227,8 @@ def test_manual_override_proposal_still_fails_the_consensus_gate() -> None:
     ]
 
     proposal = analyst.propose_manual_override("BTCUSDC", overbought_snapshot)
-    decision = risk_engine.evaluate(proposal=proposal, risk_state=risk_state, snapshots=overbought_snapshot)
+    decision = risk_engine.evaluate(proposal=proposal, risk_state=risk_state, snapshots=overbought_snapshot,
+                                    portfolio_value=None, spendable_quote=None)
 
     assert proposal.action == "BUY"  # the override itself was accepted as a candidate...
     assert decision.approved is False  # ...but the deterministic risk engine still rejects it

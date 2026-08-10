@@ -404,6 +404,46 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Nothing changed - those are the caps already in force.",
         "cs": "Nic se nezměnilo - tyhle stropy už platí.",
     },
+    "trade_sizing_invalid": {
+        "en": "Every value must be above zero, and a percentage cannot exceed 100.",
+        "cs": "Každá hodnota musí být větší než nula a procento nesmí přesáhnout 100.",
+    },
+    "trade_sizing_unchanged": {
+        "en": "Nothing changed.",
+        "cs": "Nic se nezměnilo.",
+    },
+    "trade_sizing_saved": {
+        "en": "Order sizing saved.",
+        "cs": "Velikosti příkazů uloženy.",
+    },
+    "trade_sizing_last_bound_template": {
+        "en": "The last analysed order was limited by: {limit}.",
+        "cs": "Poslední analyzovaný příkaz omezil: {limit}.",
+    },
+    "trade_sizing_limit_proposal": {
+        "en": "the flat maximum above",
+        "cs": "plochá pojistka výše",
+    },
+    "trade_sizing_limit_trade_size_pct": {
+        "en": "order size as a share of the portfolio",
+        "cs": "velikost příkazu jako podíl portfolia",
+    },
+    "trade_sizing_limit_position_per_asset": {
+        "en": "the per-asset share",
+        "cs": "podíl na jedno aktivum",
+    },
+    "trade_sizing_limit_total_trading_capital": {
+        "en": "the share allowed in active trading",
+        "cs": "podíl povolený v aktivním obchodování",
+    },
+    "trade_sizing_limit_risk_per_trade": {
+        "en": "the risk allowed per trade",
+        "cs": "riziko povolené na obchod",
+    },
+    "trade_sizing_limit_funding": {
+        "en": "what the account could actually pay",
+        "cs": "kolik účet reálně mohl zaplatit",
+    },
     "order_caps_invalid": {
         "en": "A cap must be a number greater than zero. Nothing was saved.",
         "cs": "Strop musí být číslo větší než nula. Nic se neuložilo.",

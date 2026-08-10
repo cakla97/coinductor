@@ -95,6 +95,14 @@ class FirstPortfolioExecutor:
                 snapshots=[],
                 skip_consensus=True,
                 allowed_symbols={symbol},
+                # Deliberately unbounded by the portfolio percentages. This is
+                # a first-portfolio basket the user sized and confirmed, split
+                # into tranches by the planner; a 10%-per-asset ceiling meant
+                # for tactical trades would refuse to build it. Every other
+                # deterministic limit above still applies, and the tranche
+                # amount is the one the user already agreed to.
+                portfolio_value=None,
+                spendable_quote=None,
             )
             if not risk_decision.approved:
                 result = FirstPortfolioTrancheResult(

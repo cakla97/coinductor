@@ -20,7 +20,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from trading_agent.config import load_config
+
 from .config_fields import Field, FieldGroup
+from .risk_profile import _apply
 
 SECTION = "earn"
 
@@ -39,6 +42,67 @@ GROUP = FieldGroup(
         Field("reserve", SECTION, "min_auto_redeem_reserve_usdc", allow_zero=True),
     )
 )
+
+
+# The switch itself, kept out of the FieldGroup because that machinery is for
+# numbers with ceilings and this is a yes/no. It shipped readable only in
+# config.toml, which is the one thing this app promises nobody has to open -
+# and it is the single most consequential setting on the screen.
+AUTO_KEY = "auto_funding_enabled"
+
+
+def read_auto_funding(config_path: str | Path) -> bool:
+    """Whether a run may move Earn to Spot unattended. Absent means no."""
+    try:
+        raw = load_config(str(config_path)).raw
+    except Exception:
+        return False
+    return bool(raw.get(SECTION, {}).get(AUTO_KEY, False))
+
+
+def apply_auto_funding(config_path: str | Path, enabled: object) -> dict[str, str]:
+    """Write the switch; return what changed, empty when nothing did."""
+    path = Path(config_path)
+    if not path.exists():
+        return {}
+    ensure_auto_key(path)
+    return _apply(path, SECTION, {AUTO_KEY: bool(enabled)})
+
+
+def ensure_auto_key(config_path: str | Path) -> bool:
+    """Create the key for a config written before the switch existed.
+
+    `_apply` only edits keys that already exist, so without this the toggle
+    reports success and changes nothing - and unlike a limit, silently failing
+    to turn this *off* would be the dangerous direction.
+    """
+    path = Path(config_path)
+    if not path.exists():
+        return False
+    text = path.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    start = next((i for i, line in enumerate(lines) if line.strip() == f"[{SECTION}]"), None)
+    if start is None:
+        return False
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        stripped = lines[index].strip()
+        if stripped.startswith("[") and stripped.endswith("]") and "=" not in stripped:
+            end = index
+            break
+    present = {
+        line.split("=", 1)[0].strip()
+        for line in lines[start + 1 : end]
+        if "=" in line and not line.strip().startswith("#")
+    }
+    if AUTO_KEY in present:
+        return False
+    insert_at = end
+    while insert_at > start + 1 and not lines[insert_at - 1].strip():
+        insert_at -= 1
+    lines.insert(insert_at, f"{AUTO_KEY} = false")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return True
 
 
 def read_funding(config_path: str | Path) -> dict[str, str]:

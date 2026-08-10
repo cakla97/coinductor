@@ -3797,8 +3797,10 @@ ApplicationWindow {
                     Layout.row: 7
                     Layout.fillWidth: true
                     // Fixed, like every card on this page; measured rather than
-                    // guessed, see the panel above. Same 490 + margins.
-                    Layout.preferredHeight: 530
+                    // guessed, see the panel above. The unattended-funding
+                    // switch and its explanation take it to 628 at the tallest
+                    // (English at 1400), plus the 16px margin at each end.
+                    Layout.preferredHeight: 670
                     radius: radiusMd
                     color: panel
                     border.color: border
@@ -3896,6 +3898,32 @@ ApplicationWindow {
                                 text: appController.appText.earn_funding_reserve_help
                                 color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
                             }
+                        }
+                        // The one switch on this page that changes what
+                        // happens while nobody is watching, so it sits apart
+                        // from the numbers rather than among them.
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: 10
+                            CheckBox {
+                                id: autoFundingToggle
+                                text: appController.appText.earn_funding_auto_label
+                                checked: appController.earnFunding.autoEnabled
+                                onToggled: appController.setAutoFunding(checked)
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.earn_funding_auto_help
+                                color: textSecondary; font.pixelSize: 10; wrapMode: Text.WordWrap
+                            }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            visible: appController.earnFunding.autoEnabled && !appController.earnFunding.autoArmed
+                            text: appController.appText.earn_funding_auto_needs_stage
+                            color: warning
+                            font.pixelSize: 10
+                            wrapMode: Text.WordWrap
                         }
                         RowLayout {
                             Layout.fillWidth: true

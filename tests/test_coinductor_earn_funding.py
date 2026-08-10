@@ -162,3 +162,115 @@ def test_the_panel_is_on_the_live_actions_page() -> None:
     # missing ones to zero and is refused as invalid.
     for field in ("runPct", "runAmount", "dayPct", "dayAmount", "reserve"):
         assert f'"{field}":' in qml
+
+
+# ---------------------------------------------------------------------------
+# The unattended-funding switch. It shipped in 1.4.0 readable only in
+# config.toml - a whole panel for the limits, and the switch itself left in
+# the file this app promises nobody has to open.
+# ---------------------------------------------------------------------------
+
+from coinductor.earn_funding import (  # noqa: E402
+    apply_auto_funding,
+    ensure_auto_key,
+    read_auto_funding,
+)
+
+
+def test_it_is_off_in_the_shipped_template(config: Path) -> None:
+    assert read_auto_funding(config) is False
+
+
+def test_an_absent_key_reads_as_off(tmp_path) -> None:
+    """Fail closed: the dangerous direction is reading absence as permission."""
+    path = tmp_path / "config.toml"
+    path.write_text(
+        TEMPLATE.read_text(encoding="utf-8").replace("auto_funding_enabled = false\n", ""),
+        encoding="utf-8",
+    )
+
+    assert read_auto_funding(path) is False
+
+
+def test_turning_it_on_and_off_round_trips(config: Path) -> None:
+    assert apply_auto_funding(config, True)
+    assert read_auto_funding(config) is True
+
+    assert apply_auto_funding(config, False)
+    assert read_auto_funding(config) is False
+
+
+def test_setting_it_to_what_it_already_is_changes_nothing(config: Path) -> None:
+    assert apply_auto_funding(config, False) == {}
+
+
+def test_a_config_predating_the_switch_gains_it(tmp_path) -> None:
+    """`_apply` only edits existing keys, so without this the toggle would
+    report success and change nothing - and silently failing to turn this
+    *off* is the direction that matters."""
+    path = tmp_path / "config.toml"
+    path.write_text(
+        TEMPLATE.read_text(encoding="utf-8").replace("auto_funding_enabled = false\n", ""),
+        encoding="utf-8",
+    )
+
+    assert ensure_auto_key(path) is True
+    apply_auto_funding(path, True)
+
+    assert read_auto_funding(path) is True
+
+
+def test_the_key_lands_in_the_earn_section(tmp_path) -> None:
+    path = tmp_path / "config.toml"
+    path.write_text(
+        TEMPLATE.read_text(encoding="utf-8").replace("auto_funding_enabled = false\n", ""),
+        encoding="utf-8",
+    )
+
+    ensure_auto_key(path)
+
+    from trading_agent.config import load_config
+
+    assert load_config(str(path)).raw["earn"]["auto_funding_enabled"] is False
+
+
+def test_the_screen_shows_and_sets_it(controller) -> None:
+    assert controller.earnFunding["autoEnabled"] is False
+
+    controller.setAutoFunding(True)
+
+    assert controller.earnFunding["autoEnabled"] is True
+
+
+def test_switching_it_says_what_it_did(controller) -> None:
+    """It changes what happens while nobody is watching; "saved" is not enough."""
+    controller.setWizardLanguage("cs")
+    notes: list[str] = []
+    controller.notificationRequested.connect(notes.append)
+
+    controller.setAutoFunding(True)
+    assert "zapnuté" in notes[-1]
+
+    controller.setAutoFunding(False)
+    assert "vypnuté" in notes[-1]
+
+
+def test_the_screen_reports_whether_the_stage_permits_it(controller) -> None:
+    """On below LIVE_ENABLED does nothing, and a switch that silently does
+    nothing is worse than one that is not there."""
+    assert controller.earnFunding["autoArmed"] is False
+
+    controller._safety_snapshot = controller._safety_snapshot.__class__(
+        **{**controller._safety_snapshot.__dict__, "stage": "LIVE_ENABLED"}
+    )
+
+    assert controller.earnFunding["autoArmed"] is True
+
+
+def test_the_toggle_is_on_the_panel() -> None:
+    qml = (Path(__file__).parents[1] / "coinductor" / "qml" / "Main.qml").read_text(encoding="utf-8")
+
+    assert "appController.setAutoFunding" in qml
+    assert "earn_funding_auto_label" in qml
+    # The warning only makes sense while it is on but cannot act.
+    assert "earnFunding.autoEnabled && !appController.earnFunding.autoArmed" in qml

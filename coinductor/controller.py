@@ -41,7 +41,13 @@ from .order_caps import (
     valid_caps,
 )
 from .paths import data_dir_label
-from .earn_funding import apply_funding_to_config, read_funding, valid_funding
+from .earn_funding import (
+    apply_auto_funding,
+    apply_funding_to_config,
+    read_auto_funding,
+    read_funding,
+    valid_funding,
+)
 from .suggested_limits import money_for_percent, suggested_limits
 from .trade_sizing import apply_sizing_to_config, read_sizing, valid_sizing
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions, SafetySnapshot
@@ -2422,7 +2428,28 @@ class AppController(QObject):
         """Composed when read: the config is the source of truth, not a cache."""
         values = dict(read_funding(default_config_path()))
         self._add_guidance(values, ("runPct", "dayPct"))
+        values["autoEnabled"] = read_auto_funding(default_config_path())
+        # Turning it on below LIVE_ENABLED does nothing, and a switch that
+        # silently does nothing is worse than one that is not there. The screen
+        # says which it is rather than leaving the user to find out by waiting.
+        values["autoArmed"] = self._safety_snapshot.stage == "LIVE_ENABLED"
         return values
+
+    @Slot(bool)
+    def setAutoFunding(self, enabled: bool) -> None:
+        """Turn unattended Earn funding on or off.
+
+        The one setting here that changes what happens without you present, so
+        it says plainly what it did rather than reporting "saved".
+        """
+        language = self._wizard_language
+        changed = apply_auto_funding(default_config_path(), enabled)
+        self.earnFundingChanged.emit()
+        if not changed:
+            self.notificationRequested.emit(service_text("earn_funding_unchanged", language))
+            return
+        key = "auto_funding_on" if enabled else "auto_funding_off"
+        self.notificationRequested.emit(service_text(key, language))
 
     @Slot("QVariantMap")
     def saveEarnFunding(self, values: dict) -> None:

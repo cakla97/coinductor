@@ -412,6 +412,14 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Run an analysis first and these will be suggested from what you actually hold.",
         "cs": "Nejdřív spusťte analýzu a tyhle hodnoty se doporučí podle toho, co skutečně držíte.",
     },
+    "auto_funding_on": {
+        "en": "Unattended Earn funding is on. It acts only when an approved action is waiting on the money.",
+        "cs": "Automatické financování z Earnu je zapnuté. Jedná jen tehdy, když na peníze čeká schválená akce.",
+    },
+    "auto_funding_off": {
+        "en": "Unattended Earn funding is off. Every redemption now waits for your typed confirmation.",
+        "cs": "Automatické financování z Earnu je vypnuté. Každý výběr teď čeká na vaše vypsané potvrzení.",
+    },
     "earn_funding_invalid": {
         "en": "Limits must be above zero, a reserve may be zero, and a percentage cannot exceed 100.",
         "cs": "Meze musí být větší než nula, rezerva smí být nula a procento nesmí přesáhnout 100.",

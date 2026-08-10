@@ -1330,6 +1330,18 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Untouchable, whatever the limits above allow. Zero is a real answer and means the balance may be drawn to nothing.",
         "cs": "Nedotknutelné bez ohledu na meze výše. Nula je platná odpověď a znamená, že zůstatek smí být vyčerpán do nuly.",
     },
+    "earn_funding_auto_label": {
+        "en": "Move Earn to Spot without asking me",
+        "cs": "Přesouvat z Earnu na Spot bez ptaní",
+    },
+    "earn_funding_auto_help": {
+        "en": "Off by default, and the only thing here that acts while you are away. It runs only when an action Coinductor already approved is waiting on the money, never for a Grid or Rebalancing bot — those have to be created by hand on Binance, so moving the money would only cost you yield. The limits above still apply, and an order still needs its own typed confirmation.",
+        "cs": "Ve výchozím stavu vypnuté a jediné, co tu jedná bez vaší přítomnosti. Spustí se jen tehdy, když na peníze čeká akce, kterou už Coinductor schválil — nikdy kvůli Grid ani Rebalancing botovi, ty se musí založit ručně na Binance, takže přesun peněz by vás jen stál výnos. Meze výše platí dál a příkaz pořád potřebuje vlastní vypsané potvrzení.",
+    },
+    "earn_funding_auto_needs_stage": {
+        "en": "Ignored until the safety stage is Live Enabled. Turning it on now is remembered, but nothing will move.",
+        "cs": "Ignoruje se, dokud není bezpečnostní stupeň Živě povoleno. Zapnutí se zapamatuje, ale nic se nepřesune.",
+    },
     "earn_funding_save_button": {
         "en": "Save funding limits",
         "cs": "Uložit meze financování",

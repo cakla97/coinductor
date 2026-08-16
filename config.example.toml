@@ -145,10 +145,29 @@ min_auto_redeem_reserve_usdc = 0.0
 # A redemption is not an order and not a withdrawal. It moves USDC between
 # parts of your own account, changes no exposure, and costs only forgone yield.
 auto_funding_enabled = false
-wait_for_redeem_seconds = 30
-require_redeem_success_before_order = true
+# Not a switch for executing anything, despite the name: the only gates on a
+# real redemption are the runtime flag plus CONFIRM_EARN_REDEEM, or
+# auto_funding_enabled plus the LIVE_ENABLED stage. What this does is fail the
+# readiness check while it is true, as a reminder not to arm live confirmation
+# before you mean to.
 execute_real_redeem = false
 redeem_type = "FAST"
+
+# Deliberately absent until they do something:
+#
+#   wait_for_redeem_seconds
+#   require_redeem_success_before_order
+#
+# Both shipped for a long time and were read by no code at all. The second one
+# in particular reads like a live guarantee, which is worse than not having it:
+# somebody auditing their safety posture would count a protection that was
+# never there.
+#
+# They only start to matter when an order can be submitted with nobody present.
+# Until then the human is the gate - the live preview already refuses to
+# proceed with "X USDC must be redeemed to Spot before order submission", and
+# you cannot type the order confirmation without reading it. They will come
+# back with the code that needs them.
 
 [strategy]
 allowed_symbols = ["BTCUSDC", "ETHUSDC"]

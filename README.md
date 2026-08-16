@@ -340,6 +340,7 @@ What can be automated is **the analysis, never the order**.
 | --- | --- |
 | **Scheduled analysis** | Runs on your interval while Coinductor is open. The window closes to the notification area so the schedule can continue; the tray icon has *Quit*. |
 | **Windows scheduled task** | Runs the same analysis with Coinductor closed, once a day at a time you pick, using this same executable with no window. A run missed because the PC was off happens as soon as it is next on. |
+| **Start with Windows** | Brings Coinductor back after a restart, into the notification area rather than a window, so a schedule does not depend on remembering to launch it. Off unless you turn it on, and unavailable until a schedule exists. It is an ordinary Windows startup entry, so Task Manager's *Startup apps* lists it and can disable it too. |
 | **New listing watch** | Notices pairs newly listed on Binance and tells you. It records and notifies — it never buys. |
 
 All three are listed on the **Automation** page with the time each runs next, and all three

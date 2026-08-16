@@ -21,6 +21,8 @@ ENGLISH = (
     "what does use suggested do",
     "how do i update coinductor",
     "how much can move from earn to spot",
+    "what is start with windows",
+    "how to set the order size",
 )
 
 CZECH = (
@@ -30,6 +32,8 @@ CZECH = (
     "co dela tlacitko pouzit doporucene",
     "jak mam udelat aktualizaci",
     "kolik se muze presunout z earnu na spot",
+    "k cemu je spoustet s windows",
+    "jak zaridit spusteni po prihlaseni",
 )
 
 
@@ -85,6 +89,12 @@ def test_the_assistant_says_bots_are_not_auto_funded(service: UiKnowledgeService
     assert "Grid" in answer and "Rebalancing" in answer
 
 
+def test_the_autostart_answer_says_it_starts_into_the_tray(service: UiKnowledgeService) -> None:
+    """The choice most likely to surprise: no window appears at logon."""
+    assert "notification area" in service.answer("what is start with windows")
+    assert "oznamovací oblasti" in service.answer("k cemu je spoustet s windows")
+
+
 def test_the_upgrade_answer_mentions_quitting_first(service: UiKnowledgeService) -> None:
     assert "tray" in service.answer("how do i update coinductor").lower()
     assert "Quit" in service.answer("jak mam udelat aktualizaci")
@@ -98,3 +108,6 @@ def test_an_unrelated_question_is_left_to_the_model(service: UiKnowledgeService)
     """
     assert service.answer("why is bitcoin falling today") is None
     assert service.answer("kolik stoji bitcoin") is None
+    # "jak nastavit" was added to the gate for settings questions; it must not
+    # turn every "how do I set up X" into a canned answer.
+    assert service.answer("jak nastavit budik") is None

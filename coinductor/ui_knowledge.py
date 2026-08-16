@@ -388,7 +388,7 @@ UI_KNOWLEDGE = (
         "Order sizing panel",
         "Live Actions",
         ("order sizing", "how large an order", "velikost prikaz", "jak velky prikaz",
-         "trade size", "max trade pct", "order size percent"),
+         "trade size", "max trade pct", "order size"),
         "The order sizing panel decides what size the analysis considers appropriate, one layer before the cap that guards what may reach the exchange. The approved amount is the smallest of: what the analyst proposed, your order-size percentage of the portfolio, the flat never-more-than amount, the per-asset and trading-capital percentages, the risk-per-trade percentage measured against the stop loss, and what your account can actually pay. Every value is a ceiling, so raising one alone cannot enlarge an order - another ceiling then binds. The percentages bound a single order, not the position it builds towards: what you already hold is not counted, so repeated buys can accumulate past them.",
         "Panel velikosti příkazu rozhoduje, jakou velikost analýza považuje za přiměřenou - o úroveň dřív než strop, který hlídá, co smí odejít na burzu. Schválená částka je minimum z: návrhu analytika, vašeho procenta portfolia na příkaz, ploché meze „nikdy víc než“, procent na aktivum a na obchodní kapitál, procenta rizika na obchod měřeného proti stop lossu, a toho, co účet reálně zaplatí. Každá hodnota je strop, takže zvýšení jediné z nich příkaz zvětšit nemůže - pak váže jiná. Procenta omezují jeden příkaz, ne výslednou pozici: to, co už držíte, se nezapočítává, takže opakované nákupy se přes ně můžou nasčítat.",
     ),
@@ -396,7 +396,8 @@ UI_KNOWLEDGE = (
         "Earn funding panel",
         "Live Actions",
         ("earn funding", "earn to spot", "presun z earnu", "financovani z earnu",
-         "redeem limit", "auto funding", "automaticky presun", "z earnu na spot"),
+         "redeem limit", "auto funding", "automaticky presun", "z earnu na spot",
+         "meze financovani", "funding limit"),
         "The Earn funding panel decides how much may move from Simple Earn Flexible to Spot so an approved action can be paid for. This is a transfer inside your own account, not a withdrawal: Coinductor cannot withdraw and refuses an API key that could. Each limit is a flat amount and a percentage of portfolio value, and the smaller wins; there is a per-run limit, a per-day limit counted across every run, and a reserve that is never touched. Only redemptions that actually went through count against the day. Automatic funding is off by default and is ignored below the LIVE_ENABLED safety stage.",
         "Panel financování z Earnu rozhoduje, kolik se smí přesunout ze Simple Earn Flexible na Spot, aby šla zaplatit schválená akce. Jde o přesun uvnitř vašeho účtu, ne o výběr: Coinductor vybírat neumí a API klíč, který by to uměl, odmítne. Každá mez je plochá částka i procento portfolia a platí menší; je tam mez na běh, mez na den počítaná napříč všemi běhy, a rezerva, na kterou se nesahá. Do denního součtu se počítají jen výběry, které skutečně proběhly. Automatický přesun je ve výchozím stavu vypnutý a pod stupněm LIVE_ENABLED se ignoruje.",
     ),
@@ -432,6 +433,15 @@ UI_KNOWLEDGE = (
         "Quit a running Coinductor from the tray icon before installing a new version. The single-instance guard only recognises instances that have it, so upgrading while an older one runs can leave two instances with two schedules writing one journal. From one guarded version to the next, launching again simply returns to the window that is already open.",
         "Před instalací nové verze ukončete běžící Coinductor přes ikonu v oznamovací oblasti (Quit). Ochrana proti druhé instanci pozná jen instance, které ji samy mají, takže upgrade při běžící starší verzi může nechat dvě instance se dvěma rozvrhy zapisující do jednoho journalu. Mezi verzemi, které ochranu mají, další spuštění jen vrátí okno, které už je otevřené.",
     ),
+    UiKnowledgeEntry(
+        "Start with Windows",
+        "Automation",
+        ("start with windows", "start on logon", "spoustet s windows", "po prihlaseni",
+         "autostart", "spustit po startu", "start automatically", "spusteni po prihlaseni",
+         "spoustet po", "sam spustit"),
+        "Start with Windows brings Coinductor back after a restart, so a schedule does not depend on somebody remembering to launch it. Off unless you turn it on, and unavailable until a scheduled analysis exists - a background app with nothing to do is one people hunt down in Task Manager. It starts into the notification area rather than opening a window, because the reason to start is that the schedule runs, which needs a process rather than a screen; open it from the tray icon whenever you want to look. It is an ordinary Windows startup entry, so Task Manager's Startup apps tab lists it and can disable it too.",
+        "Spouštět s Windows vrátí Coinductor po restartu, aby rozvrh nezávisel na tom, jestli si někdo vzpomene aplikaci spustit. Ve výchozím stavu vypnuté a nedostupné, dokud neexistuje naplánovaná analýza - aplikace běžící na pozadí bez práce je ta, kterou lidi hledají ve Správci úloh. Spustí se do oznamovací oblasti místo otevření okna, protože důvodem ke spuštění je běžící rozvrh, a k tomu je potřeba proces, ne obrazovka; kdykoli se chcete podívat, otevřete ho přes ikonu v traye. Je to běžná položka po spuštění Windows, takže ji vypisuje i záložka Aplikace po spuštění ve Správci úloh a jde vypnout i tam.",
+    ),
 )
 
 
@@ -457,6 +467,7 @@ def _looks_like_explanation_request(query: str) -> bool:
             "why cant", "why can t", "cannot", "how can i", "how do i", "what should i do",
             "why is", "why was", "why did", "why does", "proc je", "proc byl", "proc se",
             "proc ma", "proc mi", "how much", "how many", "kolik", "kdy se", "when does",
+            "jak zaridit", "jak nastavit", "how do i set", "how to set",
             "not working", "proc nemohu", "proc nemuzu", "co mam udelat", "jak mohu", "jak muzu",
             "jak mam", "jak zprovoznit", "nejde mi", "nefunguje", "co si mam",
         )

@@ -2208,8 +2208,8 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "cs": "Nastavte, aby analýza běžela podle rozvrhu, dokud je Coinductor otevřený, nebo zaregistrujte úlohu ve Windows, ať běží i zavřený. Seznam pod tím ukazuje, co je aktivní a kdy co poběží příště.",
     },
     "app_tour_automation_tip": {
-        "en": "A scheduled run only ever reads. It cannot place an order, because the confirmation you type is what authorises one and no timer can type.",
-        "cs": "Naplánovaný běh jen čte. Příkaz zadat nemůže, protože ho povoluje potvrzení, které vypisujete vy, a to žádný časovač nenapíše.",
+        "en": "A scheduled run only ever reads. It cannot place an order, because the confirmation you type is what authorises one and no timer can type. Start with Windows brings Coinductor back after a restart, into the notification area, so none of this depends on remembering to launch it.",
+        "cs": "Naplánovaný běh jen čte. Příkaz zadat nemůže, protože ho povoluje potvrzení, které vypisujete vy, a to žádný časovač nenapíše. Spouštět s Windows vrátí Coinductor po restartu do oznamovací oblasti, takže nic z toho nezávisí na tom, jestli si vzpomenete ho spustit.",
     },
     "app_tour_ai_assistant_title": {
         "en": "Ask for explanations, not permission bypasses",

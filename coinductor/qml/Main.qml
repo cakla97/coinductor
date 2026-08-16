@@ -4571,6 +4571,60 @@ ApplicationWindow {
                     }
                 }
 
+
+                // Not a schedule of its own - it is what makes the schedules
+                // above survive a restart. Height from its content, which this
+                // page allows because it is a ColumnLayout rather than the
+                // GridLayout on Live Actions.
+                Rectangle {
+                    objectName: "startupPanel"
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: startupContent.implicitHeight + 32
+                    visible: appController.startOnLogon.supported
+                    radius: radiusMd
+                    color: panel
+                    border.color: appController.startOnLogon.enabled ? accent : border
+                    ColumnLayout {
+                        id: startupContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 8
+                        Text {
+                            text: appController.appText.startup_title
+                            color: textPrimary
+                            font.pixelSize: 16
+                            font.bold: true
+                        }
+                        CheckBox {
+                            id: startupToggle
+                            text: appController.appText.startup_label
+                            checked: appController.startOnLogon.enabled
+                            // Nothing for a background process to do without a
+                            // schedule, and an app that starts itself to sit
+                            // idle is one people hunt down in Task Manager.
+                            enabled: appController.startOnLogon.useful
+                            onToggled: appController.setStartOnLogon(checked)
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.startup_help
+                            color: textSecondary
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            visible: !appController.startOnLogon.useful
+                            text: appController.appText.startup_needs_automation
+                            color: warning
+                            font.pixelSize: 11
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
                 Text {
                     Layout.fillWidth: true
                     visible: !appController.schedules.some(function (item) { return item.active })

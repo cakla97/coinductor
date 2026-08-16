@@ -412,6 +412,22 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "Run an analysis first and these will be suggested from what you actually hold.",
         "cs": "Nejdřív spusťte analýzu a tyhle hodnoty se doporučí podle toho, co skutečně držíte.",
     },
+    "startup_enabled": {
+        "en": "Coinductor will start in the notification area when you sign in.",
+        "cs": "Coinductor se po přihlášení spustí do oznamovací oblasti.",
+    },
+    "startup_disabled": {
+        "en": "Coinductor will no longer start on its own. Nothing runs until you open it.",
+        "cs": "Coinductor se už sám nespustí. Dokud ho neotevřete, nic neběží.",
+    },
+    "startup_not_windows": {
+        "en": "Starting at sign-in is available on Windows only.",
+        "cs": "Spuštění po přihlášení je dostupné jen na Windows.",
+    },
+    "startup_failed": {
+        "en": "Windows refused the startup entry. Nothing was changed.",
+        "cs": "Windows odmítly zápis položky po spuštění. Nic se nezměnilo.",
+    },
     "auto_funding_on": {
         "en": "Unattended Earn funding is on. It acts only when an approved action is waiting on the money.",
         "cs": "Automatické financování z Earnu je zapnuté. Jedná jen tehdy, když na peníze čeká schválená akce.",

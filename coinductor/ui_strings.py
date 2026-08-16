@@ -1350,6 +1350,26 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Use suggested",
         "cs": "Použít doporučené",
     },
+    "startup_title": {
+        "en": "Start with Windows",
+        "cs": "Spouštět s Windows",
+    },
+    "startup_label": {
+        "en": "Start Coinductor when I sign in",
+        "cs": "Spustit Coinductor po přihlášení",
+    },
+    "startup_help": {
+        "en": "Starts into the notification area, not into a window — the point is that the schedule runs, which needs a process rather than a screen. Open it from the tray icon whenever you want to look. Windows lists it under Task Manager → Startup apps, so you can disable it there too.",
+        "cs": "Spustí se do oznamovací oblasti, ne do okna — jde o to, aby běžel rozvrh, a k tomu je potřeba proces, ne obrazovka. Kdykoli se chcete podívat, otevřete ho přes ikonu v traye. Windows to vypisuje v Správci úloh → Aplikace po spuštění, takže to jde vypnout i tam.",
+    },
+    "startup_needs_automation": {
+        "en": "Turn on a scheduled analysis first. Without one there is nothing for a background Coinductor to do.",
+        "cs": "Nejdřív zapněte naplánovanou analýzu. Bez ní nemá Coinductor na pozadí co dělat.",
+    },
+    "startup_unsupported": {
+        "en": "Windows only.",
+        "cs": "Jen pro Windows.",
+    },
     "trade_sizing_title": {
         "en": "How large an order the analysis proposes",
         "cs": "Jak velký příkaz analýza navrhne",

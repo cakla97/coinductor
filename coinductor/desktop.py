@@ -60,6 +60,7 @@ def main() -> int:
 
     from .controller import AppController
     from .single_instance import SingleInstanceGuard, instance_key
+    from .startup import wants_tray_start
     from .tray import CoinductorTray
 
     # QApplication rather than QGuiApplication: QSystemTrayIcon lives in
@@ -110,6 +111,16 @@ def main() -> int:
     controller.trayVisibilityRequested.connect(follow_tray)
     controller.wizardLanguageChanged.connect(tray.retranslate)
     controller.refreshTrayVisibility()
+
+    # A logon start wants the schedule running, not a window in the way. Only
+    # honoured when a tray icon is actually going to be there: hiding without
+    # one leaves a process the user can neither see nor stop, which is the
+    # exact failure follow_tray exists to avoid. Without the tray the window
+    # simply opens, which is a visible wrong answer rather than an invisible
+    # one.
+    if wants_tray_start() and controller.keepRunningInTray and CoinductorTray.available():
+        engine.rootObjects()[0].hide()
+
     return app.exec()
 
 

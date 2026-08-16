@@ -48,6 +48,10 @@ from .earn_funding import (
     read_funding,
     valid_funding,
 )
+from .startup import disable as disable_startup
+from .startup import enable as enable_startup
+from .startup import is_enabled as startup_is_enabled
+from .startup import is_supported as startup_is_supported
 from .suggested_limits import money_for_percent, suggested_limits
 from .trade_sizing import apply_sizing_to_config, read_sizing, valid_sizing
 from .models import AiProviderHealthResult, ConnectionCheckResult, DesktopRunResult, RunOptions, SafetySnapshot
@@ -2237,6 +2241,28 @@ class AppController(QObject):
         if remaining < 0:
             return ""
         return (datetime.now() + timedelta(milliseconds=remaining)).strftime("%H:%M")
+
+    @Property("QVariantMap", notify=automationChanged)
+    def startOnLogon(self) -> dict[str, object]:
+        """Whether Coinductor comes back on its own after a restart.
+
+        `useful` rather than `enabled`: with no automation configured there is
+        nothing for a background process to do, and an app that starts itself
+        to sit idle in the tray is one people hunt down in Task Manager.
+        """
+        return {
+            "supported": startup_is_supported(),
+            "enabled": startup_is_enabled(),
+            "useful": read_automation(default_config_path()).enabled,
+        }
+
+    @Slot(bool)
+    def setStartOnLogon(self, enabled: bool) -> None:
+        """Add or remove the logon entry. Says which, not just "saved"."""
+        language = self._wizard_language
+        _, reason = enable_startup() if enabled else disable_startup()
+        self.automationChanged.emit()
+        self.notificationRequested.emit(service_text(reason.split(":")[0], language))
 
     @Property("QVariantMap", notify=automationChanged)
     def scheduledTask(self) -> dict[str, object]:

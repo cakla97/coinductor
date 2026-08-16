@@ -4,6 +4,45 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.4.3] — 2026-08-10
+
+### Added
+
+- **Start with Windows.** Coinductor can come back after a restart, so a schedule stops
+  depending on somebody remembering to launch it. Off unless you turn it on, on the
+  Automation page, and unavailable until a scheduled analysis exists — an app that starts
+  itself to sit idle in the tray is one people hunt down in Task Manager, and rightly.
+
+  It starts **into the notification area, not into a window**. The reason to start at all
+  is that the schedule should be running, which needs a process rather than a screen; open
+  it from the tray icon whenever you want to look. It refuses to hide unless a tray icon
+  will actually be there, so it can never leave something you can neither see nor stop.
+
+  Registered as an ordinary Windows startup entry, so Task Manager's *Startup apps* lists
+  it and can disable it too — the same reasoning as using `schtasks` for the daily run.
+- The assistant and the app tour know about it, in both languages.
+
+### Changed
+
+- **The config template no longer claims guards that do not exist.**
+  `wait_for_redeem_seconds` and `require_redeem_success_before_order` shipped for a long
+  time and were read by no code at all. The second reads like a live guarantee, which is
+  worse than not having it: somebody auditing their safety posture would count a protection
+  that was never there.
+
+  They are removed rather than wired up, because today the human is the gate — the live
+  preview already refuses with *"X USDC must be redeemed to Spot before order submission"*
+  and you cannot type the order confirmation without reading it. They start to matter only
+  when an order can be submitted with nobody present, and they will come back with the code
+  that needs them. The template says so where they used to be.
+- `execute_real_redeem` is documented as what it is: a readiness assertion, not a switch
+  for executing anything.
+
+### Fixed
+
+- The assistant now answers *"how to set…"* and *"jak zařídit / jak nastavit…"* questions,
+  which never reached its knowledge at all.
+
 ## [1.4.2] — 2026-08-10
 
 ### Fixed

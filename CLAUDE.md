@@ -8,7 +8,7 @@ Local Binance Spot assistant. Two packages, one direction of dependency:
 ## Commands
 
 ```bash
-python -m pytest -q                                   # 816 tests, ~35s, fully offline
+python -m pytest -q                                   # 839 tests, ~40s, fully offline
 python -m ruff check trading_agent coinductor tests   # must be clean
 python -m trading_agent run --config config.example.toml
 python -m coinductor.desktop                          # desktop app (needs the desktop extra)

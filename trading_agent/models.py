@@ -15,6 +15,15 @@ class Balance:
     locked_amount: Decimal = Decimal("0")
 
 
+# A trend regime is a claim about a 200-period average, so it needs 200 periods
+# to be a claim at all. Anything shorter is reported as its own regime rather
+# than squeezed into RISK_ON/NEUTRAL/RISK_OFF: every gate that reads the regime
+# compares against RISK_ON, so an unknown value is refused by all of them
+# instead of being waved through by one that forgot to ask.
+TREND_INSUFFICIENT_HISTORY = "INSUFFICIENT_HISTORY"
+MIN_TREND_CANDLES = 200
+
+
 @dataclass(frozen=True)
 class MarketSnapshot:
     symbol: str

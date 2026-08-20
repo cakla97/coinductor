@@ -442,6 +442,46 @@ UI_KNOWLEDGE = (
         "Start with Windows brings Coinductor back after a restart, so a schedule does not depend on somebody remembering to launch it. Off unless you turn it on, and unavailable until a scheduled analysis exists - a background app with nothing to do is one people hunt down in Task Manager. It starts into the notification area rather than opening a window, because the reason to start is that the schedule runs, which needs a process rather than a screen; open it from the tray icon whenever you want to look. It is an ordinary Windows startup entry, so Task Manager's Startup apps tab lists it and can disable it too.",
         "Spouštět s Windows vrátí Coinductor po restartu, aby rozvrh nezávisel na tom, jestli si někdo vzpomene aplikaci spustit. Ve výchozím stavu vypnuté a nedostupné, dokud neexistuje naplánovaná analýza - aplikace běžící na pozadí bez práce je ta, kterou lidi hledají ve Správci úloh. Spustí se do oznamovací oblasti místo otevření okna, protože důvodem ke spuštění je běžící rozvrh, a k tomu je potřeba proces, ne obrazovka; kdykoli se chcete podívat, otevřete ho přes ikonu v traye. Je to běžná položka po spuštění Windows, takže ji vypisuje i záložka Aplikace po spuštění ve Správci úloh a jde vypnout i tam.",
     ),
+    UiKnowledgeEntry(
+        "New version notice",
+        "Overview",
+        ("new version", "update", "aktualizace", "nova verze", "upgrade",
+         "update check", "kontrola aktualizaci", "je k dispozici",
+         "nove verzi", "nove verze", "verzi", "aktualizaci", "aktualizace",
+         "novejsi verze", "novou verzi"),
+        "Coinductor asks GitHub once a day whether a newer release exists and, if so, puts a line at the top of Overview saying which version and which one you are running. Never a dialog: something that pops up on every launch is something people close without reading. The line stays until you upgrade, costs nothing to ignore, and 'Not now' puts that particular version away - a later release speaks up again. It never downloads or installs anything; upgrading stays a thing you do. This is the only request Coinductor makes that is neither Binance nor your AI provider, it sends nothing about you, and Settings has a switch to stop it entirely.",
+        "Coinductor se jednou denně zeptá GitHubu, jestli existuje novější vydání, a pokud ano, napíše nahoře na Přehledu, která verze je k dispozici a kterou používáte. Nikdy ne dialog: co vyskočí při každém spuštění, to lidé zavírají bez čtení. Řádek zůstane, dokud neaktualizujete, nic nestojí ho ignorovat, a 'Teď ne' odloží konkrétní verzi - pozdější vydání se ozve znovu. Nic nestahuje ani neinstaluje; aktualizace zůstává na vás. Je to jediný dotaz, který Coinductor posílá jinam než na Binance nebo na vašeho AI poskytovatele, neodesílá o vás nic a v Nastavení je přepínač, kterým se dá úplně vypnout.",
+    ),
+    UiKnowledgeEntry(
+        "Allowed for analysis",
+        "New listings",
+        ("allowed symbols", "povolene symboly", "povoleno pro analyzu", "remove symbol",
+         "odebrat symbol", "allowed for analysis", "seznam paru", "allowlist",
+         "odebrat z analyzy", "pridat symbol", "odeberu symbol", "odeberu",
+         "povolene symboly", "povolenych symbolu", "seznam symbolu",
+         "symbol z analyzy", "analyzy symbol"),
+        "Every run considers only the pairs on this list. The New listings page shows the list in full, each entry with its own Remove - the listing feed only keeps recent pairs, so a symbol allowed weeks ago has no card left to press, and that is usually the one worth removing. Adding a pair is not a buy: it only becomes eligible for the same analysis, risk checks, funding check and typed confirmation as any other. Removing takes it out of the next analysis and sells nothing you already hold.",
+        "Každý běh zvažuje jen páry z tohoto seznamu. Obrazovka Nové listingy ukazuje celý seznam a u každé položky tlačítko Odebrat - seznam listingů drží jen nedávné páry, takže symbol povolený před týdny už žádnou kartu nemá, a právě ten je obvykle ten, který chcete pryč. Přidání páru není nákup: jen se stane způsobilým pro stejnou analýzu, rizikové kontroly, kontrolu financování a napsané potvrzení jako kterýkoli jiný. Odebrání ho vyřadí z příští analýzy a nic z toho, co držíte, neprodá.",
+    ),
+    UiKnowledgeEntry(
+        "Proposed and approved amount",
+        "Trade",
+        ("proposed amount", "approved amount", "navrzena castka", "schvalena castka",
+         "quote amount", "kolik nakoupi", "limited by", "omezilo", "objem",
+         "schvalene castky", "navrzene castky", "schvalenou castku"),
+        "The Trade screen shows two amounts because they are two different things. The proposed amount is what the model asked for; the approved amount is what the risk engine allowed after every ceiling was applied, and it is the figure that would actually be submitted. 'Limited by' names the ceiling that produced it - often what the account could actually pay. They can differ by a lot: a proposal of 77 USDC with 11.90 available becomes an 11.90 order. A rejected proposal shows no approved amount at all, because a refused order has no size.",
+        "Obrazovka Trade ukazuje dvě částky, protože jsou to dvě různé věci. Navržená částka je to, oč požádal model; schválená částka je to, co povolil risk engine po uplatnění všech stropů, a je to číslo, které by se skutečně odeslalo. 'Omezilo' pojmenuje strop, který ji určil - často kolik účet reálně mohl zaplatit. Můžou se lišit hodně: návrh 77 USDC při dostupných 11,90 se stane příkazem na 11,90. U zamítnutého návrhu se schválená částka nezobrazí vůbec, protože odmítnutý příkaz žádnou velikost nemá.",
+    ),
+    UiKnowledgeEntry(
+        "Too little price history",
+        "Trade",
+        ("insufficient history", "kratka historie", "malo historie", "nova mince",
+         "new listing trend", "ema200", "200denni prumer", "not tradeable yet",
+         "neobchoduje se", "neobchoduje", "kratkou historii", "kratke historie",
+         "malo svicek", "kratkou cenovou historii"),
+        "A pair needs 200 days of candles before Coinductor will judge its trend, and refuses a buy on anything shorter. A 200-day average computed from three weeks of prices is not a measurement, and a freshly listed pair would otherwise look like a strong uptrend to every check that reads it. The refusal sits outside the consensus gate on purpose: it is missing data rather than a view about the market, so turning consensus off does not turn it off. The grid advisor refuses those pairs too, because a range bet needs a range to have been observed in.",
+        "Pár potřebuje 200 dní svíček, než Coinductor posoudí jeho trend, a nákup na čemkoli kratším odmítne. Dvousetdenní průměr spočítaný ze tří týdnů cen není měření a čerstvě listovaný pár by jinak vypadal jako silný růst pro každou kontrolu, která ho čte. Odmítnutí schválně stojí mimo konsenzuální bránu: jde o chybějící data, ne o názor na trh, takže vypnutí konsenzu ho nevypne. Grid advisor takové páry odmítá také, protože sázka na rozpětí potřebuje rozpětí, které bylo kdy pozorované.",
+    ),
 )
 
 
@@ -470,6 +510,11 @@ def _looks_like_explanation_request(query: str) -> bool:
             "jak zaridit", "jak nastavit", "how do i set", "how to set",
             "not working", "proc nemohu", "proc nemuzu", "co mam udelat", "jak mohu", "jak muzu",
             "jak mam", "jak zprovoznit", "nejde mi", "nefunguje", "co si mam",
+            # Plain "what is this" and "where do I find/turn off this" are the
+            # commonest way either language asks, and both fell straight through.
+            "co je", "kde je", "kde najdu", "kde vypnu", "kde zapnu", "kde se",
+            "jak odeberu", "jak pridam", "jak vypnu", "jak zapnu",
+            "where is", "where do i", "where can i", "how to", "what are",
         )
     )
 

@@ -10,7 +10,13 @@ import ssl
 import time
 from urllib.parse import urlencode, urlsplit
 
-from .models import Balance, MarketSnapshot, SymbolRules
+from .models import (
+    MIN_TREND_CANDLES,
+    TREND_INSUFFICIENT_HISTORY,
+    Balance,
+    MarketSnapshot,
+    SymbolRules,
+)
 
 # Binance answers 429 when a request exceeds a rate limit and escalates to 418
 # (temporary IP ban) when 429s keep coming. 5xx means the request status is
@@ -276,7 +282,7 @@ class BinanceClient:
         recent_volume = sum(volumes[-7:]) / Decimal("7")
         prior_volume = sum(volumes[-14:-7]) / Decimal("7")
         volume_trend = "rising" if recent_volume >= prior_volume else "falling"
-        trend_regime = self._trend_regime(price, ema20, ema50, ema200, rsi14)
+        trend_regime = self._trend_regime(price, ema20, ema50, ema200, rsi14, len(closes))
         return MarketSnapshot(
             symbol=symbol,
             price=price,
@@ -500,8 +506,21 @@ class BinanceClient:
             return ssl.create_default_context()
 
     def _ema(self, values: list[Decimal], period: int) -> Decimal:
+        """Seeded on the candles that exist, not on the ones we asked for.
+
+        Dividing the seed by `period` when fewer candles came back does not
+        produce a rough average - it produces a fraction of one. A pair listed
+        twenty days ago got an "EMA200" near a tenth of its price, so
+        `price > ema200` was true by arithmetic, every symbol freshly listed
+        looked like a strong uptrend, and the consensus gate that reads it
+        waved them through. `_trend_regime` refuses short history outright;
+        this keeps the number itself honest for everything that reads it.
+        """
+        if not values:
+            return Decimal("0")
+        seed = values[:period]
+        ema = sum(seed) / Decimal(len(seed))
         multiplier = Decimal("2") / Decimal(period + 1)
-        ema = sum(values[:period]) / Decimal(period)
         for value in values[period:]:
             ema = (value - ema) * multiplier + ema
         return ema
@@ -532,7 +551,20 @@ class BinanceClient:
             )
         return sum(true_ranges[-period:]) / Decimal(period)
 
-    def _trend_regime(self, price: Decimal, ema20: Decimal, ema50: Decimal, ema200: Decimal, rsi14: Decimal) -> str:
+    def _trend_regime(
+        self,
+        price: Decimal,
+        ema20: Decimal,
+        ema50: Decimal,
+        ema200: Decimal,
+        rsi14: Decimal,
+        candles: int,
+    ) -> str:
+        # Said before anything else: a pair with three weeks of history has no
+        # 200-day trend to be on the right side of, and calling it NEUTRAL would
+        # hide that behind a word that sounds like a measurement.
+        if candles < MIN_TREND_CANDLES:
+            return TREND_INSUFFICIENT_HISTORY
         if price > ema50 > ema200 and Decimal("40") <= rsi14 <= Decimal("70"):
             return "RISK_ON"
         if price < ema50 < ema200 or rsi14 < Decimal("35"):

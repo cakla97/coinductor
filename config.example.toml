@@ -361,3 +361,13 @@ watch_listings = false
 listing_interval_minutes = 15
 # These rows have no run_id, so ordinary run retention cannot prune them.
 listing_keep = 200
+
+[updates]
+# Ask GitHub once a day whether a newer Coinductor has been released, and say so
+# on the Overview page. This is the only request Coinductor makes that is not to
+# Binance or to your configured AI provider, which is why it is written here
+# rather than left implicit: it sends nothing about you, reads the public
+# releases feed, and can be turned off here or in Settings.
+#
+# It never downloads or installs anything. Upgrading stays a thing you do.
+check_on_start = true

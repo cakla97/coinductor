@@ -57,6 +57,14 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
         "en": "New listing watch is off.",
         "cs": "Sledování nových listingů je vypnuté.",
     },
+    "allowed_symbol_removed": {
+        "en": "{symbol} was taken off the analysis list.",
+        "cs": "{symbol} byl odebrán ze seznamu pro analýzu.",
+    },
+    "allowed_symbol_not_there": {
+        "en": "{symbol} was not on the analysis list.",
+        "cs": "{symbol} na seznamu pro analýzu nebyl.",
+    },
     "allowed_symbol_added": {
         "en": "{symbol} can now be analysed. Nothing was bought - run an analysis, then confirm as usual if you want to act.",
         "cs": "{symbol} se teď smí analyzovat. Nic se nekoupilo - spusťte analýzu a pokud budete chtít jednat, potvrďte ji jako obvykle.",
@@ -1141,7 +1149,9 @@ SERVICE_STRINGS: dict[str, dict[str, str]] = {
     "trade_param_action": {"en": "Action", "cs": "Akce"},
     "trade_param_symbol": {"en": "Symbol", "cs": "Symbol"},
     "trade_param_confidence": {"en": "Confidence", "cs": "Jistota"},
-    "trade_param_quote": {"en": "Quote amount", "cs": "Objem v kotaci"},
+    "trade_param_quote": {"en": "Proposed amount", "cs": "Navržená částka"},
+    "trade_param_quote_approved": {"en": "Approved amount", "cs": "Schválená částka"},
+    "trade_param_bound_by": {"en": "Limited by", "cs": "Omezilo"},
     "trade_param_run_decision": {"en": "Run decision", "cs": "Rozhodnutí běhu"},
     # --- Privacy & data (Settings) ---
     "privacy_binance_name": {"en": "Binance account data", "cs": "Data účtu Binance"},

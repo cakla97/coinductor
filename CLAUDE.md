@@ -89,6 +89,26 @@ submit path without passing through the risk engine.
 - **Two panels write into one `[automation]` section**, so an omitted value means "leave it"
   rather than "turn it off". `_apply` only edits keys that already exist, so a new key needs
   `ensure_section` or it is accepted and silently discarded.
+- **An indicator is only as long as the candles behind it.** `_ema` seeds on
+  `values[:period]` and must divide by `len(seed)`, not by `period` - dividing by the
+  full period when fewer candles came back returns a fraction of an average, not a rough
+  one, and `price > ema200` then holds by arithmetic for every new listing. Symbols
+  under `MIN_TREND_CANDLES` get `TREND_INSUFFICIENT_HISTORY` and the risk engine refuses
+  them **outside** the consensus block, because that is missing data rather than a market
+  view and must survive `consensus.enabled = false` and `skip_consensus`.
+- **The Trade screen must show the approved amount, not only the proposal.** They differ
+  by a lot when a ceiling binds, and the submit button is directly underneath.
+- **Anything the UI can add, the UI has to be able to remove.** `allowed_symbols` was
+  addable from a listing card and removable only by editing the config, and the listing
+  feed drops old pairs - so the symbols most worth removing had no card at all. The
+  allowed list is shown in full on *New listings* for that reason.
+- **The update check is the only request that is neither Binance nor the AI provider.**
+  It must stay switchable off in three places (Settings, `[updates] check_on_start`,
+  `COINDUCTOR_DISABLE_UPDATE_CHECK`), must never download or install anything, and must
+  report nothing on any failure - a false "you are out of date" is worse than silence.
+  Read it through `read_check_on_start`, never `load_config` directly: the env guard is
+  what keeps the suite offline, and wiring around it once sent every Qt test to github.com
+  and crashed the run.
 - **`config.toml` and `state/` are gitignored.** `config.example.toml` is the tracked
   template and is what the tests load.
 - **Version lives only in `trading_agent/__init__.py`.** pyproject reads it dynamically,

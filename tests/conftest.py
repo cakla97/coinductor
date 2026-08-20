@@ -20,5 +20,8 @@ def isolate_credentials(monkeypatch):
     Autouse so tests added later are covered too.
     """
     monkeypatch.setenv("COINDUCTOR_DISABLE_KEYCHAIN", "1")
+    # Same reason, newer leak: the update check runs when a controller is built,
+    # so without this every Qt test would reach github.com.
+    monkeypatch.setenv("COINDUCTOR_DISABLE_UPDATE_CHECK", "1")
     for key in MANAGED_KEYS:
         monkeypatch.delenv(key, raising=False)

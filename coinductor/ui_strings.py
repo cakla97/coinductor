@@ -2112,6 +2112,46 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "en": "Analysis allowed",
         "cs": "Analýza povolena",
     },
+    "update_available_title": {
+        "en": "Coinductor {version} is available",
+        "cs": "K dispozici je Coinductor {version}",
+    },
+    "update_available_detail": {
+        "en": "You are running {current}. Quit from the tray icon first, then install over the top - your settings and journal stay where they are.",
+        "cs": "Používáte {current}. Nejdřív ukončete aplikaci přes ikonu v traye, pak instalujte přes stávající - nastavení i žurnál zůstanou, kde jsou.",
+    },
+    "update_open_button": {
+        "en": "Open the release",
+        "cs": "Otevřít vydání",
+    },
+    "update_dismiss_button": {
+        "en": "Not now",
+        "cs": "Teď ne",
+    },
+    "update_check_label": {
+        "en": "Check GitHub for new versions on start",
+        "cs": "Při spuštění hledat nové verze na GitHubu",
+    },
+    "update_check_help": {
+        "en": "Once a day at most. It reads the public releases feed, sends nothing about you, and never downloads or installs anything.",
+        "cs": "Nejvýš jednou denně. Čte veřejný seznam vydání, neodesílá o vás nic a nikdy nic nestahuje ani neinstaluje.",
+    },
+    "allowed_symbols_title": {
+        "en": "Allowed for analysis",
+        "cs": "Povoleno pro analýzu",
+    },
+    "allowed_symbols_description": {
+        "en": "Every run considers these pairs and no others. Removing one takes it out of the next analysis; it does not sell anything you already hold.",
+        "cs": "Každý běh zvažuje tyto páry a žádné jiné. Odebrání vyřadí pár z příští analýzy; nic z toho, co držíte, tím neprodáte.",
+    },
+    "allowed_symbols_empty": {
+        "en": "No pairs are allowed, so every run will hold.",
+        "cs": "Není povolen žádný pár, takže každý běh skončí držením.",
+    },
+    "listings_remove_button": {
+        "en": "Remove from analysis",
+        "cs": "Odebrat z analýzy",
+    },
     # --- app tour ---
     # One entry per step of the guided tour behind Settings > Replay app tour.
     # The nav label of each step is reused from the nav_* keys above.

@@ -4,6 +4,61 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [1.5.0] — 2026-08-20
+
+### Added
+
+- **Coinductor says when a newer version exists.** It asks GitHub once a day and, if there
+  is one, puts a line at the top of *Portfolio Overview* naming the version and the one you
+  are running. Deliberately not a dialog: something that appears on every launch is
+  something people learn to close without reading, which defeats the point of showing it.
+  The line costs nothing to ignore, stays until the upgrade happens, and *Not now* puts
+  that version away — a later release speaks up again.
+
+  It never downloads or installs anything. This is **the only request Coinductor makes that
+  is neither Binance nor the configured AI provider**, which is why it is written into the
+  config template rather than left implicit: it reads the public releases feed, sends
+  nothing about you, and can be switched off in *Settings*, via `[updates] check_on_start`,
+  or with `COINDUCTOR_DISABLE_UPDATE_CHECK=1`. Every failure — offline, rate limited, a tag
+  that will not parse — reports nothing rather than guessing, because a false "you are out
+  of date" is worse than silence.
+
+- **The Trade screen shows the order, not only the request.** The proposal and the
+  approved amount are separate lines, with the ceiling that bound it. It showed the
+  model's figure alone, directly above the submit button: a run that proposed 77.00 USDC
+  and had 11.90 approved — bound by what the account could actually pay — displayed
+  77.00 and nothing else.
+- **A pair can be taken off the analysis list from the screen that puts it on.**
+  `remove_allowed_symbol` was written and tested with the add path and then wired to
+  nothing, so a symbol allowed by one click could only be removed by hand-editing the
+  config. *New listings* now lists everything currently allowed, each with its own
+  Remove — the listing feed only keeps recent pairs, and a symbol allowed weeks ago has
+  no card left to press, which is exactly the one people want gone.
+- The assistant answers about all three, in both languages — including the Czech forms
+  ("co je to…", "kde vypnu…") the question gate did not previously recognise at all.
+
+### Fixed
+
+- **A pair with three weeks of history no longer reads as a 200-day uptrend.** The EMA
+  seed divided the sum of every candle that existed by the *full* period rather than by
+  how many there actually were. Found in a real journal: a pair listed twenty days
+  earlier recorded `price 46.70, ema50 21.1660, ema200 5.2915` — and `21.1660 × 50` and
+  `5.2915 × 200` are both 1058.30, the same sum divided two different ways. So
+  `price > ema50 > ema200` held by arithmetic, the regime came out RISK_ON, the consensus
+  gate's `require_price_above_ema200` waved it through, and the pair was proposed on
+  sixteen consecutive runs while the majors were filtered out as overbought.
+
+  Every freshly listed symbol looked like a strong uptrend. The seed now divides by the
+  candles that exist.
+- **Short history is refused outright, not averaged into a number.** A correct mean of
+  twenty candles is still not a 200-day trend, so a symbol without the periods behind it
+  gets its own regime, `INSUFFICIENT_HISTORY`, and the risk engine rejects a BUY on it.
+  That check sits **outside** the consensus block: it is the absence of the data the
+  other gates are computed from, not a view about the market, so neither
+  `consensus.enabled = false` nor `skip_consensus` can switch it off. The grid advisor
+  rejects it too — a range bet needs a range to have been observed in.
+
+
 ## [1.4.3] — 2026-08-10
 
 ### Added

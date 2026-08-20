@@ -2004,6 +2004,57 @@ ApplicationWindow {
                     }
                 }
 
+                // A line, not a dialog. A dialog on every launch is one people
+                // learn to close without reading, which is the opposite of
+                // getting the message across. This costs nothing to ignore,
+                // stays until the upgrade happens, and can be put away for this
+                // version by someone who does not want it.
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: updateBannerRow.implicitHeight + 26
+                    visible: appController.updateInfo.available
+                    radius: radiusLg
+                    color: panelRaised
+                    border.color: accent
+                    RowLayout {
+                        id: updateBannerRow
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.leftMargin: 16
+                        anchors.rightMargin: 16
+                        spacing: 12
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: 2
+                            Text {
+                                text: appController.appText.update_available_title
+                                    .replace("{version}", appController.updateInfo.version)
+                                color: accent
+                                font.pixelSize: 14
+                                font.bold: true
+                            }
+                            Text {
+                                Layout.fillWidth: true
+                                text: appController.appText.update_available_detail
+                                    .replace("{current}", appController.updateInfo.current)
+                                color: textSecondary
+                                font.pixelSize: 12
+                                wrapMode: Text.WordWrap
+                            }
+                        }
+                        Button {
+                            text: appController.appText.update_open_button
+                            onClicked: appController.openReleasePage()
+                        }
+                        Button {
+                            flat: true
+                            text: appController.appText.update_dismiss_button
+                            onClicked: appController.dismissUpdateNotice()
+                        }
+                    }
+                }
+
                 RowLayout {
                     Layout.fillWidth: true
                     ColumnLayout {
@@ -4311,6 +4362,61 @@ ApplicationWindow {
                     }
                 }
 
+                // The list itself, not the feed that adds to it. A pair allowed
+                // weeks ago has no listing card left to press, and that is
+                // precisely the pair someone wants to remove - so the allowed
+                // set is shown in full, with the way out next to each entry.
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: allowedSymbolsContent.implicitHeight + 32
+                    radius: radiusMd
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        id: allowedSymbolsContent
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 8
+                        Text {
+                            text: appController.appText.allowed_symbols_title
+                            color: textPrimary
+                            font.pixelSize: 15
+                            font.bold: true
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            text: appController.appText.allowed_symbols_description
+                            color: textSecondary
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                        }
+                        Repeater {
+                            model: appController.allowedSymbols
+                            delegate: RowLayout {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                spacing: 12
+                                CopyableValue { value: modelData; font.pixelSize: 13; font.bold: true }
+                                Item { Layout.fillWidth: true }
+                                Button {
+                                    text: appController.appText.listings_remove_button
+                                    onClicked: appController.removeAllowedSymbol(modelData)
+                                }
+                            }
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            visible: appController.allowedSymbols.length === 0
+                            text: appController.appText.allowed_symbols_empty
+                            color: textSecondary
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
+
                 Text {
                     Layout.fillWidth: true
                     visible: appController.listings.length === 0
@@ -4350,12 +4456,18 @@ ApplicationWindow {
                                     .replace("{when}", modelData.firstSeenAt)
                                 font.pixelSize: 11
                             }
+                            // Reads the config, not the acknowledged flag: the
+                            // list the runs actually use is the one this offers
+                            // to change. Anything that can be added here has to
+                            // be removable here, or the only way back is a text
+                            // editor.
                             Button {
-                                text: modelData.acknowledged
-                                    ? appController.appText.listings_allowed_button
+                                text: modelData.allowed
+                                    ? appController.appText.listings_remove_button
                                     : appController.appText.listings_allow_button
-                                enabled: !modelData.acknowledged
-                                onClicked: appController.addAllowedSymbol(modelData.symbol)
+                                onClicked: modelData.allowed
+                                    ? appController.removeAllowedSymbol(modelData.symbol)
+                                    : appController.addAllowedSymbol(modelData.symbol)
                             }
                         }
                     }
@@ -4749,8 +4861,38 @@ ApplicationWindow {
                     Item { Layout.fillWidth: true }
                 }
 
-
-
+                // The only request Coinductor makes that is neither Binance nor
+                // the configured AI provider, so it gets its own switch and says
+                // plainly what it does.
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: updateCheckColumn.implicitHeight + 32
+                    radius: radiusMd
+                    color: panel
+                    border.color: border
+                    ColumnLayout {
+                        id: updateCheckColumn
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 16
+                        spacing: 6
+                        CheckBox {
+                            id: updateCheckBox
+                            text: appController.appText.update_check_label
+                            checked: appController.updateCheckEnabled
+                            onToggled: appController.setUpdateCheckEnabled(checked)
+                        }
+                        Text {
+                            Layout.fillWidth: true
+                            Layout.leftMargin: 8
+                            text: appController.appText.update_check_help
+                            color: textSecondary
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+                }
 
                 Rectangle {
                     Layout.fillWidth: true

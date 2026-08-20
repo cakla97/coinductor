@@ -162,6 +162,16 @@ Download `Coinductor-<version>-portable.zip`, extract it anywhere, and run
 
 ### Updating
 
+Coinductor asks GitHub once a day whether a newer release exists and, if there is one, puts
+a line at the top of *Portfolio Overview* naming it. Never a dialog: something that pops up
+on every launch is something people learn to close without reading. The line stays until you
+upgrade, and *Not now* puts that version away — a later release says so again.
+
+It never downloads or installs anything. **This is the only request Coinductor makes that is
+neither Binance nor your configured AI provider**: it reads the public releases feed, sends
+nothing about you, and *Settings* has a switch to stop it. `[updates] check_on_start` in
+`config.toml` is the same switch, and `COINDUCTOR_DISABLE_UPDATE_CHECK=1` overrides both.
+
 **Quit a running Coinductor from its tray icon before installing a new version.** Closing
 the window is not enough when a schedule is active — that is the point of the tray icon,
 and the process keeps running behind it.
@@ -351,6 +361,18 @@ else can without you: the confirmation phrase is typed by a person, and no timer
 
 **Your PC has to be on.** Nothing runs while the machine is off, and there is no server
 doing it for you — that is the price of the app having no account and no telemetry.
+
+### Choosing what gets analysed
+
+Every run considers the pairs on one list and no others. **New listings** shows that list in
+full, each entry with its own *Remove* — the listing feed only keeps recent pairs, so a
+symbol allowed weeks ago has no card left to press, and that is usually the one worth
+taking off. Adding a pair is not a buy: it becomes eligible for the same analysis, risk
+checks, funding check and typed confirmation as anything else.
+
+A pair needs 200 days of candles before Coinductor will judge its trend, and a buy on
+anything shorter is refused outright — a 200-day average computed from three weeks of prices
+is not a measurement.
 
 ### About new listings
 

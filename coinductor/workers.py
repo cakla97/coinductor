@@ -22,6 +22,7 @@ from .assistant import ProviderBackedAssistant
 from .connection_check import ConnectionCheckService, LiveTradingCheckService, TestnetCheckService
 from .first_portfolio_executor import FirstPortfolioExecutor
 from .models import RunOptions
+from .update_check import UpdateCheckService
 
 
 class AnalysisWorker(QObject):
@@ -270,5 +271,31 @@ class ListingScanWorker(QObject):
             config = load_config(self.config_path)
             watcher = ListingWatcher(config.raw, Storage(config.database_path), keep=self.keep)
             self.completed.emit(watcher.scan())
+        finally:
+            self.finished.emit()
+
+
+class UpdateCheckWorker(QObject):
+    """Asks GitHub for the newest published release.
+
+    Off the GUI thread for the same reason every other network call here is: a
+    launch must not wait on a host that may not answer. It reports a version
+    string or nothing, and has no failure signal - there is no failure worth
+    telling anyone about, because being offline is the normal state of this app.
+    """
+
+    completed = Signal(str)
+    finished = Signal()
+
+    def __init__(self, service: UpdateCheckService):
+        super().__init__()
+        self.service = service
+
+    @Slot()
+    def run(self) -> None:
+        try:
+            self.completed.emit(self.service.fetch())
+        except Exception:
+            self.completed.emit("")
         finally:
             self.finished.emit()

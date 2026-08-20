@@ -5,6 +5,7 @@ from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 from .decimal_utils import money
 from .messages import ManualStep, Message, render_manual_steps, render_message, render_messages
 from .models import (
+    TREND_INSUFFICIENT_HISTORY,
     ActiveStrategiesReport,
     GridCandidateAssessment,
     GridRecommendation,
@@ -182,6 +183,10 @@ class GridBotAdvisor:
         watch_score = Decimal(str(config.get("watch_score", "45")))
         hard_reject = (
             snapshot.trend_regime == "RISK_OFF"
+            # A grid is a range bet, and a range needs a history to have been
+            # observed in. Rejected here as well as in the risk engine because
+            # a grid never passes through it.
+            or snapshot.trend_regime == TREND_INSUFFICIENT_HISTORY
             or snapshot.rsi14 < Decimal(str(config.get("min_rsi14", "40")))
             or snapshot.rsi14 > Decimal(str(config.get("max_rsi14", "65")))
             or ema_distance > max_ema_distance

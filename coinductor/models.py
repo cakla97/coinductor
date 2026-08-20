@@ -56,6 +56,12 @@ class DesktopRunResult:
     # journal stores. Empty for a rejected proposal and for any run from before
     # sizing recorded it; the screen shows nothing rather than guessing.
     binding_limit: str = ""
+    # What the risk engine actually approved, as opposed to what the model asked
+    # for. The two differ by a lot when a ceiling binds - a proposal of 77 was
+    # cut to 11.90 by available funding - and the Trade screen showed only the
+    # proposal, directly above the button that submits the order. Empty for a
+    # rejected proposal and for runs recorded before this was read.
+    approved_quote_amount: str = ""
 
 
 @dataclass(frozen=True)

@@ -456,6 +456,10 @@ MESSAGE_TEXT: dict[str, dict[str, str]] = {
         "en": "Consensus gate: {symbol} trend regime is {regime}, not RISK_ON.",
         "cs": "Konsenzuální brána: trendový režim {symbol} je {regime}, ne RISK_ON.",
     },
+    "risk_insufficient_history": {
+        "en": "{symbol} has too little price history for a 200-day trend, so it is not tradeable yet.",
+        "cs": "{symbol} má příliš krátkou cenovou historii na 200denní trend, zatím se s ním neobchoduje.",
+    },
     "risk_below_ema200": {
         "en": "Consensus gate: {symbol} price is not above EMA200.",
         "cs": "Konsenzuální brána: cena {symbol} není nad EMA200.",

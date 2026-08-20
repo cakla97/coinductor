@@ -4,7 +4,13 @@ from decimal import Decimal
 
 from .decimal_utils import display
 from .messages import Message, render_message
-from .models import LiveRiskState, MarketSnapshot, RiskDecision, TradeProposal
+from .models import (
+    TREND_INSUFFICIENT_HISTORY,
+    LiveRiskState,
+    MarketSnapshot,
+    RiskDecision,
+    TradeProposal,
+)
 
 
 class RiskEngine:
@@ -58,6 +64,17 @@ class RiskEngine:
             return self._reject(Message("risk_daily_loss_limit"))
         if risk_state.weekly_loss_pct >= Decimal(str(risk["max_weekly_loss_pct"])):
             return self._reject(Message("risk_weekly_loss_limit"))
+        # Outside the consensus block on purpose. Every other trend check sits
+        # behind `consensus.enabled` or `skip_consensus`, and this one is not a
+        # view about the market - it is the absence of the data those views are
+        # computed from. A caller that has good reason to skip consensus still
+        # has no reason to buy a pair whose averages are made of three weeks.
+        if proposal.action == "BUY":
+            snapshot = next((item for item in snapshots if item.symbol == proposal.symbol), None)
+            if snapshot is not None and snapshot.trend_regime == TREND_INSUFFICIENT_HISTORY:
+                return self._reject(
+                    Message("risk_insufficient_history", {"symbol": proposal.symbol})
+                )
         if not skip_consensus:
             consensus_reason = self._consensus_rejection(proposal, snapshots)
             if consensus_reason is not None:

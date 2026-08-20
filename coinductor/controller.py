@@ -8,6 +8,7 @@ from uuid import uuid4
 from PySide6.QtCore import QObject, Property, QThread, QTimer, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices, QGuiApplication, QImageReader
 
+from trading_agent import __version__ as APP_VERSION
 from trading_agent.config import default_config_path, load_config
 from trading_agent.messages import ManualStep, render_manual_step, render_message
 from trading_agent.storage import Storage
@@ -21,7 +22,7 @@ from .desktop_store import DesktopStore
 from .first_portfolio_planner import FirstPortfolioPlanner
 from .diagnostics_service import DiagnosticsService
 from .guide_service import GuideService
-from .allowed_symbols import add_allowed_symbol
+from .allowed_symbols import add_allowed_symbol, read_allowed_symbols, remove_allowed_symbol
 from .automation import (
     MAX_INTERVAL_HOURS,
     MAX_LISTING_MINUTES,
@@ -31,6 +32,12 @@ from .automation import (
     read_automation,
 )
 from .catch_up import CatchUpService
+from .update_check import (
+    RELEASES_PAGE,
+    UpdateCheckService,
+    apply_check_on_start,
+    read_check_on_start,
+)
 from .local_data_reset import LocalDataResetService
 from .scheduled_task import is_supported, query_task, register_task, remove_task
 from .order_caps import (
@@ -80,6 +87,7 @@ from .workers import (
     LiveTradingCheckWorker,
     LocalAiHardwareWorker,
     TestnetCheckWorker,
+    UpdateCheckWorker,
 )
 
 
@@ -119,6 +127,7 @@ class AppController(QObject):
     # looking at one.
     trayMessageRequested = Signal(str, str)
     trayVisibilityRequested = Signal(bool)
+    updateAvailableChanged = Signal()
 
     def __init__(self, parent: QObject | None = None):
         super().__init__(parent)
@@ -278,6 +287,10 @@ class AppController(QObject):
         self._apply_listing_timer()
         self._reload_listings()
         self._report_catch_up()
+        self._update_check = UpdateCheckService()
+        self._update_thread: QThread | None = None
+        self._update_worker = None
+        self._start_update_check()
 
     @Property(bool, notify=busyChanged)
     def busy(self) -> bool:
@@ -2110,9 +2123,18 @@ class AppController(QObject):
     def _reload_listings(self) -> None:
         try:
             config = load_config(default_config_path())
-            self._listings = Storage(config.database_path).get_recent_listings(50)
+            listings = Storage(config.database_path).get_recent_listings(50)
         except Exception:
             self._listings = []
+            return
+        # `acknowledged` records that the card was actioned once; the config is
+        # what the run actually reads. They part company the moment a symbol is
+        # taken off the list, and the button has to follow the config or it
+        # offers to remove something that is already gone.
+        allowed = set(read_allowed_symbols(default_config_path()))
+        self._listings = [
+            {**row, "allowed": str(row.get("symbol", "")).upper() in allowed} for row in listings
+        ]
 
     @Slot()
     def _clear_listing_worker(self) -> None:
@@ -2172,6 +2194,44 @@ class AppController(QObject):
             self.listingsChanged.emit()
         self.notificationRequested.emit(
             service_text(reason, self._wizard_language).format(symbol=str(symbol).strip().upper())
+        )
+
+    @Property("QVariantList", notify=listingsChanged)
+    def allowedSymbols(self) -> list[str]:
+        """The pairs every run analyses, read from the config when asked.
+
+        The listing feed only keeps the most recent pairs, so a symbol allowed
+        three weeks ago has no card left to press - which is exactly the symbol
+        someone wants to take off the list. This is the list itself, so nothing
+        can be on it without being visible here.
+        """
+        return read_allowed_symbols(default_config_path())
+
+    @Slot(str)
+    def removeAllowedSymbol(self, symbol: str) -> None:
+        """The other half of the deliberate step, on the same screen.
+
+        `remove_allowed_symbol` was written and tested with the add path and
+        then reached from nowhere, so a pair put on the list by one click could
+        only be taken off it by hand-editing the config - which is exactly the
+        thing this app exists to avoid asking for. A listing added months ago
+        and forgotten is the case that matters: it stays in every analysis until
+        somebody can take it out.
+        """
+        normalized = str(symbol).strip().upper()
+        removed = remove_allowed_symbol(default_config_path(), normalized)
+        if removed:
+            try:
+                self._manual_override_symbols = load_config(default_config_path()).allowed_symbols
+            except Exception:
+                pass
+            self._reload_listings()
+            self.listingsChanged.emit()
+        self.notificationRequested.emit(
+            service_text(
+                "allowed_symbol_removed" if removed else "allowed_symbol_not_there",
+                self._wizard_language,
+            ).format(symbol=normalized)
         )
 
     @Property(bool, notify=automationChanged)
@@ -2322,6 +2382,73 @@ class AppController(QObject):
         )
         self._catch_up.mark_seen(result.latest_run_id)
 
+    # -- a newer release ----------------------------------------------------
+
+    @Property("QVariantMap", notify=updateAvailableChanged)
+    def updateInfo(self) -> dict[str, object]:
+        """What the Overview line should say, composed when read."""
+        version = self._update_check.available()
+        return {
+            "available": bool(version),
+            "version": version,
+            "current": f"v{APP_VERSION}",
+            "url": RELEASES_PAGE,
+        }
+
+    def _start_update_check(self) -> None:
+        """Ask GitHub, at most once a day, and only if the config allows it.
+
+        Deliberately silent about every failure. This is the one request that is
+        neither Binance nor the configured AI provider, so it must never be the
+        reason a launch is slow or an error appears.
+        """
+        if not read_check_on_start(default_config_path()) or self._update_thread is not None:
+            return
+        # Emitted regardless of whether we ask: a record written yesterday still
+        # has something to report today.
+        self.updateAvailableChanged.emit()
+        if not self._update_check.due():
+            return
+        self._update_worker = UpdateCheckWorker(self._update_check)
+        self._update_worker.completed.connect(self._on_update_checked)
+        self._update_thread = self._start_worker(self._update_worker, self._clear_update_worker)
+
+    def _on_update_checked(self, tag: str) -> None:
+        if tag:
+            self._update_check.record(tag)
+        self.updateAvailableChanged.emit()
+
+    def _clear_update_worker(self) -> None:
+        self._update_thread = None
+        self._update_worker = None
+
+    @Property(bool, notify=updateAvailableChanged)
+    def updateCheckEnabled(self) -> bool:
+        return read_check_on_start(default_config_path())
+
+    @Slot(bool)
+    def setUpdateCheckEnabled(self, enabled: bool) -> None:
+        """Turn the check on or off, and ask straight away when turning it on.
+
+        Waiting for the next launch to honour a switch someone just moved makes
+        it look broken; `_start_update_check` is idempotent and rate-limited, so
+        calling it here costs nothing when the answer is already known.
+        """
+        apply_check_on_start(default_config_path(), enabled)
+        self.updateAvailableChanged.emit()
+        if enabled:
+            self._start_update_check()
+
+    @Slot()
+    def dismissUpdateNotice(self) -> None:
+        """Put this version's notice away; a later release says so again."""
+        self._update_check.dismiss()
+        self.updateAvailableChanged.emit()
+
+    @Slot()
+    def openReleasePage(self) -> None:
+        QDesktopServices.openUrl(QUrl(RELEASES_PAGE))
+
     @Slot()
     def announceTrayHide(self) -> None:
         """Tell the user the app is still running, and how to stop it."""
@@ -2423,14 +2550,24 @@ class AppController(QObject):
         run happened in - the same reason the risk gate and latest decision are
         composed at read time.
         """
+        phrase = self._binding_limit_phrase()
+        if not phrase:
+            return ""
+        return service_text("trade_sizing_last_bound_template", self._wizard_language).format(
+            limit=phrase
+        )
+
+    def _binding_limit_phrase(self) -> str:
+        """The bare reason, without the sentence around it.
+
+        The Trade screen shows it as the value of a labelled field, where the
+        full sentence would repeat the label back at the reader.
+        """
         latest = self._snapshot.latest_run if self._snapshot is not None else None
         key = str(getattr(latest, "binding_limit", "") or "") if latest is not None else ""
         if not key:
             return ""
-        language = self._wizard_language
-        return service_text("trade_sizing_last_bound_template", language).format(
-            limit=service_text(f"trade_sizing_limit_{key}", language)
-        )
+        return service_text(f"trade_sizing_limit_{key}", self._wizard_language)
 
     @Slot("QVariantMap")
     def saveTradeSizing(self, values: dict) -> None:
@@ -3517,6 +3654,22 @@ class AppController(QObject):
             {"label": service_text("trade_param_quote", language),
              "value": str(latest_trade.get("quoteAmount", "") if latest_trade else "")},
         ]
+        # The proposal is what the model asked for; the order is what the risk
+        # engine allowed. Showing only the first put "77.00" directly above the
+        # submit button on a run that had approved 11.90, which is the number
+        # that would actually have been sent. Both are shown, in that order, so
+        # the cut is visible rather than either figure standing in for the other.
+        latest_run = self._snapshot.latest_run if self._snapshot is not None else None
+        approved = str(getattr(latest_run, "approved_quote_amount", "") or "")
+        if approved:
+            trade_parameters.append(
+                {"label": service_text("trade_param_quote_approved", language), "value": approved}
+            )
+            bound_by = self._binding_limit_phrase()
+            if bound_by:
+                trade_parameters.append(
+                    {"label": service_text("trade_param_bound_by", language), "value": bound_by}
+                )
         if run_decision and run_decision != trade_status:
             # Keep it visible, but named for what it is - and spelled the way a
             # person reads rather than as the enum the engine stores.

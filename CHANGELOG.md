@@ -4,6 +4,25 @@ Notable changes per release. This project follows [Semantic Versioning](https://
 Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
 default takes a major version.
 
+## [Unreleased]
+
+### Changed
+
+- **Updating means uninstall first, and every place that mentions it now says so.**
+  Installing over a running Coinductor does not replace the files the running program still
+  has open, so the result is a mixture: the new screens and data files sitting on top of an
+  older program. It then misbehaves in ways that look nothing like a bad install — this was
+  found because the tray icon's right-click menu went dead while everything else worked, and
+  it survived a reinstall-over-the-top before a proper uninstall fixed it. The measurement:
+  the installed program shared none of the release's 81 PySide6 DLLs and its executable was
+  2.8 MB smaller, while `Main.qml` matched exactly.
+
+  Quit from the tray, uninstall, then install. Uninstalling removes the program only — the
+  config, journal, reports and API keys survive, and the uninstaller asks separately, with
+  both boxes unticked, before deleting either. The README, the update notice on Overview and
+  the assistant all carry the three steps now, and say where Windows lists a per-user
+  install: *Settings → Apps → Installed apps*, not the old Control Panel.
+
 ## [1.5.0] — 2026-08-20
 
 ### Added

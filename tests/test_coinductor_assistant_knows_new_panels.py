@@ -96,8 +96,11 @@ def test_the_autostart_answer_says_it_starts_into_the_tray(service: UiKnowledgeS
 
 
 def test_the_upgrade_answer_mentions_quitting_first(service: UiKnowledgeService) -> None:
+    """Czech asserts on "ukončit", not on the English label: the tray menu item
+    itself reads Ukončit in Czech, so quoting "Quit" there named a button that
+    does not exist for that reader."""
     assert "tray" in service.answer("how do i update coinductor").lower()
-    assert "Quit" in service.answer("jak mam udelat aktualizaci")
+    assert "ukončit" in service.answer("jak mam udelat aktualizaci").lower()
 
 
 def test_an_unrelated_question_is_left_to_the_model(service: UiKnowledgeService) -> None:

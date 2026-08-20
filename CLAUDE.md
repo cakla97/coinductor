@@ -102,6 +102,12 @@ submit path without passing through the risk engine.
   addable from a listing card and removable only by editing the config, and the listing
   feed drops old pairs - so the symbols most worth removing had no card at all. The
   allowed list is shown in full on *New listings* for that reason.
+- **An upgrade must be uninstall-then-install, never install-over-the-top.** Inno's
+  `CloseApplications=yes` did not save a real upgrade: files the running program held open
+  were left in place and the install became a mixture of old binaries and new data files,
+  which fails in ways that do not look like a bad install. If this is ever to become safe,
+  the app needs a named mutex and the script an `AppMutex`; until then the README, the
+  Overview notice and the assistant all have to keep saying uninstall first.
 - **The update check is the only request that is neither Binance nor the AI provider.**
   It must stay switchable off in three places (Settings, `[updates] check_on_start`,
   `COINDUCTOR_DISABLE_UPDATE_CHECK`), must never download or install anything, and must

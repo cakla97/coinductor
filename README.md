@@ -172,9 +172,29 @@ neither Binance nor your configured AI provider**: it reads the public releases 
 nothing about you, and *Settings* has a switch to stop it. `[updates] check_on_start` in
 `config.toml` is the same switch, and `COINDUCTOR_DISABLE_UPDATE_CHECK=1` overrides both.
 
-**Quit a running Coinductor from its tray icon before installing a new version.** Closing
-the window is not enough when a schedule is active — that is the point of the tray icon,
-and the process keeps running behind it.
+**Uninstall before installing a new version.** Three steps, in this order:
+
+1. **Quit** Coinductor from its tray icon. Closing the window is not enough when a schedule
+   is active — that is the point of the tray icon, and the process keeps running behind it.
+   Check Task Manager if you are unsure; nothing named `Coinductor.exe` should be left.
+2. **Uninstall** it.
+3. **Install** the new version.
+
+Installing over the top is not enough, and the way it fails is nasty. Files the running
+program still had open are not replaced, so you end up with a *mixture* — the new screens
+and data files on top of an older program — which then misbehaves in ways that look nothing
+like a bad install. This was found because the tray icon's right-click menu went dead while
+everything else worked.
+
+**Uninstalling does not touch your data.** It removes the program only; `config.toml`, the
+journal, reports and your API keys all survive, and the uninstaller asks separately, with
+both boxes unticked, before it will delete either. That is what makes uninstall-then-install
+a safe way to update.
+
+Coinductor is a **per-user** install, so Windows lists it under *Settings → Apps → Installed
+apps* — not the old Control Panel *Programs and Features*, which shows machine-wide
+installs only. The uninstaller also sits next to the program itself, in
+`%LOCALAPPDATA%\Programs\Coinductor`.
 
 Coinductor allows one instance per data folder, so an ordinary second launch just returns
 to the window you already have open. That guard can only recognise instances that have it,

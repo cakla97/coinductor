@@ -48,6 +48,35 @@ def test_english_questions_are_answered(service, question) -> None:
     assert service.answer(question), question
 
 
+UPDATING = [
+    "Jak mám aktualizovat Coinductor?",
+    "Musím před aktualizací odinstalovat?",
+    "Kde najdu odinstalátor?",
+    "Přijdu odinstalací o data?",
+    "How do I update Coinductor?",
+    "Do I have to uninstall before updating?",
+    "Will uninstalling delete my journal?",
+]
+
+
+@pytest.mark.parametrize("question", UPDATING)
+def test_updating_is_explained_however_it_is_asked(service, question) -> None:
+    """Installing over the top leaves a mixture that fails obscurely, so the
+    three steps have to be findable by every ordinary phrasing of the question."""
+    answer = service.answer(question)
+
+    assert answer, question
+    lowered = answer.lower()
+    assert "odinstal" in lowered or "uninstall" in lowered, question
+
+
+def test_the_update_answer_says_data_survives(service) -> None:
+    """The reason uninstall-then-install is safe advice at all."""
+    answer = service.answer("Will uninstalling delete my journal?").lower()
+
+    assert "survive" in answer or "zůstan" in answer
+
+
 def test_the_update_answer_says_it_installs_nothing(service) -> None:
     """The reassurance is the point: it is an outbound request, and people ask."""
     answer = service.answer("What does the new version notice do?")

@@ -428,10 +428,11 @@ UI_KNOWLEDGE = (
     UiKnowledgeEntry(
         "Updating Coinductor",
         "Settings",
-        ("update", "upgrade", "aktualizac", "nova verz", "install new version",
-         "quit before installing"),
-        "Quit a running Coinductor from the tray icon before installing a new version. The single-instance guard only recognises instances that have it, so upgrading while an older one runs can leave two instances with two schedules writing one journal. From one guarded version to the next, launching again simply returns to the window that is already open.",
-        "Před instalací nové verze ukončete běžící Coinductor přes ikonu v oznamovací oblasti (Quit). Ochrana proti druhé instanci pozná jen instance, které ji samy mají, takže upgrade při běžící starší verzi může nechat dvě instance se dvěma rozvrhy zapisující do jednoho journalu. Mezi verzemi, které ochranu mají, další spuštění jen vrátí okno, které už je otevřené.",
+        ("update", "upgrade", "aktualiz", "nova verz", "install new version",
+         "quit before installing", "odinstal", "uninstall", "jak aktualizovat",
+         "how do i update", "reinstall", "preinstalovat", "instalac", "instalovat"),
+        "Updating is three steps, in order: quit Coinductor from the tray icon, uninstall it, then install the new version. Installing over the top is not enough - files the running program had open are not replaced, and what you get is a mixture: new screens on top of an older program, which fails in ways that look nothing like a bad install. The tray icon's right-click menu going dead is how this was found. Uninstalling removes the program only; your settings, journal, reports and API keys survive, and the uninstaller asks separately before touching either. It is a per-user install, so it is listed in Settings > Apps > Installed apps rather than the old Control Panel, and the uninstaller also sits next to the program itself.",
+        "Aktualizace má tři kroky v tomto pořadí: ukončit Coinductor přes ikonu v oznamovací oblasti, odinstalovat ho a teprve pak nainstalovat novou verzi. Instalace přes stávající nestačí - soubory, které měl běžící program otevřené, se nepřepíšou a vznikne směs: nové obrazovky nad starším programem, což selhává způsobem, který vůbec nevypadá jako špatná instalace. Přišlo se na to tak, že přestalo fungovat pravé tlačítko na ikoně v traye. Odinstalace odstraní jen program; nastavení, žurnál, reporty i klíče zůstanou a odinstalátor se na obojí zvlášť zeptá. Je to instalace pro jednoho uživatele, takže ji najdete v Nastavení > Aplikace > Nainstalované aplikace, ne ve starých Ovládacích panelech, a odinstalátor leží i vedle samotného programu.",
     ),
     UiKnowledgeEntry(
         "Start with Windows",
@@ -515,6 +516,10 @@ def _looks_like_explanation_request(query: str) -> bool:
             "co je", "kde je", "kde najdu", "kde vypnu", "kde zapnu", "kde se",
             "jak odeberu", "jak pridam", "jak vypnu", "jak zapnu",
             "where is", "where do i", "where can i", "how to", "what are",
+            "musim", "musi se", "je potreba", "potrebuji", "mam odinstalovat",
+            "prijdu o", "ztratim", "zustane", "zustanou", "smaze",
+            "do i have to", "do i need", "will i", "will it", "does it delete",
+            "is it safe", "can i still", "delete my", "remove my", "keep my",
         )
     )
 

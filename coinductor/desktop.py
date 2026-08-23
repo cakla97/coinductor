@@ -58,6 +58,7 @@ def main() -> int:
     from PySide6.QtQml import QQmlApplicationEngine
     from PySide6.QtWidgets import QApplication
 
+    from .app_mutex import acquire as hold_app_mutex
     from .controller import AppController
     from .single_instance import SingleInstanceGuard, instance_key
     from .startup import wants_tray_start
@@ -77,6 +78,12 @@ def main() -> int:
     # cost a pipe round trip and exit, not build all of that and throw it away.
     # The tray menu could always find the running app because it lives inside
     # it; until this, the desktop shortcut could not, and started a rival.
+    # Before anything is opened: the installer asks whether this name exists,
+    # and the answer has to be yes for every copy that is running, including one
+    # about to exit as a duplicate. Answers a different question from the guard
+    # below - see app_mutex.py - and its failure is never fatal.
+    hold_app_mutex()
+
     guard = SingleInstanceGuard(instance_key(data_dir))
     if not guard.acquire():
         return 0

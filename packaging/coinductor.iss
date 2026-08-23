@@ -11,7 +11,7 @@
 ; code-signing certificate is added (out of scope for this step).
 
 #define AppName "Coinductor"
-#define AppVersion "1.5.0"
+#define AppVersion "1.5.1"
 #define AppPublisher "Coinductor"
 #define AppExeName "Coinductor.exe"
 
@@ -36,6 +36,12 @@ WizardStyle=modern
 ; close it instead of demanding a reboot; it is the Inno 6 default, but stated
 ; here so a future default cannot silently take it away.
 CloseApplications=yes
+; CloseApplications on its own was not enough: an upgrade landed on top of a
+; running program, left the files it still had open, and produced an install
+; that was new data files over an older binary. This name is created by the
+; application at startup (coinductor/app_mutex.py) and refuses the install
+; outright while any copy holds it. A test holds the two strings together.
+AppMutex=Coinductor-6F3B9C24-8A1E-4C7D-9E2F-1A5B7C3D8E90
 ; The [Run] entry below already offers to launch after installing. Letting
 ; Restart Manager relaunch as well would open two copies.
 RestartApplications=no

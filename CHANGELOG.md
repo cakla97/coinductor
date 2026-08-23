@@ -1,10 +1,36 @@
 # Changelog
 
-Notable changes per release. This project follows [Semantic Versioning](https://semver.org),
-Since 1.0.0, a breaking change to the config format, the journal schema, or a safety
-default takes a major version.
+Notable changes per release, following [Semantic Versioning](https://semver.org). What each
+number means here, so the versions stay worth reading:
 
-## [Unreleased]
+| | When | Examples |
+| --- | --- | --- |
+| **Patch** `1.5.x` | Nothing new to learn and nothing to decide. | A bug fix, corrected wording, documentation. |
+| **Minor** `1.x.0` | New behaviour, but upgrading is still just installing it. | A new screen or setting, a new config key with a default, a limit that got stricter, a journal migration that runs by itself. |
+| **Major** `x.0.0` | The release asks something of *you*. | A rework you have to relearn, or a migration you have to perform by hand. |
+
+The test is who does the work. A config key added with a working default, or a schema change
+`storage.py` migrates on open, costs the reader nothing and stays minor however large it was
+to build. Removing a key people depend on, or changing what a setting means underneath them,
+is what a major version is for — and this project has not needed one yet.
+
+## [1.5.1] — 2026-08-20
+
+### Fixed
+
+- **The installer now refuses to write over a running Coinductor.** `CloseApplications=yes`
+  was supposed to handle this and did not: an upgrade landed on top of a running program,
+  left every file it still had open, and produced an install that was new data files over an
+  older binary. It then misbehaved in ways that looked nothing like a bad install — the tray
+  icon's right-click menu was dead while its left click still worked — and it survived a
+  second install over the top. Measured on the affected copy: none of the release's 81
+  PySide6 DLLs matched and the executable was 2.8 MB smaller, while `Main.qml` matched byte
+  for byte.
+
+  Coinductor now holds a named mutex for as long as it runs, and the installer's `AppMutex`
+  looks for it, so an install while any copy is running is refused outright instead of half
+  happening. This is a different question from the single-instance guard, which is per data
+  folder; a test holds the name in `app_mutex.py` and the one in `coinductor.iss` together.
 
 ### Changed
 

@@ -117,6 +117,11 @@ submit path without passing through the risk engine.
   and crashed the run.
 - **`config.toml` and `state/` are gitignored.** `config.example.toml` is the tracked
   template and is what the tests load.
+- **Major versions are for reworks, not for churn.** The test is who does the work: a new
+  key with a default, or a migration `storage.py` runs on open, is *minor* however large it
+  was to build, because the reader does nothing. Major is reserved for a release that asks
+  the user to relearn or to migrate by hand. The table at the top of CHANGELOG.md is the
+  statement of record.
 - **Version lives only in `trading_agent/__init__.py`.** pyproject reads it dynamically,
   `coinductor` re-exports it, and a test holds `packaging/coinductor.iss` to it.
 

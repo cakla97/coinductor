@@ -14,6 +14,17 @@ The test is who does the work. A config key added with a working default, or a s
 to build. Removing a key people depend on, or changing what a setting means underneath them,
 is what a major version is for — and this project has not needed one yet.
 
+## [1.5.2] — 2026-08-23
+
+### Changed
+
+- **The installer's "please close it" message now says how.** Inno's own wording is *close
+  all instances of it now*, which names something the reader cannot see: Coinductor's whole
+  point is to keep running after its window is closed, so the thing to close is a tray icon
+  in the hidden-icons flyout. The message now says which icon, which menu item, that closing
+  the window is not enough while an analysis is scheduled, and what to do if clicking OK
+  keeps bringing it back. Same for the uninstaller.
+
 ## [1.5.1] — 2026-08-20
 
 ### Fixed

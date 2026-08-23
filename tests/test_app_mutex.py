@@ -34,6 +34,19 @@ def test_the_installer_looks_for_exactly_that_name() -> None:
     assert f"AppMutex={app_mutex.MUTEX_NAME}" in ISS.read_text(encoding="utf-8")
 
 
+def test_the_running_app_message_says_where_to_click() -> None:
+    """Inno's default says "close all instances of it now", which names nothing
+    a tray-only application actually shows. Both messages have to explain the
+    notification area, or the guard just blocks people without helping them."""
+    text = ISS.read_text(encoding="utf-8")
+
+    for message in ("SetupAppRunningError", "UninstallAppRunningError"):
+        line = next(row for row in text.splitlines() if row.startswith(f"{message}="))
+        assert "notification area" in line, message
+        assert "Quit" in line, message
+        assert "Task Manager" in line, message
+
+
 def test_nothing_is_held_before_acquiring() -> None:
     assert app_mutex.held() is False
 

@@ -11,7 +11,7 @@
 ; code-signing certificate is added (out of scope for this step).
 
 #define AppName "Coinductor"
-#define AppVersion "1.5.1"
+#define AppVersion "1.5.2"
 #define AppPublisher "Coinductor"
 #define AppExeName "Coinductor.exe"
 
@@ -51,6 +51,14 @@ ArchitecturesInstallIn64BitMode=x64compatible
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[Messages]
+; Inno's own wording is "close all instances of it now". For an application
+; whose whole point is to keep running after you close its window, that names
+; something the reader cannot see and does not know how to do - so it says which
+; icon, which menu item, and what to do when the window is already gone.
+SetupAppRunningError=%1 is still running, so Setup cannot replace the files it has open.%n%nIf a window is open, close it. If %1 is running in the notification area (the ^ arrow next to the clock), right-click its icon and choose Quit - closing the window is not enough while an analysis is scheduled.%n%nThen click OK. If OK keeps bringing this message back, end Coinductor.exe in Task Manager.
+UninstallAppRunningError=%1 is still running, so it cannot be removed.%n%nIf a window is open, close it. If %1 is running in the notification area (the ^ arrow next to the clock), right-click its icon and choose Quit.%n%nThen click OK. If OK keeps bringing this message back, end Coinductor.exe in Task Manager.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked

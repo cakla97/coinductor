@@ -11,7 +11,7 @@
 ; code-signing certificate is added (out of scope for this step).
 
 #define AppName "Coinductor"
-#define AppVersion "1.5.3"
+#define AppVersion "1.5.4"
 #define AppPublisher "Coinductor"
 #define AppExeName "Coinductor.exe"
 
@@ -62,6 +62,20 @@ UninstallAppRunningError=%1 is still running, so it cannot be removed.%n%nIf a w
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+
+[InstallDelete]
+; Wipe the previous program payload before laying down the new one. Without
+; this, a file that survived one bad install survives every install after it:
+; ignoreversion overwrites what it ships, but a file it cannot write - because
+; the old program still had it open - is simply left, and the next install has
+; no reason to touch it either. That is how a Qt6Core.dll from an older build
+; outlived three upgrades and kept the tray icon's context menu dead.
+;
+; Safe to delete outright: {app} holds only the PyInstaller output. Config,
+; journal, reports and keys live in the data directory, which is somewhere else
+; entirely (%LOCALAPPDATA%\Coinductor), and the uninstaller is what removes
+; those, only when asked.
+Type: filesandordirs; Name: "{app}\_internal"
 
 [Files]
 ; Recursively bundle the whole PyInstaller onedir output.

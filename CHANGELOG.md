@@ -14,6 +14,29 @@ The test is who does the work. A config key added with a working default, or a s
 to build. Removing a key people depend on, or changing what a setting means underneath them,
 is what a major version is for — and this project has not needed one yet.
 
+## [1.5.4] — 2026-08-24
+
+### Fixed
+
+- **A file that survived one bad install no longer survives every install after it.**
+  `ignoreversion` overwrites the files an install ships, but a file it *cannot* write —
+  because the running program still had it open — is left alone, and the next install has
+  no reason to touch it either. So one interrupted upgrade poisons every upgrade that
+  follows, silently.
+
+  Found by measurement, not by reasoning: an installed copy reporting 1.5.1 shared only
+  1698 of the release's files, with 285 different and 27 missing, and its `Qt6Core.dll` was
+  Qt 6.11.2 — a version none of the releases has ever shipped, left over from a build
+  installed a week earlier. Every release ships 6.11.1. That stale library is what kept the
+  tray icon's right-click menu dead across three upgrades, while the same icon's left click
+  went on working, because the two take different paths through Qt.
+
+  The installer now deletes the previous program payload before laying down the new one.
+  Only the program: config, journal, reports and keys live in the data directory, which is
+  somewhere else entirely and which only the uninstaller touches, only when asked. Together
+  with 1.5.1's mutex — nothing running, so nothing locked — an install can no longer inherit
+  anything from the one before it.
+
 ## [1.5.3] — 2026-08-24
 
 ### Fixed

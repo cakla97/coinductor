@@ -47,6 +47,15 @@ def test_the_running_app_message_says_where_to_click() -> None:
         assert "Task Manager" in line, message
 
 
+def test_the_installer_wipes_the_previous_payload() -> None:
+    """The mutex stops files being locked; this stops a locked file from the
+    past outliving every future install. One without the other is not enough."""
+    text = ISS.read_text(encoding="utf-8")
+
+    assert "[InstallDelete]" in text
+    assert r'Type: filesandordirs; Name: "{app}\_internal"' in text
+
+
 def test_nothing_is_held_before_acquiring() -> None:
     assert app_mutex.held() is False
 

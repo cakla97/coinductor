@@ -2117,8 +2117,8 @@ APP_STRINGS: dict[str, dict[str, str]] = {
         "cs": "K dispozici je Coinductor {version}",
     },
     "update_available_detail": {
-        "en": "You are running {current}. Quit from the tray icon, uninstall Coinductor, then install the new version - installing over the top leaves a mixture of old and new files. Uninstalling keeps your settings, journal and API keys.",
-        "cs": "Používáte {current}. Ukončete aplikaci přes ikonu v traye, Coinductor odinstalujte a teprve pak nainstalujte novou verzi - instalace přes stávající nechá směs starých a nových souborů. Odinstalace vám nastavení, žurnál i klíče ponechá.",
+        "en": "You are running {current}. Quit Coinductor from its tray icon, then install the new version over the top - no uninstall needed, and your settings and journal stay where they are. Forget to quit and the installer says so rather than installing half of it.",
+        "cs": "Používáte {current}. Ukončete Coinductor přes ikonu v traye a novou verzi nainstalujte přes stávající - odinstalovat není potřeba a nastavení i žurnál zůstanou, kde jsou. Když zapomenete ukončit, instalátor to řekne, místo aby se nainstaloval napůl.",
     },
     "update_open_button": {
         "en": "Open the release",

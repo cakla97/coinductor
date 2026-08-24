@@ -172,24 +172,31 @@ neither Binance nor your configured AI provider**: it reads the public releases 
 nothing about you, and *Settings* has a switch to stop it. `[updates] check_on_start` in
 `config.toml` is the same switch, and `COINDUCTOR_DISABLE_UPDATE_CHECK=1` overrides both.
 
-**Uninstall before installing a new version.** Three steps, in this order:
+**Quit Coinductor before installing a new version, then install over the top.** Two steps:
 
-1. **Quit** Coinductor from its tray icon. Closing the window is not enough when a schedule
-   is active — that is the point of the tray icon, and the process keeps running behind it.
-   Check Task Manager if you are unsure; nothing named `Coinductor.exe` should be left.
-2. **Uninstall** it.
-3. **Install** the new version.
+1. **Quit** it from its tray icon. Closing the window is not enough when a schedule is
+   active — that is the point of the tray icon, and the process keeps running behind it.
+   On Windows 11 the icon usually lives behind the `^` arrow next to the clock.
+2. **Install** the new version. There is no need to uninstall first, and your settings,
+   journal, reports and API keys are untouched either way.
 
-Installing over the top is not enough, and the way it fails is nasty. Files the running
-program still had open are not replaced, so you end up with a *mixture* — the new screens
-and data files on top of an older program — which then misbehaves in ways that look nothing
-like a bad install. This was found because the tray icon's right-click menu went dead while
+Quitting is the part that matters, and **since 1.5.1 you cannot get it wrong by accident**:
+Coinductor holds a named mutex while it runs, and the installer refuses to write a single
+file while any copy holds it — naming the icon to close rather than failing quietly.
+
+That guard exists because the failure is nasty and does not look like what it is. A running
+program keeps its files open; an install that cannot replace them leaves a *mixture* — new
+data files on top of an older program — which then misbehaves in ways that look nothing like
+a bad install. It was found because the tray icon's right-click menu went dead while
 everything else worked.
 
-**Uninstalling does not touch your data.** It removes the program only; `config.toml`, the
+**Upgrading from 1.5.0 or older is the one case with no guard**, because those versions do
+not hold the mutex and the installer cannot see them. Quit it yourself, and check Task
+Manager if you are unsure: nothing named `Coinductor.exe` should be left.
+
+If you ever do want to remove it, uninstalling takes the program only — `config.toml`, the
 journal, reports and your API keys all survive, and the uninstaller asks separately, with
-both boxes unticked, before it will delete either. That is what makes uninstall-then-install
-a safe way to update.
+both boxes unticked, before it will delete either.
 
 Coinductor is a **per-user** install, so Windows lists it under *Settings → Apps → Installed
 apps* — not the old Control Panel *Programs and Features*, which shows machine-wide

@@ -70,11 +70,20 @@ def test_updating_is_explained_however_it_is_asked(service, question) -> None:
     assert "odinstal" in lowered or "uninstall" in lowered, question
 
 
-def test_the_update_answer_says_data_survives(service) -> None:
-    """The reason uninstall-then-install is safe advice at all."""
+def test_the_update_answer_says_the_journal_is_kept(service) -> None:
+    """The question people actually worry about before touching an install."""
     answer = service.answer("Will uninstalling delete my journal?").lower()
 
-    assert "survive" in answer or "zůstan" in answer
+    assert "journal" in answer
+    assert "stay where they are" in answer or "survive" in answer
+
+
+def test_the_update_answer_no_longer_demands_an_uninstall(service) -> None:
+    """It did, for one release, and it was wrong by the time 1.5.1 shipped: the
+    installer's mutex made quitting sufficient, and the advice never caught up."""
+    answer = service.answer("Do I have to uninstall before updating?").lower()
+
+    assert "no uninstall is needed" in answer
 
 
 def test_the_update_answer_says_it_installs_nothing(service) -> None:

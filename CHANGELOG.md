@@ -14,6 +14,23 @@ The test is who does the work. A config key added with a working default, or a s
 to build. Removing a key people depend on, or changing what a setting means underneath them,
 is what a major version is for — and this project has not needed one yet.
 
+## [1.5.3] — 2026-08-24
+
+### Fixed
+
+- **The update notice was still telling people to uninstall first.** That advice was right
+  for exactly one release. 1.5.1 made the installer refuse to write while any copy is
+  running, which is what the uninstall was working around — so from 1.5.1 quitting is
+  enough and installing over the top is correct. The notice, the README and the assistant
+  all kept saying otherwise, because the text was written before the guard existed and
+  nothing brought it back into line.
+
+  Measured rather than assumed: installing 1.5.1 over 1.5.0 without uninstalling produced
+  2010 files byte-for-byte identical to a pristine install, with nothing left over. All
+  three now say quit, then install; that uninstalling is unnecessary and never required for
+  your data; and that upgrading *from* 1.5.0 or older is the one case with no guard, because
+  those versions do not hold the mutex.
+
 ## [1.5.2] — 2026-08-23
 
 ### Changed
